@@ -1,0 +1,14 @@
+{
+    "Index": {
+        "title": "SaaS Éducatif",
+        "login": "Connexion",
+        "register": "Inscrire une École"
+    },
+    "Auth": {
+        "email": "Adresse Email",
+        "password": "Mot de passe",
+        "schoolName": "Nom de l'École",
+        "domain": "Préfixe Domaine (ex: 'mon-ecole')",
+        "submit": "Soumettre"
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "Index": {
+        "title": "Educational SaaS",
+        "login": "Login",
+        "register": "Register School"
+    },
+    "Auth": {
+        "email": "Email Address",
+        "password": "Password",
+        "schoolName": "School Name",
+        "domain": "Domain Prefix (e.g. 'my-school')",
+        "submit": "Submit"
+    }
+}

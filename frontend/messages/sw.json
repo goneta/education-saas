@@ -1,0 +1,14 @@
+{
+    "Index": {
+        "title": "SaaS ya Elimu",
+        "login": "Ingia",
+        "register": "Sajili Shule"
+    },
+    "Auth": {
+        "email": "Barua pepe",
+        "password": "Nywila",
+        "schoolName": "Jina la Shule",
+        "domain": "Kiambishi awali cha Kikoa",
+        "submit": "Wasilisha"
+    }
+}
