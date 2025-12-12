@@ -1,0 +1,17 @@
+---
+description: Verify UI elements exist before referencing them in logic or tests to avoid "element not found" logic errors.
+globs: **/*.tsx, **/*.jsx, **/*.test.ts, **/*.test.js
+---
+
+# 14. Verify UI Elements Exist Before Logic
+
+**Summary:** Ensure that UI elements (like Select dropdowns, inputs, buttons) actually exist in the JSX/HTML structure *before* writing logic to interact with them or assuming they are available for user interaction.
+
+**Context:**
+This error occurs when a developer assumes a field exists (e.g., "Teacher Selector" in a form) and writes state management or payload logic for it (e.g., `teacher_id: formData.teacher_id`), but forgets to add the actual `<Select>` component to the render method. This leads to logic that does nothing or payload data that is always null/undefined because the user has no way to input it.
+
+**Mandatory Checklist:**
+- [ ] **UI-First Development:** When adding a new field to a form, add the UI component (Input, Select, etc.) *first*, then add the state logic.
+- [ ] **Visual Verification:** Check the render method or returned JSX to ensure every state variable in your form has a corresponding input element.
+- [ ] **Integration Check:** If existing logic (like a `useEffect` fetching data) expects to populate a dropdown, ensure that dropdown is actually rendered.
+- [ ] **Self-Correction:** If you write a `multi_replace_file_content` that adds state/logic but fails to add the UI, or creates an invalid/incomplete UI structure, stop and fix the UI immediately.

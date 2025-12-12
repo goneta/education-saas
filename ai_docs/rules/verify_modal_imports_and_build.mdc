@@ -1,0 +1,54 @@
+---
+description: Prevents import errors when using Modals and enforces build verification to catch issues early.
+globs: ["**/*modal.tsx", "**/*dialog.tsx", "**/components/**/*.tsx"]
+---
+
+# Verify Modal Imports and Build
+
+## Context
+Modals and Dialogs often face specific import issues:
+1.  **Circular Dependencies**: Modals importing parent components that import the modal.
+2.  **Export Mismatches**: Default vs Named exports are frequently confused.
+3.  **Client/Server Mismatches**: Modals in Next.js usually require `"use client"` but might be imported in server components without proper hydration handling.
+
+## Trigger
+- Creating a new Modal or Dialog component.
+- Importing a Modal into a Page or another Component.
+- Encountering "Element type is invalid" or "ReferenceError" related to a Modal.
+
+## Mandatory Checklist
+
+### 1. Pre-Import Verification
+- [ ] **Check Exports**: Open the modal file. Does it use `export default` or `export class/function`? Match the import statement exactly.
+    - *Correct*: `export function MyModal` -> `import { MyModal } from ...`
+    - *Correct*: `export default function MyModal` -> `import MyModal from ...`
+- [ ] **Check "use client"**: Modals with interactivity (hooks, event handlers) MUST have `"use client"` at the very top.
+- [ ] **Circular Dependency Check**: Ensure the modal does NOT import the parent component calling it. Pass data via props or use strict state management.
+
+### 2. Implementation Verification
+- [ ] **Path Verification**: Run `ls -R [path_to_modal]` (or equivalent) to confirm the file exists at the exact path before writing the import.
+- [ ] **Barrel Files**: If importing from an `index.ts` barrel file, verify the modal is actually re-exported there. **Prefer direct imports** if barrel files are complex/messy.
+
+### 3. Build Verification (CRITICAL)
+- [ ] **Immediate Build Check**: After adding the modal to a parent component, STOP and run:
+    ```bash
+    npm run build
+    ```
+    (Or `npx tsc --noEmit` for a faster check)
+- [ ] **Fix Immediately**: If the build fails with "Module not found" or type errors, revert or fix *immediately*. Do not proceed to add more logic on top of a broken build.
+
+## Example Error & Fix
+
+**Error**: `Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined.`
+
+**Cause**: You likely did `import MyModal from './MyModal'` but the file has `export { MyModal }`.
+
+**Fix**:
+1.  Check `MyModal.tsx`:
+    ```tsx
+    export function MyModal() { ... }
+    ```
+2.  Fix Import:
+    ```tsx
+    import { MyModal } from './MyModal';
+    ```

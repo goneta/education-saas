@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Integer, String, ForeignKey, Enum as SqEnum, DateTime, Text, JSON
+from sqlalchemy import Boolean, Column, Integer, String, ForeignKey, Enum as SqEnum, DateTime, Text, JSON, Time, Float, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
@@ -17,6 +17,21 @@ class SchoolType(str, enum.Enum):
     GENERAL = "general"
     TECHNICAL = "technical"
     VOCATIONAL = "vocational"
+
+class DayOfWeek(str, enum.Enum):
+    MONDAY = "monday"
+    TUESDAY = "tuesday"
+    WEDNESDAY = "wednesday"
+    THURSDAY = "thursday"
+    FRIDAY = "friday"
+    SATURDAY = "saturday"
+    SUNDAY = "sunday"
+
+class AttendanceStatus(str, enum.Enum):
+    PRESENT = "present"
+    ABSENT = "absent"
+    LATE = "late"
+    EXCUSED = "excused"
 
 # Core Models
 
@@ -42,6 +57,7 @@ class School(Base):
     users = relationship("User", back_populates="school", cascade="all, delete-orphan")
     academic_years = relationship("AcademicYear", back_populates="school")
     classes = relationship("Class", back_populates="school")
+    subjects = relationship("Subject", back_populates="school")
 
 class User(Base):
     __tablename__ = "users"
@@ -58,6 +74,7 @@ class User(Base):
     # Tenancy
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=True) # Null for Super Admin
     school = relationship("School", back_populates="users")
+    timetables = relationship("Timetable", back_populates="teacher")
 
     # Profile details
     phone_number = Column(String, nullable=True)
@@ -65,6 +82,7 @@ class User(Base):
 
     # Relationships
     student_profile = relationship("StudentProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    teacher_profile = relationship("TeacherProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
 class StudentProfile(Base):
     __tablename__ = "student_profiles"
@@ -89,6 +107,19 @@ class StudentProfile(Base):
     
     user = relationship("User", back_populates="student_profile")
     current_class = relationship("Class", back_populates="students")
+    grades = relationship("Grade", back_populates="student")
+
+class TeacherProfile(Base):
+    __tablename__ = "teacher_profiles"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    
+    specialization = Column(String, nullable=True)
+    join_date = Column(DateTime, nullable=True)
+    bio = Column(Text, nullable=True)
+    
+    user = relationship("User", back_populates="teacher_profile")
 
 class AcademicYear(Base):
     __tablename__ = "academic_years"
@@ -114,6 +145,7 @@ class Term(Base):
     
     academic_year_id = Column(Integer, ForeignKey("academic_years.id"))
     academic_year = relationship("AcademicYear", back_populates="terms")
+    assessments = relationship("Assessment", back_populates="term")
 
 class Class(Base):
     __tablename__ = "classes"
@@ -130,6 +162,42 @@ class Class(Base):
     main_teacher = relationship("User", foreign_keys=[main_teacher_id])
 
     students = relationship("StudentProfile", back_populates="current_class")
+    timetables = relationship("Timetable", back_populates="class_")
+    assessments = relationship("Assessment", back_populates="current_class")
+
+class Subject(Base):
+    __tablename__ = "subjects"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True, nullable=False)
+    code = Column(String, index=True) # e.g. MATH101
+    description = Column(String, nullable=True)
+    coefficient = Column(Integer, default=1)
+    
+    school_id = Column(Integer, ForeignKey("schools.id"))
+    school = relationship("School", back_populates="subjects")
+    
+    timetables = relationship("Timetable", back_populates="subject")
+    assessments = relationship("Assessment", back_populates="subject")
+
+class Timetable(Base):
+    __tablename__ = "timetables"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    day_of_week = Column(SqEnum(DayOfWeek), nullable=False)
+    start_time = Column(Time, nullable=False)
+    end_time = Column(Time, nullable=False)
+    room = Column(String, nullable=True)
+    
+    class_id = Column(Integer, ForeignKey("classes.id"), nullable=False)
+    class_ = relationship("Class", back_populates="timetables")
+    
+    subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=False)
+    subject = relationship("Subject", back_populates="timetables")
+    
+    teacher_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    teacher = relationship("User", back_populates="timetables")
 
 class ReferenceData(Base):
     __tablename__ = "reference_data"
@@ -143,3 +211,77 @@ class ReferenceData(Base):
     
     # Scope: Null = Global System Default, Set = School Specific
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=True)
+
+# Grade & Assessment Models
+
+class AssessmentType(str, enum.Enum):
+    EXAM = "exam"
+    HOMEWORK = "homework"
+    QUIZ = "quiz"
+    PROJECT = "project"
+    PARTICIPATION = "participation"
+
+class Assessment(Base):
+    __tablename__ = "assessments"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    type = Column(SqEnum(AssessmentType), default=AssessmentType.EXAM)
+    date = Column(DateTime, nullable=False)
+    max_score = Column(Integer, default=20)
+    weight = Column(Integer, default=1) # Coefficient within calculation
+    
+    # Relationships
+    class_id = Column(Integer, ForeignKey("classes.id"), nullable=False)
+    current_class = relationship("Class", back_populates="assessments")
+    
+    subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=False)
+    subject = relationship("Subject", back_populates="assessments")
+    
+    term_id = Column(Integer, ForeignKey("terms.id"), nullable=False)
+    term = relationship("Term", back_populates="assessments")
+    
+    grades = relationship("Grade", back_populates="assessment", cascade="all, delete-orphan")
+
+class Grade(Base):
+    __tablename__ = "grades"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    score = Column(Float, nullable=False) 
+    comment = Column(String, nullable=True)
+    
+    assessment_id = Column(Integer, ForeignKey("assessments.id"), nullable=False)
+    assessment = relationship("Assessment", back_populates="grades")
+    
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    student = relationship("StudentProfile", back_populates="grades")
+
+    # Avoid duplicates
+    __table_args__ = (
+        UniqueConstraint('assessment_id', 'student_id', name='_assessment_student_uc'),
+    ) 
+
+
+class Attendance(Base):
+    __tablename__ = "attendance"
+
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(DateTime, nullable=False, index=True) # The specific date of the class
+    status = Column(SqEnum(AttendanceStatus), nullable=False, default=AttendanceStatus.PRESENT)
+    remarks = Column(String, nullable=True)
+    
+    # Links
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    student = relationship("StudentProfile")
+    
+    timetable_id = Column(Integer, ForeignKey("timetables.id"), nullable=False)
+    timetable = relationship("Timetable")
+    
+
+    
+    # Metadata
+    recorded_by_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Teacher or Admin who marked it
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+

@@ -1,0 +1,164 @@
+---
+description: MANDATORY process for auto-checking, auto-testing, auto-fixing, and auto-creating rules for every task
+globs: *
+alwaysApply: true
+priority: CRITICAL
+---
+# Mandatory Auto-Check, Auto-Test, Auto-Fix Process
+
+## CRITICAL: This is Your Most Important Rule
+This rule defines the MANDATORY process you MUST follow for EVERY task. No exceptions.
+
+## The Mandatory Process Loop
+
+### BEFORE Starting Any Task
+1. **Check for Existing Issues**
+   - Review recent errors/warnings
+   - Check if similar issues occurred before
+   - Look for patterns in past failures
+
+2. **If Issues Found → Create Rule IMMEDIATELY**
+   - Do NOT wait for user to ask
+   - Create rule documenting the issue
+   - Document prevention steps
+   - Then proceed with task
+
+### DURING Task Execution
+3. **Follow All Existing Rules**
+   - Read ALL rules in `ai_docs/rules/` before starting
+   - Apply rules as you work
+   - Reference rules in your decisions
+
+### AFTER Task Execution (MANDATORY TESTING LOOP)
+4. **Test the Feature**
+   - Use browser_subagent to test UI
+   - Verify behavior matches requirements
+   - Check for console errors
+   - Verify visual design matches reference
+
+5. **Check for New Issues**
+   - Build errors?
+   - Runtime errors?
+   - UI not working as expected?
+   - Visual design mismatches?
+
+6. **If Issues Found → Auto-Fix Loop**
+   ```
+   WHILE (issues exist) {
+     a. Create rule for the issue (if new pattern)
+     b. Fix the issue
+     c. Test again
+     d. Check for new issues
+   }
+   ```
+
+7. **Only Report Success When:**
+   - ✅ No build errors
+   - ✅ No runtime errors
+   - ✅ Feature works as expected in browser
+   - ✅ Visual design matches reference
+   - ✅ All rules followed
+   - ✅ Rule created for any new issues encountered
+
+## Rule Creation Triggers (Auto-Create Rules For)
+- **Build Errors**: Module not found, syntax errors, type errors
+- **Runtime Errors**: API failures, authentication issues, state errors
+- **Logic Errors**: Feature doesn't work as expected
+- **Visual Errors**: Design doesn't match reference
+- **Process Errors**: Forgot to check dependencies, skipped verification
+- **Pattern Errors**: Same mistake repeated
+
+## Testing Checklist (MANDATORY)
+Before declaring task complete:
+- [ ] Code builds without errors
+- [ ] Feature tested in browser (use browser_subagent)
+- [ ] UI behaves exactly as expected
+- [ ] Visual design matches `dashboard_visual_description.md`
+- [ ] No console errors
+- [ ] All user interactions work
+- [ ] Rules created for any issues encountered
+- [ ] All issues fixed
+
+## User Should NEVER Have To:
+- ❌ Tell you about build errors (you should catch them)
+- ❌ Tell you about runtime errors (you should test and find them)
+- ❌ Tell you to create rules (you should auto-create them)
+- ❌ Tell you to fix issues (you should auto-fix in loop)
+- ❌ Tell you to test (you should always test)
+
+## Your Responsibility
+- ✅ Auto-detect issues
+- ✅ Auto-create rules
+- ✅ Auto-fix errors
+- ✅ Auto-test features
+- ✅ Repeat until clean
+- ✅ Only then report success
+
+## Example Process Flow
+
+```
+User: "Implement feature X"
+
+You:
+1. Check for existing issues → None found
+2. Read all rules
+3. Implement feature X
+4. Test in browser → Error found: "Module not found"
+5. Create rule: "verify_component_imports.mdc"
+6. Fix: Create missing component
+7. Test again → Error found: "Authentication required"
+8. Create rule: "check_auth_dependencies.mdc"
+9. Fix: Add auth check or workaround
+10. Test again → Works perfectly
+11. Report: "Feature X implemented and tested successfully"
+```
+
+## Failure Mode (What NOT To Do)
+
+```
+User: "Implement feature X"
+
+You:
+1. Implement feature X
+2. Report: "Feature X implemented"
+
+User: "There's an error: Module not found"
+You: "Oh, let me fix that"
+
+User: "Create a rule for this"
+You: "Okay, rule created"
+
+❌ THIS IS WRONG - You should have caught and fixed this yourself
+```
+
+## Success Mode (What TO Do)
+
+```
+User: "Implement feature X"
+
+You:
+1. Check existing issues
+2. Read all rules
+3. Implement feature X
+4. Test → Find error
+5. Create rule
+6. Fix error
+7. Test → Find another error
+8. Create rule
+9. Fix error
+10. Test → Everything works
+11. Report: "Feature X implemented, tested, and working perfectly"
+
+✅ THIS IS RIGHT - Proactive, thorough, complete
+```
+
+## Remember
+- **You are responsible for quality, not the user**
+- **Test everything before reporting success**
+- **Create rules proactively, not reactively**
+- **Fix issues in a loop until clean**
+- **The user should only see working features**
+
+## Enforcement
+This is your MOST IMPORTANT rule. Violating this process is unacceptable.
+Every task MUST follow this loop. No exceptions.

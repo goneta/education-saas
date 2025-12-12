@@ -1,0 +1,24 @@
+---
+description: MANDATORY: You must verify that a fix works (via test or reproduction) BEFORE reporting "implementation successful" to the user.
+globs: *
+---
+# Mandatory Verification Before Success
+
+## Context
+Reporting "Success" or "Fixed" when the issue persists erodes trust. You must prove the fix works before telling the user it is done.
+
+## Rule
+1.  **Trigger:** You have applied a code change to fix a bug or implement a feature.
+2.  **Action:** You MUST run a verification step.
+    *   **Browser:** Use `browser_subagent` to visit the page.
+    *   **Backend:** Run a script (like `debug_expenses.py`) to hit the endpoint and *assert* a 200 OK response.
+    *   **Build:** Run `npm run build` (but this doesn't catch runtime errors).
+    *   **Logs:** Check command output for errors.
+3.  **Constraint:** Do NOT send a `notify_user` message with "Success" until you have a *positive confirmation* from a tool call that the specific error is gone.
+    *   If you can't verify (e.g., need user to restart server), explicitly state: "I have applied the fix, but verified it requires a server restart. Please restart and check." Do NOT say "It is fixed."
+
+## Checklist
+- [ ] Applied code change?
+- [ ] Ran verification (script/browser/build)?
+- [ ] Did verification SUCCEED? (If no, fix again).
+- [ ] Only then: Notify User.

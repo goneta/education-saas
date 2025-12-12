@@ -1,0 +1,65 @@
+---
+description: Prevent "Export doesn't exist" errors by verifying component exports match imports
+globs: *.tsx, *.ts
+alwaysApply: true
+---
+# Verify Component Exports Match Imports
+
+## Overview
+This rule prevents build errors caused by importing components that don't exist in the target module.
+
+## Rule: Check Exports Before Importing
+1. **BEFORE** importing from a UI component, view the file to see what it exports
+2. **VERIFY** the exact export name matches what you're importing
+3. **IF MISSING**: Add the missing export to the component file
+4. **NEVER** assume a component exports something just because it's a standard pattern
+
+## Root Cause Analysis
+**What Happened:**
+- Created `login-form.tsx` that imports `CardDescription` from `card.tsx`
+- `card.tsx` only exported: `Card`, `CardHeader`, `CardTitle`, `CardContent`
+- `CardDescription` was NOT exported
+- Build failed with: "Export CardDescription doesn't exist in target module"
+
+**Why It Happened:**
+- I assumed `CardDescription` existed because it's a common shadcn/ui pattern
+- I didn't verify the exports in `card.tsx` before importing
+- I violated the `verify_component_imports.mdc` rule (should have checked file exists AND exports)
+
+## Common Violations and Solutions
+
+### ❌ BAD: Assuming Export Exists
+```tsx
+// Assuming CardDescription exists without checking
+import { Card, CardDescription } from "@/components/ui/card"
+// Build fails: Export CardDescription doesn't exist
+```
+
+### ✅ GOOD: Verify Exports First
+```tsx
+// Step 1: view_file card.tsx
+// Step 2: Check exports: { Card, CardHeader, CardTitle, CardContent }
+// Step 3: CardDescription is missing - add it first
+// Step 4: Then import
+import { Card, CardDescription } from "@/components/ui/card"
+```
+
+## Checklist Before Importing
+- [ ] Run `view_file` on the component file
+- [ ] Check the `export` statement at the bottom
+- [ ] Verify the component you need is in the export list
+- [ ] If missing: Add the component to the file first
+- [ ] Then import
+
+## How to Fix Missing Exports
+1. View the component file
+2. Add the missing component (follow existing patterns)
+3. Add to export statement
+4. Then use the import
+
+## Prevention
+- **Always** check exports before importing
+- **Never** trust assumptions about what a file exports
+- **Extend** `verify_component_imports.mdc` to include export verification
+
+Remember: **File exists ≠ Export exists. Always verify both.**

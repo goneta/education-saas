@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Menu, Search, CircleUser } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { UserMenu } from "@/components/layout/user-menu"
 
 interface HeaderProps {
     isResizablePanel?: boolean;
@@ -11,7 +12,7 @@ interface HeaderProps {
 export function Header({ isResizablePanel = false }: HeaderProps) {
     return (
         <header className={cn(
-            "flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 bg-background",
+            "flex h-14 items-center gap-4 border-b border-[#E5E7EB] bg-white px-4 lg:h-[60px] lg:px-6",
             !isResizablePanel && "fixed top-0 right-0 left-0 md:left-64 z-20",
             isResizablePanel && "w-full"
         )}>
@@ -27,10 +28,7 @@ export function Header({ isResizablePanel = false }: HeaderProps) {
                     </div>
                 </form>
             </div>
-            <button className="rounded-full border border-input w-8 h-8 flex items-center justify-center">
-                <CircleUser className="h-5 w-5" />
-                <span className="sr-only">Toggle user menu</span>
-            </button>
+            <UserMenu />
         </header>
     )
 }

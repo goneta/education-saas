@@ -1,0 +1,86 @@
+---
+description: Prevent TypeScript errors in configuration files by understanding return type requirements
+globs: *.ts, *.tsx
+alwaysApply: true
+---
+# Handle TypeScript Configuration File Errors
+
+## Overview
+This rule prevents TypeScript errors in configuration files (i18n, middleware, etc.) by ensuring return types match library expectations.
+
+## Rule: Understand Library Type Requirements
+1. **WHEN** you see a TypeScript error about type mismatch in a config file
+2. **READ** the error message carefully - it shows what type is expected vs what you're returning
+3. **CHECK** the library documentation or existing examples
+4. **FIX** by adding missing properties or type assertions
+5. **NEVER** ignore TypeScript errors - they indicate real runtime issues
+
+## Root Cause Analysis
+**What Happened:**
+- Modified `i18n.ts` configuration file
+- TypeScript error: "Property 'locale' is missing in type { messages: any } but required in type { locale: string }"
+- Return object was missing the `locale` property
+- Build failed repeatedly
+
+**Why It Happened:**
+- I didn't understand the `RequestConfig` type requirements
+- I removed the `locale` property thinking it was optional
+- I didn't read the full TypeScript error message
+- The `locale` parameter type was `string | undefined` but return type required `string`
+
+## Common Violations and Solutions
+
+### ❌ BAD: Ignoring TypeScript Errors
+```typescript
+// TypeScript says locale is missing, but I ignore it
+export default getRequestConfig(async ({ locale }) => {
+    return {
+        messages: (await import(`./messages/${locale}.json`)).default
+    };
+});
+// Error: Property 'locale' is missing
+```
+
+### ✅ GOOD: Fix Type Mismatches
+```typescript
+// Add missing property and assert type
+export default getRequestConfig(async ({ locale }) => {
+    return {
+        locale: locale as string,  // Assert type to fix string | undefined
+        messages: (await import(`./messages/${locale as string}.json`)).default
+    };
+});
+```
+
+### ❌ BAD: Partial Fixes
+```typescript
+// Adding locale but not fixing the type
+return {
+    locale,  // Still string | undefined, error persists
+    messages: ...
+};
+```
+
+### ✅ GOOD: Complete Fix
+```typescript
+// Type assertion to satisfy TypeScript
+return {
+    locale: locale as string,  // Now it's string, not string | undefined
+    messages: ...
+};
+```
+
+## Debugging TypeScript Errors
+1. **Read the full error message** - it tells you exactly what's wrong
+2. **Check what type is expected** vs what you're providing
+3. **Look for "missing property"** errors - add the property
+4. **Look for type incompatibility** - use type assertions or fix the type
+5. **Test with `npx tsc --noEmit`** to see all TypeScript errors
+
+## Prevention
+- **Always** read TypeScript error messages completely
+- **Never** remove properties without understanding why they're there
+- **Check** library documentation for type requirements
+- **Use** type assertions (`as Type`) when you know the type is correct
+
+Remember: **TypeScript errors are helpful - they prevent runtime bugs.**

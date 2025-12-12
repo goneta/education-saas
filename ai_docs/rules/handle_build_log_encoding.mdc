@@ -1,0 +1,50 @@
+---
+description: Handle encoding issues when reading build logs on Windows
+globs: *.log
+alwaysApply: true
+---
+# Handle Build Log Encoding
+
+## Overview
+This rule addresses the "Failed to read build log (encoding issue)" error. When standard file reading commands (like `Get-Content`) fail due to encoding problems in build logs (often caused by non-standard characters in compiler output), you must use robust fallback methods.
+
+**Trigger Signals:** 
+- Error: "Failed to read build log (encoding issue)"
+- PowerShell error: "The string is missing the terminator"
+- Garbage characters in log output
+
+## Rule: Use Robust File Reading
+1. **Prefer `cmd /c type`**: When `Get-Content` fails or produces encoding errors, usage of the native Windows `type` command via `cmd /c type filename.log` is often more robust for mixed-encoding logs.
+2. **Explicit Encoding**: If using `Get-Content`, try specifying `-Encoding UTF8` or `-Encoding Byte` (if looking for binary issues), although `type` is the preferred fallback for quick text viewing.
+3. **Analyze the Output**: If the system says "Using type command to read it", trust the output provided by that fallback.
+
+## Common Violations and Solutions
+
+### ❌ BAD: Persisting with failing Get-Content
+```powershell
+Get-Content build.log
+# Fails with encoding error
+# AI tries again with same command
+```
+
+### ✅ GOOD: Switching to type command
+```powershell
+# If Get-Content fails:
+cmd /c type build.log
+```
+
+### ✅ GOOD: Proactive Encoding Handling
+```powershell
+# When creating read commands in scripts:
+try {
+    Get-Content build.log -ErrorAction Stop
+} catch {
+    Write-Warning "Encoding issue detected, using type command..."
+    cmd /c type build.log
+}
+```
+
+## Checklist for the Assistant
+- [ ] If `read_file` or `Get-Content` fails with encoding errors, immediately try `cmd /c type`.
+- [ ] Do not assume the file is empty or corrupt; it is likely just an encoding mismatch.
+- [ ] Trust the "Using type command to read it" fallback if provided by the environment.

@@ -1,0 +1,34 @@
+---
+description: Handle numbers correctly with Zod and React Hook Form using valueAsNumber
+globs: **/*.tsx
+---
+# Zod & React Hook Form Number Handling
+
+## Context
+When using `zod` schemas with `react-hook-form` and HTML inputs (`type="number"`), a common issue is that HTML inputs return strings by default. `z.coerce.number()` handles generic coercion, but `z.number()` is safer for strict typing. When using `useForm<T>`, strict type mismatches can occur if the input logic doesn't explicitly handle the number conversion.
+
+## Rule
+1. **Preferred Pattern:** Use `z.number()` in schema, and `{ valueAsNumber: true }` in `register`.
+   ```tsx
+   // Schema
+   const schema = z.object({
+     score: z.number().min(0)
+   })
+   
+   // Component
+   <Input 
+     type="number" 
+     {...register("score", { valueAsNumber: true })} 
+   />
+   ```
+   
+2. **Avoid:** relying solely on `z.coerce.number()` when strict Typescript checks are active for `useForm` default values or resolvers, as it might lead to "Type 'Resolver...'" mismatches during build if the inferred types don't align perfectly with the form's expected input behavior.
+
+3. **Controller Pattern:** If using `Controller` or `Select`, explicitly cast the value to number in `onChange`.
+   ```tsx
+   <Select onValueChange={(val) => field.onChange(Number(val))}>
+   ```
+
+## Trigger
+- Build Error: `Type 'Resolver<...>' is not assignable to type...`
+- TypeScript Error: `Type 'string' is not assignable to type 'number'` for form fields.

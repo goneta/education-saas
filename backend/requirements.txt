@@ -10,3 +10,5 @@ passlib[argon2]
 python-jose[cryptography]
 python-multipart
 email-validator
+pytest
+httpx

@@ -1,0 +1,43 @@
+
+> frontend@0.1.0 build
+> next build
+
+   ▲ Next.js 16.0.8 (Turbopack)
+   - Environments: .env.local
+
+ ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 23.7s
+   Running TypeScript ...
+   Collecting page data using 7 workers ...
+   Generating static pages using 7 workers (0/3) ...
+ ✓ Generating static pages using 7 workers (3/3) in 1510.5ms
+   Finalizing page optimization ...
+
+Route (app)
+┌ ○ /_not-found
+├ ƒ /[locale]
+├ ƒ /[locale]/dashboard
+├ ƒ /[locale]/dashboard/attendance
+├ ƒ /[locale]/dashboard/attendance/reports
+├ ƒ /[locale]/dashboard/education/classes
+├ ƒ /[locale]/dashboard/education/subjects
+├ ƒ /[locale]/dashboard/education/timetable
+├ ƒ /[locale]/dashboard/finance
+├ ƒ /[locale]/dashboard/finance/expenses
+├ ƒ /[locale]/dashboard/finance/fees
+├ ƒ /[locale]/dashboard/grades
+├ ƒ /[locale]/dashboard/grades/assessments
+├ ƒ /[locale]/dashboard/grades/assessments/[id]
+├ ƒ /[locale]/dashboard/grades/reports
+├ ƒ /[locale]/dashboard/students
+├ ƒ /[locale]/dashboard/students/[id]
+├ ƒ /[locale]/dashboard/teachers
+└ ƒ /[locale]/login
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

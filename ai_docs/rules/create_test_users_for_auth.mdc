@@ -1,0 +1,128 @@
+---
+description: Always create test users with simple credentials when implementing login/authentication systems
+globs: *
+alwaysApply: true
+---
+# Create Test Users for Authentication Systems
+
+## Overview
+This rule ensures that whenever an authentication system is implemented, test users with simple, documented credentials are created for easy testing and demonstration.
+
+## Rule: Provide Test Users with Login Systems
+1. **WHEN** implementing a login/authentication system
+2. **ALWAYS** create at least one test user with simple credentials
+3. **DOCUMENT** the credentials clearly in a README or provide them to the user
+4. **USE** simple, memorable credentials for testing (e.g., admin@test.com / admin123)
+5. **CREATE** a script to easily recreate test users if needed
+
+## Root Cause Analysis
+**What Happened:**
+- Implemented complete authentication system
+- Provided complex test credentials from database (admin_49a6eb13@test.com)
+- User tried to login and got "Internal Server Error"
+- User had to ask for credentials
+- No simple test user was available
+
+**Why It Happened:**
+- I didn't create a dedicated test user during implementation
+- I assumed existing test users from backend tests would work
+- I didn't verify the login flow with actual credentials
+- I didn't provide simple, memorable test credentials
+
+## Mandatory Requirements
+
+### When Implementing Auth System
+- [ ] Create test user creation script
+- [ ] Run script to create test user
+- [ ] Use simple credentials (e.g., admin@test.com / admin123)
+- [ ] Test login with these credentials
+- [ ] Provide credentials to user in clear format
+- [ ] Document credentials in README or walkthrough
+
+### Test User Credentials Format
+```
+Email:    admin@test.com
+Password: admin123
+Role:     SCHOOL_ADMIN (or appropriate role)
+```
+
+### Test User Creation Script
+Create a script like `create_test_admin.py`:
+```python
+from backend.database import SessionLocal
+from backend.models import User, School
+from backend.security import get_password_hash
+
+def create_test_admin():
+    db = SessionLocal()
+    # Create test school if needed
+    # Create test admin with simple credentials
+    # Print credentials clearly
+```
+
+## Common Violations and Solutions
+
+### ❌ BAD: No Test Users
+```
+# Implement auth system
+# Don't create test users
+# User asks: "How do I login?"
+```
+
+### ✅ GOOD: Create Test Users
+```
+# Implement auth system
+# Create test user script
+# Run script
+# Provide credentials:
+#   Email: admin@test.com
+#   Password: admin123
+```
+
+### ❌ BAD: Complex Test Credentials
+```
+Email: admin_49a6eb13@test.com
+Password: securepassword123
+# Hard to remember, hard to type
+```
+
+### ✅ GOOD: Simple Test Credentials
+```
+Email: admin@test.com
+Password: admin123
+# Easy to remember, easy to type
+```
+
+## Checklist for Auth Implementation
+- [ ] Implement login system
+- [ ] Create test user creation script
+- [ ] Run script to create test user
+- [ ] Test login with test credentials
+- [ ] Verify login works end-to-end
+- [ ] Provide credentials to user in clear format
+- [ ] Document in walkthrough or README
+
+## Test User Documentation Template
+```
+## Test Login Credentials
+
+**Admin User:**
+- Email: admin@test.com
+- Password: admin123
+- Role: School Admin
+
+**How to Login:**
+1. Navigate to http://localhost:3000/en/login
+2. Enter the email and password above
+3. Click "Login"
+4. You will be redirected to the dashboard
+```
+
+## Prevention
+- **Always** create test users when implementing auth
+- **Never** assume existing test data is sufficient
+- **Test** the login flow with the test credentials
+- **Document** credentials clearly
+- **Provide** credentials to user immediately
+
+Remember: **Auth system without test users = Incomplete implementation.**

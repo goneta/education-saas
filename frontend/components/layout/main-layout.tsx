@@ -15,31 +15,29 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     const { isAgentPanelOpen, viewMode, setViewMode, previewContent } = useLayout()
 
     return (
-        <ResizablePanelGroup direction="horizontal" className="min-h-screen w-full rounded-lg border">
-            {/* Left Panel: AI Agent */}
+        <ResizablePanelGroup direction="horizontal" className="min-h-screen w-full">
+            {/* Left Panel: AI Agent - Light grey/off-white background */}
             <ResizablePanel
-                defaultSize={20}
-                minSize={15}
+                defaultSize={25}
+                minSize={20}
                 maxSize={30}
                 collapsible={true}
                 collapsedSize={4}
-                // We control the size via the context state in a real app ideally, 
-                // but for now we let the panel handle resize and we just react to state for rendering content
                 className={cn(
-                    "transition-all duration-300 ease-in-out",
+                    "transition-all duration-300 ease-in-out bg-[#F7F8FA]",
                     !isAgentPanelOpen && "min-w-[50px] max-w-[50px]"
                 )}
             >
                 <AgentPanel />
             </ResizablePanel>
 
-            <ResizableHandle withHandle />
+            <ResizableHandle withHandle className="bg-[#E5E7EB]" />
 
-            {/* Middle Panel: Navigation/Sidebar */}
-            <ResizablePanel defaultSize={15} minSize={12} maxSize={20}>
-                <div className="h-full border-r bg-muted/40 flex flex-col">
+            {/* Middle Panel: Navigation/Sidebar - Pure white background */}
+            <ResizablePanel defaultSize={20} minSize={15} maxSize={25}>
+                <div className="h-full bg-white flex flex-col border-r border-[#E5E7EB]">
                     {/* Toggle Buttons Area */}
-                    <div className="p-2 flex gap-1 border-b bg-background">
+                    <div className="p-2 flex gap-1 border-b border-[#E5E7EB] bg-white">
                         <Button
                             variant={viewMode === 'dashboard' ? 'default' : 'ghost'}
                             size="sm"
@@ -47,7 +45,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                             onClick={() => setViewMode('dashboard')}
                         >
                             <LayoutDashboard className="h-3 w-3 mr-1" />
-                            Dash
+                            Dashboard
                         </Button>
                         <Button
                             variant={viewMode === 'preview' ? 'default' : 'ghost'}
@@ -56,7 +54,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                             onClick={() => setViewMode('preview')}
                         >
                             <Eye className="h-3 w-3 mr-1" />
-                            Prev
+                            Preview
                         </Button>
                     </div>
                     <div className="flex-1 overflow-hidden">
@@ -65,21 +63,21 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                 </div>
             </ResizablePanel>
 
-            <ResizableHandle withHandle />
+            <ResizableHandle withHandle className="bg-[#E5E7EB]" />
 
-            {/* Right Panel: Main Content */}
-            <ResizablePanel defaultSize={65}>
-                <div className="flex flex-col h-full overflow-hidden">
+            {/* Right Panel: Main Content - Very light grey background */}
+            <ResizablePanel defaultSize={55}>
+                <div className="flex flex-col h-full overflow-hidden bg-[#F6F7F9]">
                     {viewMode === 'dashboard' ? (
                         <>
                             <Header isResizablePanel={true} />
-                            <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-muted/20">
+                            <main className="flex-1 overflow-y-auto p-4 md:p-6">
                                 {children}
                             </main>
                         </>
                     ) : (
-                        <div className="h-full flex flex-col bg-background">
-                            <div className="h-14 border-b flex items-center px-4 font-semibold text-lg bg-muted/40 justify-between">
+                        <div className="h-full flex flex-col bg-white">
+                            <div className="h-14 border-b border-[#E5E7EB] flex items-center px-4 font-semibold text-lg bg-white justify-between">
                                 <span>Preview Output</span>
                                 <Button variant="ghost" size="sm" onClick={() => setViewMode('dashboard')}>Close Preview</Button>
                             </div>
@@ -89,8 +87,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                                         <ReactMarkdown>{previewContent}</ReactMarkdown>
                                     </div>
                                 ) : (
-                                    <div className="flex items-center justify-center text-muted-foreground flex-col gap-4 h-full">
-                                        <div className="p-6 border-2 border-dashed rounded-lg bg-muted/20">
+                                    <div className="flex items-center justify-center text-[#6B7280] flex-col gap-4 h-full">
+                                        <div className="p-6 border-2 border-dashed border-[#E5E7EB] rounded-lg bg-[#F6F7F9]">
                                             <Eye className="h-12 w-12 mx-auto mb-2 opacity-20" />
                                             <p>AI Generated Content Preview</p>
                                         </div>

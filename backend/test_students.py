@@ -92,5 +92,62 @@ def test_student_flow():
     except Exception as e:
         print(f"❌ List Connection Failed: {e}")
 
+    # 4. Update Student
+    print("\n--- Testing Update Student ---")
+    try:
+        # Get the student ID from registration response or list
+        if 'id' in locals().get('data', {}):
+             student_id = data['id']
+        else:
+             # Fallback if registration failed but list worked
+             student_id = students[0]['id']
+
+        update_payload = {
+            "full_name": "Jean Eleve Updated",
+            "profile": {
+                "student_address": "Updated Address 123"
+            }
+        }
+        
+        res = requests.put(f"{BASE_URL}/students/{student_id}", json=update_payload, headers=headers)
+        if res.status_code == 200:
+            updated_data = res.json()
+            print("✅ Student Updated Successfully")
+            print(f"   New Name: {updated_data['full_name']}")
+            print(f"   New Address: {updated_data['student_profile']['student_address']}")
+            
+            # Verify persistence
+            if updated_data['full_name'] == "Jean Eleve Updated":
+                print("   -> Verification: Name updated correctly")
+            else:
+                print("   -> Verification FAILED: Name mismatch")
+        else:
+            print(f"❌ Update Student Failed: {res.status_code} {res.text}")
+            
+    except Exception as e:
+        print(f"❌ Update Connection Failed: {e}")
+
+    # 5. Delete Student
+    print("\n--- Testing Delete Student ---")
+    try:
+        if 'student_id' in locals():
+            res = requests.delete(f"{BASE_URL}/students/{student_id}", headers=headers)
+            if res.status_code == 204:
+                print("✅ Student Deleted Successfully (204 No Content)")
+                
+                # Verify deletion
+                get_res = requests.get(f"{BASE_URL}/students/{student_id}", headers=headers)
+                if get_res.status_code == 404:
+                     print("   -> Verification: Student effectively removed (404 on GET)")
+                else:
+                     print(f"   -> Verification FAILED: Student still exists ({get_res.status_code})")
+            else:
+                print(f"❌ Delete Student Failed: {res.status_code} {res.text}")
+        else:
+            print("❌ Skipping Delete Test (No Student ID)")
+            
+    except Exception as e:
+        print(f"❌ Delete Connection Failed: {e}")
+
 if __name__ == "__main__":
     test_student_flow()

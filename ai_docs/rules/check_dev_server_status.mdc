@@ -1,0 +1,42 @@
+---
+description: Ensure development server is running and accessible before browser testing
+globs: **/*.tsx, **/*.ts
+---
+# Check Dev Server Status Before Browser Testing
+
+## Context
+When using the `browser_subagent` to test `http://localhost:3000` (or other local ports), the tool will fail immediately if the server is not reachable. This wastes time and tool calls.
+
+## Trigger
+- You are about to call `browser_subagent` with a `localhost` URL.
+- You have just started the server and want to verify it's ready.
+
+## Mandatory Steps
+1. **Verify Port Accessibility:**
+   Before calling the browser, run this PowerShell command to check if the port is listening:
+   ```powershell
+   Test-NetConnection -ComputerName localhost -Port 3000
+   ```
+   *Replace 3000 with the relevant port.*
+
+2. **Analyze Output:**
+   - If `TcpTestSucceeded : True`: Proceed with `browser_subagent`.
+   - If `TcpTestSucceeded : False`:
+     - Check if `npm run dev` (or equivalent) is running.
+     - Start it if missing.
+     - Wait a few seconds and retry the connection test.
+
+3. **Do NOT use `curl`:**
+   In PowerShell, `curl` is an alias for `Invoke-WebRequest` and often fails with standard `curl` flags. Use `Test-NetConnection`.
+
+## Example
+```json
+{
+  "tool": "run_command",
+  "arguments": {
+    "CommandLine": "Test-NetConnection -ComputerName localhost -Port 3000",
+    "Cwd": "..."
+  }
+}
+```
+DO NOT proceed to browser tools until `TcpTestSucceeded` is `True`.

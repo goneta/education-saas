@@ -1,0 +1,27 @@
+---
+description: Enforce cleaning .next directory before debugging build errors.
+globs: *
+alwaysApply: true
+---
+# Mandatory: Always Clean Build
+
+## Overview
+When debugging a build failure, you MUST clean the `.next` directory (or equivalent build artifacts) before running the build again. This prevents ghost errors from cached files.
+
+**Trigger:** Build failure that doesn't make sense or persists after fix.
+
+## Rule: Clean Before Debugging
+1. **Trigger:** Build failed.
+2. **Action:** Run `Remove-Item -Recurse -Force .next` (PowerShell) or `rm -rf .next` (Bash).
+3. **Verify:** Run build again.
+
+## Common Violations
+### ❌ BAD: Debugging ghost errors
+"I modified the file but the error persists." (Because next.js usage cache is stale).
+
+### ✅ GOOD: Clean slate
+"The build failed. I'll clean `.next` to ensure I'm seeing the current state."
+
+## Checklist
+- [ ] Did I remove `.next`?
+- [ ] Did I run build with logging?

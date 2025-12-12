@@ -1,0 +1,21 @@
+---
+description: Ensure database tables are created or migrated when new models are added.
+globs: backend/models.py
+---
+# Mandatory DB Schema Update
+
+## Context
+When adding new tables (models) to `models.py`, the database schema must be updated. In development (SQLite), this often requires running a script to `create_all` tables if "auto-migration" isn't active, or restarting the backend if it handles it on startup. Accessing a missing table causes "Internal Server Error" (500).
+
+## Rule
+1. **Trigger:** You edited `backend/models.py` to add a new `class`.
+2. **Action:** You MUST ensuring the table is created in the database.
+3. **Method:**
+   - Run `python -m backend.init_db` (create this script if missing, which calls `Base.metadata.create_all`).
+   - OR verify that the backend `main.py` runs `create_all` on startup AND the backend was restarted.
+   - **Verification:** Use a script or curl to hitting the endpoint to ensure no 500 error.
+
+## Checklist
+- [ ] Added new model?
+- [ ] Ran `python -m backend.init_db`?
+- [ ] Verified endpoint response is not 500?

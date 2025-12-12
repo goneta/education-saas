@@ -1,0 +1,65 @@
+---
+description: Prevent "Module not found" errors by mandating verification of UI component existence before import.
+globs: *.tsx, *.ts
+alwaysApply: true
+---
+# Verify Component Imports
+
+## Overview
+This rule prevents build errors caused by importing undefined components, particularly from `@/components/ui/...`.
+
+## Rule: MANDATORY Verification Before Import
+1. **BEFORE importing ANY component**, you MUST run `list_dir` on the component directory
+2. **VERIFY** the exact filename exists in the output
+3. **ONLY THEN** can you import the component
+4. **NO EXCEPTIONS** - even if you "created" it earlier in the session, verify it exists
+
+## Mandatory Checklist (MUST FOLLOW)
+Before writing ANY import statement for a UI component:
+- [ ] Run `list_dir components/ui` (or appropriate directory)
+- [ ] Check the output for the exact filename (e.g., `input.tsx`)
+- [ ] If missing: Create the component first
+- [ ] If exists: Proceed with import
+
+## Common Violations and Solutions
+
+### ❌ BAD: Assuming Component Exists
+```typescript
+// I created input.tsx earlier, so it must exist
+import { Input } from "@/components/ui/input"; // WRONG - Never assume!
+```
+
+### ✅ GOOD: Explicit Verification
+```typescript
+// Step 1: Run list_dir
+// Step 2: Verify input.tsx is in the list
+// Step 3: Only then import
+import { Input } from "@/components/ui/input"; // Correct - Verified first
+```
+
+### ❌ BAD: Trusting Memory
+```typescript
+// The task plan says Input exists, so I'll import it
+import { Input } from "@/components/ui/input"; // WRONG - Verify, don't trust!
+```
+
+### ✅ GOOD: Always Verify
+```typescript
+// Even if task plan says it exists, run list_dir to confirm
+// Confirmed: input.tsx exists in components/ui/
+import { Input } from "@/components/ui/input"; // Correct
+```
+
+## Why This Rule Exists
+**Root Cause of Past Failures:**
+- I assumed `input.tsx` existed because I mentioned it in planning
+- I didn't verify before importing
+- Build failed with "Module not found"
+- This happened TWICE - the exact same error
+
+**Prevention:**
+- ALWAYS run `list_dir` before importing
+- NEVER trust your memory or assumptions
+- VERIFY, then import
+
+Remember: **One `list_dir` call prevents hours of debugging.**

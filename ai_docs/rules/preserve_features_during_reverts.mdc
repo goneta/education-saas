@@ -1,0 +1,73 @@
+---
+description: Prevent accidental deletion of existing application features during git revert operations
+globs: *
+alwaysApply: true
+---
+# Preserve Existing Features During Reverts
+
+## Overview
+This rule prevents the accidental deletion of working features when reverting code changes using git operations.
+
+## Rule: Verify Impact Before Git Clean
+1. **Never** use `git clean -fd` without first checking what files will be deleted.
+2. **Always** use `git clean -fd --dry-run` first to preview deletions.
+3. **Never** assume all untracked files are safe to delete.
+4. **Always** check if untracked files contain user features created in previous sessions.
+5. **If reverting**: Only revert the specific files that were modified, not the entire directory.
+
+## Root Cause Analysis
+**What Happened:**
+- User had a working `students` page in `app/[locale]/dashboard/students/`
+- During a `git restore . ; git clean -fd` operation, the students directory was deleted
+- The students directory was "untracked" because it was created in a previous session
+- `git clean -fd` removed it, breaking the feature
+
+**Why It Happened:**
+- I used a blanket `git clean -fd` without checking what would be deleted
+- I didn't verify existing features before running destructive commands
+- I assumed all untracked files were from my recent changes
+
+## Common Violations and Solutions
+
+### ❌ BAD: Blanket git clean
+```bash
+git restore .
+git clean -fd  # DANGEROUS: Deletes ALL untracked files
+```
+
+### ✅ GOOD: Selective revert
+```bash
+# First, check what will be deleted
+git clean -fd --dry-run
+
+# Then, only restore specific files you modified
+git restore path/to/modified/file1.tsx
+git restore path/to/modified/file2.tsx
+
+# Or, manually delete only the files you created
+rm path/to/new/file.tsx
+```
+
+### ❌ BAD: Assuming untracked = safe to delete
+```bash
+# This assumes everything untracked is from your current session
+git clean -fd
+```
+
+### ✅ GOOD: Verify before deleting
+```bash
+# List untracked files
+git status --short | grep "^??"
+
+# Manually review each one
+# Only delete files you created in THIS session
+```
+
+## Checklist for the Assistant
+- [ ] Before using `git clean`, run `git clean --dry-run` first
+- [ ] Check `git status` to see what files are untracked
+- [ ] Verify untracked files aren't user features from previous sessions
+- [ ] Use selective `git restore` on specific files instead of blanket operations
+- [ ] When in doubt, ask the user before deleting files
+
+Remember: `git clean -fd` is a destructive operation. Always verify before using it.

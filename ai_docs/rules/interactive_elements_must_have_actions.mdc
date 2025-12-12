@@ -1,0 +1,83 @@
+---
+description: Ensure all interactive UI elements (buttons, inputs, links) have proper event handlers or actions
+globs: *.tsx, *.ts
+alwaysApply: true
+---
+# Interactive Elements Must Have Actions
+
+## Overview
+This rule ensures that all interactive UI elements have proper event handlers or actions attached. Buttons, links, and inputs should never be decorative-only.
+
+## Rule: Always Attach Event Handlers to Interactive Elements
+1. **Never** create a button without an `onClick` handler (unless it's a submit button in a form).
+2. **Never** create a link without a valid `href`.
+3. **Always** implement the action when creating the UI element.
+4. **If the action is complex**: Create a placeholder handler with a TODO comment.
+
+## Root Cause Analysis
+**What Happened:**
+- "Add Student" button was created with visual styling
+- No `onClick` handler was attached
+- Button appears clickable but does nothing when clicked
+- User expects the button to open a form or modal
+
+**Why It Happened:**
+- I focused only on the visual implementation
+- I didn't consider the full user interaction flow
+- I created a "decorative" button instead of a functional one
+
+## Common Violations and Solutions
+
+### ❌ BAD: Button without onClick
+```tsx
+<Button className="bg-black text-white">
+    <Plus className="h-4 w-4 mr-2" />
+    Add Student
+</Button>
+```
+
+### ✅ GOOD: Button with onClick handler
+```tsx
+<Button 
+    onClick={() => setShowAddModal(true)}
+    className="bg-black text-white"
+>
+    <Plus className="h-4 w-4 mr-2" />
+    Add Student
+</Button>
+```
+
+### ✅ ACCEPTABLE: Button with placeholder handler
+```tsx
+<Button 
+    onClick={() => {
+        // TODO: Implement add student modal
+        console.log("Add student clicked")
+    }}
+    className="bg-black text-white"
+>
+    <Plus className="h-4 w-4 mr-2" />
+    Add Student
+</Button>
+```
+
+### ❌ BAD: Link without href
+```tsx
+<Link className="text-blue-500">Click here</Link>
+```
+
+### ✅ GOOD: Link with href
+```tsx
+<Link href="/students/new" className="text-blue-500">
+    Click here
+</Link>
+```
+
+## Checklist for the Assistant
+- [ ] Before creating a button, decide what it should do
+- [ ] Add `onClick` handler to all buttons
+- [ ] Add `href` to all links
+- [ ] If functionality is complex, add a placeholder with TODO
+- [ ] Test that the button/link responds to clicks
+
+Remember: If it looks clickable, it should BE clickable. Never create decorative-only interactive elements.

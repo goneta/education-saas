@@ -1,0 +1,33 @@
+---
+description: Enforce strict adherence to user-requested scope, preventing unauthorized layout, design, or functional changes.
+globs: *
+alwaysApply: true
+---
+# Strict Scope Enforcement
+
+## Overview
+This rule prevents "over-engineering" or unauthorized refactoring. The AI must ONLY implement what is explicitly requested.
+
+## Rule: Only Implement Requested Changes
+1. **Never** change layout, colors, behavior, or functionality unless strictly necessary for the requested task.
+2. **Never** "modernize" or "cleanup" code that is not part of the active task.
+3. **Always** ask for clarification if a request implies changes that might affect unrelated parts of the system.
+4. **Fix** the specific problem, do not re-architect the solution.
+
+## Common Violations and Solutions
+
+### ❌ BAD: Changing the theme while fixing a button
+```css
+/* User asked to fix button padding */
+.btn {
+  padding: 10px;
+  background-color: blue; /* VIOLATION: User didn't ask to change color */
+}
+```
+
+### ✅ GOOD: Only changing exactly what was asked
+```css
+.btn {
+  padding: 10px; /* Only this changed */
+}
+```

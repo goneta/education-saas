@@ -1,0 +1,72 @@
+---
+description: Ensure proper locale-aware routing in Next.js apps with [locale] dynamic segments
+globs: *.tsx, *.ts
+alwaysApply: true
+---
+# Locale-Aware Routing in Next.js
+
+## Overview
+This rule ensures that navigation links in Next.js apps with internationalization (i18n) properly include the locale parameter.
+
+## Rule: Always Include Locale in Routes
+1. **Never** hardcode routes like `/dashboard/students` in apps with `[locale]` segments.
+2. **Always** use the current locale from `useParams()` or similar hooks.
+3. **Always** prefix routes with the locale: `/${locale}/dashboard/students`.
+4. **Never** assume the default locale will work without the prefix.
+
+## Root Cause Analysis
+**What Happened:**
+- App structure uses `app/[locale]/dashboard/students/page.tsx`
+- Sidebar links were hardcoded as `/dashboard/students`
+- Next.js couldn't match the route because it expects `/{locale}/dashboard/students`
+- Result: "Not Found" error
+
+**Why It Happened:**
+- I didn't check if the app uses internationalization
+- I hardcoded routes without considering the `[locale]` dynamic segment
+- I didn't test the route before declaring it fixed
+
+## Common Violations and Solutions
+
+### ❌ BAD: Hardcoded routes without locale
+```tsx
+const sidebarItems = [
+    { href: "/dashboard", label: "Overview" },
+    { href: "/dashboard/students", label: "Students" },
+]
+```
+
+### ✅ GOOD: Locale-aware routes
+```tsx
+"use client"
+import { useParams } from "next/navigation"
+
+export function Sidebar() {
+    const params = useParams()
+    const locale = params.locale as string
+    
+    const sidebarItems = [
+        { href: `/${locale}/dashboard`, label: "Overview" },
+        { href: `/${locale}/dashboard/students`, label: "Students" },
+    ]
+}
+```
+
+### ❌ BAD: Using Link without locale
+```tsx
+<Link href="/dashboard/students">Students</Link>
+```
+
+### ✅ GOOD: Using Link with locale
+```tsx
+<Link href={`/${locale}/dashboard/students`}>Students</Link>
+```
+
+## Checklist for the Assistant
+- [ ] Check if app uses `[locale]` or other dynamic segments
+- [ ] Use `useParams()` to get the current locale
+- [ ] Prefix all routes with `/${locale}`
+- [ ] Test the route in the browser before declaring success
+- [ ] Never assume routes work without testing
+
+Remember: In Next.js apps with `[locale]`, ALL routes must include the locale parameter.

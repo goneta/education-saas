@@ -1,0 +1,21 @@
+---
+description: Prevent duplicate router modules by checking existing files.
+globs: backend/routers/*.py
+---
+# Prevent Duplicate Router Modules
+
+## Context
+Adding a router for a feature (e.g., `expenses`) when a file for it already exists (e.g., `routers/expenses.py`) AND you implement it in another file (e.g., `routers/finance.py`) causes confusion and potential import errors if `main.py` tries to load the non-existent or conflicting module.
+
+## Rule
+1. **Trigger:** Planning to add a new backend router or endpoint.
+2. **Action:** 
+   - Check if a specific file already exists for that feature (e.g., `ls backend/routers`).
+   - Check `backend/main.py` to see what is currently included.
+   - Decide ONE location for the logic.
+   - If consolidating (e.g., moving `expenses` to `finance`), DELETE the old file and generic import from `main.py`.
+
+## Checklist
+- [ ] `list_dir backend/routers` before implementing.
+- [ ] Ensure no duplicate files for the same domain (e.g., `expenses.py` vs `finance.py`).
+- [ ] Clean up `main.py` imports/includes if deleting files.

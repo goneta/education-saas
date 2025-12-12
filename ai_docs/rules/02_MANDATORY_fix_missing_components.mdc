@@ -1,0 +1,32 @@
+---
+description: Enforce immediate fix of missing components when build fails.
+globs: *.tsx,*.ts
+alwaysApply: true
+---
+# Mandatory: Fix Missing Components on Build Error
+
+## Overview
+When a build fails with "Module not found" pointing to `components/ui` or similar shared directories, you must immediately create the missing component or fix the import path. Do not ignore it.
+
+**Trigger:** Build error "Module not found", "Can't resolve".
+
+## Rule: verify and Create Missing Components
+1. **Identify Missing Component:** Read the build log to find the exact missing file (e.g., `components/ui/separator.tsx`).
+2. **Check Existence:** Use `list_dir` to confirm it is actually missing.
+3. **Install/Create:** 
+    - If it's a shadcn/ui component, install the dependency (if needed) and create the file.
+    - If it's a custom component, create it based on usage context.
+4. **Do NOT just remove the import:** Unless the code is dead, you must provide the dependency.
+
+## Common Violations
+### ❌ BAD: Ignoring unrelated errors
+"I am working on Teachers, so I will ignore the build error in Students module."
+*Result:* The build remains broken, preventing deployment.
+
+### ✅ GOOD: Fixing the environment
+"The build failed in Students module. I must fix it to ensure a clean environment for my changes."
+
+## Checklist
+- [ ] Did I read the full build log?
+- [ ] Did I identify missing components?
+- [ ] Did I create/restore them?

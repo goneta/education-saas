@@ -20,7 +20,6 @@ def register_student(
         raise HTTPException(status_code=400, detail="Email already registered")
         
     # 3. Check if registration number exists (in this school)
-    # Ideally should scope by school, but for MVP global unique is safer or scope query
     existing_profile = db.query(models.StudentProfile).filter(
         models.StudentProfile.registration_number == student_in.profile.registration_number
     ).first()
@@ -84,3 +83,102 @@ def list_students(
         
     students = query.offset(skip).limit(limit).all()
     return students
+
+@router.get("/{student_id}", response_model=schemas.StudentResponse)
+def get_student(
+    student_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    student = db.query(models.User).filter(
+        models.User.id == student_id, 
+        models.User.school_id == current_user.school_id, # Scoped to school
+        models.User.role == models.UserRole.STUDENT
+    ).first()
+    
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+        
+    return student
+
+@router.put("/{student_id}", response_model=schemas.StudentResponse)
+def update_student(
+    student_id: int,
+    student_in: schemas.StudentUpdate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    # Permission Check
+    if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
+        raise HTTPException(status_code=403, detail="Not authorized to update students")
+
+    student = db.query(models.User).filter(
+        models.User.id == student_id,
+        models.User.school_id == current_user.school_id
+    ).first()
+    
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    # Update User Fields
+    if student_in.full_name:
+        student.full_name = student_in.full_name
+    if student_in.email:
+        # Check uniqueness if email changed
+        if student_in.email != student.email:
+             if db.query(models.User).filter(models.User.email == student_in.email).first():
+                 raise HTTPException(status_code=400, detail="Email already registered")
+             student.email = student_in.email
+
+    # Update Profile Fields
+    if student_in.profile:
+        # Ensure profile exists (it should for students)
+        if not student.student_profile:
+             # Should not happen ideally if data integrity is kept
+             pass 
+        else:
+            profile_data = student_in.profile.dict(exclude_unset=True)
+            for key, value in profile_data.items():
+                setattr(student.student_profile, key, value)
+
+    try:
+        db.commit()
+        db.refresh(student)
+        return student
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/{student_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_student(
+    student_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    # Permission Check
+    if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
+        raise HTTPException(status_code=403, detail="Not authorized to delete students")
+
+    student = db.query(models.User).filter(
+        models.User.id == student_id,
+        models.User.school_id == current_user.school_id
+    ).first()
+
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    try:
+        # Cascade delete handled by DB FK usually, or manual:
+        # Check if we need to manually delete profile? 
+        # SQLAlchemy relationship with cascade='all, delete' on User.student_profile would handle this.
+        # Assuming database level Key constraints or Model cascade is set.
+        # For safety, we delete user, profile should follow if configured, or we delete profile first.
+        
+        if student.student_profile:
+            db.delete(student.student_profile)
+            
+        db.delete(student)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))

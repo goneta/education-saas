@@ -1,0 +1,116 @@
+---
+description: Implement proper build error logging to capture full error messages for debugging
+globs: *
+alwaysApply: true
+---
+# Proper Build Error Logging and Debugging
+
+## Overview
+This rule ensures all build errors are properly captured, logged, and debugged systematically.
+
+## Rule: Capture Full Build Errors
+1. **ALWAYS** redirect build output to a log file for full error capture
+2. **NEVER** rely on truncated terminal output
+3. **CREATE** a dedicated error log file for each build attempt
+4. **READ** the full error log to understand the complete error
+5. **CLEAN** build cache before rebuilding after fixes
+
+## Root Cause Analysis
+**What Happened:**
+- Build errors were truncated in terminal output
+- Couldn't see full error messages
+- Had to run build multiple times to piece together the error
+- Wasted time debugging incomplete information
+- Build cache showed old errors even after fixes
+
+**Why It Happened:**
+- PowerShell truncates long output
+- Didn't redirect output to a file
+- Didn't use proper error capture techniques
+- Didn't clean `.next` cache between builds
+
+## Mandatory Build Error Workflow
+
+### Step 1: Clean Build
+```powershell
+# Always clean before building after a fix
+Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+```
+
+### Step 2: Build with Full Logging
+```powershell
+# Redirect ALL output to log file
+npm run build > build.log 2>&1
+
+# OR capture specific errors
+npm run build 2>&1 | Tee-Object -FilePath build.log
+```
+
+### Step 3: Read Full Error Log
+```powershell
+# View the complete error
+Get-Content build.log
+
+# Or search for errors
+Select-String -Path build.log -Pattern "error|Error|ERROR" -Context 5,5
+```
+
+### Step 4: TypeScript Check
+```powershell
+# Check TypeScript errors separately
+npx tsc --noEmit > typescript-errors.log 2>&1
+Get-Content typescript-errors.log
+```
+
+## Common Violations and Solutions
+
+### ❌ BAD: Relying on Truncated Output
+```powershell
+npm run build
+# Output gets truncated, can't see full error
+```
+
+### ✅ GOOD: Full Error Capture
+```powershell
+Remove-Item -Recurse -Force .next
+npm run build > build.log 2>&1
+Get-Content build.log | Select-String "error" -Context 10
+```
+
+### ❌ BAD: Not Cleaning Cache
+```powershell
+# Fix error
+npm run build
+# Still shows old cached error!
+```
+
+### ✅ GOOD: Clean Then Build
+```powershell
+Remove-Item -Recurse -Force .next
+npm run build > build.log 2>&1
+```
+
+## Build Error Log File Structure
+Create these log files in project root:
+- `build.log` - Full build output
+- `typescript-errors.log` - TypeScript-specific errors
+- `build-history.log` - Append-only history of all builds
+
+## Checklist for Build Errors
+- [ ] Clean `.next` directory
+- [ ] Run build with output redirect to file
+- [ ] Read FULL error log file
+- [ ] Identify ALL errors (not just first one)
+- [ ] Fix errors systematically
+- [ ] Clean and rebuild
+- [ ] Verify build succeeds
+- [ ] Save error log for future reference
+
+## Prevention
+- **Always** use log files for build errors
+- **Never** trust truncated terminal output
+- **Clean** cache before rebuilding
+- **Document** errors in log files
+- **Create** rules for new error patterns
+
+Remember: **Full error logs = Faster debugging. Always capture complete output.**

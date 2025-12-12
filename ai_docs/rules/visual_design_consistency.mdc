@@ -1,0 +1,61 @@
+---
+description: Enforce consistent visual design for all new UI elements based on dashboard_visual_description.md
+globs: *.tsx, *.ts
+alwaysApply: true
+---
+# Visual Design Consistency
+
+## Overview
+This rule ensures all new UI elements (pages, cards, modals, icons, buttons) follow the design guidelines specified in `dashboard_visual_description.md`.
+
+## Rule: Follow Design Reference for All UI Elements
+1. **Always** reference `ai_docs/references/examples/dashboard_visual_description.md` when creating new UI elements.
+2. **Never** use arbitrary colors, spacing, or typography that don't match the reference.
+3. **Always** use the specified design tokens:
+   - **Backgrounds**: Light grey (#F7F8FA, #F6F7F9), White (#FFFFFF)
+   - **Text**: Dark headings (#111827), Muted body (#6B7280), Links (#2563EB)
+   - **Borders**: Subtle (#E5E7EB)
+   - **Shadows**: Soft, minimal
+   - **Rounded Corners**: 12px+ for cards
+   - **Font**: Modern sans-serif (Inter / SF Pro style)
+
+## Common Violations and Solutions
+
+### ❌ BAD: Using arbitrary colors
+```tsx
+<Card className="bg-blue-500 text-white">
+  <h2>Title</h2>
+</Card>
+```
+
+### ✅ GOOD: Using reference colors
+```tsx
+<Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
+  <h2 className="text-[#111827]">Title</h2>
+</Card>
+```
+
+### ❌ BAD: Inconsistent button styling
+```tsx
+<Button className="bg-red-500 rounded-sm">
+  Click Me
+</Button>
+```
+
+### ✅ GOOD: Following reference button style
+```tsx
+<Button className="bg-black text-white rounded-lg px-4 py-2">
+  Click Me
+</Button>
+```
+
+## Checklist for the Assistant
+- [ ] Before creating any new UI element, read `dashboard_visual_description.md`
+- [ ] Use white backgrounds for cards (#FFFFFF)
+- [ ] Use #111827 for headings, #6B7280 for body text
+- [ ] Use #E5E7EB for borders
+- [ ] Use 12px+ rounded corners for cards
+- [ ] Apply soft shadows (shadow-sm)
+- [ ] Ensure clean, minimal SaaS aesthetic
+
+Remember: Consistency is key. All UI elements must feel like they belong to the same design system.

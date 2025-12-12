@@ -1,0 +1,25 @@
+---
+description: Avoid deprecated props in react-day-picker v9 (e.g. components={{ IconLeft... }})
+globs: **/*.tsx
+---
+# React Day Picker v9 Migration
+
+## Context
+`react-day-picker` v9 introduced breaking changes. Common props like `components={{ IconLeft: ... }}` are deprecated or removed in favor of new patterns (often handled internally or via different named components).
+
+## Rule
+1. **Do NOT use `IconLeft` or `IconRight` in `components` prop.**
+   - **Incorrect:**
+     ```tsx
+     components={{
+       IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
+       IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
+     }}
+     ```
+   - **Correct:** V9 handles icons differently or uses standard navigation components. Often you can remove these custom icon overrides if they are just basic chevrons, or use the correct V9 API.
+
+2. **Check specific v9 documentation** if custom navigation icons are strictly required, but for standard shadcn/ui `Calendar` components, removing the deprecated `components` entries often resolves the build error `Property 'IconLeft' does not exist`.
+
+## Trigger
+- Build error: `Property 'IconLeft' does not exist in type 'Partial<CustomComponents>'`
+- File: `components/ui/calendar.tsx`

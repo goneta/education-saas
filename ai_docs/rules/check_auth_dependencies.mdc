@@ -1,0 +1,104 @@
+---
+description: Ensure authentication dependencies are verified before implementing features that require protected API endpoints
+globs: *.tsx, *.ts
+alwaysApply: true
+---
+# Check Authentication Dependencies Before Implementation
+
+## Overview
+This rule prevents implementing features that require authentication without first verifying that an authentication system exists in the frontend.
+
+## Rule: Verify Auth System Exists Before Protected Features
+1. **BEFORE** implementing any feature that calls a protected API endpoint, check if authentication is implemented
+2. **VERIFY** that a login system exists and tokens can be obtained
+3. **IF MISSING**: Either implement authentication first, or provide clear workaround instructions
+4. **NEVER** assume users can authenticate just because the backend has auth endpoints
+
+## Mandatory Checklist
+Before implementing features that require authentication:
+- [ ] Check if login page/component exists in frontend
+- [ ] Check if auth context/state management exists
+- [ ] Check if token storage mechanism is implemented
+- [ ] If any are missing: Create task for authentication first OR provide workaround
+
+## Root Cause Analysis
+**What Happened:**
+- Implemented "Add Student" feature that requires JWT token
+- Backend has `/auth/token` endpoint for login
+- Frontend has NO login page or auth system
+- Users couldn't create students because they had no way to get a token
+- Error: "Not authenticated. Please log in."
+
+**Why It Happened:**
+- I focused only on the feature (Add Student Modal)
+- I didn't check if authentication was implemented in frontend
+- I assumed users could somehow log in
+- I didn't verify the dependency chain
+
+## Common Violations and Solutions
+
+### ❌ BAD: Implementing Protected Feature Without Auth Check
+```typescript
+// Implementing Add Student without checking if login exists
+const handleSubmit = async () => {
+  const token = localStorage.getItem("access_token") // Where does this come from?
+  await fetch("/students/", {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+}
+```
+
+### ✅ GOOD: Check Auth System First
+```typescript
+// Step 1: Check if login page exists
+// find_by_name: *login* in app directory
+// Result: No login page found
+
+// Step 2: Decision
+// Option A: Create authentication task first
+// Option B: Provide manual workaround with clear instructions
+```
+
+### ❌ BAD: Assuming Auth Exists
+```typescript
+// "The backend has /auth/token, so users can log in"
+// WRONG - Backend endpoint ≠ Frontend UI
+```
+
+### ✅ GOOD: Verify Full Auth Flow
+```typescript
+// Check:
+// 1. Login page exists? ❌
+// 2. Auth context exists? ❌
+// 3. Token storage exists? ❌
+// Conclusion: Need to implement auth first or provide workaround
+```
+
+## Detection Checklist
+When you see these patterns, check for auth:
+- `Authorization: Bearer ${token}`
+- `localStorage.getItem("access_token")`
+- `Depends(security.get_current_user)` in backend
+- Protected API endpoints (401/403 responses)
+
+## Solutions
+
+### Solution 1: Implement Auth First (Recommended)
+1. Create task definition for login/authentication system
+2. Get user approval
+3. Implement authentication
+4. Then implement protected features
+
+### Solution 2: Provide Workaround (Temporary)
+1. Add clear error message with instructions
+2. Document how to get token manually (Postman/curl)
+3. Show how to set token in localStorage
+4. Note this is temporary until auth is implemented
+
+## Prevention
+- **Always** check for login page before implementing protected features
+- **Always** verify auth flow exists end-to-end
+- **Never** assume authentication exists just because backend has endpoints
+- **Document** authentication dependencies in task definitions
+
+Remember: **Backend auth ≠ Frontend auth. Always verify both.**

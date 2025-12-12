@@ -1,0 +1,17 @@
+---
+description: Prevent duplicate keys in object literals to avoid TypeScript errors and runtime bugs.
+globs: **/*.ts, **/*.tsx, **/*.js, **/*.jsx
+---
+
+# 13. Prevent Duplicate Object Keys
+
+**Summary:** Ensure object literals do not contain duplicate property names, which causes TypeScript errors ("An object literal cannot have multiple properties with the same name") and potential runtime bugs where one value silently overwrites another.
+
+**Context:**
+This error often occurs when copy-pasting code blocks or merging form state updates where a key is accidentally repeated (e.g., `end_time` defined twice in a payload object).
+
+**Mandatory Checklist:**
+- [ ] **Review Before Saving:** Before applying edits to file content, scan object literals for duplicate keys.
+- [ ] **Lint Check:** Pay attention to IDE lint errors like "An object literal cannot have multiple properties with the same name".
+- [ ] **Fix immediately:** If such an error is reported, remove the duplicate key (usually the first one is the intended one to keep if it's a spread, or the last one if it's an override - but in simple object literals, duplicates are usually mistakes). 
+- [ ] **Verification:** Use `npx tsc --noEmit` or similar to verify no structural errors exist in the new code.

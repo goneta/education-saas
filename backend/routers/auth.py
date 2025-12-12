@@ -6,6 +6,9 @@ from .. import models, schemas, security, database
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+
+
+
 @router.post("/register/school", response_model=schemas.SchoolResponse)
 def register_school(school: schemas.SchoolCreate, owner: schemas.UserCreate, db: Session = Depends(database.get_db)):
     try:

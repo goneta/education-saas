@@ -5,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Mic, Paperclip, Send, PanelLeftClose, PanelLeftOpen, BookOpen } from "lucide-react"
 import { useLayout } from "@/context/layout-context"
 import { useState, useRef, useEffect } from "react"
+import { API_BASE_URL } from "@/lib/config"
 
 export function AgentPanel() {
     const { isAgentPanelOpen, toggleAgentPanel, aiStatus, setAiStatus, agentAction, setAgentAction, setViewMode, setPreviewContent } = useLayout()
@@ -40,10 +41,10 @@ export function AgentPanel() {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-            console.log("Sending request to http://localhost:8000/chat");
+            console.log(`Sending request to ${API_BASE_URL}/chat`);
 
             // IMPORTANT: No trailing slash on the URL to avoid 307 redirects or 404s depending on backend config
-            const response = await fetch('http://localhost:8000/chat', {
+            const response = await fetch(`${API_BASE_URL}/chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -92,7 +93,7 @@ export function AgentPanel() {
 
     if (!isAgentPanelOpen) {
         return (
-            <div className="h-full border-r bg-muted/20 flex flex-col items-center py-4 gap-4">
+            <div className="h-full flex flex-col items-center py-4 gap-4">
                 <Button variant="ghost" size="icon" onClick={toggleAgentPanel}>
                     <PanelLeftOpen className="h-4 w-4" />
                 </Button>
@@ -101,8 +102,8 @@ export function AgentPanel() {
     }
 
     return (
-        <div className="flex h-full flex-col border-r bg-muted/20">
-            <div className="flex h-[60px] items-center justify-between border-b px-4">
+        <div className="flex h-full flex-col">
+            <div className="flex h-[60px] items-center justify-between border-b border-[#E5E7EB] px-4">
                 <div className="flex items-center gap-2 font-semibold">
                     {/* Logo */}
                     <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
@@ -130,7 +131,7 @@ export function AgentPanel() {
                                     }`}>
                                     {msg.role === 'agent' ? 'AI' : 'You'}
                                 </div>
-                                <div className="bg-muted p-3 rounded-lg text-sm whitespace-pre-wrap">
+                                <div className="bg-[#EDEFF2] p-3 rounded-lg text-sm whitespace-pre-wrap text-[#111827]">
                                     {msg.content}
                                 </div>
                             </div>
@@ -138,7 +139,7 @@ export function AgentPanel() {
                         {aiStatus === 'working' && (
                             <div className="flex gap-3">
                                 <div className="h-8 w-8 rounded-full bg-primary flex-shrink-0 flex items-center justify-center text-primary-foreground text-xs">AI</div>
-                                <div className="bg-muted p-3 rounded-lg text-sm italic text-muted-foreground flex items-center gap-2">
+                                <div className="bg-[#EDEFF2] p-3 rounded-lg text-sm italic text-[#6B7280] flex items-center gap-2">
                                     <span className="animate-pulse">Thinking...</span>
                                 </div>
                             </div>
@@ -157,8 +158,8 @@ export function AgentPanel() {
                     </div>
                     <div className="flex gap-2">
                         <input
-                            className="flex-1 bg-transparent border-none text-sm focus:outline-none"
-                            placeholder="Type a message..."
+                            className="flex-1 bg-transparent border-none text-sm focus:outline-none text-[#111827] placeholder:text-[#6B7280]"
+                            placeholder="What would you like to change?"
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}

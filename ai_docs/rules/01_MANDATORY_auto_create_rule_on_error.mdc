@@ -1,0 +1,47 @@
+---
+description: Enforce automatic rule creation and template update upon encountering error/issue/mistake.
+globs: *
+alwaysApply: true
+---
+# Mandatory: Auto-Create Rule on Error
+
+## Overview
+This rule enforces a mandatory habit of continuous improvement. The words "error", "issue", and "mistake" are trigger signals. Whenever these occur, you must formalized the lesson learned by creating a new rule and ensuring future tasks benefit from it by updating the template.
+
+**Trigger Signals:** "error", "issue", "mistake" (in user feedback, tool outputs, or your own reasoning).
+
+## Rule: Auto-Create Rule & Update Template
+1. **Trigger Recognition:** actively scan for "error", "issue", or "mistake".
+2. **Immediate Action:** When triggered, you MUST:
+    a. **Create a new rule file** in `ai_docs/rules/` that prevents this specific error/issue/mistake from happening again.
+    b. **Update `ai_task_template_skeleton.md`** immediately to include this new rule in the "Mandatory Rules" section.
+3. **Never Ignore:** Do not just fix the code. You must fix the *process* by creating the rule.
+4. **Link to Template:** The rule is useless if it's not read. Updating the skeleton ensures it's read for every new task.
+
+## Common Violations and Solutions
+
+### ❌ BAD: Just fixing the code
+```text
+User: "I see an error in the build log."
+AI: "I fixed the build error by adding the missing import."
+(AI proceeds to next task)
+```
+*Why it's bad:* The AI fixed the symptom but didn't ensure it wouldn't happen again. The next task might repeat the same mistake.
+
+### ✅ GOOD: Fixing the process
+```text
+User: "I see an error in the build log."
+AI: "I noticed a build error. This triggers my mandatory rule creation process.
+1. I am fixing the code by adding the missing import.
+2. I am creating a new rule `ai_docs/rules/verify_build_before_commit.mdc` to ensure I always check builds.
+3. I am updating `ai_task_template_skeleton.md` to include this new rule."
+```
+*Why it's good:* The AI turned a mistake into a permanent process improvement.
+
+## Checklist for the Assistant
+- [ ] Did I encounter an "error", "issue", or "mistake"?
+- [ ] If yes, did I create a new `.mdc` file in `ai_docs/rules/`?
+- [ ] Did I add that new rule to `ai_task_template_skeleton.md` in Section 14?
+- [ ] Did I confirm to the user that I have created the rule?
+
+Remember: **A mistake repeated is a failure of process.** Capture the lesson immediately.
