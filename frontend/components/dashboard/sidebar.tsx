@@ -41,6 +41,7 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
             title: "Management",
             items: [
                 { href: `/${locale}/dashboard/students`, label: "Students", icon: Users },
+                { href: `/${locale}/dashboard/teachers`, label: "Teachers", icon: GraduationCap },
             ]
         },
         {
@@ -50,6 +51,7 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
                 { href: `/${locale}/dashboard/education/subjects`, label: "Subjects", icon: BookOpen },
                 { href: `/${locale}/dashboard/education/timetable`, label: "Timetable", icon: Calendar },
                 { href: `/${locale}/dashboard/grades/assessments`, label: "Grades", icon: ClipboardCheck },
+                { href: `/${locale}/dashboard/library`, label: "Library", icon: BookOpen },
             ]
         },
         {

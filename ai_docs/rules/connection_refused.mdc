@@ -1,0 +1,21 @@
+---
+description: Procedures for handling ERR_CONNECTION_REFUSED or "Site can't be reached" errors
+globs: **/*
+alwaysApply: false
+---
+
+# Connection Refused / Site Unreachable
+
+If the user reports `ERR_CONNECTION_REFUSED`, `localhost n'autorise pas la connexion`, or "Site is unreachable":
+
+1.  **Stop and Think**: This almost always means the web server (Frontend or Backend) is NOT running or has crashed.
+2.  **Verify Port**: Check if the expected ports (usually 3000 for Frontend, 8000 for Backend) are listening.
+    *   Windows: `netstat -an | findstr "3000"` or `netstat -an | findstr "8000"`
+3.  **Check Process**: Use `tasklist` to see if `node.exe` or `python.exe` (uvicorn) are running.
+4.  **Restart Servers**: If not found, you MUST restart the servers.
+    *   Backend: `uvicorn backend.main:app --reload`
+    *   Frontend: `npm run dev`
+5.  **Check Logs**: If they were running but crashed, look for recent modifications that might have caused a syntax error on startup.
+
+> [!IMPORTANT]
+> Do not assume the code is broken logic-wise if the page won't load at all. It's usually just that the server process needs to be started.

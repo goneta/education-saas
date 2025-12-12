@@ -267,6 +267,22 @@ TODO: Tell the AI what sections of code you're worried about breaking, performan
 
 ---
 
+#### 5. Missing Dependency Check (MANDATORY)
+**File:** `check_dependencies.mdc`
+
+**Summary:** Determine root cause of "Module not found" - often missing package install.
+
+**Trigger Signals:**
+- Build Error: "Module not found: Can't resolve..." (especially `@radix-ui/...`)
+
+**Mandatory Checklist:**
+- [ ] Check import path in error.
+- [ ] If `@radix-ui/...` or external lib -> Run `npm install <package>`.
+- [ ] If local file -> Check file existence.
+- [ ] Don't just modify code; fix the environment first.
+
+---
+
 ### 🔧 Component & Import Verification
 
 #### 2. Verify Component Imports

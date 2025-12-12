@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime, time, date
-from .models import UserRole, SchoolType, DayOfWeek, AttendanceStatus
+from .models import UserRole, SchoolType, DayOfWeek, AttendanceStatus, BookStatus, LoanStatus
 
 # School Schemas
 class SchoolBase(BaseModel):
@@ -304,7 +304,54 @@ class AttendanceStats(BaseModel):
     total: int
     present: int
     absent: int
-    late: int
     excused: int
+    
+    
+# Library Management Schemas
+
+# Books
+class BookBase(BaseModel):
+    title: str
+    author: str
+    isbn: Optional[str] = None
+    category: Optional[str] = None
+    quantity: int = 1
+    location: Optional[str] = None
+    
+class BookCreate(BookBase):
+    school_id: Optional[int] = None
+    
+class BookResponse(BookBase):
+    id: int
+    available_quantity: int
+    school_id: Optional[int] = None
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+# Loans
+class LoanBase(BaseModel):
+    book_id: int
+    user_id: int
+    due_date: datetime
+    notes: Optional[str] = None
+
+class LoanCreate(LoanBase):
+    pass
+    
+class LoanResponse(LoanBase):
+    id: int
+    issue_date: datetime
+    return_date: Optional[datetime] = None
+    status: LoanStatus
+    
+    # Include related data for display
+    book_title: Optional[str] = None
+    user_full_name: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
 
 

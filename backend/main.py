@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
-from backend.routers import auth, students, teachers, chat, education, attendance, grades, dashboard
+from backend.routers import auth, students, teachers, chat, education, attendance, grades, dashboard, library
 
 # Create Tables (Simple migration for MVP)
 Base.metadata.create_all(bind=engine)
@@ -26,6 +26,7 @@ app.include_router(education.router)
 app.include_router(grades.router)
 app.include_router(attendance.router)
 app.include_router(dashboard.router)
+app.include_router(library.router)
 
 @app.get("/")
 def read_root():

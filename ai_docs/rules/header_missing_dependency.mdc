@@ -1,0 +1,27 @@
+---
+description: Procedures for handling "Module not found" or missing dependency errors
+globs: **/*
+alwaysApply: false
+---
+
+# Missing Dependency / Module Not Found
+
+If you encounter `Module not found: Can't resolve '...'`:
+
+1.  **Identify Package**: Look at the import path.
+    *   `@/components/ui/...` -> usually means a shadcn component is missing.
+    *   `@radix-ui/...` -> means the underlying radix primitive is missing.
+    *   Other libs -> means `npm install` was skipped.
+
+2.  **Radix/Shadcn Specifics**:
+    *   If you manually created a shadcn component (e.g., `tabs.tsx`), you **MUST** install its dependencies.
+    *   Do not just copy the file. Check the top of the file for imports like `@radix-ui/react-tabs`.
+    *   Run `npm install @radix-ui/react-tabs` (or relevant package).
+
+3.  **Action**:
+    *   Install the missing package immediately: `npm install <package-name>`
+    *   If it's a project internal file (`@/components/...`), verify the file actually exists.
+
+4.  **Prevention**:
+    *   When adding UI components, always check their imports.
+    *   Use `npx shadcn@latest add <component>` when possible, as it installs dependencies automatically.

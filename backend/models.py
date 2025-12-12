@@ -284,4 +284,55 @@ class Attendance(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+# Library Management Models
+
+class BookStatus(str, enum.Enum):
+    AVAILABLE = "available"
+    BORROWED = "borrowed"
+    LOST = "lost"
+    DAMAGED = "damaged"
+
+class LoanStatus(str, enum.Enum):
+    ACTIVE = "active"
+    RETURNED = "returned"
+    OVERDUE = "overdue"
+
+class Book(Base):
+    __tablename__ = "books"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True, nullable=False)
+    author = Column(String, index=True, nullable=False)
+    isbn = Column(String, unique=True, index=True, nullable=True)
+    category = Column(String, index=True, nullable=True)
+    
+    quantity = Column(Integer, default=1)
+    available_quantity = Column(Integer, default=1)
+    location = Column(String, nullable=True) # e.g. "Shelf A1"
+    
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True)
+    school = relationship("School")
+    
+    loans = relationship("Loan", back_populates="book")
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class Loan(Base):
+    __tablename__ = "loans"
+
+    id = Column(Integer, primary_key=True, index=True)
+    book_id = Column(Integer, ForeignKey("books.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False) # Borrower (Student or Teacher)
+    
+    issue_date = Column(DateTime, default=func.now())
+    due_date = Column(DateTime, nullable=False)
+    return_date = Column(DateTime, nullable=True)
+    
+    status = Column(SqEnum(LoanStatus), default=LoanStatus.ACTIVE)
+    notes = Column(String, nullable=True)
+    
+    book = relationship("Book", back_populates="loans")
+    user = relationship("User") # We can add back_populates="loans" to User if needed, but not strictly required yet
+
 
