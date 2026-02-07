@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Search } from "lucide-react"
+import { Plus, Search, Eye } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
@@ -194,8 +194,17 @@ export default function StudentsPage() {
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
+                                                        className="h-8 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                                                        onClick={() => handleRowClick(student.id)}
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
                                                         className="h-8 text-[#2563EB] hover:text-[#2563EB] hover:bg-[#F0F1F3]"
-                                                        onClick={() => {
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
                                                             setSelectedStudent(student)
                                                             setShowEditModal(true)
                                                         }}
@@ -206,7 +215,8 @@ export default function StudentsPage() {
                                                         variant="ghost"
                                                         size="sm"
                                                         className="h-8 text-red-600 hover:text-red-600 hover:bg-red-50"
-                                                        onClick={() => {
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
                                                             setSelectedStudent(student)
                                                             setShowDeleteDialog(true)
                                                         }}

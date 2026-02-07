@@ -1,15 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Edit, Trash2 } from "lucide-react"
-import { EditStudentModal } from "@/components/students/edit-student-modal"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { ArrowLeft, User, Phone, Mail, MapPin, Calendar, CreditCard, Edit, Trash2 } from "lucide-react"
+import { EducationHistoryList } from "@/components/students/education-history-list"
 import { DeleteStudentDialog } from "@/components/students/delete-student-dialog"
-import { Separator } from "@/components/ui/separator"
+import { EditStudentModal } from "@/components/students/edit-student-modal"
 
 interface StudentProfile {
     registration_number: string
@@ -21,6 +21,7 @@ interface StudentProfile {
     parent_email: string | null
     parent_address: string
     current_class_id: number | null
+    education_history: any[]
 }
 
 interface Student {
@@ -37,235 +38,167 @@ export default function StudentDetailPage() {
     const { token } = useAuth()
     const params = useParams()
     const router = useRouter()
-    const id = params.id as string
+    const studentId = params.id
     const locale = params.locale as string
 
     const [student, setStudent] = useState<Student | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const [showEditModal, setShowEditModal] = useState(false)
-    const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+    const [showEdit, setShowEdit] = useState(false)
+    const [showDelete, setShowDelete] = useState(false)
 
-    // Fetch student details
     const fetchStudent = async () => {
         if (!token) return
 
         try {
             setIsLoading(true)
-            setError(null)
-            const response = await fetch(`${API_BASE_URL}/students/${id}`, {
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                },
+            const response = await fetch(`${API_BASE_URL}/students/${studentId}`, {
+                headers: { "Authorization": `Bearer ${token}` }
             })
 
-            if (!response.ok) {
-                if (response.status === 404) {
-                    throw new Error("Student not found")
-                }
-                throw new Error("Failed to fetch student details")
-            }
-
+            if (!response.ok) throw new Error("Student not found")
             const data = await response.json()
             setStudent(data)
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An error occurred")
+            setError(err instanceof Error ? err.message : "Error fetching student")
         } finally {
             setIsLoading(false)
         }
     }
 
     useEffect(() => {
-        if (token && id) {
-            fetchStudent()
-        }
-    }, [token, id])
-
-    const handleBack = () => {
-        router.push(`/${locale}/dashboard/students`)
-    }
-
-    const handleStudentUpdated = () => {
         fetchStudent()
-    }
+    }, [token, studentId])
 
-    const handleStudentDeleted = () => {
-        router.push(`/${locale}/dashboard/students`)
-    }
-
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <p className="text-[#6B7280]">Loading student details...</p>
-            </div>
-        )
-    }
-
-    if (error || !student) {
-        return (
-            <div className="space-y-4">
-                <Button variant="ghost" onClick={handleBack} className="text-[#6B7280]">
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Students
-                </Button>
-                <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
-                    {error || "Student not found"}
-                </div>
-            </div>
-        )
-    }
+    if (isLoading) return <div className="p-8 text-center text-gray-500">Loading profile...</div>
+    if (error || !student) return <div className="p-8 text-center text-red-500">Error: {error}</div>
 
     return (
-        <div className="space-y-6">
-            {/* Header / Navigation */}
+        <div className="space-y-6 max-w-5xl mx-auto">
+            {/* Header */}
             <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                    <Button
-                        variant="ghost"
-                        onClick={handleBack}
-                        className="pl-0 text-[#6B7280] hover:text-[#111827] hover:bg-transparent"
-                    >
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Back to Students
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                        <ArrowLeft className="h-4 w-4" />
                     </Button>
-                    <h1 className="text-2xl font-bold text-[#111827]">Student Profile</h1>
+                    <div>
+                        <h1 className="text-2xl font-bold text-[#111827]">{student.full_name}</h1>
+                        <p className="text-sm text-gray-500">{student.email}</p>
+                    </div>
                 </div>
                 <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        onClick={() => setShowEditModal(true)}
-                        className="border-[#E5E7EB] text-[#111827] hover:bg-[#F9FAFB]"
-                    >
+                    <Button variant="outline" onClick={() => setShowEdit(true)}>
                         <Edit className="h-4 w-4 mr-2" />
-                        Edit
+                        Edit Profile
                     </Button>
-                    <Button
-                        variant="outline"
-                        onClick={() => setShowDeleteDialog(true)}
-                        className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
-                    >
+                    <Button variant="destructive" onClick={() => setShowDelete(true)}>
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete
                     </Button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Personal Information */}
-                <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
+            {/* Main Content Grid */}
+            <div className="grid gap-6 md:grid-cols-2">
+
+                {/* Personal Info Card */}
+                <Card>
                     <CardHeader>
-                        <CardTitle className="text-lg font-semibold text-[#111827]">Personal Information</CardTitle>
+                        <CardTitle className="flex items-center gap-2">
+                            <User className="h-5 w-5" />
+                            Personal Information
+                        </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                                <h4 className="text-sm font-medium text-[#6B7280]">Full Name</h4>
-                                <p className="text-sm text-[#111827] mt-1">{student.full_name}</p>
+                                <p className="text-gray-500">Registration Number</p>
+                                <p className="font-medium">{student.student_profile.registration_number}</p>
                             </div>
                             <div>
-                                <h4 className="text-sm font-medium text-[#6B7280]">Gender</h4>
-                                <p className="text-sm text-[#111827] mt-1">{student.student_profile.gender}</p>
+                                <p className="text-gray-500">Date of Birth</p>
+                                <p className="font-medium">{new Date(student.student_profile.date_of_birth).toLocaleDateString()}</p>
                             </div>
                             <div>
-                                <h4 className="text-sm font-medium text-[#6B7280]">Date of Birth</h4>
-                                <p className="text-sm text-[#111827] mt-1">
-                                    {new Date(student.student_profile.date_of_birth).toLocaleDateString()}
-                                </p>
+                                <p className="text-gray-500">Gender</p>
+                                <p className="font-medium">{student.student_profile.gender}</p>
                             </div>
                             <div>
-                                <h4 className="text-sm font-medium text-[#6B7280]">Status</h4>
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ${student.is_active
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-gray-100 text-gray-800"
-                                    }`}>
+                                <p className="text-gray-500">Status</p>
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${student.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                     {student.is_active ? "Active" : "Inactive"}
                                 </span>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
-
-                {/* Academic Information */}
-                <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
-                    <CardHeader>
-                        <CardTitle className="text-lg font-semibold text-[#111827]">Academic Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 gap-4">
-                            <div>
-                                <h4 className="text-sm font-medium text-[#6B7280]">Registration Number</h4>
-                                <p className="text-sm text-[#111827] mt-1">{student.student_profile.registration_number}</p>
-                            </div>
-                            <div>
-                                <h4 className="text-sm font-medium text-[#6B7280]">Current Class</h4>
-                                <p className="text-sm text-[#111827] mt-1">
-                                    {student.student_profile.current_class_id || "Not assigned"}
-                                </p>
-                            </div>
+                        <div className="pt-4 border-t">
+                            <p className="text-sm text-gray-500 mb-1">Address</p>
+                            <p className="text-sm font-medium flex items-start gap-2">
+                                <MapPin className="h-4 w-4 mt-0.5 text-gray-400" />
+                                {student.student_profile.student_address}
+                            </p>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Contact Information */}
-                <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
+                {/* Parent Info Card */}
+                <Card>
                     <CardHeader>
-                        <CardTitle className="text-lg font-semibold text-[#111827]">Contact Information</CardTitle>
+                        <CardTitle className="flex items-center gap-2">
+                            <User className="h-5 w-5" />
+                            Parent / Guardian
+                        </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div>
-                            <h4 className="text-sm font-medium text-[#6B7280]">Email Address</h4>
-                            <p className="text-sm text-[#111827] mt-1">{student.email}</p>
-                        </div>
-                        <Separator />
-                        <div>
-                            <h4 className="text-sm font-medium text-[#6B7280]">Student Address</h4>
-                            <p className="text-sm text-[#111827] mt-1 whitespace-pre-wrap">{student.student_profile.student_address}</p>
+                        <div className="space-y-3">
+                            <div>
+                                <p className="text-sm text-gray-500">Name</p>
+                                <p className="text-base font-medium">{student.student_profile.parent_name}</p>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                                <Phone className="h-4 w-4 text-gray-400" />
+                                <span>{student.student_profile.parent_phone}</span>
+                            </div>
+                            {student.student_profile.parent_email && (
+                                <div className="flex items-center gap-2 text-sm">
+                                    <Mail className="h-4 w-4 text-gray-400" />
+                                    <span>{student.student_profile.parent_email}</span>
+                                </div>
+                            )}
+                            <div className="flex items-start gap-2 text-sm">
+                                <MapPin className="h-4 w-4 mt-0.5 text-gray-400" />
+                                <span>{student.student_profile.parent_address}</span>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Parent/Guardian Information */}
-                <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
+                {/* Education History - Spans full width */}
+                <Card className="md:col-span-2">
                     <CardHeader>
-                        <CardTitle className="text-lg font-semibold text-[#111827]">Parent/Guardian</CardTitle>
+                        <CardTitle>Academic Background</CardTitle>
+                        <CardDescription>Records of previous education and achievements</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <h4 className="text-sm font-medium text-[#6B7280]">Parent Name</h4>
-                                <p className="text-sm text-[#111827] mt-1">{student.student_profile.parent_name}</p>
-                            </div>
-                            <div>
-                                <h4 className="text-sm font-medium text-[#6B7280]">Phone Number</h4>
-                                <p className="text-sm text-[#111827] mt-1">{student.student_profile.parent_phone}</p>
-                            </div>
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-medium text-[#6B7280]">Parent Email</h4>
-                            <p className="text-sm text-[#111827] mt-1">{student.student_profile.parent_email || "N/A"}</p>
-                        </div>
-                        <Separator />
-                        <div>
-                            <h4 className="text-sm font-medium text-[#6B7280]">Parent Address</h4>
-                            <p className="text-sm text-[#111827] mt-1 whitespace-pre-wrap">{student.student_profile.parent_address}</p>
-                        </div>
+                    <CardContent>
+                        <EducationHistoryList
+                            studentId={student.id}
+                            initialHistory={student.student_profile.education_history || []}
+                        />
                     </CardContent>
                 </Card>
             </div>
 
             {/* Modals */}
             <EditStudentModal
-                open={showEditModal}
-                onOpenChange={setShowEditModal}
+                open={showEdit}
+                onOpenChange={setShowEdit}
                 student={student}
-                onSuccess={handleStudentUpdated}
+                onSuccess={fetchStudent}
             />
-
             <DeleteStudentDialog
-                open={showDeleteDialog}
-                onOpenChange={setShowDeleteDialog}
+                open={showDelete}
+                onOpenChange={setShowDelete}
                 student={student}
-                onSuccess={handleStudentDeleted}
+                onSuccess={() => router.push(`/${locale}/dashboard/students`)}
             />
         </div>
     )

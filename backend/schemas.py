@@ -59,6 +59,23 @@ class StudentProfileBase(BaseModel):
     parent_address: Optional[str] = None
     current_class_id: Optional[int] = None
 
+class EducationHistoryBase(BaseModel):
+    previous_school: str
+    class_level: str
+    degree_obtained: Optional[str] = None
+    grade_average: Optional[str] = None
+    year_completed: Optional[int] = None
+
+class EducationHistoryCreate(EducationHistoryBase):
+    pass
+
+class EducationHistoryResponse(EducationHistoryBase):
+    id: int
+    student_id: int
+    
+    class Config:
+        from_attributes = True
+
 class StudentCreateSchema(UserCreate):
     profile: StudentProfileBase
 
@@ -80,6 +97,7 @@ class StudentUpdate(BaseModel):
 
 class StudentProfileResponse(StudentProfileBase):
     id: int
+    education_history: List[EducationHistoryResponse] = []
     class Config:
         from_attributes = True
 

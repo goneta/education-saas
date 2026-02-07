@@ -182,3 +182,55 @@ def delete_student(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/{student_id}/history", response_model=schemas.EducationHistoryResponse)
+def add_education_history(
+    student_id: int,
+    history_in: schemas.EducationHistoryCreate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN, models.UserRole.STUDENT]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # If student, can only add to own profile
+    if current_user.role == models.UserRole.STUDENT and current_user.id != student_id:
+        raise HTTPException(status_code=403, detail="Cannot edit other students")
+
+    student = db.query(models.User).filter(models.User.id == student_id).first()
+    if not student or not student.student_profile:
+        raise HTTPException(status_code=404, detail="Student profile not found")
+
+    new_history = models.StudentEducationHistory(
+        student_id=student.student_profile.id,
+        **history_in.dict()
+    )
+    db.add(new_history)
+    try:
+        db.commit()
+        db.refresh(new_history)
+        return new_history
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/history/{history_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_education_history(
+    history_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    history = db.query(models.StudentEducationHistory).filter(models.StudentEducationHistory.id == history_id).first()
+    if not history:
+        raise HTTPException(status_code=404, detail="History record not found")
+        
+    # Permission check: Admin or the student themselves
+    student = db.query(models.StudentProfile).filter(models.StudentProfile.id == history.student_id).first()
+    if current_user.role == models.UserRole.STUDENT:
+        if not student or student.user_id != current_user.id:
+             raise HTTPException(status_code=403, detail="Not authorized")
+    elif current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
+         raise HTTPException(status_code=403, detail="Not authorized")
+
+    db.delete(history)
+    db.commit()

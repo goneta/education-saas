@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
-from backend.routers import auth, students, teachers, chat, education, attendance, grades, dashboard, library
+from .routers import auth, students, teachers, chat, education, attendance, grades, dashboard, library
 
 # Create Tables (Simple migration for MVP)
 Base.metadata.create_all(bind=engine)

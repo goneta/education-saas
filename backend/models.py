@@ -108,6 +108,21 @@ class StudentProfile(Base):
     user = relationship("User", back_populates="student_profile")
     current_class = relationship("Class", back_populates="students")
     grades = relationship("Grade", back_populates="student")
+    education_history = relationship("StudentEducationHistory", back_populates="student", cascade="all, delete-orphan")
+
+class StudentEducationHistory(Base):
+    __tablename__ = "student_education_history"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    
+    previous_school = Column(String, nullable=False)
+    class_level = Column(String, nullable=False) # e.g. "Terminale", "Bachelor 1"
+    degree_obtained = Column(String, nullable=True) # e.g. "Baccalaureat"
+    grade_average = Column(String, nullable=True) # e.g. "14/20" or "B+"
+    year_completed = Column(Integer, nullable=True)
+    
+    student = relationship("StudentProfile", back_populates="education_history")
 
 class TeacherProfile(Base):
     __tablename__ = "teacher_profiles"
