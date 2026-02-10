@@ -38,7 +38,7 @@ const formSchema = z.object({
     author: z.string().min(1, "Author is required"),
     isbn: z.string().optional(),
     category: z.string().optional(),
-    quantity: z.coerce.number().min(1, "Quantity must be at least 1"),
+    quantity: z.number().min(1, "Quantity must be at least 1"),
     location: z.string().optional(),
 })
 
@@ -166,7 +166,12 @@ export function AddBookDialog({ onSuccess }: AddBookDialogProps) {
                                     <FormItem>
                                         <FormLabel>Quantity</FormLabel>
                                         <FormControl>
-                                            <Input type="number" min="1" {...field} />
+                                            <Input
+                                                type="number"
+                                                min={1}
+                                                value={field.value}
+                                                onChange={(e) => field.onChange(Number(e.target.value))}
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

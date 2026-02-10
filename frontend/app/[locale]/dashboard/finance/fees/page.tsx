@@ -42,10 +42,6 @@ export default function FeesPage() {
     const [description, setDescription] = useState("")
     const [dueDate, setDueDate] = useState("")
 
-    useEffect(() => {
-        fetchFees()
-    }, [])
-
     const fetchFees = async () => {
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/finance/fees`, {
@@ -56,6 +52,10 @@ export default function FeesPage() {
             console.error(e)
         }
     }
+
+    useEffect(() => {
+        fetchFees()
+    }, [])
 
     const handleCreateFee = async (e: React.FormEvent) => {
         e.preventDefault()

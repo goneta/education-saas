@@ -23,15 +23,40 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
+type ClassItem = { id: number; name: string }
+
+type SubjectItem = { id: number; name: string }
+
+type TeacherItem = { id: number; full_name: string }
+
+type TimetableItem = {
+    id: number
+    day_of_week: string
+    start_time: string
+    end_time: string
+    subject_id: number
+    teacher_id?: number | null
+    room?: string | null
+}
+
+type FormData = {
+    day_of_week: string
+    start_time: string
+    end_time: string
+    subject_id: string
+    teacher_id: string
+    room: string
+}
+
 export default function TimetablePage() {
     const { token } = useAuth()
-    const [timetable, setTimetable] = useState<any[]>([])
-    const [classes, setClasses] = useState<any[]>([])
-    const [subjects, setSubjects] = useState<any[]>([])
-    const [teachers, setTeachers] = useState<any[]>([])
+    const [timetable, setTimetable] = useState<TimetableItem[]>([])
+    const [classes, setClasses] = useState<ClassItem[]>([])
+    const [subjects, setSubjects] = useState<SubjectItem[]>([])
+    const [teachers, setTeachers] = useState<TeacherItem[]>([])
     const [selectedClass, setSelectedClass] = useState<string>("")
     const [isDialogOpen, setIsDialogOpen] = useState(false)
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<FormData>({
         day_of_week: "monday",
         start_time: "08:00",
         end_time: "10:00",
@@ -39,22 +64,6 @@ export default function TimetablePage() {
         teacher_id: "",
         room: ""
     })
-
-    useEffect(() => {
-        if (token) {
-            fetchClasses()
-            fetchSubjects()
-            fetchTeachers()
-        }
-    }, [token])
-
-    useEffect(() => {
-        if (token && selectedClass) {
-            fetchTimetable(selectedClass)
-        } else {
-            setTimetable([])
-        }
-    }, [token, selectedClass])
 
     const fetchClasses = async () => {
         const res = await fetch(`${API_BASE_URL}/education/classes`, {
@@ -83,6 +92,22 @@ export default function TimetablePage() {
         })
         if (res.ok) setTimetable(await res.json())
     }
+
+    useEffect(() => {
+        if (token) {
+            fetchClasses()
+            fetchSubjects()
+            fetchTeachers()
+        }
+    }, [token])
+
+    useEffect(() => {
+        if (token && selectedClass) {
+            fetchTimetable(selectedClass)
+        } else {
+            setTimetable([])
+        }
+    }, [token, selectedClass])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()

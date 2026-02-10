@@ -49,10 +49,6 @@ export default function ExpensesPage() {
     const [category, setCategory] = useState("other")
     const [date, setDate] = useState("")
 
-    useEffect(() => {
-        fetchExpenses()
-    }, [])
-
     const fetchExpenses = async () => {
         try {
             const res = await fetch(`${API_BASE_URL}/finance/expenses`, {
@@ -66,6 +62,10 @@ export default function ExpensesPage() {
             console.error(e)
         }
     }
+
+    useEffect(() => {
+        fetchExpenses()
+    }, [])
 
     const handleCreateExpense = async (e: React.FormEvent) => {
         e.preventDefault()

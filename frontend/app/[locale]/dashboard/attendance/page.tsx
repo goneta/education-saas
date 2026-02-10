@@ -27,14 +27,50 @@ import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
 
+type ClassItem = { id: number; name: string }
+
+type TimetableSlot = {
+    id: number
+    day_of_week: string
+    start_time: string
+    end_time: string
+    subject_id: number
+}
+
 export default function AttendancePage() {
-    const { token, user } = useAuth()
+    const { token } = useAuth()
     const [date, setDate] = useState<Date>(new Date())
     const [selectedClass, setSelectedClass] = useState<string>("")
-    const [classes, setClasses] = useState<any[]>([])
-    const [slots, setSlots] = useState<any[]>([])
-    const [selectedSlot, setSelectedSlot] = useState<any>(null)
+    const [classes, setClasses] = useState<ClassItem[]>([])
+    const [slots, setSlots] = useState<TimetableSlot[]>([])
+    const [selectedSlot, setSelectedSlot] = useState<TimetableSlot | null>(null)
     const [isMarkingOpen, setIsMarkingOpen] = useState(false)
+
+    const fetchClasses = async () => {
+        const res = await fetch(`${API_BASE_URL}/education/classes`, {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+        if (res.ok) setClasses(await res.json())
+    }
+
+    const fetchSlots = async () => {
+        // Fetch timetable for the specific day
+        // Note: Backend currently filters by Class.
+        // We filter by day client-side for MVP based on day_of_week.
+        try {
+            const res = await fetch(`${API_BASE_URL}/education/timetables?class_id=${selectedClass}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+            if (res.ok) {
+                const allSlots: TimetableSlot[] = await res.json()
+                const dayName = format(date, "EEEE").toLowerCase()
+                const daySlots = allSlots.filter((s) => s.day_of_week === dayName)
+                setSlots(daySlots)
+            }
+        } catch (e) {
+            console.error(e)
+        }
+    }
 
     useEffect(() => {
         if (token) fetchClasses()
@@ -48,36 +84,7 @@ export default function AttendancePage() {
         }
     }, [token, selectedClass, date])
 
-    const fetchClasses = async () => {
-        const res = await fetch(`${API_BASE_URL}/education/classes`, {
-            headers: { Authorization: `Bearer ${token}` }
-        })
-        if (res.ok) setClasses(await res.json())
-    }
-
-    const fetchSlots = async () => {
-        // Fetch timetable for the specific day
-        // Note: Backend currently filters by Class. 
-        // We need to filter by Day manually or update backend to support day filter.
-        // The backend `list_timetables` returns all slots for the class.
-        // We will filter client-side for MVP based on day of week.
-
-        try {
-            const res = await fetch(`${API_BASE_URL}/education/timetables?class_id=${selectedClass}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-            if (res.ok) {
-                const allSlots = await res.json()
-                const dayName = format(date, "EEEE").toLowerCase()
-                const daySlots = allSlots.filter((s: any) => s.day_of_week === dayName)
-                setSlots(daySlots)
-            }
-        } catch (e) {
-            console.error(e)
-        }
-    }
-
-    const handleSlotClick = (slot: any) => {
+    const handleSlotClick = (slot: TimetableSlot) => {
         setSelectedSlot(slot)
         setIsMarkingOpen(true)
     }

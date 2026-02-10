@@ -8,9 +8,15 @@ import { API_BASE_URL } from "@/lib/config"
 import { BookList } from "@/components/library/book-list"
 import { LoanList } from "@/components/library/loan-list"
 
-// Placeholder interfaces - will be refined
+// Local view models for this page
+// Keep in sync with the child component expectations (BookList/LoanList)
 interface Book {
     id: number
+    title: string
+    author: string
+    isbn?: string
+    category?: string
+    location?: string
     quantity: number
     available_quantity: number
 }
