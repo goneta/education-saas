@@ -3,289 +3,332 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-    DialogFooter
-} from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Plus, Trash2 } from "lucide-react"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 
-type ClassItem = { id: number; name: string }
-
-type SubjectItem = { id: number; name: string }
-
-type TeacherItem = { id: number; full_name: string }
-
-type TimetableItem = {
+interface TimetableEntry {
     id: number
     day_of_week: string
     start_time: string
     end_time: string
+    class_id: number
     subject_id: number
-    teacher_id?: number | null
-    room?: string | null
+    teacher_id: number | null
 }
 
-type FormData = {
-    day_of_week: string
-    start_time: string
-    end_time: string
-    subject_id: string
-    teacher_id: string
-    room: string
+interface ClassItem {
+    id: number
+    name: string
 }
+
+interface Subject {
+    id: number
+    name: string
+}
+
+interface Teacher {
+    id: number
+    full_name: string
+}
+
+const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
 
 export default function TimetablePage() {
     const { token } = useAuth()
-    const [timetable, setTimetable] = useState<TimetableItem[]>([])
+    const [entries, setEntries] = useState<TimetableEntry[]>([])
     const [classes, setClasses] = useState<ClassItem[]>([])
-    const [subjects, setSubjects] = useState<SubjectItem[]>([])
-    const [teachers, setTeachers] = useState<TeacherItem[]>([])
-    const [selectedClass, setSelectedClass] = useState<string>("")
-    const [isDialogOpen, setIsDialogOpen] = useState(false)
-    const [formData, setFormData] = useState<FormData>({
-        day_of_week: "monday",
-        start_time: "08:00",
-        end_time: "10:00",
+    const [subjects, setSubjects] = useState<Subject[]>([])
+    const [teachers, setTeachers] = useState<Teacher[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [filterClassId, setFilterClassId] = useState("")
+    const [showModal, setShowModal] = useState(false)
+    const [formData, setFormData] = useState({
+        class_id: "",
         subject_id: "",
         teacher_id: "",
-        room: ""
+        day_of_week: "monday",
+        start_time: "08:00",
+        end_time: "09:00"
     })
+    const [saving, setSaving] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
-    const fetchClasses = async () => {
-        const res = await fetch(`${API_BASE_URL}/education/classes`, {
-            headers: { Authorization: `Bearer ${token}` }
-        })
-        if (res.ok) setClasses(await res.json())
+    const fetchEntries = async () => {
+        if (!token) return
+        setIsLoading(true)
+        try {
+            const params = filterClassId ? `?class_id=${filterClassId}` : ""
+            const res = await fetch(`${API_BASE_URL}/education/timetables${params}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+            if (res.ok) setEntries(await res.json())
+        } catch (e) {
+            console.error(e)
+        } finally {
+            setIsLoading(false)
+        }
     }
 
-    const fetchSubjects = async () => {
-        const res = await fetch(`${API_BASE_URL}/education/subjects`, {
-            headers: { Authorization: `Bearer ${token}` }
-        })
-        if (res.ok) setSubjects(await res.json())
-    }
-
-    const fetchTeachers = async () => {
-        const res = await fetch(`${API_BASE_URL}/teachers`, {
-            headers: { Authorization: `Bearer ${token}` }
-        })
-        if (res.ok) setTeachers(await res.json())
-    }
-
-    const fetchTimetable = async (classId: string) => {
-        const res = await fetch(`${API_BASE_URL}/education/timetables?class_id=${classId}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        })
-        if (res.ok) setTimetable(await res.json())
+    const fetchMeta = async () => {
+        if (!token) return
+        try {
+            const [classRes, subjectRes, teacherRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/education/classes`, { headers: { Authorization: `Bearer ${token}` } }),
+                fetch(`${API_BASE_URL}/education/subjects`, { headers: { Authorization: `Bearer ${token}` } }),
+                fetch(`${API_BASE_URL}/teachers/`, { headers: { Authorization: `Bearer ${token}` } })
+            ])
+            if (classRes.ok) setClasses(await classRes.json())
+            if (subjectRes.ok) setSubjects(await subjectRes.json())
+            if (teacherRes.ok) setTeachers(await teacherRes.json())
+        } catch (e) {
+            console.error(e)
+        }
     }
 
     useEffect(() => {
-        if (token) {
-            fetchClasses()
-            fetchSubjects()
-            fetchTeachers()
-        }
+        fetchMeta()
     }, [token])
 
     useEffect(() => {
-        if (token && selectedClass) {
-            fetchTimetable(selectedClass)
-        } else {
-            setTimetable([])
+        fetchEntries()
+    }, [token, filterClassId])
+
+    const openCreate = () => {
+        setFormData({
+            class_id: classes[0]?.id.toString() || "",
+            subject_id: subjects[0]?.id.toString() || "",
+            teacher_id: "",
+            day_of_week: "monday",
+            start_time: "08:00",
+            end_time: "09:00"
+        })
+        setError(null)
+        setShowModal(true)
+    }
+
+    const handleSave = async () => {
+        if (!formData.class_id || !formData.subject_id) {
+            setError("Class and subject are required")
+            return
         }
-    }, [token, selectedClass])
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!selectedClass) return
-
+        setSaving(true)
+        setError(null)
         try {
             const payload = {
-                ...formData,
-                start_time: formData.start_time + ":00", // Append seconds for Time format
-                end_time: formData.end_time + ":00",
-                class_id: parseInt(selectedClass),
+                class_id: parseInt(formData.class_id),
                 subject_id: parseInt(formData.subject_id),
-                teacher_id: formData.teacher_id ? parseInt(formData.teacher_id) : null
+                teacher_id: formData.teacher_id ? parseInt(formData.teacher_id) : null,
+                day_of_week: formData.day_of_week,
+                start_time: formData.start_time,
+                end_time: formData.end_time
             }
-
             const res = await fetch(`${API_BASE_URL}/education/timetables`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`
-                },
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
                 body: JSON.stringify(payload)
             })
-
             if (res.ok) {
-                fetchTimetable(selectedClass)
-                setIsDialogOpen(false)
+                setShowModal(false)
+                fetchEntries()
+            } else {
+                const data = await res.json()
+                setError(data.detail || "Failed to save timetable entry")
             }
-        } catch (error) {
-            console.error(error)
+        } catch (e) {
+            setError("An error occurred")
+        } finally {
+            setSaving(false)
         }
     }
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("Delete this entry?")) return
+    const handleDelete = async (entry: TimetableEntry) => {
+        if (!confirm("Delete this timetable entry?")) return
         try {
-            const res = await fetch(`${API_BASE_URL}/education/timetables/${id}`, {
+            const res = await fetch(`${API_BASE_URL}/education/timetables/${entry.id}`, {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` }
             })
-            if (res.ok && selectedClass) {
-                fetchTimetable(selectedClass)
-            }
-        } catch (error) {
-            console.error(error)
+            if (res.ok || res.status === 204) fetchEntries()
+        } catch (e) {
+            console.error(e)
         }
     }
 
-    const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+    const getClassName = (id: number) => classes.find(c => c.id === id)?.name || "—"
+    const getSubjectName = (id: number) => subjects.find(s => s.id === id)?.name || "—"
+    const getTeacherName = (id: number | null) => id ? (teachers.find(t => t.id === id)?.full_name || "—") : "—"
+
+    const entriesByDay = DAYS.map(day => ({
+        day,
+        entries: entries.filter(e => e.day_of_week === day)
+    })).filter(d => d.entries.length > 0)
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight">Timetable</h1>
-                <div className="flex gap-4">
-                    <Select value={selectedClass} onValueChange={setSelectedClass}>
-                        <SelectTrigger className="w-[200px]">
-                            <SelectValue placeholder="Select Class" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {classes.map(c => (
-                                <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
-                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button disabled={!selectedClass}>
-                                <Plus className="mr-2 h-4 w-4" /> Add Entry
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Add Timetable Entry</DialogTitle>
-                            </DialogHeader>
-                            <form onSubmit={handleSubmit} className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>Day</Label>
-                                    <Select
-                                        value={formData.day_of_week}
-                                        onValueChange={(val) => setFormData({ ...formData, day_of_week: val })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {days.map(d => (
-                                                <SelectItem key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>Start Time</Label>
-                                        <Input type="time" value={formData.start_time} onChange={(e) => setFormData({ ...formData, start_time: e.target.value })} required />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>End Time</Label>
-                                        <Input type="time" value={formData.end_time} onChange={(e) => setFormData({ ...formData, end_time: e.target.value })} required />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Subject</Label>
-                                    <Select
-                                        value={formData.subject_id}
-                                        onValueChange={(val) => setFormData({ ...formData, subject_id: val })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select Subject" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {subjects.map(s => (
-                                                <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Teacher</Label>
-                                    <Select
-                                        value={formData.teacher_id}
-                                        onValueChange={(val) => setFormData({ ...formData, teacher_id: val })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select Teacher (Optional)" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {teachers.map(t => (
-                                                <SelectItem key={t.id} value={t.id.toString()}>{t.full_name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Room</Label>
-                                    <Input value={formData.room} onChange={(e) => setFormData({ ...formData, room: e.target.value })} placeholder="e.g. 101" />
-                                </div>
-                                <DialogFooter>
-                                    <Button type="submit">Save</Button>
-                                </DialogFooter>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
+                <div>
+                    <h1 className="text-2xl font-bold text-[#111827]">Timetable</h1>
+                    <p className="text-sm text-[#6B7280] mt-1">Manage class schedules and timetable entries</p>
                 </div>
+                <Button onClick={openCreate} className="bg-black text-white hover:bg-black/90 rounded-lg">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Entry
+                </Button>
             </div>
 
-            {selectedClass ? (
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    {days.slice(0, 5).map(day => (
-                        <div key={day} className="border rounded-md p-4 bg-white">
-                            <h3 className="font-semibold capitalize mb-4 text-center border-b pb-2">{day}</h3>
-                            <div className="space-y-2">
-                                {timetable.filter(t => t.day_of_week === day).sort((a, b) => a.start_time.localeCompare(b.start_time)).map(t => {
-                                    const subjectName = subjects.find(s => s.id === t.subject_id)?.name || "Unknown"
-                                    return (
-                                        <div key={t.id} className="text-xs p-2 bg-blue-50 rounded border border-blue-100 relative group">
-                                            <div className="font-medium">{t.start_time.slice(0, 5)} - {t.end_time.slice(0, 5)}</div>
-                                            <div className="font-bold text-blue-700">{subjectName}</div>
-                                            {t.teacher_id && <div className="text-xs text-gray-500 italic">{teachers.find(tr => tr.id === t.teacher_id)?.full_name}</div>}
-                                            {t.room && <div className="text-gray-500">Room: {t.room}</div>}
-                                            <button
-                                                onClick={() => handleDelete(t.id)}
-                                                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity"
-                                            >
-                                                <Trash2 className="h-3 w-3" />
-                                            </button>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
+            <div className="flex items-center gap-4">
+                <Label className="text-sm text-[#6B7280]">Filter by class:</Label>
+                <select
+                    value={filterClassId}
+                    onChange={(e) => setFilterClassId(e.target.value)}
+                    className="border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                    <option value="">All Classes</option>
+                    {classes.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                </select>
+            </div>
+
+            {isLoading ? (
+                <div className="text-center py-12 text-[#6B7280]">Loading timetable...</div>
+            ) : entries.length === 0 ? (
+                <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
+                    <CardContent className="text-center py-12 text-[#6B7280]">
+                        No timetable entries yet. Add your first entry!
+                    </CardContent>
+                </Card>
+            ) : (
+                <div className="space-y-4">
+                    {entriesByDay.map(({ day, entries: dayEntries }) => (
+                        <Card key={day} className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-[#111827] capitalize text-base">{day}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="border-b border-[#E5E7EB]">
+                                                <th className="text-left py-2 px-4 text-sm font-medium text-[#6B7280]">Time</th>
+                                                <th className="text-left py-2 px-4 text-sm font-medium text-[#6B7280]">Class</th>
+                                                <th className="text-left py-2 px-4 text-sm font-medium text-[#6B7280]">Subject</th>
+                                                <th className="text-left py-2 px-4 text-sm font-medium text-[#6B7280]">Teacher</th>
+                                                <th className="text-left py-2 px-4 text-sm font-medium text-[#6B7280]">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {dayEntries.sort((a, b) => a.start_time.localeCompare(b.start_time)).map((entry) => (
+                                                <tr key={entry.id} className="border-b border-[#E5E7EB] last:border-0 hover:bg-[#F6F7F9] transition-colors">
+                                                    <td className="py-2 px-4 text-sm text-[#111827]">{entry.start_time} – {entry.end_time}</td>
+                                                    <td className="py-2 px-4 text-sm text-[#6B7280]">{getClassName(entry.class_id)}</td>
+                                                    <td className="py-2 px-4 text-sm text-[#6B7280]">{getSubjectName(entry.subject_id)}</td>
+                                                    <td className="py-2 px-4 text-sm text-[#6B7280]">{getTeacherName(entry.teacher_id)}</td>
+                                                    <td className="py-2 px-4">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 text-red-600 hover:text-red-600 hover:bg-red-50"
+                                                            onClick={() => handleDelete(entry)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </CardContent>
+                        </Card>
                     ))}
                 </div>
-            ) : (
-                <div className="text-center py-10 text-gray-500">Select a class to view timetable</div>
             )}
+
+            <Dialog open={showModal} onOpenChange={setShowModal}>
+                <DialogContent className="sm:max-w-[450px]">
+                    <DialogHeader>
+                        <DialogTitle>Add Timetable Entry</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 text-red-800 px-3 py-2 rounded text-sm">{error}</div>
+                        )}
+                        <div className="space-y-2">
+                            <Label>Class *</Label>
+                            <select
+                                value={formData.class_id}
+                                onChange={(e) => setFormData({ ...formData, class_id: e.target.value })}
+                                className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
+                                <option value="">Select class</option>
+                                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Subject *</Label>
+                            <select
+                                value={formData.subject_id}
+                                onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
+                                className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
+                                <option value="">Select subject</option>
+                                {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Teacher</Label>
+                            <select
+                                value={formData.teacher_id}
+                                onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
+                                className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
+                                <option value="">No teacher assigned</option>
+                                {teachers.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Day of Week *</Label>
+                            <select
+                                value={formData.day_of_week}
+                                onChange={(e) => setFormData({ ...formData, day_of_week: e.target.value })}
+                                className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
+                                {DAYS.map(d => <option key={d} value={d} className="capitalize">{d.charAt(0).toUpperCase() + d.slice(1)}</option>)}
+                            </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Start Time *</Label>
+                                <input
+                                    type="time"
+                                    value={formData.start_time}
+                                    onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                                    className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>End Time *</Label>
+                                <input
+                                    type="time"
+                                    value={formData.end_time}
+                                    onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                                    className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
+                        <Button onClick={handleSave} disabled={saving} className="bg-black text-white hover:bg-black/90">
+                            {saving ? "Saving..." : "Save"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
