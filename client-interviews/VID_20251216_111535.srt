@@ -1,0 +1,4527 @@
+1
+00:00:00,000 --> 00:00:06,000
+Dans l'application, on sent ça au début, et vous, c'est dans que l'application...
+
+2
+00:00:06,000 --> 00:00:11,000
+Vous avez financé, vous avez financé.
+
+3
+00:00:11,000 --> 00:00:19,940
+Ici, déjà, on peut y mettre dans la base des données.
+
+4
+00:00:19,940 --> 00:00:25,940
+On peut voir toutes les données, ce qu'on a eu ici depuis,
+
+5
+00:00:25,940 --> 00:00:30,940
+depuis la question d'évolution, toutes les données qu'on s'est aidées, les idées...
+
+6
+00:00:30,940 --> 00:00:35,939
+Encore une question d'année, ça donne l'information de cette année.
+
+7
+00:00:35,939 --> 00:00:41,939
+Tout ce qui est déjà fait, c'est que, ici, déjà, on peut voir dans la question,
+
+8
+00:00:41,939 --> 00:00:45,939
+ici, on a l'information professionnelle et technique,
+
+9
+00:00:45,939 --> 00:00:48,939
+dans la question, on a apprécié le temps de l'échénial.
+
+10
+00:00:48,939 --> 00:00:51,939
+Et quand on a fini, on a fait une recouteille,
+
+11
+00:00:51,939 --> 00:00:55,939
+alors là, j'ai choisi, on a évoqué de venir à la déchéniale,
+
+12
+00:00:55,939 --> 00:01:00,939
+pour ce qui est, qui travaille avec le concept de l'automastique,
+
+13
+00:01:00,939 --> 00:01:04,939
+où il m'a fait mon pool d'affaires, et quand c'est fait,
+
+14
+00:01:04,939 --> 00:01:22,670
+je m'en suis motivé, parce que c'est les frais scolaires,
+
+15
+00:01:22,670 --> 00:01:26,670
+la gestion d'affaires, le pool d'affaires et des employés.
+
+16
+00:01:26,670 --> 00:01:28,670
+Normalement, à partir d'ici, on va avoir fait,
+
+17
+00:01:28,670 --> 00:01:31,670
+à tout ce qu'il y ait professionnel, dans le sens d'arriver et tout.
+
+18
+00:01:31,670 --> 00:01:35,670
+Il y a aussi tout ce qui est suivi bien,
+
+19
+00:01:35,670 --> 00:01:38,670
+c'est l'inétoirage, c'est l'inétoirage,
+
+20
+00:01:38,670 --> 00:01:40,670
+ou c'est vous même qui...
+
+21
+00:01:41,670 --> 00:01:44,670
+Il y a bien des gardiens, c'est le decaguer,
+
+22
+00:01:44,670 --> 00:01:46,670
+c'est le decaguer, c'est le decaguer, c'est le decaguer,
+
+23
+00:01:46,670 --> 00:01:49,670
+qui est en train de m'abonner.
+
+24
+00:01:49,670 --> 00:01:55,670
+Donc, à partir d'ici, on a les frais scolaires, donc ici,
+
+25
+00:01:55,670 --> 00:02:00,670
+quand on déplie le massage de la mairie,
+
+26
+00:02:00,670 --> 00:02:05,670
+ou des danses, on a un certain projet qui est souvre,
+
+27
+00:02:05,670 --> 00:02:09,669
+comme on choisit les livres, quand on a les livres,
+
+28
+00:02:10,669 --> 00:02:12,669
+on a les motants, la prise d'encharge,
+
+29
+00:02:12,669 --> 00:02:15,669
+l'entité qui ont la prise d'encharge soit de la mairie,
+
+30
+00:02:15,669 --> 00:02:17,669
+soit de l'établissement ou...
+
+31
+00:02:17,669 --> 00:02:20,669
+C'est une entité que vous pouvez appuyer sur l'entité.
+
+32
+00:02:20,669 --> 00:02:24,669
+Effectivement, à partir d'ici,
+
+33
+00:02:24,669 --> 00:02:27,669
+on peut ajouter l'entité.
+
+34
+00:02:27,669 --> 00:02:30,669
+C'est que cette information va re-enter sur l'entité.
+
+35
+00:02:30,669 --> 00:02:32,669
+C'est l'entité.
+
+36
+00:02:32,669 --> 00:02:35,669
+Quand on a fait l'entité, l'entité apparaît.
+
+37
+00:02:35,669 --> 00:02:38,669
+On a le moment de l'entendre, on en délise,
+
+38
+00:02:38,669 --> 00:02:41,669
+et le moment de l'entendre, il arrive à Paris.
+
+39
+00:02:41,669 --> 00:02:46,669
+Et automatiquement, ça se repère sur le sol du paiement.
+
+40
+00:02:46,669 --> 00:02:50,669
+Parce que tous ces frais de scolaïté,
+
+41
+00:02:50,669 --> 00:02:52,669
+vous avez déjà le moment de l'entendre,
+
+42
+00:02:52,669 --> 00:02:53,669
+tu dois payer.
+
+43
+00:02:53,669 --> 00:02:56,669
+Une fois que l'informatique c'est le renseignement,
+
+44
+00:02:56,669 --> 00:02:57,669
+directement dans la classe,
+
+45
+00:02:57,669 --> 00:03:00,669
+les frais de scolaïté sont enseignés automatiquement.
+
+46
+00:03:00,669 --> 00:03:01,669
+Donc, quand le livre est rentré,
+
+47
+00:03:01,669 --> 00:03:02,669
+il y a eu un temps troisième,
+
+48
+00:03:02,669 --> 00:03:05,669
+automatiquement, les frais de scolaïté s'applicationnent.
+
+49
+00:03:05,669 --> 00:03:06,669
+Donc, quand on est dans l'entrée,
+
+50
+00:03:06,669 --> 00:03:07,669
+on vit ici automatiquement.
+
+51
+00:03:07,669 --> 00:03:08,669
+Tout ce qu'il faut,
+
+52
+00:03:08,669 --> 00:03:09,669
+il y a une solution à payer,
+
+53
+00:03:09,669 --> 00:03:11,669
+on a tout le monde en total à payer.
+
+54
+00:03:11,669 --> 00:03:13,669
+Donc, quand l'avant c'est fait,
+
+55
+00:03:13,669 --> 00:03:15,669
+on revient ici directement
+
+56
+00:03:15,669 --> 00:03:17,669
+au niveau de la classe du paiement.
+
+57
+00:03:17,669 --> 00:03:19,669
+Donc, ici, on a accès
+
+58
+00:03:19,669 --> 00:03:20,669
+à tous les élèves,
+
+59
+00:03:20,669 --> 00:03:22,669
+tous les établissements.
+
+60
+00:03:22,669 --> 00:03:24,669
+Ici, on a accès à toutes les classes.
+
+61
+00:03:24,669 --> 00:03:26,669
+Ils sont ouverts.
+
+62
+00:03:26,669 --> 00:03:28,669
+Donc, on peut choisir la classe du paiement
+
+63
+00:03:28,669 --> 00:03:29,669
+pour faire le paiement.
+
+64
+00:03:29,669 --> 00:03:31,669
+Et quand on a fini là,
+
+65
+00:03:31,669 --> 00:03:33,669
+même pour quoi vous avez choisi?
+
+66
+00:03:33,669 --> 00:03:35,669
+Bon, en fait, là, ici...
+
+67
+00:03:35,669 --> 00:03:37,669
+Parce que quand vous avez saigné là,
+
+68
+00:03:37,669 --> 00:03:38,669
+vous me mettez dans une classe.
+
+69
+00:03:38,669 --> 00:03:39,669
+Effectivement.
+
+70
+00:03:39,669 --> 00:03:41,669
+Donc, si vous sélectionnez l'élève,
+
+71
+00:03:41,669 --> 00:03:43,669
+tout ce qui est relié à l'élève,
+
+72
+00:03:43,669 --> 00:03:45,669
+vous n'avez plus besoin de sélection.
+
+73
+00:03:45,669 --> 00:03:47,669
+Oui, ça doit être sélectionné automatiquement.
+
+74
+00:03:47,669 --> 00:03:49,669
+Puis, vous l'avez mis en place.
+
+75
+00:03:49,669 --> 00:03:51,669
+Oui, c'est sélectionné.
+
+76
+00:03:51,669 --> 00:03:52,669
+Oui, ici, par exemple,
+
+77
+00:03:52,669 --> 00:03:53,669
+comme il y a de toutes les élèves sur ici,
+
+78
+00:03:53,669 --> 00:03:54,669
+mais ici,
+
+79
+00:03:54,669 --> 00:03:55,669
+c'est de mélanger toutes les classes
+
+80
+00:03:55,669 --> 00:03:56,669
+qui sont confondues là,
+
+81
+00:03:56,669 --> 00:03:57,669
+d'avoir le temps réformé.
+
+82
+00:03:57,669 --> 00:03:58,669
+Toutes les classes.
+
+83
+00:03:58,669 --> 00:04:00,669
+Donc, quand on prête l'élève, par exemple,
+
+84
+00:04:00,669 --> 00:04:01,669
+c'est celui-là.
+
+85
+00:04:01,669 --> 00:04:03,669
+Je donne la classe à l'élève.
+
+86
+00:04:03,669 --> 00:04:05,669
+Je donne le parent de l'élève,
+
+87
+00:04:05,669 --> 00:04:06,669
+je donne le parent de l'élève,
+
+88
+00:04:06,669 --> 00:04:07,669
+je donne son contact,
+
+89
+00:04:07,669 --> 00:04:08,669
+le statut de l'élève
+
+90
+00:04:08,669 --> 00:04:09,669
+affecté, non affecté,
+
+91
+00:04:09,669 --> 00:04:11,669
+le niveau des téléphones de l'élève.
+
+92
+00:04:11,669 --> 00:04:12,669
+Et là, à partir de là,
+
+93
+00:04:12,669 --> 00:04:14,669
+on a une foignée du paiement.
+
+94
+00:04:14,669 --> 00:04:15,669
+Là, c'est que l'élève,
+
+95
+00:04:15,669 --> 00:04:16,670
+il y a son date,
+
+96
+00:04:16,670 --> 00:04:17,670
+il y a le thème,
+
+97
+00:04:17,670 --> 00:04:18,670
+il y a l'effort de l'école,
+
+98
+00:04:18,670 --> 00:04:19,670
+il y a le montant.
+
+99
+00:04:19,670 --> 00:04:20,670
+Et ici, c'est tout,
+
+100
+00:04:20,670 --> 00:04:21,670
+c'est tout le document
+
+101
+00:04:21,670 --> 00:04:22,670
+que l'élève doit nous faire
+
+102
+00:04:22,670 --> 00:04:23,670
+parvenir,
+
+103
+00:04:23,670 --> 00:04:24,670
+après son inscription.
+
+104
+00:04:24,670 --> 00:04:25,670
+Oui.
+
+105
+00:04:25,670 --> 00:04:26,670
+Donc, on a quand même réussi
+
+106
+00:04:26,670 --> 00:04:27,670
+de sélection en ligne.
+
+107
+00:04:27,670 --> 00:04:28,670
+Si je peux,
+
+108
+00:04:28,670 --> 00:04:29,670
+je sais que l'on voit
+
+109
+00:04:29,670 --> 00:04:31,670
+exactement les traits de mes sens.
+
+110
+00:04:31,670 --> 00:04:32,670
+Il y a les enjeux,
+
+111
+00:04:32,670 --> 00:04:33,670
+les élèves,
+
+112
+00:04:33,670 --> 00:04:34,670
+d'envoyer,
+
+113
+00:04:34,670 --> 00:04:35,670
+il y a les paquilleres
+
+114
+00:04:35,670 --> 00:04:36,670
+qui les doivent se parvenir,
+
+115
+00:04:36,670 --> 00:04:37,670
+il y a des paquets
+
+116
+00:04:37,670 --> 00:04:38,670
+un peu plus paquets chimiques,
+
+117
+00:04:38,670 --> 00:04:39,670
+les marqueurs,
+
+118
+00:04:39,670 --> 00:04:40,670
+les chimiques arabes,
+
+119
+00:04:40,670 --> 00:04:42,670
+les mythémiques mythes,
+
+120
+00:04:42,670 --> 00:04:43,670
+que les élèves,
+
+121
+00:04:43,670 --> 00:04:44,670
+si les élèves ont été
+
+122
+00:04:44,670 --> 00:04:45,670
+ici dans les bassins,
+
+123
+00:04:45,670 --> 00:04:46,670
+les services à voire sont
+
+124
+00:04:46,670 --> 00:04:47,670
+délibutés
+
+125
+00:04:47,670 --> 00:04:48,670
+pour les séances de cette année.
+
+126
+00:04:48,670 --> 00:04:49,670
+Une fois qu'on a écrit
+
+127
+00:04:49,670 --> 00:04:50,670
+tout ça,
+
+128
+00:04:50,670 --> 00:04:51,670
+on poche
+
+129
+00:04:51,670 --> 00:04:53,670
+et on va partir ici,
+
+130
+00:04:53,670 --> 00:04:54,670
+donc on t'emparait,
+
+131
+00:04:54,670 --> 00:04:55,670
+on t'allait pas mal paraît,
+
+132
+00:04:55,670 --> 00:04:56,670
+et on en fait
+
+133
+00:04:58,670 --> 00:04:59,670
+Quand on a fait,
+
+134
+00:04:59,670 --> 00:05:00,670
+on a parti d'ici,
+
+135
+00:05:00,670 --> 00:05:01,670
+on s'est abusé
+
+136
+00:05:01,670 --> 00:05:02,670
+de faire les paiements.
+
+137
+00:05:03,670 --> 00:05:04,670
+Ici c'est tout ce qu'on fait les paiements.
+
+138
+00:05:04,670 --> 00:05:05,670
+Tout ce que l'on fait les paiements,
+
+139
+00:05:05,670 --> 00:05:06,670
+maintenant,
+
+140
+00:05:06,670 --> 00:05:08,670
+quand on dit tout ce que l'on fait les paiements,
+
+141
+00:05:08,670 --> 00:05:09,670
+c'est
+
+142
+00:05:10,670 --> 00:05:11,670
+le début des paiements,
+
+143
+00:05:11,670 --> 00:05:12,670
+parce qu'ils font plusieurs paiements.
+
+144
+00:05:12,670 --> 00:05:13,670
+Effectivement.
+
+145
+00:05:13,670 --> 00:05:15,670
+Celui qui n'a pas fait un paiement
+
+146
+00:05:15,670 --> 00:05:16,670
+dans la année,
+
+147
+00:05:16,670 --> 00:05:17,670
+il va pas parler.
+
+148
+00:05:18,670 --> 00:05:20,670
+Dans tout ce que l'on fait les paiements,
+
+149
+00:05:20,670 --> 00:05:21,670
+ils ne savent pas
+
+150
+00:05:21,670 --> 00:05:22,670
+qu'ils ont fini de sortir.
+
+151
+00:05:22,670 --> 00:05:23,670
+Exactement.
+
+152
+00:05:24,670 --> 00:05:26,670
+Voilà, c'est là par exemple,
+
+153
+00:05:26,670 --> 00:05:27,670
+on a tout
+
+154
+00:05:27,670 --> 00:05:29,670
+de paiements qu'il a fait.
+
+155
+00:05:29,670 --> 00:05:30,670
+Tous les voies des paiements,
+
+156
+00:05:30,670 --> 00:05:31,670
+tous les jus des paiements.
+
+157
+00:05:31,670 --> 00:05:32,670
+Donc quand tu les sonnes
+
+158
+00:05:32,670 --> 00:05:33,670
+dans l'air comme ça,
+
+159
+00:05:33,670 --> 00:05:34,670
+vous avez la liste
+
+160
+00:05:34,670 --> 00:05:36,670
+de tous les paiements que tu as fait.
+
+161
+00:05:37,670 --> 00:05:38,670
+Donc à partir de là,
+
+162
+00:05:38,670 --> 00:05:39,670
+on peut rentrer.
+
+163
+00:05:40,670 --> 00:05:43,240
+On peut rentrer et voir
+
+164
+00:05:43,240 --> 00:05:44,240
+sur le solde,
+
+165
+00:05:44,240 --> 00:05:45,240
+sur le déni,
+
+166
+00:05:45,240 --> 00:05:46,240
+sur le déni paiement,
+
+167
+00:05:46,240 --> 00:05:47,240
+pour quand il a été fait.
+
+168
+00:05:48,240 --> 00:05:49,240
+Sur le déni paiement,
+
+169
+00:05:49,240 --> 00:05:50,240
+on a réussi ce présent.
+
+170
+00:05:51,240 --> 00:05:52,240
+On a le nom, la classe,
+
+171
+00:05:52,240 --> 00:05:54,240
+la date de paiement,
+
+172
+00:05:54,240 --> 00:05:55,240
+le montant payé,
+
+173
+00:05:55,240 --> 00:05:56,240
+les documents
+
+174
+00:05:57,240 --> 00:05:58,240
+apportés.
+
+175
+00:05:59,240 --> 00:06:00,240
+Donc ça, c'est le coup
+
+176
+00:06:00,240 --> 00:06:01,240
+de la scolarité,
+
+177
+00:06:01,240 --> 00:06:02,240
+le montant et tout.
+
+178
+00:06:02,240 --> 00:06:03,240
+Et puis, on a le solde
+
+179
+00:06:04,240 --> 00:06:05,240
+du paiement
+
+180
+00:06:05,240 --> 00:06:06,240
+qui me reste à payer.
+
+181
+00:06:06,240 --> 00:06:07,240
+Donc on va faire
+
+182
+00:06:07,240 --> 00:06:08,240
+le plus de reçu.
+
+183
+00:06:08,240 --> 00:06:09,240
+On commence
+
+184
+00:06:09,240 --> 00:06:10,240
+l'interface
+
+185
+00:06:10,240 --> 00:06:11,240
+de reçu des paiements.
+
+186
+00:06:11,240 --> 00:06:12,240
+On en crie,
+
+187
+00:06:12,240 --> 00:06:13,240
+mais on revient à des lèvres.
+
+188
+00:06:15,240 --> 00:06:16,240
+Quand c'est coché,
+
+189
+00:06:16,240 --> 00:06:17,240
+ça veut dire que...
+
+190
+00:06:17,240 --> 00:06:18,240
+Qu'il a apporté
+
+191
+00:06:18,240 --> 00:06:19,240
+tout cet apportement.
+
+192
+00:06:19,240 --> 00:06:20,240
+Maintenant là,
+
+193
+00:06:20,240 --> 00:06:22,240
+vous ne pouvez pas décocher.
+
+194
+00:06:22,240 --> 00:06:23,240
+Donc là,
+
+195
+00:06:23,240 --> 00:06:25,240
+c'est le côté
+
+196
+00:06:25,240 --> 00:06:26,240
+d'un bout de mercée,
+
+197
+00:06:26,240 --> 00:06:27,240
+mais vous ne pouvez pas
+
+198
+00:06:27,240 --> 00:06:28,240
+décocher.
+
+199
+00:06:32,899 --> 00:06:33,899
+Donc là,
+
+200
+00:06:33,899 --> 00:06:34,899
+ça, c'est le côté
+
+201
+00:06:34,899 --> 00:06:35,899
+gestion de paiement.
+
+202
+00:06:35,899 --> 00:06:36,899
+Donc ici,
+
+203
+00:06:36,899 --> 00:06:37,899
+vous choisissez
+
+204
+00:06:37,899 --> 00:06:38,899
+les lèvres,
+
+205
+00:06:38,899 --> 00:06:39,899
+vous choisissez
+
+206
+00:06:39,899 --> 00:06:40,899
+le type
+
+207
+00:06:40,899 --> 00:06:41,899
+de frais
+
+208
+00:06:41,899 --> 00:06:42,899
+qu'il doit payer,
+
+209
+00:06:42,899 --> 00:06:43,899
+le montant,
+
+210
+00:06:43,899 --> 00:06:44,899
+mettez le montant,
+
+211
+00:06:44,899 --> 00:06:45,899
+la date
+
+212
+00:06:45,899 --> 00:06:46,899
+et tout ça.
+
+213
+00:06:46,899 --> 00:06:47,899
+Et puis vous validez.
+
+214
+00:06:47,899 --> 00:06:48,899
+Et ça,
+
+215
+00:06:48,899 --> 00:06:49,899
+c'est liste ici.
+
+216
+00:06:49,899 --> 00:06:50,899
+OK.
+
+217
+00:06:50,899 --> 00:06:51,899
+Et là, c'est quoi?
+
+218
+00:06:52,899 --> 00:06:53,899
+Quand ici, c'est
+
+219
+00:06:53,899 --> 00:06:55,899
+les différents frais
+
+220
+00:06:55,899 --> 00:06:57,899
+de la lèvres appuyés par les lèvres.
+
+221
+00:06:57,899 --> 00:06:58,899
+Donc ici,
+
+222
+00:06:58,899 --> 00:06:59,899
+on a les fois
+
+223
+00:06:59,899 --> 00:07:00,899
+d'instruction,
+
+224
+00:07:00,899 --> 00:07:01,899
+on a
+
+225
+00:07:01,899 --> 00:07:02,899
+le montant de la photo,
+
+226
+00:07:02,899 --> 00:07:03,899
+on montre la assurance.
+
+227
+00:07:03,899 --> 00:07:04,899
+C'est tout ça
+
+228
+00:07:04,899 --> 00:07:05,899
+qui constitue les frais scolaires.
+
+229
+00:07:08,899 --> 00:07:09,899
+Et vous voyez
+
+230
+00:07:09,899 --> 00:07:10,899
+ce qu'il a dit après.
+
+231
+00:07:11,899 --> 00:07:12,899
+OK.
+
+232
+00:07:12,899 --> 00:07:13,899
+Donc là,
+
+233
+00:07:13,899 --> 00:07:14,899
+c'est la liste
+
+234
+00:07:14,899 --> 00:07:15,899
+de tous les détails
+
+235
+00:07:15,899 --> 00:07:16,899
+de ce qu'il doit payer.
+
+236
+00:07:16,899 --> 00:07:17,899
+Mais ici,
+
+237
+00:07:17,899 --> 00:07:18,899
+c'est tout.
+
+238
+00:07:18,899 --> 00:07:19,899
+C'est tout.
+
+239
+00:07:20,899 --> 00:07:21,899
+OK.
+
+240
+00:07:24,899 --> 00:07:25,899
+Normalement,
+
+241
+00:07:25,899 --> 00:07:26,899
+quand on rentre,
+
+242
+00:07:26,899 --> 00:07:27,899
+à partir d'ici,
+
+243
+00:07:27,899 --> 00:07:28,899
+il doit aller voir que
+
+244
+00:07:28,899 --> 00:07:29,899
+les montants,
+
+245
+00:07:29,899 --> 00:07:30,899
+puis ici,
+
+246
+00:07:30,899 --> 00:07:31,899
+il va rester 0,
+
+247
+00:07:31,899 --> 00:07:32,899
+puis là,
+
+248
+00:07:32,899 --> 00:07:33,899
+c'est tout.
+
+249
+00:07:33,899 --> 00:07:34,899
+Mais non.
+
+250
+00:07:34,899 --> 00:07:35,899
+Contraînant ces différences,
+
+251
+00:07:35,899 --> 00:07:36,899
+il est payé par mois.
+
+252
+00:07:36,899 --> 00:07:37,899
+Normalement,
+
+253
+00:07:37,899 --> 00:07:38,899
+8 par mois.
+
+254
+00:07:38,899 --> 00:07:39,899
+C'est la liste
+
+255
+00:07:39,899 --> 00:07:40,899
+de ce qu'il doit payer.
+
+256
+00:07:40,899 --> 00:07:41,899
+Et c'est ce
+
+257
+00:07:41,899 --> 00:07:42,899
+qu'il doit payer,
+
+258
+00:07:42,899 --> 00:07:43,899
+il doit être payé par mois.
+
+259
+00:07:43,899 --> 00:07:44,899
+Voilà, c'est tout.
+
+260
+00:07:44,899 --> 00:07:45,899
+Il y a 7 pays.
+
+261
+00:07:45,899 --> 00:07:46,899
+Comme ça,
+
+262
+00:07:46,899 --> 00:07:47,899
+c'est qu'on affiche là
+
+263
+00:07:47,899 --> 00:07:48,899
+et on affiche ici.
+
+264
+00:07:49,899 --> 00:07:50,899
+Il peut avoir payé
+
+265
+00:07:50,899 --> 00:07:51,899
+plusieurs fois.
+
+266
+00:07:51,899 --> 00:07:53,899
+Et les frais de
+
+267
+00:07:53,899 --> 00:07:54,899
+annexes,
+
+268
+00:07:54,899 --> 00:07:55,899
+il peut avoir payé
+
+269
+00:07:55,899 --> 00:07:56,899
+plusieurs fois.
+
+270
+00:07:56,899 --> 00:07:57,899
+Tout c'est l'issue.
+
+271
+00:07:57,899 --> 00:07:58,899
+Donc,
+
+272
+00:07:58,899 --> 00:07:59,899
+il a fait 10 paiements.
+
+273
+00:07:59,899 --> 00:08:00,899
+De 10,000 fois,
+
+274
+00:08:00,899 --> 00:08:01,899
+on va aller.
+
+275
+00:08:01,899 --> 00:08:02,899
+Tout va s'afficher ici.
+
+276
+00:08:02,899 --> 00:08:03,899
+OK.
+
+277
+00:08:03,899 --> 00:08:04,899
+Pour chaque,
+
+278
+00:08:04,899 --> 00:08:05,899
+pour chaque,
+
+279
+00:08:05,899 --> 00:08:06,899
+on a besoin de voir
+
+280
+00:08:06,899 --> 00:08:07,899
+quel cas c'est la miétene
+
+281
+00:08:07,899 --> 00:08:08,899
+montant,
+
+282
+00:08:08,899 --> 00:08:09,899
+un peu d'attombard,
+
+283
+00:08:09,899 --> 00:08:10,899
+on a l'air d'ouvrir
+
+284
+00:08:10,899 --> 00:08:11,899
+les issus.
+
+285
+00:08:11,899 --> 00:08:12,899
+Il y a 3 l'édition,
+
+286
+00:08:12,899 --> 00:08:13,899
+on a qu'il appuie,
+
+287
+00:08:13,899 --> 00:08:14,899
+c'est la cellulite,
+
+288
+00:08:14,899 --> 00:08:15,899
+c'est la cellulite.
+
+289
+00:08:15,899 --> 00:08:17,899
+Et quand on va finir là,
+
+290
+00:08:17,899 --> 00:08:18,899
+nous avons ici
+
+291
+00:08:18,899 --> 00:08:19,899
+l'arrêtage,
+
+292
+00:08:19,899 --> 00:08:20,899
+on a l'arrêtage,
+
+293
+00:08:20,899 --> 00:08:21,899
+on a l'air
+
+294
+00:08:21,899 --> 00:08:22,899
+qui nous permet
+
+295
+00:08:22,899 --> 00:08:23,899
+de voir
+
+296
+00:08:23,899 --> 00:08:24,899
+pas ajouter
+
+297
+00:08:24,899 --> 00:08:25,899
+tous les paiements
+
+298
+00:08:25,899 --> 00:08:26,899
+qui étaient écheux.
+
+299
+00:08:26,899 --> 00:08:27,899
+Donc,
+
+300
+00:08:27,899 --> 00:08:28,899
+à partir d'ici,
+
+301
+00:08:28,899 --> 00:08:29,899
+on prend la tatière,
+
+302
+00:08:29,899 --> 00:08:30,899
+choisir la date
+
+303
+00:08:30,899 --> 00:08:31,899
+et la tatière,
+
+304
+00:08:31,899 --> 00:08:32,899
+la personne
+
+305
+00:08:32,899 --> 00:08:33,899
+qui a fait les paiements.
+
+306
+00:08:33,899 --> 00:08:34,899
+Donc,
+
+307
+00:08:34,899 --> 00:08:35,899
+hier,
+
+308
+00:08:35,899 --> 00:08:36,899
+je n'ai pas fait du paiement,
+
+309
+00:08:36,899 --> 00:08:37,899
+c'est plus la détresse
+
+310
+00:08:37,899 --> 00:08:38,899
+qui a fait les paiements.
+
+311
+00:08:38,899 --> 00:08:39,899
+Donc,
+
+312
+00:08:39,899 --> 00:08:40,899
+pour ce que vous marquez,
+
+313
+00:08:40,899 --> 00:08:41,899
+opérateurs,
+
+314
+00:08:41,899 --> 00:08:42,899
+c'est portabilité
+
+315
+00:08:42,899 --> 00:08:43,899
+ou casque.
+
+316
+00:08:43,899 --> 00:08:44,899
+Et il n'y a pas,
+
+317
+00:08:44,899 --> 00:08:45,899
+ça ne
+
+318
+00:08:45,899 --> 00:08:46,899
+transporte
+
+319
+00:08:46,899 --> 00:08:47,899
+la personne
+
+320
+00:08:47,899 --> 00:08:48,899
+même qui a effectué.
+
+321
+00:08:48,899 --> 00:08:49,899
+Tu as vu
+
+322
+00:08:49,899 --> 00:08:50,899
+que tu t'es logué, là.
+
+323
+00:08:50,899 --> 00:08:51,899
+Oui.
+
+324
+00:08:51,899 --> 00:08:52,899
+Tu as connecté.
+
+325
+00:08:52,899 --> 00:08:53,899
+Ça,
+
+326
+00:08:53,899 --> 00:08:54,899
+c'est ton...
+
+327
+00:08:54,899 --> 00:08:56,899
+c'est un identifiant
+
+328
+00:08:56,899 --> 00:08:57,899
+personnel.
+
+329
+00:08:57,899 --> 00:08:58,899
+Dans l'application,
+
+330
+00:08:58,899 --> 00:08:59,899
+c'est que c'est toi qui as connecté.
+
+331
+00:08:59,899 --> 00:09:00,899
+Exactement.
+
+332
+00:09:00,899 --> 00:09:01,899
+Dans toutes les opérations
+
+333
+00:09:01,899 --> 00:09:02,899
+que tu as effectué là-dedans,
+
+334
+00:09:02,899 --> 00:09:03,899
+on doit pouvoir
+
+335
+00:09:03,899 --> 00:09:04,899
+savoir que
+
+336
+00:09:04,899 --> 00:09:05,899
+c'est cellulièrement
+
+337
+00:09:05,899 --> 00:09:06,899
+c'est toi qui l'as fait.
+
+338
+00:09:06,899 --> 00:09:07,899
+Même si
+
+339
+00:09:07,899 --> 00:09:08,899
+c'est le côté
+
+340
+00:09:08,899 --> 00:09:09,899
+caisse et interdité,
+
+341
+00:09:09,899 --> 00:09:10,899
+on est la personne
+
+342
+00:09:10,899 --> 00:09:11,899
+qui a fait
+
+343
+00:09:11,899 --> 00:09:12,899
+le paiement.
+
+344
+00:09:12,899 --> 00:09:13,899
+On a la personne
+
+345
+00:09:13,899 --> 00:09:14,899
+qui a fait les paiements.
+
+346
+00:09:14,899 --> 00:09:15,899
+Comme dit,
+
+347
+00:09:15,899 --> 00:09:16,899
+on a la personne qui l'a payé.
+
+348
+00:09:16,899 --> 00:09:17,899
+Mais on ne sait pas
+
+349
+00:09:17,899 --> 00:09:18,899
+qui a fait le paiement
+
+350
+00:09:18,899 --> 00:09:19,899
+et qui a fait l'agent.
+
+351
+00:09:19,899 --> 00:09:20,899
+Exactement.
+
+352
+00:09:20,899 --> 00:09:21,899
+Dans le monde,
+
+353
+00:09:21,899 --> 00:09:22,899
+c'est moi qui l'avais fait.
+
+354
+00:09:22,899 --> 00:09:23,899
+La personne qui l'a fait.
+
+355
+00:09:23,899 --> 00:09:24,899
+La personne qui l'a fait.
+
+356
+00:09:24,899 --> 00:09:25,899
+Si,
+
+357
+00:09:25,899 --> 00:09:26,899
+ici, par exemple,
+
+358
+00:09:26,899 --> 00:09:27,899
+il avait fait
+
+359
+00:09:27,899 --> 00:09:28,899
+les paiements
+
+360
+00:09:28,899 --> 00:09:29,899
+et que la caisse
+
+361
+00:09:29,899 --> 00:09:30,899
+avait fait les paiements.
+
+362
+00:09:30,899 --> 00:09:31,899
+Quand on a fait
+
+363
+00:09:31,899 --> 00:09:32,899
+le complexe,
+
+364
+00:09:32,899 --> 00:09:33,899
+tous les opérateurs,
+
+365
+00:09:33,899 --> 00:09:34,899
+si ils avaient fait
+
+366
+00:09:34,899 --> 00:09:35,899
+les paiements,
+
+367
+00:09:35,899 --> 00:09:36,899
+il a comptabilité
+
+368
+00:09:36,899 --> 00:09:37,899
+la sortie.
+
+369
+00:09:37,899 --> 00:09:38,899
+Si tous les paiements
+
+370
+00:09:38,899 --> 00:09:39,899
+qu'il lui a fait,
+
+371
+00:09:39,899 --> 00:09:40,899
+on sortait.
+
+372
+00:09:40,899 --> 00:09:41,899
+Tous les paiements,
+
+373
+00:09:41,899 --> 00:09:42,899
+j'ai fait la caisse,
+
+374
+00:09:42,899 --> 00:09:43,899
+on sortait.
+
+375
+00:09:43,899 --> 00:09:44,899
+Et c'est l'ensemble
+
+376
+00:09:45,899 --> 00:09:46,899
+que ça finit par ici.
+
+377
+00:09:46,899 --> 00:09:47,899
+Donc, peut-être,
+
+378
+00:09:47,899 --> 00:09:48,899
+la couture de la journée,
+
+379
+00:09:48,899 --> 00:09:49,899
+le fait du journal,
+
+380
+00:09:49,899 --> 00:09:50,899
+du couture.
+
+381
+00:09:50,899 --> 00:09:51,899
+Ok.
+
+382
+00:09:51,899 --> 00:09:52,899
+C'est pour ça
+
+383
+00:09:52,899 --> 00:09:53,899
+que j'ai fait le paiement.
+
+384
+00:09:53,899 --> 00:09:54,899
+J'ai fait ça,
+
+385
+00:09:54,899 --> 00:09:55,899
+comme ça,
+
+386
+00:09:55,899 --> 00:09:56,899
+le roi,
+
+387
+00:09:56,899 --> 00:09:57,899
+les données.
+
+388
+00:09:57,899 --> 00:09:59,899
+Le journal du couture,
+
+389
+00:09:59,899 --> 00:10:00,899
+nous,
+
+390
+00:10:00,899 --> 00:10:01,899
+les élèves,
+
+391
+00:10:01,899 --> 00:10:02,899
+on fait les paiements
+
+392
+00:10:02,899 --> 00:10:03,899
+dans le cours
+
+393
+00:10:03,899 --> 00:10:04,899
+de la journée.
+
+394
+00:10:04,899 --> 00:10:05,899
+Les montants qui étaient payés,
+
+395
+00:10:05,899 --> 00:10:06,899
+les opérateurs,
+
+396
+00:10:06,899 --> 00:10:07,899
+donc,
+
+397
+00:10:07,899 --> 00:10:08,899
+c'est la comptabilité.
+
+398
+00:10:08,899 --> 00:10:09,899
+On a sorti
+
+399
+00:10:09,899 --> 00:10:10,899
+tous les paiements,
+
+400
+00:10:10,899 --> 00:10:11,899
+mais soit,
+
+401
+00:10:11,899 --> 00:10:12,899
+dans le cours
+
+402
+00:10:12,899 --> 00:10:13,899
+de la journée,
+
+403
+00:10:13,899 --> 00:10:14,899
+on arrête.
+
+404
+00:10:14,899 --> 00:10:15,899
+La assurance,
+
+405
+00:10:15,899 --> 00:10:16,899
+la distribution,
+
+406
+00:10:16,899 --> 00:10:17,899
+la scolarité,
+
+407
+00:10:17,899 --> 00:10:18,899
+les thèmes et tout.
+
+408
+00:10:18,899 --> 00:10:19,899
+Là où il a payé.
+
+409
+00:10:19,899 --> 00:10:20,899
+Là,
+
+410
+00:10:20,899 --> 00:10:21,899
+on a le temps total
+
+411
+00:10:21,899 --> 00:10:22,899
+de la journée.
+
+412
+00:10:22,899 --> 00:10:23,899
+Ah,
+
+413
+00:10:23,899 --> 00:10:24,899
+pour la journée.
+
+414
+00:10:24,899 --> 00:10:25,899
+Je sais,
+
+415
+00:10:25,899 --> 00:10:26,899
+tout,
+
+416
+00:10:26,899 --> 00:10:27,899
+tous les élèves
+
+417
+00:10:27,899 --> 00:10:28,899
+qui ont payé,
+
+418
+00:10:28,899 --> 00:10:29,899
+de la journée.
+
+419
+00:10:29,899 --> 00:10:30,899
+Ok.
+
+420
+00:10:30,899 --> 00:10:31,899
+Donc,
+
+421
+00:10:31,899 --> 00:10:32,899
+à partir d'ici,
+
+422
+00:10:32,899 --> 00:10:33,899
+moi,
+
+423
+00:10:33,899 --> 00:10:34,899
+j'ai pris le paiement
+
+424
+00:10:34,899 --> 00:10:35,899
+et j'ai pris la caisse.
+
+425
+00:10:35,899 --> 00:10:36,899
+Pour me rassurer
+
+426
+00:10:36,899 --> 00:10:37,899
+qu'effectivement,
+
+427
+00:10:37,899 --> 00:10:38,899
+la caisse a reçu
+
+428
+00:10:38,899 --> 00:10:39,899
+tous ces montants
+
+429
+00:10:39,899 --> 00:10:40,899
+qui sont là.
+
+430
+00:10:40,899 --> 00:10:41,899
+On fait une félicitation
+
+431
+00:10:41,899 --> 00:10:42,899
+de ce qu'elle a en caisse.
+
+432
+00:10:42,899 --> 00:10:43,899
+On s'assure que
+
+433
+00:10:43,899 --> 00:10:44,899
+dans les soins,
+
+434
+00:10:44,899 --> 00:10:45,899
+c'est son niveau.
+
+435
+00:10:45,899 --> 00:10:46,899
+Mais quand c'est bon,
+
+436
+00:10:46,899 --> 00:10:47,899
+justement,
+
+437
+00:10:47,899 --> 00:10:48,899
+les décharges,
+
+438
+00:10:48,899 --> 00:10:49,899
+les décharges,
+
+439
+00:10:49,899 --> 00:10:50,899
+on les donne.
+
+440
+00:10:50,899 --> 00:10:51,899
+Non.
+
+441
+00:10:51,899 --> 00:10:52,899
+On refait ça chaque soir.
+
+442
+00:10:52,899 --> 00:10:53,899
+Chaque soir.
+
+443
+00:10:53,899 --> 00:10:54,899
+Oui.
+
+444
+00:10:54,899 --> 00:10:55,899
+On a baissé le temps.
+
+445
+00:10:55,899 --> 00:10:56,899
+Ok.
+
+446
+00:10:56,899 --> 00:10:57,899
+Ok.
+
+447
+00:10:57,899 --> 00:10:58,899
+Ok.
+
+448
+00:10:58,899 --> 00:10:59,899
+Et
+
+449
+00:10:59,899 --> 00:11:00,899
+des façons de m'aider
+
+450
+00:11:00,899 --> 00:11:01,899
+en fin de semaine,
+
+451
+00:11:01,899 --> 00:11:02,899
+on va tirer un état.
+
+452
+00:11:02,899 --> 00:11:03,899
+Bon,
+
+453
+00:11:03,899 --> 00:11:04,899
+on ptit ça
+
+454
+00:11:04,899 --> 00:11:05,899
+par sous chaque soir
+
+455
+00:11:05,899 --> 00:11:06,899
+et en fin de semaine,
+
+456
+00:11:06,899 --> 00:11:07,899
+on fait un point
+
+457
+00:11:07,899 --> 00:11:08,899
+total de plus qu'il est rentré.
+
+458
+00:11:08,899 --> 00:11:09,899
+On s'assure
+
+459
+00:11:09,899 --> 00:11:10,899
+que,
+
+460
+00:11:10,899 --> 00:11:11,899
+éventuellement,
+
+461
+00:11:11,899 --> 00:11:12,899
+on va jouer un jour,
+
+462
+00:11:12,899 --> 00:11:14,899
+on va se faire des passeurs
+
+463
+00:11:14,899 --> 00:11:15,899
+et de m'aider.
+
+464
+00:11:15,899 --> 00:11:16,899
+Oui.
+
+465
+00:11:16,899 --> 00:11:18,899
+Quand on a fini ça,
+
+466
+00:11:18,899 --> 00:11:19,899
+oui.
+
+467
+00:11:19,899 --> 00:11:21,899
+On a déjà la possibilité,
+
+468
+00:11:21,899 --> 00:11:22,899
+maintenant,
+
+469
+00:11:22,899 --> 00:11:23,899
+de venir imprimer
+
+470
+00:11:23,899 --> 00:11:24,899
+tout ce qui est
+
+471
+00:11:24,899 --> 00:11:25,899
+le passeur du contrôle.
+
+472
+00:11:25,899 --> 00:11:26,899
+Donc,
+
+473
+00:11:26,899 --> 00:11:27,899
+on va se faire,
+
+474
+00:11:27,899 --> 00:11:28,899
+tout ce qui est rentré,
+
+475
+00:11:28,899 --> 00:11:29,899
+tout ce qui est la main
+
+476
+00:11:29,899 --> 00:11:30,899
+pour responser des décharges.
+
+477
+00:11:30,899 --> 00:11:31,899
+Donc,
+
+478
+00:11:31,899 --> 00:11:32,899
+à partir d'ici,
+
+479
+00:11:32,899 --> 00:11:33,899
+il faut choisir
+
+480
+00:11:33,899 --> 00:11:34,899
+tout ce qui est payé,
+
+481
+00:11:34,899 --> 00:11:35,899
+tout ce qui n'est pas payé,
+
+482
+00:11:35,899 --> 00:11:36,899
+l'élection normale de la caisse,
+
+483
+00:11:36,899 --> 00:11:37,899
+que ce soit dans l'une ou l'autre,
+
+484
+00:11:37,899 --> 00:11:38,899
+dans l'année,
+
+485
+00:11:38,899 --> 00:11:39,899
+il faut choisir.
+
+486
+00:11:39,899 --> 00:11:40,899
+Il faut tirer un period du paiement,
+
+487
+00:11:40,899 --> 00:11:41,899
+il faut entrer dans le paiement,
+
+488
+00:11:41,899 --> 00:11:42,899
+il faut voir tout ce qui a été payé,
+
+489
+00:11:42,899 --> 00:11:43,899
+forcément,
+
+490
+00:11:43,899 --> 00:11:44,899
+dans cette période-là.
+
+491
+00:11:44,899 --> 00:11:45,899
+Et puis,
+
+492
+00:11:45,899 --> 00:11:46,899
+il faut rentrer,
+
+493
+00:11:46,899 --> 00:11:47,899
+tout ce qui est payé.
+
+494
+00:11:47,899 --> 00:11:48,899
+Et là,
+
+495
+00:11:48,899 --> 00:11:49,899
+j'ai parlé à mon tutoriel,
+
+496
+00:11:49,899 --> 00:11:50,899
+vous devez venir
+
+497
+00:11:50,899 --> 00:11:51,899
+sous l'unitage de la police.
+
+498
+00:11:51,899 --> 00:11:52,899
+Alors,
+
+499
+00:11:52,899 --> 00:11:53,899
+s'il est obligé de prendre
+
+500
+00:11:53,899 --> 00:11:54,899
+peut-être,
+
+501
+00:11:54,899 --> 00:11:55,899
+là,
+
+502
+00:11:55,899 --> 00:11:56,899
+par période,
+
+503
+00:11:56,899 --> 00:11:57,899
+il faut prendre,
+
+504
+00:11:57,899 --> 00:11:58,899
+peut-être,
+
+505
+00:11:58,899 --> 00:11:59,899
+la période du juillet,
+
+506
+00:11:59,899 --> 00:12:00,899
+à septembre,
+
+507
+00:12:00,899 --> 00:12:01,899
+les paiements qui étaient
+
+508
+00:12:01,899 --> 00:12:02,899
+faits,
+
+509
+00:12:02,899 --> 00:12:03,899
+faits,
+
+510
+00:12:03,899 --> 00:12:04,899
+faits,
+
+511
+00:12:04,899 --> 00:12:05,899
+pendant cette période-là.
+
+512
+00:12:05,899 --> 00:12:06,899
+Si je n'ai pas envie d'aller
+
+513
+00:12:06,899 --> 00:12:07,899
+fouiller les façons physiques,
+
+514
+00:12:07,899 --> 00:12:08,899
+saut-il des fichiers?
+
+515
+00:12:08,899 --> 00:12:09,899
+Je rentre ici,
+
+516
+00:12:09,899 --> 00:12:11,399
+pour qu'il ait une grande
+
+517
+00:12:11,399 --> 00:12:12,399
+distance.
+
+518
+00:12:12,399 --> 00:12:13,419
+Donc,
+
+519
+00:12:13,419 --> 00:12:14,399
+ici,
+
+520
+00:12:14,399 --> 00:12:15,399
+c'est sur les paiements
+
+521
+00:12:15,399 --> 00:12:16,399
+par oublie.
+
+522
+00:12:16,399 --> 00:12:17,399
+Par oublie,
+
+523
+00:12:17,399 --> 00:12:18,399
+comme les réservaux,
+
+524
+00:12:18,399 --> 00:12:19,399
+on a le dur,
+
+525
+00:12:19,399 --> 00:12:20,399
+l'insurance,
+
+526
+00:12:20,399 --> 00:12:21,399
+les pommes,
+
+527
+00:12:21,399 --> 00:12:22,399
+donc ça sortit de tous ces
+
+528
+00:12:22,399 --> 00:12:23,399
+pays.
+
+529
+00:12:23,399 --> 00:12:24,899
+Le frais d'insurance va
+
+530
+00:12:24,899 --> 00:12:25,899
+lui courir de l'année
+
+531
+00:12:25,899 --> 00:12:26,899
+par an.
+
+532
+00:12:26,899 --> 00:12:27,399
+Il choisit la période,
+
+533
+00:12:27,399 --> 00:12:27,899
+le paiement,
+
+534
+00:12:27,899 --> 00:12:28,899
+il choisit
+
+535
+00:12:28,899 --> 00:12:29,899
+la route d'insurrection
+
+536
+00:12:29,899 --> 00:12:30,899
+de l'insurance,
+
+537
+00:12:30,899 --> 00:12:31,899
+il choisit les
+
+538
+00:12:31,899 --> 00:12:32,899
+data-surance à partie ici.
+
+539
+00:12:32,899 --> 00:12:35,539
+Il choisi les routes
+
+540
+00:12:35,539 --> 00:12:36,539
+de l'insurance,
+
+541
+00:12:36,539 --> 00:12:37,539
+tout ce qui est
+
+542
+00:12:37,539 --> 00:12:38,539
+insurance.
+
+543
+00:12:38,539 --> 00:12:39,539
+Il choisit la période
+
+544
+00:12:39,539 --> 00:12:40,539
+du cas d'un fiche.
+
+545
+00:12:40,539 --> 00:12:44,539
+ce qu'il y a des pays comme assurance et les montres totales se fait d'assurance.
+
+546
+00:12:44,539 --> 00:12:45,539
+Ok.
+
+547
+00:12:45,539 --> 00:12:50,539
+On pourrait faire pour la totalité des différents types de péremont,
+
+548
+00:12:50,539 --> 00:12:56,539
+ou on pourrait sélectionner tous les pays où l'assurance est à voir par semaine, par jour et par mois.
+
+549
+00:12:58,539 --> 00:13:02,539
+Là, par exemple, ça me donne, comme je l'ai dit, la crédition en classe.
+
+550
+00:13:02,539 --> 00:13:06,539
+Donc celui de savoir l'épément qu'il y a fait par la crédition en classe,
+
+551
+00:13:06,539 --> 00:13:12,539
+ou sélectionner la classe et puis, quand je lance l'opération,
+
+552
+00:13:12,539 --> 00:13:15,539
+il y a une autre de tous les élèves qui est le paiement qui est le paiement effectué.
+
+553
+00:13:15,539 --> 00:13:17,539
+Il y a une autre de tous les élèves par classe,
+
+554
+00:13:17,539 --> 00:13:19,539
+il y a le paiement effectué par ces élèves-là,
+
+555
+00:13:19,539 --> 00:13:22,539
+et je le souviens sur chaque élèves-poids par classe.
+
+556
+00:13:23,539 --> 00:13:26,539
+Et jusqu'à ce que je le souviens tout à l'heure.
+
+557
+00:13:30,539 --> 00:13:32,539
+C'était la possibilité d'informer ça.
+
+558
+00:13:32,539 --> 00:13:34,539
+Mais voilà qu'il a poussé à trouver un fameux compte.
+
+559
+00:13:34,539 --> 00:13:36,539
+Je vais savoir concernant telle classe,
+
+560
+00:13:36,539 --> 00:13:38,539
+il n'est tellement pas appuyé.
+
+561
+00:13:39,539 --> 00:13:42,539
+Alors, il y en a sur tous les élèves qui font cette classe.
+
+562
+00:13:42,539 --> 00:13:44,539
+Donc, à partir d'ici, nous saisons où on va.
+
+563
+00:13:44,539 --> 00:13:47,539
+Nous donnons à tous les élèves qui doivent, par classe,
+
+564
+00:13:47,539 --> 00:13:49,539
+les élèves qui ont fait du fameux élèves-poids.
+
+565
+00:13:49,539 --> 00:13:53,539
+Donc, c'est parce qu'ils ont sauvé les paiements.
+
+566
+00:13:54,539 --> 00:13:57,539
+C'est un peu, c'est un peu un ruban de contrôle.
+
+567
+00:14:00,490 --> 00:14:04,490
+Ce que nous avons vu, c'est que quelque chose sort ici-là.
+
+568
+00:14:04,490 --> 00:14:07,490
+On n'est pas venu affrayer un autre fichier ou autre part.
+
+569
+00:14:07,490 --> 00:14:10,490
+Nous n'avons pas écrit le nom de l'élève et tout ça.
+
+570
+00:14:10,490 --> 00:14:12,490
+On n'a pas eu un fichier,
+
+571
+00:14:12,490 --> 00:14:14,490
+automatiquement, le même temps que l'on sait,
+
+572
+00:14:14,490 --> 00:14:16,490
+c'est qu'on suit le fichier et le nom de l'élève.
+
+573
+00:14:16,490 --> 00:14:18,490
+Et de la base, on n'a rien dit directement.
+
+574
+00:14:18,490 --> 00:14:20,490
+On n'a rien dit directement.
+
+575
+00:14:20,490 --> 00:14:22,490
+Même les personnes qui ont envoyé ou pas,
+
+576
+00:14:22,490 --> 00:14:23,490
+parce qu'on n'a pas les élèves,
+
+577
+00:14:23,490 --> 00:14:25,490
+sont toutefois venus faire le fichier à l'îte.
+
+578
+00:14:25,490 --> 00:14:27,490
+Donc, c'est un peu ça notre difficulté.
+
+579
+00:14:27,490 --> 00:14:30,490
+Donc, on n'a pas eu nos fichiers à l'intérieur
+
+580
+00:14:30,490 --> 00:14:32,490
+qui font le fichier aux danses.
+
+581
+00:14:32,490 --> 00:14:34,490
+Si on avait fait fichier aux hautes,
+
+582
+00:14:34,490 --> 00:14:35,490
+prendre le nom de l'élève,
+
+583
+00:14:35,490 --> 00:14:36,490
+faire les saisies, sa classe,
+
+584
+00:14:36,490 --> 00:14:38,490
+mettre le montant et le plumer,
+
+585
+00:14:38,490 --> 00:14:40,490
+avoir la haute haute haute.
+
+586
+00:14:40,490 --> 00:14:43,490
+Vous voulez avoir l'élève,
+
+587
+00:14:43,490 --> 00:14:45,490
+vous voulez différente type de paiement,
+
+588
+00:14:45,490 --> 00:14:47,490
+fait ce qu'il a fait,
+
+589
+00:14:47,490 --> 00:14:48,490
+ce qu'il n'a pas payé,
+
+590
+00:14:48,490 --> 00:14:51,490
+justement, le détail n'a pas payé.
+
+591
+00:14:51,490 --> 00:14:52,490
+On n'a pas vu ça,
+
+592
+00:14:52,490 --> 00:14:54,490
+que l'inscription c'était de 100 000.
+
+593
+00:14:54,490 --> 00:14:55,490
+100 000 ?
+
+594
+00:14:55,490 --> 00:14:56,490
+100 000,
+
+595
+00:14:56,490 --> 00:14:58,490
+500 000,
+
+596
+00:14:58,490 --> 00:14:59,490
+Professeurs,
+
+597
+00:14:59,490 --> 00:15:00,490
+les intestins montants, les restants montants.
+
+598
+00:15:00,490 --> 00:15:01,490
+Je suis un amortite,
+
+599
+00:15:01,490 --> 00:15:02,490
+je suis le chef du 늘or,
+
+600
+00:15:02,490 --> 00:15:03,490
+je suis le chef du travail.
+
+601
+00:15:03,490 --> 00:15:04,490
+Nous avons fait du coser,
+
+602
+00:15:04,490 --> 00:15:06,490
+nous nous sommes à la avait.
+
+603
+00:15:07,490 --> 00:15:08,490
+Ici, ce n'est pas vrai,
+
+604
+00:15:08,490 --> 00:15:09,490
+les tables de résultats.
+
+605
+00:15:09,490 --> 00:15:10,490
+Donc, les tables de résultats,
+
+606
+00:15:10,490 --> 00:15:12,490
+ici, c'est aussi pour les élèves.
+
+607
+00:15:12,990 --> 00:15:14,490
+Quand on prend une rubrique,
+
+608
+00:15:14,490 --> 00:15:15,490
+c'est plus cher,
+
+609
+00:15:15,490 --> 00:15:16,490
+qu'en fait, ici,
+
+610
+00:15:16,490 --> 00:15:18,490
+tu n'as pour grimper qu'à la taille.
+
+611
+00:15:18,490 --> 00:15:20,490
+Quand on prend un épreuil,
+
+612
+00:15:20,490 --> 00:15:21,490
+si on a ce retis,
+
+613
+00:15:21,490 --> 00:15:23,490
+les tables de résultats
+
+614
+00:15:23,490 --> 00:15:28,490
+de chaque niveau, les montants qui étaient payés par comme frère ou vachement sur tout ce qu'il y a.
+
+615
+00:15:28,490 --> 00:15:32,490
+Parce que généralement, en début d'année, on anticipait plus sur nos élèves.
+
+616
+00:15:32,490 --> 00:15:37,490
+Si nous avons 400 élèves à l'année passée, nous nous disons que cette année, nous avons 100 élèves.
+
+617
+00:15:37,490 --> 00:15:41,490
+Donc, on est un peu temps prévisionnel pour ce concept, les pélèves, les fans, les bouts.
+
+618
+00:15:41,490 --> 00:15:43,490
+Par exemple, les institutions, nous nous préjettons.
+
+619
+00:15:43,490 --> 00:15:46,490
+Si nous avons 2 millions d'instructions à l'année passée, nous avons avec 100 élèves,
+
+620
+00:15:46,490 --> 00:15:48,490
+nous avons encore 1 million d'instructions.
+
+621
+00:15:49,490 --> 00:15:53,490
+Donc déjà, en prévisionnel, comme nous l'avons donné, nous avons donné prévisionnel
+
+622
+00:15:53,490 --> 00:15:55,490
+du plus 100 élèves, du plus 1 million.
+
+623
+00:15:55,490 --> 00:15:57,490
+Ça, c'est ce que nous avons prévisionnel.
+
+624
+00:15:57,490 --> 00:16:00,490
+Et dans le programme de l'année, il y a ce qui est vraiment cassé.
+
+625
+00:16:00,490 --> 00:16:02,490
+Donc, en fin d'aller, on va tirer ce fichier-là.
+
+626
+00:16:02,490 --> 00:16:05,490
+On va aller voir avec l'administration pour se vérifier.
+
+627
+00:16:05,490 --> 00:16:09,490
+Est-ce que nous pourrons assurer que les prévisionnels correspondent au moment qu'on est cassé
+
+628
+00:16:09,490 --> 00:16:12,490
+ou pas du tout, et puis à partir de ce moment-là,
+
+629
+00:16:12,490 --> 00:16:14,490
+on essaie de faire les prévisionnels de l'année passée?
+
+630
+00:16:14,490 --> 00:16:16,490
+Oui, encore vous dites prévisionnel.
+
+631
+00:16:16,490 --> 00:16:21,490
+Vous le dites montant pour la rechevoir des élèves.
+
+632
+00:16:21,490 --> 00:16:24,490
+Et les élèves, c'est les élèves qui sont déjà inscrits.
+
+633
+00:16:24,490 --> 00:16:27,490
+Déjà inscrits, on a nous élèves déjà inscrits.
+
+634
+00:16:27,490 --> 00:16:30,490
+Et pour l'ouverture de l'année 2006-2007,
+
+635
+00:16:30,490 --> 00:16:33,490
+j'aimerais vraiment qu'on a des élèves assautés, qui vont trouver une déliteur.
+
+636
+00:16:33,490 --> 00:16:35,490
+Comme on n'a pas encore des dés sur ces élèves-là,
+
+637
+00:16:35,490 --> 00:16:38,490
+nous nous prouvions peut-être de 5 élèves.
+
+638
+00:16:38,490 --> 00:16:39,490
+5 élèves.
+
+639
+00:16:39,490 --> 00:16:42,490
+Donc ça a été rajouté pour les frais-là.
+
+640
+00:16:42,490 --> 00:16:44,490
+Les frais-là n'ont plus de pensant.
+
+641
+00:16:44,490 --> 00:16:46,490
+Et puis les élèves.
+
+642
+00:16:46,490 --> 00:16:49,490
+Et maintenant, on fait un menu dans l'année.
+
+643
+00:16:49,490 --> 00:16:50,490
+Voilà.
+
+644
+00:16:50,490 --> 00:16:52,490
+On essaie de contrôler.
+
+645
+00:16:52,490 --> 00:16:54,490
+Vous voyez, si vous avez atteint les 100,
+
+646
+00:16:54,490 --> 00:16:56,490
+si vous n'avez pas atteint les 100, vous n'avez pas atteint les 100.
+
+647
+00:16:56,490 --> 00:16:57,490
+Ok.
+
+648
+00:16:57,490 --> 00:16:59,490
+Donc on a ce fichier là, que vous n'avez pas atteint les 100.
+
+649
+00:16:59,490 --> 00:17:01,490
+Et ça, c'est pour tout ce qui est frais.
+
+650
+00:17:01,490 --> 00:17:05,490
+On a l'assurance, on a les descriptions,
+
+651
+00:17:05,490 --> 00:17:08,490
+parce qu'on a arrêté tout ça.
+
+652
+00:17:08,490 --> 00:17:10,490
+Tout ça est l'assauf.
+
+653
+00:17:10,490 --> 00:17:13,490
+Parce que j'ai vraiment ça, on n'utilise pas trop.
+
+654
+00:17:13,490 --> 00:17:16,490
+Le plus important qu'on utilise, c'est ce que je n'ai pas à lire.
+
+655
+00:17:16,490 --> 00:17:17,490
+La relance.
+
+656
+00:17:17,490 --> 00:17:20,490
+Et les attestations du nom.
+
+657
+00:17:20,490 --> 00:17:23,490
+On a déjà montré une attestation d'ambiance.
+
+658
+00:17:23,490 --> 00:17:26,490
+Qui n'a rien à voir avec ce n'est-ce.
+
+659
+00:17:26,490 --> 00:17:29,490
+Mais qui n'est pas dans la application.
+
+660
+00:17:29,490 --> 00:17:33,789
+Et ça, c'est fait manuellement.
+
+661
+00:17:33,789 --> 00:17:35,789
+Ça, c'est fait manuellement.
+
+662
+00:17:35,789 --> 00:17:38,789
+En fait, ça va patiner à une autre application que nous avons.
+
+663
+00:17:38,789 --> 00:17:41,789
+Que nous n'étions plus à regarder.
+
+664
+00:17:41,789 --> 00:17:43,789
+Voilà, c'est là que j'ai casé le nom,
+
+665
+00:17:43,789 --> 00:17:45,789
+que j'ai rempli pour tout.
+
+666
+00:17:45,789 --> 00:17:50,579
+Normalement, cette application-là,
+
+667
+00:17:50,579 --> 00:17:52,579
+de l'utilisation, je ferais d'avoir ça aussi.
+
+668
+00:17:52,579 --> 00:17:54,579
+Mais on n'a pas.
+
+669
+00:17:54,579 --> 00:17:56,579
+On n'a pas d'utilisation.
+
+670
+00:17:56,579 --> 00:17:57,579
+C'est une vidéo qu'on a,
+
+671
+00:17:57,579 --> 00:18:00,579
+de chaque fois qu'il s'est rempli.
+
+672
+00:18:00,579 --> 00:18:03,579
+Pour mettre au niveau de la présence.
+
+673
+00:18:03,579 --> 00:18:08,200
+Dans ce cas-là, c'est sur la présence.
+
+674
+00:18:08,200 --> 00:18:10,200
+Vous pouvez le mentionner.
+
+675
+00:18:10,200 --> 00:18:12,200
+On n'a pas de problème.
+
+676
+00:18:12,200 --> 00:18:14,200
+On a du nom, du verre.
+
+677
+00:18:14,200 --> 00:18:15,200
+En fait, on a tout.
+
+678
+00:18:16,200 --> 00:18:18,200
+Et cette application, normalement,
+
+679
+00:18:18,200 --> 00:18:20,200
+dans la concentration de l'émigiciel,
+
+680
+00:18:20,200 --> 00:18:22,200
+quand on rentre le nom de l'élève,
+
+681
+00:18:22,200 --> 00:18:24,200
+si l'élève doit, l'application n'apparaît pas.
+
+682
+00:18:24,200 --> 00:18:26,200
+L'application, tout le temps,
+
+683
+00:18:26,200 --> 00:18:28,200
+de bien l'affichure de la testation.
+
+684
+00:18:28,200 --> 00:18:29,200
+Voilà.
+
+685
+00:18:29,200 --> 00:18:30,200
+Il n'a pas affiché.
+
+686
+00:18:30,200 --> 00:18:32,200
+Il n'a pas affiché le message pour l'arrêter.
+
+687
+00:18:32,200 --> 00:18:34,200
+La testation, il vide directement.
+
+688
+00:18:34,200 --> 00:18:36,200
+Même si l'application...
+
+689
+00:18:36,200 --> 00:18:38,200
+La testation, c'est qu'il est réussi
+
+690
+00:18:38,200 --> 00:18:40,200
+son année ou pas.
+
+691
+00:18:40,200 --> 00:18:41,200
+Effectivement.
+
+692
+00:18:41,200 --> 00:18:42,200
+Mais bon, dans ce cas,
+
+693
+00:18:42,200 --> 00:18:44,200
+vous avez juste affiché la testation.
+
+694
+00:18:44,200 --> 00:18:46,200
+Mais vous n'avez pas la possibilité
+
+695
+00:18:46,200 --> 00:18:47,200
+d'imprimer.
+
+696
+00:18:47,200 --> 00:18:48,200
+Effectivement, ça affiche.
+
+697
+00:18:48,200 --> 00:18:49,200
+Nous, à l'autre endroit,
+
+698
+00:18:49,200 --> 00:18:50,200
+on voit que ça affiche.
+
+699
+00:18:50,200 --> 00:18:51,200
+C'est affiché.
+
+700
+00:18:51,200 --> 00:18:53,200
+Mais c'est grisé, en fait.
+
+701
+00:18:53,200 --> 00:18:55,200
+L'application, on ne souhaite
+
+702
+00:18:55,200 --> 00:18:56,200
+qu'on prenne que l'élève.
+
+703
+00:18:56,200 --> 00:18:57,200
+Il n'a pas appuyé.
+
+704
+00:18:57,200 --> 00:18:58,200
+Et quand on arrive sur le B,
+
+705
+00:18:58,200 --> 00:18:59,200
+automatiquement, ça affiche.
+
+706
+00:18:59,200 --> 00:19:00,200
+Comme ça, nous allons attendre
+
+707
+00:19:00,200 --> 00:19:01,200
+l'élève dans l'application.
+
+708
+00:19:01,200 --> 00:19:03,200
+C'est que ça ne me permette
+
+709
+00:19:03,200 --> 00:19:04,200
+même pas de...
+
+710
+00:19:04,200 --> 00:19:06,200
+Si, sinon, on voit ça correctement
+
+711
+00:19:06,200 --> 00:19:07,200
+dans l'émigiciel,
+
+712
+00:19:07,200 --> 00:19:08,200
+seulement qu'on ne peut pas
+
+713
+00:19:08,200 --> 00:19:09,200
+imprimer ça grisé.
+
+714
+00:19:09,200 --> 00:19:11,200
+La testation, ça, c'est plus de la testation.
+
+715
+00:19:12,200 --> 00:19:14,200
+Différente ou la même attestation?
+
+716
+00:19:14,200 --> 00:19:15,200
+La même attestation.
+
+717
+00:19:15,200 --> 00:19:16,200
+Différente élève.
+
+718
+00:19:16,200 --> 00:19:18,200
+Différente élève, c'est tout.
+
+719
+00:19:18,200 --> 00:19:19,200
+Et comme ça, c'est fait de façon
+
+720
+00:19:19,200 --> 00:19:20,200
+manuelle.
+
+721
+00:19:20,200 --> 00:19:21,200
+Chaque fois, il y a les modifications,
+
+722
+00:19:21,200 --> 00:19:22,200
+les façons à sous,
+
+723
+00:19:22,200 --> 00:19:23,200
+des fois, on a le obligé
+
+724
+00:19:23,200 --> 00:19:24,200
+de le toucher.
+
+725
+00:19:24,200 --> 00:19:25,200
+Alors, lorsque c'était
+
+726
+00:19:25,200 --> 00:19:26,200
+dans le logiciel,
+
+727
+00:19:26,200 --> 00:19:27,200
+il n'y avait pas de modifications.
+
+728
+00:19:27,200 --> 00:19:29,200
+C'était tout simplement correcte.
+
+729
+00:19:29,200 --> 00:19:30,200
+Oui, plus ça,
+
+730
+00:19:30,200 --> 00:19:31,200
+ça prendrait un média
+
+731
+00:19:31,200 --> 00:19:32,200
+tout le monde.
+
+732
+00:19:32,200 --> 00:19:33,200
+C'est pour moi.
+
+733
+00:19:33,200 --> 00:19:34,200
+Et ici, c'est...
+
+734
+00:19:34,200 --> 00:19:35,200
+Oui, encore.
+
+735
+00:19:35,200 --> 00:19:36,200
+OK.
+
+736
+00:19:36,200 --> 00:19:37,200
+C'est ça.
+
+737
+00:19:37,200 --> 00:19:38,200
+Donc, c'est pour lui
+
+738
+00:19:38,200 --> 00:19:39,200
+qu'on met ça de façon
+
+739
+00:19:39,200 --> 00:19:40,200
+manuelle.
+
+740
+00:19:40,200 --> 00:19:41,200
+Il y a des modifications
+
+741
+00:19:41,200 --> 00:19:42,200
+qui nous ont fait ça bientôt.
+
+742
+00:19:43,200 --> 00:19:44,200
+Il faut que je vienne
+
+743
+00:19:44,200 --> 00:19:45,200
+pour lui.
+
+744
+00:19:47,200 --> 00:19:48,200
+OK.
+
+745
+00:19:48,200 --> 00:20:07,150
+Donc, pour lui,
+
+746
+00:20:07,150 --> 00:20:08,150
+c'est là...
+
+747
+00:20:08,150 --> 00:20:09,150
+Un certain
+
+748
+00:20:10,150 --> 00:20:11,150
+truc que nous avons affiché,
+
+749
+00:20:12,150 --> 00:20:13,150
+des possibles et des impôts,
+
+750
+00:20:13,150 --> 00:20:14,150
+mais...
+
+751
+00:20:14,150 --> 00:20:15,150
+On a compris.
+
+752
+00:20:15,150 --> 00:20:16,150
+Non, mais moi,
+
+753
+00:20:16,150 --> 00:20:17,150
+la partie des uns,
+
+754
+00:20:17,150 --> 00:20:18,150
+c'est le premier.
+
+755
+00:20:19,150 --> 00:20:20,150
+C'est malade,
+
+756
+00:20:20,150 --> 00:20:21,150
+il y a des gens
+
+757
+00:20:21,150 --> 00:20:22,150
+qui ont apprends le mois,
+
+758
+00:20:22,150 --> 00:20:23,150
+les fillets,
+
+759
+00:20:23,150 --> 00:20:24,150
+tout de même.
+
+760
+00:20:24,150 --> 00:20:25,150
+Tout de même,
+
+761
+00:20:25,150 --> 00:20:26,150
+c'est tous les prochaines,
+
+762
+00:20:26,150 --> 00:20:27,150
+ce qu'il faut relancer.
+
+763
+00:20:27,150 --> 00:20:28,150
+Et puis,
+
+764
+00:20:28,150 --> 00:20:29,150
+puis,
+
+765
+00:20:29,150 --> 00:20:30,150
+puis,
+
+766
+00:20:30,150 --> 00:20:31,150
+puis il se rend le plan parfaite
+
+767
+00:20:31,150 --> 00:20:32,150
+puis ça relance
+
+768
+00:20:32,150 --> 00:20:33,150
+le plan.
+
+769
+00:20:35,910 --> 00:20:36,910
+Donc, c'est un peu
+
+770
+00:20:37,910 --> 00:20:38,910
+ce genre.
+
+771
+00:20:38,910 --> 00:20:39,910
+Il y a la pote,
+
+772
+00:20:39,910 --> 00:20:40,910
+il a un charge.
+
+773
+00:20:40,910 --> 00:20:41,910
+Il a, sûrement,
+
+774
+00:20:41,910 --> 00:20:42,910
+un débit de charge
+
+775
+00:20:42,910 --> 00:20:44,910
+qui soit au soi du débit de
+
+776
+00:20:44,910 --> 00:20:45,910
+qui est bien détenu.
+
+777
+00:20:45,910 --> 00:20:46,910
+On a fiscalisé
+
+778
+00:20:46,910 --> 00:20:47,910
+pour la pote.
+
+779
+00:20:47,910 --> 00:20:48,910
+Ensuite.
+
+780
+00:20:48,910 --> 00:20:49,910
+Le point de vue,
+
+781
+00:20:49,910 --> 00:20:50,910
+c'est le gouvernement
+
+782
+00:20:50,910 --> 00:20:51,910
+où ça inapète
+
+783
+00:20:51,910 --> 00:20:52,910
+une partie.
+
+784
+00:20:52,910 --> 00:20:53,910
+Oui, ça peut entrepôt.
+
+785
+00:20:53,910 --> 00:20:54,910
+Ça peut être...
+
+786
+00:20:54,910 --> 00:20:55,910
+Comme,
+
+787
+00:20:55,910 --> 00:20:59,910
+Et puis, il y a encore des établissements qui donnent une réduction et tout.
+
+788
+00:20:59,910 --> 00:21:03,910
+Ici, par exemple, quand on commence à rendre compte qu'on s'en va dans les scolaires,
+
+789
+00:21:03,910 --> 00:21:06,910
+et qu'il faut entrer les frais scolaires des élèves,
+
+790
+00:21:06,910 --> 00:21:10,910
+donc comme les lèvres inscrits, on a ouvert la classe pour nous la carte du seconde.
+
+791
+00:21:10,910 --> 00:21:13,910
+C'est ici qu'on fait les entrées des montants.
+
+792
+00:21:13,910 --> 00:21:15,910
+Je suis pas dit là, c'est bon, j'ai un.
+
+793
+00:21:15,910 --> 00:21:19,910
+On met les rubriques et on met les différents montants.
+
+794
+00:21:19,910 --> 00:21:21,910
+Vous pouvez rajouter de nouveaux rubriques.
+
+795
+00:21:21,910 --> 00:21:25,910
+Et vous mettez ces montants, c'est ce qu'il a fait pour l'année.
+
+796
+00:21:25,910 --> 00:21:29,910
+Et c'est des gens qui pensent, c'est des nuits pour la nuit.
+
+797
+00:21:29,910 --> 00:21:33,910
+Ça, c'est aussi des façons manuelles ou des façons manuelles?
+
+798
+00:21:33,910 --> 00:21:37,910
+Les déductions, ils veulent faire des façons manuelles.
+
+799
+00:21:37,910 --> 00:21:40,910
+Non, l'entrée des montants, déjà, elle fait des façons manuelles.
+
+800
+00:21:40,910 --> 00:21:42,910
+Ce que nous avons oublié, c'est que,
+
+801
+00:21:42,910 --> 00:21:45,910
+étant donné que nous avons les classes, nous continuons les classes,
+
+802
+00:21:45,910 --> 00:21:47,910
+les montants, nous les changeons pas chaque année.
+
+803
+00:21:48,910 --> 00:21:50,910
+Pendant que le seconde de cette année,
+
+804
+00:21:50,910 --> 00:21:52,910
+les montants, les montants, ils vont entrer.
+
+805
+00:21:52,910 --> 00:21:55,910
+L'année prochaine, quand ils vont ouvrir la classe, le 27 septembre,
+
+806
+00:21:55,910 --> 00:21:58,910
+on aurait voulu que ces montants puissent entrer automatiquement.
+
+807
+00:21:58,910 --> 00:22:00,910
+Je crois qu'ils passaient directement là,
+
+808
+00:22:00,910 --> 00:22:02,910
+parce qu'on est encore à l'étape.
+
+809
+00:22:02,910 --> 00:22:05,910
+Donc, c'est chaque année, on est réveillé.
+
+810
+00:22:05,910 --> 00:22:08,910
+Effectivement, les résumés, les montants, les ressentés.
+
+811
+00:22:08,910 --> 00:22:10,910
+Je ne peux pas faire des façons automatiques,
+
+812
+00:22:10,910 --> 00:22:13,910
+ce n'est pas que j'ai négulé la valeur des façons automatiques.
+
+813
+00:22:13,910 --> 00:22:15,910
+C'est ce qu'on aurait voulu en fait.
+
+814
+00:22:15,910 --> 00:22:17,910
+Si nous, les montants changent, là, c'est au moins là,
+
+815
+00:22:17,910 --> 00:22:19,910
+on puisse les utiliser de façon manuelle.
+
+816
+00:22:19,910 --> 00:22:21,910
+Mais quand les montants sont les mêmes,
+
+817
+00:22:21,910 --> 00:22:23,910
+l'année passée, qu'ils ont suivi, qu'ils ont voulu que ces montants
+
+818
+00:22:23,910 --> 00:22:25,910
+ne puissent être automatiques.
+
+819
+00:22:25,910 --> 00:22:27,910
+C'est ce qu'on a convenu.
+
+820
+00:22:27,910 --> 00:22:29,910
+Oui, ces îles, tout ça.
+
+821
+00:22:31,910 --> 00:22:33,910
+Vous devez avoir, pour ça,
+
+822
+00:22:33,910 --> 00:22:35,910
+vous devez avoir les classes,
+
+823
+00:22:35,910 --> 00:22:37,910
+et puis les différents montants.
+
+824
+00:22:37,910 --> 00:22:39,910
+Alors, vous devez maintenant mettre
+
+825
+00:22:39,910 --> 00:22:41,910
+le montant actuel.
+
+826
+00:22:41,910 --> 00:22:43,910
+Donc, ça a été quand,
+
+827
+00:22:43,910 --> 00:22:45,910
+sur les montants actuels.
+
+828
+00:22:45,910 --> 00:22:47,910
+Chaque fois que vous venez ici,
+
+829
+00:22:47,910 --> 00:22:49,910
+c'est le montant actuel qui sera conseillé directement.
+
+830
+00:22:49,910 --> 00:22:51,910
+Effectivement.
+
+831
+00:22:51,910 --> 00:22:53,910
+Maintenant, si vous changez pour telle inscription
+
+832
+00:22:53,910 --> 00:22:55,910
+pour l'année prochaine,
+
+833
+00:22:55,910 --> 00:22:57,910
+c'est devenu, au lieu de décembre,
+
+834
+00:22:57,910 --> 00:22:59,910
+c'est des 300 000, vous créez.
+
+835
+00:22:59,910 --> 00:23:01,910
+Et ça, c'est les sacs en montants actuels.
+
+836
+00:23:01,910 --> 00:23:03,910
+Exactement.
+
+837
+00:23:03,910 --> 00:23:05,910
+Chaque fois que vous venez ici,
+
+838
+00:23:05,910 --> 00:23:07,910
+c'est à chaque fois que vous venez ici,
+
+839
+00:23:07,910 --> 00:23:09,910
+c'est le montant actuel qui comprend.
+
+840
+00:23:09,910 --> 00:23:11,910
+Voilà. Donc, ça serait plus facile
+
+841
+00:23:11,910 --> 00:23:13,910
+d'apprendre ici.
+
+842
+00:23:13,910 --> 00:23:15,910
+Qu'est-ce qu'on a?
+
+843
+00:23:15,910 --> 00:23:17,910
+Vous devez aussi les frais optionnels.
+
+844
+00:23:17,910 --> 00:23:19,910
+Ça, c'est plus.
+
+845
+00:23:19,910 --> 00:23:21,910
+Parce qu'on s'arrête tout ce qu'il y avait à payer.
+
+846
+00:23:21,910 --> 00:23:23,910
+On sait pratiquement tout le temps
+
+847
+00:23:23,910 --> 00:23:25,910
+ce qu'on a vu là-bas. C'est plus. Donc,
+
+848
+00:23:25,910 --> 00:23:27,910
+là, vous me dites beaucoup, c'est
+
+849
+00:23:27,910 --> 00:23:29,910
+là, la phase de prison charge,
+
+850
+00:23:29,910 --> 00:23:31,910
+la phase des frais obligatoires
+
+851
+00:23:31,910 --> 00:23:33,910
+des payments.
+
+852
+00:23:33,910 --> 00:23:35,910
+Là où on fait les paiements automatiquement,
+
+853
+00:23:35,910 --> 00:23:37,910
+là où on fait l'arrêter
+
+854
+00:23:37,910 --> 00:23:39,910
+lesquels de soi pour tout ce qui est payé.
+
+855
+00:23:39,910 --> 00:23:41,910
+Et puis, l'édition des étapes.
+
+856
+00:23:41,910 --> 00:23:43,910
+Là où on a dit tout ce qui est
+
+857
+00:23:43,910 --> 00:23:45,910
+payé par élève, par classe,
+
+858
+00:23:45,910 --> 00:23:47,910
+c'est plus une phase de suivi. Et là,
+
+859
+00:23:47,910 --> 00:23:49,910
+c'est pareil, même ça, c'est le tableau du bord.
+
+860
+00:23:49,910 --> 00:23:51,910
+Ici, on a pas payé
+
+861
+00:23:51,910 --> 00:23:53,910
+tout ce qui est payé.
+
+862
+00:23:53,910 --> 00:23:55,910
+Le sol du montant tout à dis tout ce qui est payé.
+
+863
+00:23:55,910 --> 00:23:57,910
+On choisit, sur l'année,
+
+864
+00:23:57,910 --> 00:23:59,910
+les hommes qui sont en total font combien
+
+865
+00:23:59,910 --> 00:24:01,910
+ou bien, voilà, c'est juste.
+
+866
+00:24:01,910 --> 00:24:03,910
+Je n'aime pas l'utiliser.
+
+867
+00:24:03,910 --> 00:24:05,910
+Voilà.
+
+868
+00:24:05,910 --> 00:24:07,910
+Ça fiche pour tout.
+
+869
+00:24:07,910 --> 00:24:09,910
+Donc, une sélection, effectivement.
+
+870
+00:24:09,910 --> 00:24:11,910
+Donc, c'est un peu cons,
+
+871
+00:24:11,910 --> 00:24:13,910
+ce que l'on traite.
+
+872
+00:24:13,910 --> 00:24:15,910
+Et ça, c'est fait pour le technique
+
+873
+00:24:15,910 --> 00:24:17,910
+du général, la même manière.
+
+874
+00:24:17,910 --> 00:24:19,910
+Mais comment on pourrait
+
+875
+00:24:19,910 --> 00:24:21,910
+d'aller du technique au général ?
+
+876
+00:24:21,910 --> 00:24:23,910
+Là, c'est plus...
+
+877
+00:24:23,910 --> 00:24:25,910
+Quand on finit, on revient
+
+878
+00:24:25,910 --> 00:24:27,910
+sur l'accueil, et on revient
+
+879
+00:24:27,910 --> 00:24:29,910
+dans la base de données.
+
+880
+00:24:29,910 --> 00:24:31,910
+Dans les centres, on ouvre le général.
+
+881
+00:24:31,910 --> 00:24:33,910
+Et la même chose.
+
+882
+00:24:33,910 --> 00:24:35,910
+On ouvre le général, et on fait tout le monde.
+
+883
+00:24:35,910 --> 00:24:37,910
+En attente, ça change.
+
+884
+00:24:37,910 --> 00:24:39,910
+Ok, d'accord.
+
+885
+00:24:39,910 --> 00:24:43,259
+Dans la base de données,
+
+886
+00:24:43,259 --> 00:24:56,650
+on s'en ouvre le général.
+
+887
+00:24:56,650 --> 00:24:58,650
+Et on fait pareil.
+
+888
+00:24:58,650 --> 00:25:01,990
+Ah, on écoute.
+
+889
+00:25:01,990 --> 00:25:03,990
+Voilà, il y a des choses
+
+890
+00:25:03,990 --> 00:25:05,990
+que l'on va avoir dans les apports.
+
+891
+00:25:05,990 --> 00:25:07,990
+Exactement.
+
+892
+00:25:07,990 --> 00:25:09,990
+Donc, ici, on va voir dans la pédagogie.
+
+893
+00:25:09,990 --> 00:25:11,990
+Encore un moment, on n'a pas dit
+
+894
+00:25:11,990 --> 00:25:13,990
+que c'est plus agression des livres.
+
+895
+00:25:13,990 --> 00:25:15,990
+La pédagogie était sensible
+
+896
+00:25:15,990 --> 00:25:17,990
+d'avoir des professeurs, des emplois de professeurs.
+
+897
+00:25:17,990 --> 00:25:19,990
+Mais généralement, c'est plus
+
+898
+00:25:19,990 --> 00:25:21,990
+que les hommes qui sont là-bas.
+
+899
+00:25:21,990 --> 00:25:23,990
+On n'a pas du renseignement des professeurs.
+
+900
+00:25:23,990 --> 00:25:25,990
+Quand on a pris la base, c'est plus
+
+901
+00:25:25,990 --> 00:25:27,990
+les classes, on n'a pas du temps de délire.
+
+902
+00:25:27,990 --> 00:25:29,990
+C'est plus ça que l'on va avoir.
+
+903
+00:25:29,990 --> 00:25:31,990
+Normalement, deux fois, on finit aussi
+
+904
+00:25:31,990 --> 00:25:33,990
+de professeurs. Faire un suivi de professeurs.
+
+905
+00:25:33,990 --> 00:25:35,990
+Vous avez quelque pédagogie, mais là,
+
+906
+00:25:35,990 --> 00:25:37,990
+c'est pas possible.
+
+907
+00:25:37,990 --> 00:25:39,990
+La message, je veux aussi.
+
+908
+00:25:39,990 --> 00:25:41,990
+Effectivement, ça va vous permettre
+
+909
+00:25:41,990 --> 00:25:43,990
+d'envoyer le SM et son parent
+
+910
+00:25:43,990 --> 00:25:45,990
+de la pédagogie. Normalement, pour une élève,
+
+911
+00:25:45,990 --> 00:25:47,990
+elle avait cette base-là.
+
+912
+00:25:47,990 --> 00:25:49,990
+Des élèves qui avaient fait qu'un tailleur
+
+913
+00:25:49,990 --> 00:25:51,990
+ont pu avoir les bisous numériques.
+
+914
+00:25:51,990 --> 00:25:53,990
+On voit les avoir directement.
+
+915
+00:25:53,990 --> 00:25:55,990
+Mais ce qu'ils ont fait, ça ne comprend pas
+
+916
+00:25:55,990 --> 00:25:57,990
+encore des autres établissements.
+
+917
+00:25:57,990 --> 00:25:59,990
+On n'a pas le point de façon manuelle
+
+918
+00:25:59,990 --> 00:26:01,990
+physique, mais d'envoyer les livres
+
+919
+00:26:01,990 --> 00:26:03,990
+plus renseignés. On va s'impluer
+
+920
+00:26:03,990 --> 00:26:05,990
+en gros commandes.
+
+921
+00:26:05,990 --> 00:26:07,990
+Bon, après,
+
+922
+00:26:07,990 --> 00:26:09,990
+des illustrations.
+
+923
+00:26:09,990 --> 00:26:11,990
+Des illustrations.
+
+924
+00:26:11,990 --> 00:26:13,990
+Alors, l'industrie insoli,
+
+925
+00:26:13,990 --> 00:26:15,990
+ce sont les utilisés
+
+926
+00:26:15,990 --> 00:26:17,990
+du Giver,
+
+927
+00:26:17,990 --> 00:26:30,730
+de la poeticité ou des
+
+928
+00:26:32,730 --> 00:26:33,789
+des permettants.
+
+929
+00:26:33,789 --> 00:26:40,069
+quand on a sorti des documents, que ce soit au niveau de l'adhésion légible, de l'adhésion de l'étude ou de la mentalité.
+
+930
+00:26:40,069 --> 00:26:42,670
+On s'en veut voir le non-delay, où il est fouillé.
+
+931
+00:26:42,670 --> 00:26:46,029
+Au niveau de l'adhésion de l'étude, si on recevait ce qu'il s'est dit à correspondre,
+
+932
+00:26:46,029 --> 00:26:48,630
+on se dit qu'on a, au nom d'une autre base, comptable ici.
+
+933
+00:26:48,630 --> 00:26:52,630
+On va rentrer à partir d'ici et qu'on fait une comparaison ici avec les élèves-là.
+
+934
+00:26:52,630 --> 00:26:56,589
+Donc c'est un peu ce qui est plus surpôté, on est administratif.
+
+935
+00:26:56,589 --> 00:27:00,069
+Parce que comment ça se fait que vous faites une comparaison ?
+
+936
+00:27:00,150 --> 00:27:01,670
+Je sais le même que je sais.
+
+937
+00:27:01,670 --> 00:27:04,829
+Oui, je sais le même que je sais parce que, en fait,
+
+938
+00:27:04,829 --> 00:27:09,869
+il n'y a pas encore arrivé quel élève-là, il n'est pas que tu expliques,
+
+939
+00:27:09,869 --> 00:27:12,789
+mais il est dans une salle de classe.
+
+940
+00:27:12,789 --> 00:27:16,710
+C'est-à-dire que les personnes ici, ils sont en train d'avoir,
+
+941
+00:27:16,710 --> 00:27:19,990
+comme ils se connaissent dans le but de faire, c'est pas avoir la paix.
+
+942
+00:27:19,990 --> 00:27:22,869
+Comme le plus que tu n'es pas numérique, c'est pas numérique,
+
+943
+00:27:22,869 --> 00:27:25,710
+les appels, les appareils sont pas fédérations numériques.
+
+944
+00:27:25,750 --> 00:27:28,549
+Donc c'est pas si physique que tu puisses entendre avec une élève en classe,
+
+945
+00:27:28,549 --> 00:27:30,230
+personne ne le sait, tu le sais, tu le sais.
+
+946
+00:27:30,230 --> 00:27:34,430
+Mais quand il n'a pas été entré dans la basse, effectivement.
+
+947
+00:27:34,430 --> 00:27:37,230
+Mais quand il n'a pas été entré dans la basse, comment il allait pouvoir faire ?
+
+948
+00:27:37,230 --> 00:27:39,869
+On fait des contrôles, les paiements et tout ça.
+
+949
+00:27:39,869 --> 00:27:43,150
+C'est-à-dire, lui, il est un élève, il ne tient qu'en tout.
+
+950
+00:27:43,150 --> 00:27:46,630
+On ne peut pas les payer quoi que soit possible, il ne va pas dans l'attention.
+
+951
+00:27:46,630 --> 00:27:48,750
+Donc après, il y a des moments où on fait des contrôles,
+
+952
+00:27:48,750 --> 00:27:51,309
+une punie, comme on trouve, on vérifie.
+
+953
+00:27:51,309 --> 00:27:55,069
+Mais non, pas ce n'est pas scolarité.
+
+954
+00:27:55,109 --> 00:27:57,230
+Quand il va faire le stratoire, tout ça.
+
+955
+00:27:57,230 --> 00:28:02,750
+Le problème ici, c'est que les listes du classe et de route,
+
+956
+00:28:02,750 --> 00:28:04,910
+nous, la comptabilité, nous n'avons pas accès.
+
+957
+00:28:04,910 --> 00:28:11,549
+C'est plus le volet et des études qu'il y a à la vis des classes.
+
+958
+00:28:11,549 --> 00:28:16,190
+Dans la liste des classes et des études imprimées et remets aux processions,
+
+959
+00:28:16,190 --> 00:28:17,990
+nous, nous n'avons pas accès à la vis des classes.
+
+960
+00:28:17,990 --> 00:28:23,710
+Si il imprime ce élève, on ne peut pas épargner la liste,
+
+961
+00:28:23,869 --> 00:28:26,990
+il ne peut peut-être venir aujourd'hui.
+
+962
+00:28:26,990 --> 00:28:32,670
+On le fait entrer dans la base, et ils sont allés dans la base
+
+963
+00:28:32,670 --> 00:28:35,150
+d'un premier élève sur le classe, et puis les chutes vont après.
+
+964
+00:28:35,150 --> 00:28:36,829
+Puis ils n'ont pas fait le paiement.
+
+965
+00:28:36,829 --> 00:28:40,109
+Si ils l'ont fait entrer, quand ils l'ont fait entrer,
+
+966
+00:28:40,109 --> 00:28:42,750
+ils viennent sur la liste des classes.
+
+967
+00:28:42,750 --> 00:28:45,150
+Et sur la liste des classes, on va avoir accès ici.
+
+968
+00:28:45,150 --> 00:28:47,390
+On va avoir accès ici, lorsqu'il vient faire le paiement.
+
+969
+00:28:47,390 --> 00:28:50,029
+C'est quand il vient faire le paiement que nous, on ne peut pas avoir accès ici.
+
+970
+00:28:50,349 --> 00:28:56,430
+On peut l'inscrire là-bas, et après, si il ne vient pas faire le paiement ici,
+
+971
+00:28:56,430 --> 00:28:59,470
+et qu'il a inscrit là-bas, et qu'il vient entrer et imprimer la liste des classes,
+
+972
+00:28:59,470 --> 00:29:01,150
+donc il fait partie de la liste des classes,
+
+973
+00:29:01,150 --> 00:29:02,509
+il fait partie des études de la classe,
+
+974
+00:29:02,509 --> 00:29:05,069
+mais il n'a pas fait le paiement, donc il n'est pas dans l'autre place.
+
+975
+00:29:05,069 --> 00:29:07,230
+Mais quand il le sait plus bon, il ne sait plus mettre l'application.
+
+976
+00:29:07,230 --> 00:29:08,269
+Il ne sait plus la liste des classes.
+
+977
+00:29:08,269 --> 00:29:10,990
+Oui, mais quand il ne veut rien imprimer la liste des classes, il ne va pas être dans l'application.
+
+978
+00:29:10,990 --> 00:29:12,990
+La liste des classes est imprimée, il ne sait plus quoi.
+
+979
+00:29:12,990 --> 00:29:14,190
+Il ne sait plus quoi.
+
+980
+00:29:14,190 --> 00:29:15,630
+Et on fait la photocopie, là-ci.
+
+981
+00:29:15,789 --> 00:29:19,789
+Il n'a pas du temps, on a de l'aujourd'hui, c'est con.
+
+982
+00:29:19,789 --> 00:29:21,789
+Il n'a pas du temps, c'est con.
+
+983
+00:29:21,789 --> 00:29:24,589
+Il y a des élèves qui sont malades, qui ne sont plus venus à l'école.
+
+984
+00:29:24,589 --> 00:29:26,990
+En plus, c'est comme nous, à l'autre niveau,
+
+985
+00:29:26,990 --> 00:29:29,789
+on se rend compte que les lèvres, je n'ai pas fait du paiement pendant 70 ans.
+
+986
+00:29:29,789 --> 00:29:32,349
+On a tiré, c'est-à-dire, on a dit, mais oh, t'sais,
+
+987
+00:29:32,349 --> 00:29:34,589
+il y a des lèvres là, ça ne fait pas de tronçon en l'élance.
+
+988
+00:29:34,589 --> 00:29:37,069
+Ah, ok, il n'a pas de tronçon en l'élance.
+
+989
+00:29:37,069 --> 00:29:39,950
+Il n'a pas les pays, il n'y a pas, c'est là qu'on remonte effectivement,
+
+990
+00:29:39,950 --> 00:29:42,269
+il a abandonné parce qu'il est malade ou parce qu'il n'y a pas.
+
+991
+00:29:42,269 --> 00:29:44,269
+Donc, on n'a pas accessé l'information.
+
+992
+00:29:44,269 --> 00:29:46,750
+Voilà, qu'à le moment où on met à jour,
+
+993
+00:29:46,750 --> 00:29:48,750
+et on revient les lèvres, là, il a été malade,
+
+994
+00:29:48,750 --> 00:29:50,750
+il n'y a pas fait du paiement pendant.
+
+995
+00:29:50,750 --> 00:29:53,869
+Bon, je trouve ça, c'est un petit défaut de l'application.
+
+996
+00:29:53,869 --> 00:29:55,869
+Une fois que l'élève est instée, il dort, quoi.
+
+997
+00:29:55,869 --> 00:29:57,869
+Il n'y a pas du temps, on s'allait qu'il n'a rien payé.
+
+998
+00:29:57,869 --> 00:29:58,670
+Exactement.
+
+999
+00:29:58,670 --> 00:29:59,869
+Il n'y a pas qu'un fin de paiement.
+
+1000
+00:29:59,869 --> 00:30:01,869
+C'est ça, on n'a pas de lèvres à application.
+
+1001
+00:30:01,869 --> 00:30:05,069
+C'est tout, on peut apparaître directement dans notre base,
+
+1002
+00:30:05,230 --> 00:30:07,230
+on peut savoir si il y a quelque chose que vous voulez.
+
+1003
+00:30:07,230 --> 00:30:13,230
+Il faut aussi mettre la suppression d'un élève
+
+1004
+00:30:13,230 --> 00:30:16,430
+dans la base de l'administrateur.
+
+1005
+00:30:16,430 --> 00:30:17,230
+Oui, comment.
+
+1006
+00:30:17,230 --> 00:30:21,230
+Moi, franchement, ceux qui ont lévé ces élèves qui puissent s'appuyer.
+
+1007
+00:30:21,230 --> 00:30:27,230
+C'est-à-dire qu'un élève qui peut avoir fait tout ces paiements et tout ça, là.
+
+1008
+00:30:27,230 --> 00:30:31,230
+Quelqu'un de là-bas peut les s'appuyer assez d'un tel moment.
+
+1009
+00:30:31,710 --> 00:30:35,710
+Pas tout ce qui a été fait complètement disparaître de l'application.
+
+1010
+00:30:35,710 --> 00:30:37,710
+Ça, c'est vraiment ça.
+
+1011
+00:30:37,710 --> 00:30:43,710
+Ça a été une fois qu'on a un élève inventé d'un droit de données,
+
+1012
+00:30:43,710 --> 00:30:46,670
+s'il n'y a que l'administration qui doit permettre,
+
+1013
+00:30:46,670 --> 00:30:50,670
+le directeur ou le truc qui doit permettre qu'on le suive de la base de l'administration.
+
+1014
+00:30:50,670 --> 00:30:54,670
+Moi, il y a une responsabilité qui est identifiée.
+
+1015
+00:30:54,670 --> 00:31:00,670
+Et ça permet aussi de savoir que l'élève n'est plus dans l'application.
+
+1016
+00:31:01,630 --> 00:31:03,630
+Oui, ça va éviter l'effort.
+
+1017
+00:31:03,630 --> 00:31:09,630
+Donc, dans l'application, si on a eu juste un élève par heureux ou quoi que ce soit,
+
+1018
+00:31:09,630 --> 00:31:15,630
+une fois qu'il faut suprimer, il faut demander l'approbation du tel élève.
+
+1019
+00:31:15,630 --> 00:31:17,630
+Effectivement, ce tel élève, là, expliquez-moi comment il a fait.
+
+1020
+00:31:17,630 --> 00:31:19,630
+C'est un élève fictif, vous n'avez rentré pas heureux,
+
+1021
+00:31:19,630 --> 00:31:21,630
+pour qu'il nous donne une organisation de supriment.
+
+1022
+00:31:21,630 --> 00:31:23,630
+Exactement.
+
+1023
+00:31:23,630 --> 00:31:25,630
+Mais si non, c'est pas un élève qui a rentré pas heureux.
+
+1024
+00:31:25,630 --> 00:31:29,630
+Bon, dans ce cas, on peut le garder, on peut renseigner les informations qu'il faut.
+
+1025
+00:31:30,589 --> 00:31:34,589
+On ne peut pas qu'on puisse suprimer comme ça.
+
+1026
+00:31:34,589 --> 00:31:38,589
+C'est tout ce qui est tracé sur lui.
+
+1027
+00:31:38,589 --> 00:31:42,589
+Parce que si les parents ont payé, effectivement, il n'a pas assidé, on a suprimé.
+
+1028
+00:31:42,589 --> 00:31:46,589
+Comment on fait de justifier qu'il n'a vraiment pas payé?
+
+1029
+00:31:46,589 --> 00:31:48,589
+C'est vraiment...
+
+1030
+00:31:48,589 --> 00:31:52,589
+Cette application ne doit pas permettre qu'on puisse suprimer comme ça
+
+1031
+00:31:52,589 --> 00:31:54,589
+les puissants de la réalité.
+
+1032
+00:31:54,589 --> 00:31:58,589
+Bon, ça, on va essayer de voir ça dans l'application.
+
+1033
+00:31:59,549 --> 00:32:02,549
+Donc dès qu'il est rentré, on doit avoir accès
+
+1034
+00:32:02,549 --> 00:32:05,549
+à pousser le centre et puis ça marque où il a payé.
+
+1035
+00:32:05,549 --> 00:32:07,549
+On n'a pas payé, c'est ça.
+
+1036
+00:32:07,549 --> 00:32:09,549
+Non, il est relance au fur et à mesure.
+
+1037
+00:32:09,549 --> 00:32:11,549
+On n'attend pas un paiement pour que vous, la comptabilité,
+
+1038
+00:32:11,549 --> 00:32:13,549
+puis c'est moi, l'élève apparaît.
+
+1039
+00:32:13,549 --> 00:32:15,549
+Oui, normalement, oui.
+
+1040
+00:32:17,549 --> 00:32:19,549
+Ok, d'accord.
+
+1041
+00:32:19,549 --> 00:32:21,549
+Bon, bon.
+
+1042
+00:32:21,549 --> 00:32:25,549
+Ce que j'ai tout demandé, c'est de maintenir cette interface.
+
+1043
+00:32:26,509 --> 00:32:30,509
+Comme ça, je vais avoir les difficultés qui sont gérées.
+
+1044
+00:32:30,509 --> 00:32:32,509
+Oui, même plus beaucoup de choses là.
+
+1045
+00:32:32,509 --> 00:32:34,509
+Bon, il n'y a plus la vidéo.
+
+1046
+00:32:34,509 --> 00:32:36,509
+On sait que avec la vidéo,
+
+1047
+00:32:36,509 --> 00:32:38,509
+je préfère bien voir le détail des difficultés.
+
+1048
+00:32:38,509 --> 00:32:40,509
+Là, où est-ce que tu allais le plus?
+
+1049
+00:32:40,509 --> 00:32:42,509
+Non.
+
+1050
+00:32:42,509 --> 00:32:46,460
+Non, il n'y a pas.
+
+1051
+00:32:46,460 --> 00:32:48,460
+Il n'y a pas.
+
+1052
+00:32:48,460 --> 00:32:50,460
+Il n'y a pas.
+
+1053
+00:32:50,460 --> 00:32:52,460
+Il n'y a pas.
+
+1054
+00:32:52,460 --> 00:32:54,460
+Il n'y a pas.
+
+1055
+00:32:54,460 --> 00:32:59,019
+Vous pouvez en prendre ce que je sais, c'est comme une tableau
+
+1056
+00:32:59,019 --> 00:33:01,019
+que j'ai générée,
+
+1057
+00:33:01,019 --> 00:33:03,019
+en en apparaissant, comme ceci.
+
+1058
+00:33:03,019 --> 00:33:05,019
+Ou lesquelles soient la classe, on se retombe pas.
+
+1059
+00:33:05,019 --> 00:33:14,799
+Oui ça.
+
+1060
+00:33:14,799 --> 00:33:18,799
+Vous usiez de faire les 보이는ages et les classes.
+
+1061
+00:33:18,799 --> 00:33:20,799
+Les pères morts,
+
+1062
+00:33:20,799 --> 00:33:22,799
+donc on les a joué aujourd'hui.
+
+1063
+00:33:22,799 --> 00:33:24,799
+Nous avons des pères morts qui étaient faites par la classé.
+
+1064
+00:33:24,799 --> 00:33:26,799
+On les a joués,
+
+1065
+00:33:26,799 --> 00:33:28,799
+ça nous sors ça de la forme frais.
+
+1066
+00:33:28,799 --> 00:33:30,799
+Oui, je sais.
+
+1067
+00:33:30,799 --> 00:33:42,650
+Là c'est ma question, si il y a autre chose, tu peux pas prendre un ancien d'un...
+
+1068
+00:33:42,650 --> 00:33:45,650
+Tu peux pas le dire, tu sais pas, je suis comme ça.
+
+1069
+00:33:45,650 --> 00:33:50,650
+Non, celui-là a appuyé, il lui fait une instruction, une assurance, une photo.
+
+1070
+00:33:50,650 --> 00:33:51,650
+Donc la paix et tout ça.
+
+1071
+00:33:51,650 --> 00:33:57,650
+Celui-là aussi a appuyé une instruction, avait fait un motard d'utéum, et celui-là a appuyé une instruction.
+
+1072
+00:33:57,650 --> 00:33:59,650
+Donc, ça sort tout ça.
+
+1073
+00:34:00,650 --> 00:34:07,650
+Il y en a les détails des paiements, le motard d'utéum, le motard de la photo, le motard de toute la instruction et le motard de la assurance.
+
+1074
+00:34:07,650 --> 00:34:08,650
+D'accord.
+
+1075
+00:34:09,650 --> 00:34:19,119
+Et là, ça a la totalité de plusieurs... ça c'est le même élève, hein.
+
+1076
+00:34:19,119 --> 00:34:21,119
+C'est le même élève qui a appuyé.
+
+1077
+00:34:21,119 --> 00:34:23,119
+Si tu sais, si tu sais que tu rentres, tu rentres.
+
+1078
+00:34:23,119 --> 00:34:27,119
+Si tu rentres ici, avec le nada du paiement, les motards qui étaient payés.
+
+1079
+00:34:27,119 --> 00:34:30,119
+Et à la impératrice, c'est...
+
+1080
+00:34:30,119 --> 00:34:31,119
+Ah, ok.
+
+1081
+00:34:32,119 --> 00:34:34,119
+C'est assez faire.
+
+1082
+00:34:34,119 --> 00:34:38,119
+Ici, c'est les prises en char, les méditions.
+
+1083
+00:34:38,119 --> 00:34:45,619
+Non, il y a cet élève qui est en train d'appuyer en char, qui est en train d'appuyer en toit.
+
+1084
+00:34:45,619 --> 00:34:52,340
+Et puis ça, il n'y a pas une fiche qui est imprimante.
+
+1085
+00:34:52,340 --> 00:34:55,340
+Si, on ne peut pas te le primer.
+
+1086
+00:34:55,340 --> 00:34:56,340
+C'est juste pour...
+
+1087
+00:34:56,340 --> 00:34:58,340
+C'est juste pour en faire des données.
+
+1088
+00:34:58,340 --> 00:34:59,340
+On peut, on peut.
+
+1089
+00:34:59,340 --> 00:35:00,340
+On peut.
+
+1090
+00:35:00,340 --> 00:35:05,340
+Ça rend le nom, l'organisme, les matricules, les présentations, il y en a un temps et tout.
+
+1091
+00:35:05,340 --> 00:35:20,139
+Non mais ça, c'est tout.
+
+1092
+00:35:20,139 --> 00:35:22,139
+Après ça, il y a le chui du paiement.
+
+1093
+00:35:22,139 --> 00:35:25,139
+Donc pour un élève qui a appuyé.
+
+1094
+00:35:25,139 --> 00:35:28,929
+Là, c'est...
+
+1095
+00:35:28,929 --> 00:35:29,929
+Il y a le chui du paiement.
+
+1096
+00:35:29,929 --> 00:35:30,929
+Oui, oui.
+
+1097
+00:35:30,929 --> 00:35:31,929
+Il y a le transmis du paiement.
+
+1098
+00:35:31,929 --> 00:35:32,929
+C'est juste ça aussi.
+
+1099
+00:35:32,929 --> 00:35:36,300
+Tous les élèves, ça va apparaître par exemple.
+
+1100
+00:35:36,300 --> 00:35:37,300
+Il y a tout.
+
+1101
+00:35:37,300 --> 00:35:38,300
+Oui.
+
+1102
+00:35:38,300 --> 00:35:39,300
+Voilà.
+
+1103
+00:35:39,300 --> 00:35:40,300
+On fait plus tout ce qu'on peut.
+
+1104
+00:35:40,300 --> 00:35:41,300
+Il y a tout.
+
+1105
+00:35:43,300 --> 00:35:46,579
+Ok.
+
+1106
+00:35:46,579 --> 00:35:48,579
+On a tout vu concernant.
+
+1107
+00:35:48,579 --> 00:35:53,579
+Et la comptabilité, tout ce que vous m'avez montré, ils font ça aussi.
+
+1108
+00:35:53,579 --> 00:35:54,579
+Pareil là-bas.
+
+1109
+00:35:54,579 --> 00:35:55,579
+Ils font de la caisse.
+
+1110
+00:35:55,579 --> 00:35:56,579
+Oui, ils font.
+
+1111
+00:35:56,579 --> 00:35:57,579
+C'est un truc que vous ne faites pas ici.
+
+1112
+00:35:57,579 --> 00:35:58,579
+Non, non, non.
+
+1113
+00:35:58,579 --> 00:35:59,579
+Généralement, c'est...
+
+1114
+00:35:59,579 --> 00:36:00,579
+C'est le moment qui fait...
+
+1115
+00:36:00,579 --> 00:36:01,579
+Donc c'est la caisse qui fait pas tout.
+
+1116
+00:36:01,579 --> 00:36:02,579
+Un moment qui fait tout.
+
+1117
+00:36:02,579 --> 00:36:03,579
+Tout ce qui est sauté.
+
+1118
+00:36:03,579 --> 00:36:04,579
+La caisse fait pas ça.
+
+1119
+00:36:04,579 --> 00:36:07,579
+La caisse fait que, ici, les entrées et l'impression des reçus.
+
+1120
+00:36:07,579 --> 00:36:09,579
+Non, c'est pas la réalité de l'aile.
+
+1121
+00:36:09,579 --> 00:36:10,579
+Voilà.
+
+1122
+00:36:10,579 --> 00:36:11,579
+Tout le reste fait ça.
+
+1123
+00:36:11,579 --> 00:36:12,579
+Et il fait l'arrêter.
+
+1124
+00:36:12,579 --> 00:36:14,579
+Je vais m'aller où on a les montants.
+
+1125
+00:36:14,579 --> 00:36:15,579
+Le moment qui va sur le fait.
+
+1126
+00:36:15,579 --> 00:36:16,579
+Ah, ok bien sûr.
+
+1127
+00:36:16,579 --> 00:36:22,579
+C'est pareil pour l'eau la, et en somme à titre, là vous allez, il va vous montrer un peu au mot du Yaki Diabouji.
+
+1128
+00:36:22,579 --> 00:36:27,579
+Comment est-ce que vous avez enseigné, qui a pu rencontrer là-bas, comment vous vous adressez là.
+
+1129
+00:36:27,579 --> 00:36:28,579
+C'est tout ça.
+
+1130
+00:36:28,579 --> 00:36:29,579
+Donc c'est ça.
+
+1131
+00:36:29,579 --> 00:36:30,579
+Ok.
+
+1132
+00:36:30,579 --> 00:36:31,579
+Ok.
