@@ -38,8 +38,8 @@ export default function AttendanceReportsPage() {
                     headers: { Authorization: `Bearer ${token}` }
                 })
                 if (res.ok) setClasses(await res.json())
-            } catch (e) {
-                console.error(e)
+            } catch (error) {
+                console.error(error)
             }
         }
         fetchClasses()
@@ -66,7 +66,7 @@ export default function AttendanceReportsPage() {
                 const data = await res.json()
                 setError(data.detail || "Failed to generate report")
             }
-        } catch (e) {
+        } catch {
             setError("An error occurred")
         } finally {
             setIsLoading(false)

@@ -69,6 +69,7 @@ export function IssueLoanDialog({ onSuccess }: IssueLoanDialogProps) {
     const [isLoading, setIsLoading] = useState(false)
     const [books, setBooks] = useState<Book[]>([])
     const [users, setUsers] = useState<UserOption[]>([])
+    const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -86,8 +87,9 @@ export function IssueLoanDialog({ onSuccess }: IssueLoanDialogProps) {
     }, [open])
 
     const fetchData = async () => {
+        setErrorMessage(null)
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token");
             const headers = { "Authorization": `Bearer ${token}` };
 
             // Fetch Books (available ones)
@@ -105,14 +107,16 @@ export function IssueLoanDialog({ onSuccess }: IssueLoanDialogProps) {
                 setUsers(data.map((s) => ({ id: s.id, name: s.full_name, role: "Student" })));
             }
         } catch (e) {
-            console.error("Failed to fetch data for loan dialog", e);
+            const message = e instanceof Error ? e.message : "Failed to load books and borrowers."
+            setErrorMessage(message)
         }
     }
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         try {
             setIsLoading(true)
-            const token = localStorage.getItem("token")
+            setErrorMessage(null)
+            const token = localStorage.getItem("access_token")
 
             const payload = {
                 book_id: parseInt(values.book_id),
@@ -139,8 +143,8 @@ export function IssueLoanDialog({ onSuccess }: IssueLoanDialogProps) {
             setOpen(false)
             onSuccess()
         } catch (error) {
-            console.error(error)
-            alert("Failed to issue loan"); // Simple alert for now
+            const message = error instanceof Error ? error.message : "Failed to issue loan."
+            setErrorMessage(message)
         } finally {
             setIsLoading(false)
         }
@@ -160,6 +164,11 @@ export function IssueLoanDialog({ onSuccess }: IssueLoanDialogProps) {
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        {errorMessage && (
+                            <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                                {errorMessage}
+                            </div>
+                        )}
 
                         <FormField
                             control={form.control}

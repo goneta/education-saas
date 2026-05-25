@@ -10,7 +10,6 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
     DialogFooter
 } from "@/components/ui/dialog"
 import {
@@ -20,12 +19,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
 import { format } from "date-fns"
-import { CalendarIcon, Check, X, Clock, AlertCircle } from "lucide-react"
+import { CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Badge } from "@/components/ui/badge"
 
 type ClassItem = { id: number; name: string }
 
@@ -88,6 +85,8 @@ export default function AttendancePage() {
 
     useEffect(() => {
         if (token) fetchClasses()
+    // fetchClasses is intentionally triggered only when the auth token changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token])
 
     useEffect(() => {
@@ -96,6 +95,8 @@ export default function AttendancePage() {
         } else {
             setSlots([])
         }
+    // fetchSlots is intentionally triggered by the selected class/date/token tuple.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token, selectedClass, date])
 
     const handleSlotClick = (slot: TimetableSlot) => {
@@ -192,15 +193,19 @@ function MarkAttendanceDialog({ open, onOpenChange, slot, date, classId }: { ope
     const [remarks, setRemarks] = useState<Record<number, string>>({})
     const [loading, setLoading] = useState(false)
     const [saving, setSaving] = useState(false)
+    const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
     useEffect(() => {
         if (open) {
             fetchData()
         }
+    // fetchData is intentionally triggered when the dialog opens or the attendance context changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, slot, date])
 
     const fetchData = async () => {
         setLoading(true)
+        setErrorMessage(null)
         try {
             // 1. Fetch Students of the class
             const studentsRes = await fetch(`${API_BASE_URL}/students?class_id=${classId}`, {
@@ -236,7 +241,8 @@ function MarkAttendanceDialog({ open, onOpenChange, slot, date, classId }: { ope
             setRemarks(remMap)
 
         } catch (e) {
-            console.error(e)
+            const message = e instanceof Error ? e.message : "Unable to load attendance data."
+            setErrorMessage(message)
         } finally {
             setLoading(false)
         }
@@ -252,6 +258,7 @@ function MarkAttendanceDialog({ open, onOpenChange, slot, date, classId }: { ope
 
     const handleSave = async () => {
         setSaving(true)
+        setErrorMessage(null)
         try {
             const records = students.map(s => ({
                 student_id: s.student_profile.id,
@@ -277,11 +284,12 @@ function MarkAttendanceDialog({ open, onOpenChange, slot, date, classId }: { ope
             if (res.ok) {
                 onOpenChange(false)
             } else {
-                alert("Failed to save")
+                const errorText = await res.text()
+                setErrorMessage(errorText || "Failed to save attendance.")
             }
         } catch (e) {
-            console.error(e)
-            alert("Error saving")
+            const message = e instanceof Error ? e.message : "Error saving attendance."
+            setErrorMessage(message)
         } finally {
             setSaving(false)
         }
@@ -303,6 +311,12 @@ function MarkAttendanceDialog({ open, onOpenChange, slot, date, classId }: { ope
                 <DialogHeader>
                     <DialogTitle>Mark Attendance</DialogTitle>
                 </DialogHeader>
+
+                {errorMessage && (
+                    <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        {errorMessage}
+                    </div>
+                )}
 
                 {loading ? (
                     <div className="py-8 text-center text-gray-500">Loading students...</div>

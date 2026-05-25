@@ -100,10 +100,14 @@ export default function AssessmentsPage() {
 
     useEffect(() => {
         fetchMeta()
+    // Grade metadata is intentionally loaded when the auth token becomes available.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token])
 
     useEffect(() => {
         fetchAssessments()
+    // Assessments intentionally refresh when auth or the class filter changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token, filterClassId])
 
     const openCreate = () => {
@@ -169,7 +173,7 @@ export default function AssessmentsPage() {
                 const data = await res.json()
                 setError(data.detail || "Failed to save assessment")
             }
-        } catch (e) {
+        } catch {
             setError("An error occurred")
         } finally {
             setSaving(false)

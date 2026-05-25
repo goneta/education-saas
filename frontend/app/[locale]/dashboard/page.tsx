@@ -21,7 +21,7 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
-    const { token, user } = useAuth()
+    const { token } = useAuth()
     const [stats, setStats] = useState<DashboardStats | null>(null)
     const [loading, setLoading] = useState(true)
 

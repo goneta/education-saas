@@ -137,8 +137,7 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
             }
 
             // Success
-            const data = await response.json()
-            console.log("Student created successfully:", data)
+            await response.json()
 
             // Reset form
             setFormData({

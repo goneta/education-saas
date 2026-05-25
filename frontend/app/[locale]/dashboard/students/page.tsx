@@ -85,6 +85,8 @@ export default function StudentsPage() {
     // Fetch students on component mount
     useEffect(() => {
         fetchStudents()
+    // Student list loading is intentionally bound to the auth token.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token])
 
     // Filter students based on search query

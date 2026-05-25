@@ -312,6 +312,20 @@ class LoanStatus(str, enum.Enum):
     RETURNED = "returned"
     OVERDUE = "overdue"
 
+class FeeStatus(str, enum.Enum):
+    PENDING = "pending"
+    PARTIAL = "partial"
+    PAID = "paid"
+    OVERDUE = "overdue"
+
+class ExpenseCategory(str, enum.Enum):
+    SALARIES = "salaries"
+    UTILITIES = "utilities"
+    MAINTENANCE = "maintenance"
+    SUPPLIES = "supplies"
+    EQUIPMENT = "equipment"
+    OTHER = "other"
+
 class Book(Base):
     __tablename__ = "books"
 
@@ -349,5 +363,58 @@ class Loan(Base):
     
     book = relationship("Book", back_populates="loans")
     user = relationship("User") # We can add back_populates="loans" to User if needed, but not strictly required yet
+
+
+# Finance Management Models
+
+class Fee(Base):
+    __tablename__ = "fees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False, index=True)
+    amount = Column(Float, nullable=False)
+    due_date = Column(DateTime, nullable=True)
+    status = Column(SqEnum(FeeStatus), default=FeeStatus.PENDING, nullable=False)
+    description = Column(String, nullable=True)
+
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True)
+
+    student = relationship("StudentProfile")
+    school = relationship("School")
+    payments = relationship("Payment", back_populates="fee", cascade="all, delete-orphan")
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class Payment(Base):
+    __tablename__ = "payments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    amount = Column(Float, nullable=False)
+    payment_date = Column(DateTime(timezone=True), server_default=func.now())
+    note = Column(String, nullable=True)
+
+    fee_id = Column(Integer, ForeignKey("fees.id"), nullable=False)
+    fee = relationship("Fee", back_populates="payments")
+
+
+class Expense(Base):
+    __tablename__ = "expenses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False, index=True)
+    amount = Column(Float, nullable=False)
+    category = Column(SqEnum(ExpenseCategory), default=ExpenseCategory.OTHER, nullable=False)
+    date = Column(DateTime, nullable=True)
+    description = Column(String, nullable=True)
+
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True)
+    school = relationship("School")
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
 
 

@@ -90,10 +90,14 @@ export default function TimetablePage() {
 
     useEffect(() => {
         fetchMeta()
+    // Timetable metadata loading is intentionally bound to the auth token.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token])
 
     useEffect(() => {
         fetchEntries()
+    /* Entries intentionally refresh only when auth or the class filter changes. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token, filterClassId])
 
     const openCreate = () => {
@@ -137,7 +141,7 @@ export default function TimetablePage() {
                 const data = await res.json()
                 setError(data.detail || "Failed to save timetable entry")
             }
-        } catch (e) {
+        } catch {
             setError("An error occurred")
         } finally {
             setSaving(false)

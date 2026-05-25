@@ -50,6 +50,8 @@ export default function ClassesPage() {
             fetchClasses()
             fetchTeachers()
         }
+    // Initial metadata load is intentionally bound to the auth token.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token])
 
     const fetchTeachers = async () => {

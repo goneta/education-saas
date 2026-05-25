@@ -46,6 +46,8 @@ export default function SubjectsPage() {
 
     useEffect(() => {
         fetchSubjects()
+    // Subject list loading is intentionally bound to the auth token.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token])
 
     const openCreate = () => {
@@ -95,7 +97,7 @@ export default function SubjectsPage() {
                 const data = await res.json()
                 setError(data.detail || "Failed to save subject")
             }
-        } catch (e) {
+        } catch {
             setError("An error occurred")
         } finally {
             setSaving(false)

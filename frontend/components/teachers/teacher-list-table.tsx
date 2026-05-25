@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, Mail, Phone, Calendar } from "lucide-react"
+import { Pencil, Trash2 } from "lucide-react"
 
 export interface Teacher {
     id: number

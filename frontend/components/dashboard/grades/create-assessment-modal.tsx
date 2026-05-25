@@ -37,6 +37,11 @@ type SubjectOption = {
     code: string
 }
 
+type TermOption = {
+    id: number
+    name: string
+}
+
 interface CreateAssessmentModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
@@ -48,12 +53,7 @@ export function CreateAssessmentModal({ open, onOpenChange, onSuccess }: CreateA
     const [loading, setLoading] = useState(false)
     const [classes, setClasses] = useState<ClassOption[]>([])
     const [subjects, setSubjects] = useState<SubjectOption[]>([])
-    // Wait, verification script created Terms. But endpoint for Listing Terms?
-    // I created 'create_term' but did I create 'list_terms'?
-    // In routers/education.py, I only added create_term.
-    // I need to check routers/education.py again. Listing might be missing.
-    // If missing, I can't populate the dropdown.
-    // I MUST fix this.
+    const [terms, setTerms] = useState<TermOption[]>([])
 
     const { register, control, handleSubmit, formState: { errors } } = useForm<AssessmentFormValues>({
         resolver: zodResolver(assessmentSchema),
@@ -64,34 +64,26 @@ export function CreateAssessmentModal({ open, onOpenChange, onSuccess }: CreateA
         }
     })
 
-    // ... Implement logic after checking endpoints ...
-    // Since I'm writing the file now, I'll write the fetch logic assuming endpoints exist or I'll add them.
-    // I will add List Terms endpoint to education.py in next step if missing.
-
     useEffect(() => {
         if (open && token) {
             fetchOptions()
         }
+    // Options are intentionally loaded when the modal opens with an available auth token.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, token])
 
     const fetchOptions = async () => {
         const headers = { Authorization: `Bearer ${token}` }
         try {
-            // Parallel fetch
-            const [clsRes, subRes] = await Promise.all([
+            const [clsRes, subRes, termRes] = await Promise.all([
                 fetch(`${API_BASE_URL}/education/classes`, { headers }),
-                fetch(`${API_BASE_URL}/education/subjects`, { headers })
+                fetch(`${API_BASE_URL}/education/subjects`, { headers }),
+                fetch(`${API_BASE_URL}/education/terms`, { headers })
             ])
-            // We need a way to fetch current year terms. 
-            // Maybe /education/academic-years/current ? Or just list them?
-            // Since I haven't implemented comprehensive Year/Term Listing, I'll fetch current year and extract terms?
-            // "AcademicYearResponse" has "terms" list.
-            // So I need endpoint to get Academic Years.
-            // DO I have it? List? No.
-            // I need to add LIST endpoints for Years/Terms quickly.
 
             if (clsRes.ok) setClasses(await clsRes.json())
             if (subRes.ok) setSubjects(await subRes.json())
+            if (termRes.ok) setTerms(await termRes.json())
 
         } catch (e) {
             console.error(e)
@@ -221,10 +213,23 @@ export function CreateAssessmentModal({ open, onOpenChange, onSuccess }: CreateA
 
                     <div className="space-y-2">
                         <Label>Term</Label>
-                        {/* Temporary Input if fetching fails? No, I'll fetch. Using manual input for now until I fix backend? */}
-                        {/* I'll use a placeholder Select assuming I fetch terms later. */}
-                        <Input {...register("term_id", { valueAsNumber: true })} placeholder="Term ID (Temporary)" type="number" />
-                        <p className="text-xs text-muted-foreground">Please enter Term ID (e.g. 1) until selection is fixed.</p>
+                        <Controller
+                            control={control}
+                            name="term_id"
+                            render={({ field }) => (
+                                <Select onValueChange={(val) => field.onChange(Number(val))} value={field.value?.toString()}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select term" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {terms.map(t => (
+                                            <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        />
+                        {errors.term_id && <p className="text-sm text-red-500">{errors.term_id.message}</p>}
                     </div>
 
                     <DialogFooter>

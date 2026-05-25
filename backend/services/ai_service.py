@@ -1,116 +1,158 @@
-import os
 import json
-import time
-from typing import Dict, Any, Optional
+import logging
+import os
+from typing import Any, Dict, Literal, Optional, TypedDict
 
 try:
     from openai import OpenAI
-except ImportError:
+except ImportError:  # pragma: no cover - depends on deployment dependencies
     OpenAI = None
 
-class AIService:
-    def __init__(self):
-        self.api_key = os.getenv("OPENAI_API_KEY")
-        self.client = None
-        if self.api_key and OpenAI:
-            self.client = OpenAI(api_key=self.api_key)
-        else:
-            print("Warning: OPENAI_API_KEY not found or openai not installed. Using Mock AI Service.")
+logger = logging.getLogger(__name__)
 
-    def generate_response(self, message: str) -> Dict[str, Any]:
-        """
-        Generates a response based on the user message.
-        If API key is present, uses OpenAI.
-        Otherwise, uses varied mock responses.
-        """
+
+class AIResponse(TypedDict):
+    type: Literal["chat", "content"]
+    message: str
+    data: Optional[Any]
+
+
+class AIService:
+    """AI assistant service used by the dashboard chat panel.
+
+    The service uses an OpenAI-compatible client when `OPENAI_API_KEY` is
+    configured. In local or demo environments without a key, it returns a
+    deterministic fallback response instead of failing the whole chat endpoint.
+    """
+
+    def __init__(self) -> None:
+        self.api_key = os.getenv("OPENAI_API_KEY")
+        self.model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+        self.client = None
+
+        if self.api_key and OpenAI:
+            base_url = os.getenv("OPENAI_BASE_URL")
+            client_kwargs: Dict[str, Any] = {"api_key": self.api_key}
+            if base_url:
+                client_kwargs["base_url"] = base_url
+            self.client = OpenAI(**client_kwargs)
+        else:
+            logger.warning(
+                "AI service is running in local fallback mode because OPENAI_API_KEY "
+                "is not configured or the openai package is unavailable."
+            )
+
+    def generate_response(self, message: str) -> AIResponse:
+        if not message.strip():
+            return {
+                "type": "chat",
+                "message": "Please enter a question or request for the school assistant.",
+                "data": None,
+            }
+
         if self.client:
             return self._call_openai(message)
-        else:
-            return self._call_mock(message)
 
-    def _call_openai(self, message: str) -> Dict[str, Any]:
+        return self._call_fallback(message)
+
+    def _call_openai(self, message: str) -> AIResponse:
         try:
-            # We enforce a JSON structure prompt
             system_prompt = """
-            You are an expert AI assistant for an Education SaaS.
-            You must return a JSON object with this structure:
-            {
-                "type": "chat" | "content",
-                "message": "A conversational response to the user.",
-                "data": null | string (Markdown content if type is 'content')
-            }
-            If the user asks to create something (course, report, list), set type to 'content' and put the result in 'data' (Markdown).
-            If just chatting, set type to 'chat' and data to null.
-            """
-            
+You are TeducAI, an expert assistant for a school-management SaaS platform.
+Return only a JSON object with this exact structure:
+{
+  "type": "chat" | "content",
+  "message": "short conversational response for the user",
+  "data": null | "Markdown content when the answer should open in the preview panel"
+}
+Use `content` when the user asks you to draft a course, report, letter, list,
+policy, lesson plan, parent-support text, or administrative document. Use `chat`
+for short guidance and operational answers. Keep school data privacy in mind.
+"""
+
             response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo", # Or gpt-4-turbo
+                model=self.model,
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": message}
+                    {"role": "user", "content": message},
                 ],
-                response_format={"type": "json_object"}
+                response_format={"type": "json_object"},
             )
-            
-            content = response.choices[0].message.content
-            return json.loads(content)
-        except Exception as e:
-            print(f"OpenAI Error: {e}")
+
+            content = response.choices[0].message.content or "{}"
+            parsed = json.loads(content)
+            return self._normalize_response(parsed)
+        except Exception as exc:  # pragma: no cover - external service failure path
+            logger.exception("AI provider call failed: %s", exc)
             return {
                 "type": "chat",
-                "message": "I encountered an error connecting to the AI brain. Falling back to internal logic.",
-                "data": None
+                "message": "The AI provider is temporarily unavailable. Please try again shortly.",
+                "data": None,
             }
 
-    def _call_mock(self, message: str) -> Dict[str, Any]:
-        """
-        Sophisticated mock logic to simulate AI behavior.
-        """
-        time.sleep(1.5) # Simulate thinking
+    def _normalize_response(self, value: Dict[str, Any]) -> AIResponse:
+        response_type = value.get("type") if value.get("type") in {"chat", "content"} else "chat"
+        message = value.get("message")
+        data = value.get("data")
+
+        if not isinstance(message, str) or not message.strip():
+            message = "I prepared a response for you."
+
+        if response_type == "chat":
+            data = None
+        elif data is not None and not isinstance(data, str):
+            data = json.dumps(data, ensure_ascii=False, indent=2)
+
+        return {"type": response_type, "message": message, "data": data}
+
+    def _call_fallback(self, message: str) -> AIResponse:
         msg_lower = message.lower()
 
-        if "course" in msg_lower or "curriculum" in msg_lower:
+        if any(keyword in msg_lower for keyword in ["course", "curriculum", "lesson", "cours", "leçon"]):
             return {
                 "type": "content",
-                "message": "I have drafted a course outline for you. You can review it in the preview panel.",
-                "data": """# Introduction to Computer Science
-## Course Overview
-This course provides a comprehensive introduction to the fundamental concepts of computer science.
+                "message": "I drafted a lesson outline that you can review in the preview panel.",
+                "data": """# Lesson Outline: Introduction to Digital Skills
 
-## Modules
-1. **Basics of Programming**
-   - Variables and Data Types
-   - Control Structures
-   - Functions
-2. **Data Structures**
-   - Arrays and Lists
-   - Trees and Graphs
-3. **Algorithms**
-   - Sorting and Searching
-   - Complexity Analysis
+## Learning Objectives
 
-## Duration
-- 12 Weeks
-- 4 Hours/Week
-"""
+Students will understand basic digital safety, responsible device usage, and how to organize school work with simple productivity tools.
+
+## Session Plan
+
+1. **Warm-up discussion** about how students currently use digital tools.
+2. **Mini-lesson** on passwords, privacy, and respectful communication.
+3. **Guided activity** where students organize a sample assignment folder.
+4. **Reflection** on one safe digital habit to apply at home.
+
+## Assessment
+
+Teachers can assess participation, completion of the guided activity, and the quality of the final reflection.
+""",
             }
-        elif "list" in msg_lower or "report" in msg_lower:
-             return {
-                "type": "content",
-                "message": "Here is the list you requested.",
-                "data": """## Top 5 Educational Trends 2025
-1. **AI-Driven Personalization**: Custom learning paths.
-2. **Immersive Learning**: AR/VR integration.
-3. **Micro-Learning**: Bite-sized content consumption.
-4. **Gamification**: Engagement through game mechanics.
-5. **Blockchain Credentials**: Secure and verifiable certificates.
-"""
-            }
-        else:
+
+        if any(keyword in msg_lower for keyword in ["report", "list", "rapport", "liste"]):
             return {
-                "type": "chat",
-                "message": f"I understand you said: '{message}'. I am running in Simulation Mode because no API Key was configured. Ask me to 'create a course' to see the Preview feature in action!",
-                "data": None
+                "type": "content",
+                "message": "I prepared a structured draft in the preview panel.",
+                "data": """## School Operations Checklist
+
+1. Verify pupil registration records.
+2. Confirm teacher timetable completeness.
+3. Review recent attendance anomalies.
+4. Check pending fee payments and recorded expenses.
+5. Generate academic reports for the selected term.
+""",
             }
+
+        return {
+            "type": "chat",
+            "message": (
+                "The AI provider is not configured in this environment, so I am using a local fallback response. "
+                "Configure OPENAI_API_KEY to enable full AI-assisted parent support and document generation."
+            ),
+            "data": None,
+        }
+
 
 ai_service = AIService()

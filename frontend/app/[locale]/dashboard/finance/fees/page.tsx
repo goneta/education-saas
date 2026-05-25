@@ -87,10 +87,14 @@ export default function FeesPage() {
 
     useEffect(() => {
         fetchStudents()
+    // Student options are intentionally loaded when the auth token becomes available.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token])
 
     useEffect(() => {
         fetchFees()
+    /* Fees intentionally refresh only when auth or status filter changes. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token, filterStatus])
 
     const openCreate = () => {
@@ -153,7 +157,7 @@ export default function FeesPage() {
                 const data = await res.json()
                 setError(data.detail || "Failed to save fee")
             }
-        } catch (e) {
+        } catch {
             setError("An error occurred")
         } finally {
             setSaving(false)
@@ -180,7 +184,7 @@ export default function FeesPage() {
                 const data = await res.json()
                 setError(data.detail || "Failed to add payment")
             }
-        } catch (e) {
+        } catch {
             setError("An error occurred")
         } finally {
             setSaving(false)

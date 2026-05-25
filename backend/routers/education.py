@@ -88,12 +88,49 @@ def delete_class(
         raise HTTPException(status_code=404, detail="Class not found")
         
     db.delete(cls)
-    db.delete(cls)
     db.commit()
 
 # ---------------------------------------------------------
 # Years & Terms Endpoints
 # ---------------------------------------------------------
+
+@router.get("/academic-years", response_model=List[schemas.AcademicYearResponse])
+def list_academic_years(
+    skip: int = 0,
+    limit: int = 100,
+    current_only: bool = False,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    if not current_user.school_id:
+        raise HTTPException(status_code=400, detail="User not part of a school")
+
+    query = db.query(models.AcademicYear).filter(
+        models.AcademicYear.school_id == current_user.school_id
+    )
+    if current_only:
+        query = query.filter(models.AcademicYear.is_current == True)
+
+    return query.order_by(models.AcademicYear.start_date.desc().nullslast(), models.AcademicYear.id.desc()).offset(skip).limit(limit).all()
+
+@router.get("/terms", response_model=List[schemas.TermResponse])
+def list_terms(
+    academic_year_id: int = None,
+    skip: int = 0,
+    limit: int = 100,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    if not current_user.school_id:
+        raise HTTPException(status_code=400, detail="User not part of a school")
+
+    query = db.query(models.Term).join(models.AcademicYear).filter(
+        models.AcademicYear.school_id == current_user.school_id
+    )
+    if academic_year_id:
+        query = query.filter(models.Term.academic_year_id == academic_year_id)
+
+    return query.order_by(models.Term.start_date.asc().nullslast(), models.Term.id.asc()).offset(skip).limit(limit).all()
 
 @router.post("/academic-years", response_model=schemas.AcademicYearResponse)
 def create_academic_year(
@@ -105,7 +142,7 @@ def create_academic_year(
         raise HTTPException(status_code=403, detail="Not authorized")
         
     new_year = models.AcademicYear(
-        **year_in.dict(),
+        **year_in.model_dump(),
         school_id=current_user.school_id
     )
     db.add(new_year)
@@ -122,7 +159,14 @@ def create_term(
     if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
         raise HTTPException(status_code=403, detail="Not authorized")
         
-    new_term = models.Term(**term_in.dict())
+    academic_year = db.query(models.AcademicYear).filter(
+        models.AcademicYear.id == term_in.academic_year_id,
+        models.AcademicYear.school_id == current_user.school_id
+    ).first()
+    if not academic_year:
+        raise HTTPException(status_code=404, detail="Academic year not found in this school")
+
+    new_term = models.Term(**term_in.model_dump())
     db.add(new_term)
     db.commit()
     db.refresh(new_term)
@@ -140,7 +184,7 @@ def create_subject(
         raise HTTPException(status_code=403, detail="Not authorized")
         
     new_sub = models.Subject(
-        **subject_in.dict(),
+        **subject_in.model_dump(),
         school_id=current_user.school_id
     )
     db.add(new_sub)
@@ -228,7 +272,7 @@ def create_timetable_entry(
     if not cls:
         raise HTTPException(status_code=404, detail="Class not found in this school")
 
-    entry = models.Timetable(**entry_in.dict())
+    entry = models.Timetable(**entry_in.model_dump())
     db.add(entry)
     db.commit()
     db.refresh(entry)

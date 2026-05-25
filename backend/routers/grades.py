@@ -23,7 +23,7 @@ def create_assessment(
     # Simplified check:
     # If teacher, ideally verify they teach this class/subject
     
-    new_assessment = models.Assessment(**assessment_in.dict())
+    new_assessment = models.Assessment(**assessment_in.model_dump())
     db.add(new_assessment)
     db.commit()
     db.refresh(new_assessment)
@@ -88,7 +88,7 @@ def update_assessment(
         raise HTTPException(status_code=404, detail="Assessment not found")
 
     # Update fields
-    for key, value in assessment_in.dict().items():
+    for key, value in assessment_in.model_dump().items():
         setattr(assessment, key, value)
 
     db.commit()

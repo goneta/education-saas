@@ -47,7 +47,6 @@ export default function AssessmentGradesPage() {
 
     const [assessment, setAssessment] = useState<Assessment | null>(null)
     const [students, setStudents] = useState<Student[]>([])
-    const [grades, setGrades] = useState<Grade[]>([])
     const [gradeInputs, setGradeInputs] = useState<Record<number, { score: string; comment: string }>>({})
     const [isLoading, setIsLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -57,6 +56,8 @@ export default function AssessmentGradesPage() {
     useEffect(() => {
         if (!token || !assessmentId) return
         loadData()
+    /* Assessment details intentionally refresh when route id or auth token changes. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token, assessmentId])
 
     const loadData = async () => {
@@ -76,7 +77,6 @@ export default function AssessmentGradesPage() {
             setAssessment(assessmentData)
 
             const existingGrades: Grade[] = gradesRes.ok ? await gradesRes.json() : []
-            setGrades(existingGrades)
 
             // Fetch students in the class
             const studentsRes = await fetch(
@@ -137,7 +137,7 @@ export default function AssessmentGradesPage() {
                 const data = await res.json()
                 setError(data.detail || "Failed to save grades")
             }
-        } catch (e) {
+        } catch {
             setError("An error occurred")
         } finally {
             setSaving(false)

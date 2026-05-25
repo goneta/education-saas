@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from .. import models, security, database
 
 router = APIRouter(prefix="/system", tags=["System Configuration"])
@@ -22,8 +22,7 @@ class ReferenceDataUpdate(BaseModel):
 class ReferenceDataResponse(ReferenceDataCreate):
     id: int
     is_active: bool
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 @router.post("/reference-data", response_model=ReferenceDataResponse)
 def create_reference_data(

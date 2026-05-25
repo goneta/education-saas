@@ -47,13 +47,11 @@ export default function GradeReportsPage() {
     const [searchQuery, setSearchQuery] = useState("")
     const [report, setReport] = useState<ReportCard | null>(null)
     const [isLoading, setIsLoading] = useState(false)
-    const [isLoadingMeta, setIsLoadingMeta] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
         if (!token) return
         const fetchMeta = async () => {
-            setIsLoadingMeta(true)
             try {
                 const [studentsRes, termsRes] = await Promise.all([
                     fetch(`${API_BASE_URL}/students/`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -61,10 +59,8 @@ export default function GradeReportsPage() {
                 ])
                 if (studentsRes.ok) setStudents(await studentsRes.json())
                 if (termsRes.ok) setTerms(await termsRes.json())
-            } catch (e) {
-                console.error(e)
-            } finally {
-                setIsLoadingMeta(false)
+            } catch (error) {
+                console.error(error)
             }
         }
         fetchMeta()
@@ -89,7 +85,7 @@ export default function GradeReportsPage() {
                 const data = await res.json()
                 setError(data.detail || "Failed to generate report")
             }
-        } catch (e) {
+        } catch {
             setError("An error occurred")
         } finally {
             setIsLoading(false)

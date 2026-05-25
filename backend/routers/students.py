@@ -203,7 +203,7 @@ def add_education_history(
 
     new_history = models.StudentEducationHistory(
         student_id=student.student_profile.id,
-        **history_in.dict()
+        **history_in.model_dump()
     )
     db.add(new_history)
     try:

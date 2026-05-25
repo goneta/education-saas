@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { useTranslations } from "next-intl"
 import { API_BASE_URL } from "@/lib/config"
 
 // Types (should ideally be in a types file)
@@ -26,10 +25,8 @@ interface Expense {
 }
 
 export default function FinanceDashboard({ params: { locale } }: { params: { locale: string } }) {
-    const t = useTranslations("Dashboard") // Assuming a generic namespace or create one
     const [fees, setFees] = useState<Fee[]>([])
     const [expenses, setExpenses] = useState<Expense[]>([])
-    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         const fetchData = async () => {
@@ -37,7 +34,7 @@ export default function FinanceDashboard({ params: { locale } }: { params: { loc
                 // Fetch Fees
                 const feesRes = await fetch(`${API_BASE_URL}/finance/fees`, {
                     headers: {
-                        "Authorization": `Bearer ${localStorage.getItem("token")}`
+                        "Authorization": `Bearer ${localStorage.getItem("access_token")}`
                     }
                 })
                 if (feesRes.ok) {
@@ -48,7 +45,7 @@ export default function FinanceDashboard({ params: { locale } }: { params: { loc
                 // Fetch Expenses
                 const expRes = await fetch(`${API_BASE_URL}/finance/expenses`, {
                     headers: {
-                        "Authorization": `Bearer ${localStorage.getItem("token")}`
+                        "Authorization": `Bearer ${localStorage.getItem("access_token")}`
                     }
                 })
                 if (expRes.ok) {
@@ -59,8 +56,7 @@ export default function FinanceDashboard({ params: { locale } }: { params: { loc
             } catch (error) {
                 console.error("Failed to fetch finance data", error)
             } finally {
-                setLoading(false)
-            }
+                }
         }
 
         fetchData()

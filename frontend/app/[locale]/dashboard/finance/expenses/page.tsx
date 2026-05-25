@@ -61,6 +61,8 @@ export default function ExpensesPage() {
 
     useEffect(() => {
         fetchExpenses()
+    // Expenses are intentionally refreshed when auth or category filter changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token, filterCategory])
 
     const openCreate = () => {
@@ -114,7 +116,7 @@ export default function ExpensesPage() {
                 const data = await res.json()
                 setError(data.detail || "Failed to save expense")
             }
-        } catch (e) {
+        } catch {
             setError("An error occurred")
         } finally {
             setSaving(false)

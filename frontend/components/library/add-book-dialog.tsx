@@ -25,13 +25,6 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 
 const formSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -65,7 +58,7 @@ export function AddBookDialog({ onSuccess }: AddBookDialogProps) {
     async function onSubmit(values: z.infer<typeof formSchema>) {
         try {
             setIsLoading(true)
-            const token = localStorage.getItem("token")
+            const token = localStorage.getItem("access_token")
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/library/books`, {
                 method: "POST",
                 headers: {

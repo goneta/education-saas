@@ -1,7 +1,6 @@
 "use client"
 
-import Link from "next/link"
-import { Menu, Search, CircleUser } from "lucide-react"
+import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { UserMenu } from "@/components/layout/user-menu"
 

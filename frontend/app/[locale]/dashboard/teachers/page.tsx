@@ -27,6 +27,8 @@ export default function TeachersPage() {
         if (token) {
             fetchTeachers()
         }
+    // Teacher list loading is intentionally bound to the auth token.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token])
 
     const fetchTeachers = async () => {

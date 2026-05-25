@@ -41,7 +41,6 @@ export function AgentPanel() {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-            console.log(`Sending request to ${API_BASE_URL}/chat`);
 
             // IMPORTANT: No trailing slash on the URL to avoid 307 redirects or 404s depending on backend config
             const response = await fetch(`${API_BASE_URL}/chat`, {
@@ -54,7 +53,6 @@ export function AgentPanel() {
             })
             clearTimeout(timeoutId);
 
-            console.log("Response status:", response.status);
 
             if (!response.ok) {
                 const errorText = await response.text();

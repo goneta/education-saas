@@ -67,6 +67,8 @@ export default function StudentDetailPage() {
     useEffect(() => {
         if (!token || !studentId) return
         loadData()
+    /* Student details intentionally refresh when route id or auth token changes. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token, studentId])
 
     const loadData = async () => {

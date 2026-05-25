@@ -37,7 +37,6 @@ export default function LibraryPage() {
     const { token } = useAuth()
     const [books, setBooks] = useState<Book[]>([])
     const [loans, setLoans] = useState<Loan[]>([])
-    const [loading, setLoading] = useState(true)
 
     const fetchData = async () => {
         if (!token) return
@@ -62,13 +61,13 @@ export default function LibraryPage() {
             }
         } catch (error) {
             console.error("Failed to fetch library data", error)
-        } finally {
-            setLoading(false)
         }
     }
 
     useEffect(() => {
         fetchData()
+    // Library data is intentionally loaded when the auth token becomes available.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token])
 
     // Calculate stats

@@ -55,7 +55,7 @@ export function IssueLoanModal({ open, onOpenChange, onSuccess, books }: IssueLo
                         const data: StudentOption[] = await res.json()
                         setStudents(data)
                     }
-                } catch (e) {
+                } catch {
                     console.error("Failed to fetch students")
                 }
             }

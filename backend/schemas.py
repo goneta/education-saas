@@ -1,7 +1,7 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional, List
 from datetime import datetime, time, date
-from .models import UserRole, SchoolType, DayOfWeek, AttendanceStatus, BookStatus, LoanStatus
+from .models import UserRole, SchoolType, DayOfWeek, AttendanceStatus, BookStatus, LoanStatus, FeeStatus, ExpenseCategory
 
 # School Schemas
 class SchoolBase(BaseModel):
@@ -18,8 +18,7 @@ class SchoolResponse(SchoolBase):
     is_active: bool
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # User Schemas
 class UserBase(BaseModel):
@@ -36,8 +35,7 @@ class UserResponse(UserBase):
     is_active: bool
     school_id: Optional[int]
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Token Schema
 class Token(BaseModel):
@@ -73,8 +71,7 @@ class EducationHistoryResponse(EducationHistoryBase):
     id: int
     student_id: int
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class StudentCreateSchema(UserCreate):
     profile: StudentProfileBase
@@ -98,8 +95,7 @@ class StudentUpdate(BaseModel):
 class StudentProfileResponse(StudentProfileBase):
     id: int
     education_history: List[EducationHistoryResponse] = []
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class StudentResponse(UserResponse):
     student_profile: Optional[StudentProfileResponse] = None
@@ -127,8 +123,7 @@ class TeacherUpdate(BaseModel):
 
 class TeacherProfileResponse(TeacherProfileBase):
     id: int
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TeacherResponse(UserResponse):
     phone_number: Optional[str] = None
@@ -148,8 +143,7 @@ class TermCreate(TermBase):
 
 class TermResponse(TermBase):
     id: int
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class AcademicYearBase(BaseModel):
     name: str # e.g. "2024-2025"
@@ -165,8 +159,7 @@ class AcademicYearResponse(AcademicYearBase):
     school_id: int
     terms: List[TermResponse] = []
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Class Schemas
 class ClassBase(BaseModel):
@@ -181,8 +174,7 @@ class ClassResponse(ClassBase):
     id: int
     school_id: int
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Subject Schemas
 class SubjectBase(BaseModel):
@@ -204,8 +196,7 @@ class SubjectResponse(SubjectBase):
     id: int
     school_id: int
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Timetable Schemas
 class TimetableBase(BaseModel):
@@ -223,8 +214,7 @@ class TimetableCreate(TimetableBase):
 class TimetableResponse(TimetableBase):
     id: int
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Grade & Assessment Schemas
 
@@ -244,8 +234,7 @@ class AssessmentCreate(AssessmentBase):
 class AssessmentResponse(AssessmentBase):
     id: int
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class GradeBase(BaseModel):
     score: float
@@ -259,8 +248,7 @@ class GradeCreate(GradeBase):
 class GradeResponse(GradeBase):
     id: int
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class GradeBulkCreate(BaseModel):
     assessment_id: int
@@ -273,7 +261,9 @@ class ReportAssessment(BaseModel):
     weight: int
 
 class ReportSubject(BaseModel):
-    subject: str
+    subject_id: int
+    subject_name: str
+    coefficient: int
     assessments: List[ReportAssessment]
     average: float
 
@@ -300,8 +290,7 @@ class AttendanceResponse(AttendanceBase):
     recorded_by_id: Optional[int] = None
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class AttendanceBatchCreate(BaseModel):
     timetable_id: int
@@ -345,8 +334,7 @@ class BookResponse(BookBase):
     school_id: Optional[int] = None
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Loans
 class LoanBase(BaseModel):
@@ -368,8 +356,65 @@ class LoanResponse(LoanBase):
     book_title: Optional[str] = None
     user_full_name: Optional[str] = None
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
+
+# Finance Management Schemas
+
+class PaymentCreate(BaseModel):
+    amount: float
+    note: Optional[str] = None
+
+
+class PaymentResponse(BaseModel):
+    id: int
+    amount: float
+    payment_date: datetime
+    note: Optional[str] = None
+    fee_id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FeeBase(BaseModel):
+    title: str
+    amount: float
+    due_date: Optional[datetime] = None
+    status: FeeStatus = FeeStatus.PENDING
+    description: Optional[str] = None
+    student_id: Optional[int] = None
+
+
+class FeeCreate(FeeBase):
+    school_id: Optional[int] = None
+
+
+class FeeResponse(FeeBase):
+    id: int
+    school_id: Optional[int] = None
+    created_at: datetime
+    payments: List[PaymentResponse] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ExpenseBase(BaseModel):
+    title: str
+    amount: float
+    category: ExpenseCategory = ExpenseCategory.OTHER
+    date: Optional[datetime] = None
+    description: Optional[str] = None
+
+
+class ExpenseCreate(ExpenseBase):
+    school_id: Optional[int] = None
+
+
+class ExpenseResponse(ExpenseBase):
+    id: int
+    school_id: Optional[int] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
 
 

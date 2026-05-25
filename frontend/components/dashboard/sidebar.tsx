@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname, useParams } from "next/navigation"
 import { cn } from "@/lib/utils"
 // We will replace these with Lucide icons later
-import { Home, Users, Settings, BookOpen, GraduationCap, Calendar, ClipboardCheck, DollarSign, ChevronDown } from "lucide-react"
+import { Home, Users, Settings, BookOpen, GraduationCap, Calendar, ClipboardCheck, ChevronDown } from "lucide-react"
 
 interface SidebarProps {
     isResizablePanel?: boolean;

@@ -1,15 +1,23 @@
-import sys
+"""Small import smoke-check utility for the FastAPI application."""
+
+import logging
 import os
+import sys
 
-# Add current CWD to sys.path explicitly just in case
-sys.path.append(os.getcwd())
+logger = logging.getLogger(__name__)
 
-print("Sys Path:", sys.path)
 
-try:
-    print("Attempting to import backend.main...")
-    from backend.main import app
-    print("Success importing backend.main")
-except Exception as e:
-    import traceback
-    traceback.print_exc()
+def main() -> None:
+    """Import the backend application and fail loudly if startup imports are broken."""
+    sys.path.append(os.getcwd())
+    try:
+        from backend.main import app  # noqa: F401
+    except Exception:
+        logger.exception("Unable to import backend.main")
+        raise
+    logger.info("backend.main imported successfully")
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
+    main()
