@@ -67,8 +67,8 @@ export function AddBookModal({ open, onOpenChange, onSuccess }: AddBookModalProp
                 location: "",
                 quantity: 1
             })
-        } catch (err: any) {
-            setError(err.message)
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Failed to add book")
         } finally {
             setIsLoading(false)
         }

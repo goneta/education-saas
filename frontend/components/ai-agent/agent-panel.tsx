@@ -74,17 +74,19 @@ export function AgentPanel() {
                 setMessages(prev => [...prev, { role: 'agent', content: data.message }])
             }
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("AI Error:", error)
             setAiStatus("idle")
             setAgentAction("Error")
 
             // Detailed error message for the user
             let errorMessage = "Sorry, I encountered an error communicating with the server.";
-            if (error.name === 'AbortError') {
+            const errorName = error instanceof Error ? error.name : undefined
+            const errorText = error instanceof Error ? error.message : String(error)
+            if (errorName === 'AbortError') {
                 errorMessage = "Request timed out. The server took too long to respond.";
-            } else if (error.message) {
-                errorMessage = `Error: ${error.message}`;
+            } else if (errorText) {
+                errorMessage = `Error: ${errorText}`;
             }
 
             setMessages(prev => [...prev, { role: 'agent', content: errorMessage }])

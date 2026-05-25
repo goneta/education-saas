@@ -31,10 +31,15 @@ interface ClassItem {
     main_teacher_id?: number
 }
 
+interface TeacherOption {
+    id: number
+    full_name: string
+}
+
 export default function ClassesPage() {
     const { token } = useAuth()
     const [classes, setClasses] = useState<ClassItem[]>([])
-    const [teachers, setTeachers] = useState<any[]>([])
+    const [teachers, setTeachers] = useState<TeacherOption[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [currentClass, setCurrentClass] = useState<ClassItem | null>(null)

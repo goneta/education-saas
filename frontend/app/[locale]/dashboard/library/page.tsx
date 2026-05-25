@@ -23,7 +23,14 @@ interface Book {
 
 interface Loan {
     id: number
-    status: string
+    book_id: number
+    user_id: number
+    book_title: string
+    user_full_name: string
+    issue_date: string
+    due_date: string
+    return_date?: string
+    status: "active" | "returned" | "overdue"
 }
 
 export default function LibraryPage() {
@@ -95,7 +102,7 @@ export default function LibraryPage() {
                     <BookList books={books} onRefresh={fetchData} />
                 </TabsContent>
                 <TabsContent value="loans" className="mt-4">
-                    <LoanList loans={loans} onRefresh={fetchData} />
+                    <LoanList loans={loans} books={books} onRefresh={fetchData} />
                 </TabsContent>
             </Tabs>
         </div>

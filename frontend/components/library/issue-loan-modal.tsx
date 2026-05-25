@@ -9,17 +9,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 
+export interface LibraryBook {
+    id: number
+    title: string
+    available_quantity: number
+}
+
+interface StudentOption {
+    id: number
+    full_name: string
+    student_profile?: {
+        registration_number?: string | null
+    }
+}
+
 interface IssueLoanModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onSuccess: () => void
-    books: any[] // Pass available books to avoid refetching, or simple interface
+    books: LibraryBook[]
 }
 
 export function IssueLoanModal({ open, onOpenChange, onSuccess, books }: IssueLoanModalProps) {
     const { token } = useAuth()
     const [isLoading, setIsLoading] = useState(false)
-    const [students, setStudents] = useState<any[]>([])
+    const [students, setStudents] = useState<StudentOption[]>([])
     const [error, setError] = useState<string | null>(null)
 
     const [formData, setFormData] = useState({
@@ -38,7 +52,7 @@ export function IssueLoanModal({ open, onOpenChange, onSuccess, books }: IssueLo
                         headers: { "Authorization": `Bearer ${token}` }
                     })
                     if (res.ok) {
-                        const data = await res.json()
+                        const data: StudentOption[] = await res.json()
                         setStudents(data)
                     }
                 } catch (e) {
@@ -84,8 +98,8 @@ export function IssueLoanModal({ open, onOpenChange, onSuccess, books }: IssueLo
                 due_date: "",
                 notes: ""
             })
-        } catch (err: any) {
-            setError(err.message)
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Failed to issue book")
         } finally {
             setIsLoading(false)
         }

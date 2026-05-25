@@ -173,7 +173,7 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
                 <DialogHeader>
                     <DialogTitle>Add New Student</DialogTitle>
                     <DialogDescription>
-                        Enter the student's information to register them in the system.
+                        Enter the student&apos;s information to register them in the system.
                     </DialogDescription>
                 </DialogHeader>
 

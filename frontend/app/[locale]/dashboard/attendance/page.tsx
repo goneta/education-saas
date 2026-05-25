@@ -37,6 +37,20 @@ type TimetableSlot = {
     subject_id: number
 }
 
+type AttendanceStudent = {
+    id: number
+    full_name: string
+    student_profile: {
+        id: number
+    }
+}
+
+type AttendanceRecord = {
+    student_id: number
+    status: string
+    remarks?: string | null
+}
+
 export default function AttendancePage() {
     const { token } = useAuth()
     const [date, setDate] = useState<Date>(new Date())
@@ -171,9 +185,9 @@ export default function AttendancePage() {
     )
 }
 
-function MarkAttendanceDialog({ open, onOpenChange, slot, date, classId }: { open: boolean, onOpenChange: (open: boolean) => void, slot: any, date: Date, classId: number }) {
+function MarkAttendanceDialog({ open, onOpenChange, slot, date, classId }: { open: boolean, onOpenChange: (open: boolean) => void, slot: TimetableSlot, date: Date, classId: number }) {
     const { token } = useAuth()
-    const [students, setStudents] = useState<any[]>([])
+    const [students, setStudents] = useState<AttendanceStudent[]>([])
     const [attendance, setAttendance] = useState<Record<number, string>>({}) // student_id -> status
     const [remarks, setRemarks] = useState<Record<number, string>>({})
     const [loading, setLoading] = useState(false)
@@ -192,26 +206,26 @@ function MarkAttendanceDialog({ open, onOpenChange, slot, date, classId }: { ope
             const studentsRes = await fetch(`${API_BASE_URL}/students?class_id=${classId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             })
-            const studentsData = await studentsRes.json()
+            const studentsData: AttendanceStudent[] = await studentsRes.json()
 
             // 2. Fetch Existing Attendance
             const dateStr = date.toISOString()
             const attRes = await fetch(`${API_BASE_URL}/attendance/?timetable_id=${slot.id}&date=${dateStr}`, {
                 headers: { Authorization: `Bearer ${token}` }
             })
-            const attData = await attRes.json()
+            const attData: AttendanceRecord[] = await attRes.json()
 
             // Map existing data
             const attMap: Record<number, string> = {}
             const remMap: Record<number, string> = {}
 
             // Default everyone to PRESENT if no record
-            studentsData.forEach((s: any) => {
+            studentsData.forEach((s) => {
                 attMap[s.student_profile.id] = "present"
             })
 
             if (Array.isArray(attData)) {
-                attData.forEach((a: any) => {
+                attData.forEach((a) => {
                     attMap[a.student_id] = a.status
                     remMap[a.student_id] = a.remarks || ""
                 })
