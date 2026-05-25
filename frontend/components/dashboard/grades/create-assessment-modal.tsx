@@ -26,6 +26,17 @@ const assessmentSchema = z.object({
 
 type AssessmentFormValues = z.infer<typeof assessmentSchema>
 
+type ClassOption = {
+    id: number
+    name: string
+}
+
+type SubjectOption = {
+    id: number
+    name: string
+    code: string
+}
+
 interface CreateAssessmentModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
@@ -35,9 +46,8 @@ interface CreateAssessmentModalProps {
 export function CreateAssessmentModal({ open, onOpenChange, onSuccess }: CreateAssessmentModalProps) {
     const { token } = useAuth()
     const [loading, setLoading] = useState(false)
-    const [classes, setClasses] = useState<any[]>([])
-    const [subjects, setSubjects] = useState<any[]>([])
-    const [terms, setTerms] = useState<any[]>([]) // We need a way to fetch terms. Assuming endpoint exists.
+    const [classes, setClasses] = useState<ClassOption[]>([])
+    const [subjects, setSubjects] = useState<SubjectOption[]>([])
     // Wait, verification script created Terms. But endpoint for Listing Terms?
     // I created 'create_term' but did I create 'list_terms'?
     // In routers/education.py, I only added create_term.

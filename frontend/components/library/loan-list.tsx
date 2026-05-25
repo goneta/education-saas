@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus, Search, CheckCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { IssueLoanModal } from "./issue-loan-modal"
+import { IssueLoanModal, type LibraryBook } from "./issue-loan-modal"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 
@@ -24,11 +24,12 @@ interface Loan {
 interface LoanListProps {
     loans: Loan[]
     onRefresh: () => void
+    books?: LibraryBook[]
 }
 
 import { Badge } from "@/components/ui/badge"
 
-export function LoanList({ loans, onRefresh, books }: any) { // using any to bypass strict type check on incomplete interface for now
+export function LoanList({ loans, onRefresh, books = [] }: LoanListProps) {
     const { token } = useAuth()
     const [searchQuery, setSearchQuery] = useState("")
     const [showIssueModal, setShowIssueModal] = useState(false)
@@ -53,7 +54,7 @@ export function LoanList({ loans, onRefresh, books }: any) { // using any to byp
         }
     }
 
-    const filteredLoans = loans.filter((loan: any) =>
+    const filteredLoans = loans.filter((loan) =>
         loan.book_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         loan.user_full_name.toLowerCase().includes(searchQuery.toLowerCase())
     )
@@ -98,7 +99,7 @@ export function LoanList({ loans, onRefresh, books }: any) { // using any to byp
                                     </td>
                                 </tr>
                             ) : (
-                                filteredLoans.map((loan: any) => (
+                                filteredLoans.map((loan) => (
                                     <tr key={loan.id} className="border-b border-[#E5E7EB] hover:bg-gray-50">
                                         <td className="py-3 px-4 text-sm font-medium">{loan.book_title}</td>
                                         <td className="py-3 px-4 text-sm text-gray-500">{loan.user_full_name}</td>
@@ -139,7 +140,7 @@ export function LoanList({ loans, onRefresh, books }: any) { // using any to byp
                 open={showIssueModal}
                 onOpenChange={setShowIssueModal}
                 onSuccess={onRefresh}
-                books={books || []}
+                books={books}
             />
         </Card>
     )

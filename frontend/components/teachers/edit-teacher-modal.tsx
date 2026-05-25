@@ -106,7 +106,7 @@ export function EditTeacherModal({ open, onOpenChange, teacher, onSuccess }: Edi
                 <DialogHeader>
                     <DialogTitle>Edit Teacher</DialogTitle>
                     <DialogDescription>
-                        Update teacher's personal and professional details.
+                        Update teacher&apos;s personal and professional details.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">

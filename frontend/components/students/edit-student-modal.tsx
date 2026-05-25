@@ -182,7 +182,7 @@ export function EditStudentModal({ open, onOpenChange, student, onSuccess }: Edi
                 <DialogHeader>
                     <DialogTitle>Edit Student</DialogTitle>
                     <DialogDescription>
-                        Update the student's information.
+                        Update the student&apos;s information.
                     </DialogDescription>
                 </DialogHeader>
 

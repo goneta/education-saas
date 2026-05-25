@@ -101,8 +101,8 @@ export function IssueLoanDialog({ onSuccess }: IssueLoanDialogProps) {
             // Actually /students endpoint returns StudentResponse which extends UserResponse
             const studentsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/students?limit=100`, { headers });
             if (studentsRes.ok) {
-                const data = await studentsRes.json();
-                setUsers(data.map((s: any) => ({ id: s.id, name: s.full_name, role: "Student" })));
+                const data: Student[] = await studentsRes.json();
+                setUsers(data.map((s) => ({ id: s.id, name: s.full_name, role: "Student" })));
             }
         } catch (e) {
             console.error("Failed to fetch data for loan dialog", e);
