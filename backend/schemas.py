@@ -18,6 +18,9 @@ from .models import (
     SubmissionStatus,
     AdministrativeRequestType,
     AdministrativeRequestStatus,
+    AdmissionStatus,
+    InventoryStatus,
+    PayrollStatus,
 )
 
 # School Schemas
@@ -715,6 +718,144 @@ class StudentOrientationResponse(StudentOrientationCreate):
     id: int
     school_id: int
     created_by_id: Optional[int] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Institution Operations Schemas
+
+class AcademicProgramCreate(BaseModel):
+    name: str
+    sector: str
+    level: Optional[str] = None
+    diploma: Optional[str] = None
+    duration_years: Optional[int] = None
+    description: Optional[str] = None
+
+
+class AcademicProgramResponse(AcademicProgramCreate):
+    id: int
+    school_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AdmissionApplicationCreate(BaseModel):
+    applicant_name: str
+    applicant_phone: Optional[str] = None
+    applicant_email: Optional[str] = None
+    desired_level: Optional[str] = None
+    desired_program_id: Optional[int] = None
+    status: AdmissionStatus = AdmissionStatus.SUBMITTED
+    notes: Optional[str] = None
+
+
+class AdmissionApplicationUpdate(BaseModel):
+    status: AdmissionStatus
+    notes: Optional[str] = None
+
+
+class AdmissionApplicationResponse(AdmissionApplicationCreate):
+    id: int
+    school_id: int
+    handled_by_id: Optional[int] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ExamSessionCreate(BaseModel):
+    name: str
+    exam_type: str
+    class_id: Optional[int] = None
+    program_id: Optional[int] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    status: str = "planned"
+
+
+class ExamSessionResponse(ExamSessionCreate):
+    id: int
+    school_id: int
+    created_by_id: Optional[int] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class InventoryItemCreate(BaseModel):
+    name: str
+    category: str
+    quantity: int = 0
+    minimum_quantity: int = 0
+    location: Optional[str] = None
+
+
+class InventoryItemResponse(InventoryItemCreate):
+    id: int
+    status: InventoryStatus
+    school_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PayrollRecordCreate(BaseModel):
+    staff_user_id: int
+    period: str
+    gross_amount: float
+    deductions: float = 0
+
+
+class PayrollRecordUpdate(BaseModel):
+    status: PayrollStatus
+
+
+class PayrollRecordResponse(PayrollRecordCreate):
+    id: int
+    net_amount: float
+    status: PayrollStatus
+    paid_at: Optional[datetime] = None
+    school_id: int
+    created_by_id: Optional[int] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TransportRouteCreate(BaseModel):
+    name: str
+    vehicle_identifier: Optional[str] = None
+    driver_name: Optional[str] = None
+    driver_phone: Optional[str] = None
+    stops: Optional[List[str]] = None
+    monthly_fee: float = 0
+    is_active: bool = True
+
+
+class TransportRouteResponse(TransportRouteCreate):
+    id: int
+    school_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CanteenMealPlanCreate(BaseModel):
+    name: str
+    day_of_week: Optional[str] = None
+    meal_type: str
+    menu: Optional[str] = None
+    price: float = 0
+    is_active: bool = True
+
+
+class CanteenMealPlanResponse(CanteenMealPlanCreate):
+    id: int
+    school_id: int
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

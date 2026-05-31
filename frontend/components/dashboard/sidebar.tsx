@@ -57,6 +57,12 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
             ]
         },
         {
+            title: "Operations",
+            items: [
+                { href: `/${locale}/dashboard/operations`, label: "Operations", icon: Settings },
+            ]
+        },
+        {
             title: "Finance",
             items: [
                 { href: `/${locale}/dashboard/finance`, label: "Finance", icon: CreditCard },

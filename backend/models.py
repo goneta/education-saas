@@ -61,6 +61,23 @@ class AdministrativeRequestStatus(str, enum.Enum):
     REJECTED = "rejected"
     DONE = "done"
 
+class AdmissionStatus(str, enum.Enum):
+    DRAFT = "draft"
+    SUBMITTED = "submitted"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    ENROLLED = "enrolled"
+
+class InventoryStatus(str, enum.Enum):
+    AVAILABLE = "available"
+    LOW_STOCK = "low_stock"
+    OUT_OF_STOCK = "out_of_stock"
+
+class PayrollStatus(str, enum.Enum):
+    DRAFT = "draft"
+    APPROVED = "approved"
+    PAID = "paid"
+
 # Core Models
 
 class School(Base):
@@ -488,6 +505,134 @@ class StudentOrientation(Base):
     student = relationship("StudentProfile")
     school = relationship("School")
     created_by = relationship("User")
+
+
+class AcademicProgram(Base):
+    __tablename__ = "academic_programs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, index=True)
+    sector = Column(String, nullable=False, index=True)
+    level = Column(String, nullable=True, index=True)
+    diploma = Column(String, nullable=True)
+    duration_years = Column(Integer, nullable=True)
+    description = Column(Text, nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    school = relationship("School")
+
+
+class AdmissionApplication(Base):
+    __tablename__ = "admission_applications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    applicant_name = Column(String, nullable=False, index=True)
+    applicant_phone = Column(String, nullable=True)
+    applicant_email = Column(String, nullable=True)
+    desired_level = Column(String, nullable=True)
+    desired_program_id = Column(Integer, ForeignKey("academic_programs.id"), nullable=True)
+    status = Column(SqEnum(AdmissionStatus), default=AdmissionStatus.SUBMITTED, nullable=False)
+    notes = Column(Text, nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    handled_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    desired_program = relationship("AcademicProgram")
+    school = relationship("School")
+    handled_by = relationship("User")
+
+
+class ExamSession(Base):
+    __tablename__ = "exam_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, index=True)
+    exam_type = Column(String, nullable=False, index=True)
+    class_id = Column(Integer, ForeignKey("classes.id"), nullable=True)
+    program_id = Column(Integer, ForeignKey("academic_programs.id"), nullable=True)
+    start_date = Column(DateTime, nullable=True)
+    end_date = Column(DateTime, nullable=True)
+    status = Column(String, default="planned", nullable=False)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    class_ = relationship("Class")
+    program = relationship("AcademicProgram")
+    school = relationship("School")
+    created_by = relationship("User")
+
+
+class InventoryItem(Base):
+    __tablename__ = "inventory_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, index=True)
+    category = Column(String, nullable=False, index=True)
+    quantity = Column(Integer, default=0)
+    minimum_quantity = Column(Integer, default=0)
+    location = Column(String, nullable=True)
+    status = Column(SqEnum(InventoryStatus), default=InventoryStatus.AVAILABLE, nullable=False)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    school = relationship("School")
+
+
+class PayrollRecord(Base):
+    __tablename__ = "payroll_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    staff_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    period = Column(String, nullable=False, index=True)
+    gross_amount = Column(Float, nullable=False)
+    deductions = Column(Float, default=0)
+    net_amount = Column(Float, nullable=False)
+    status = Column(SqEnum(PayrollStatus), default=PayrollStatus.DRAFT, nullable=False)
+    paid_at = Column(DateTime(timezone=True), nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    staff = relationship("User", foreign_keys=[staff_user_id])
+    school = relationship("School")
+    created_by = relationship("User", foreign_keys=[created_by_id])
+
+
+class TransportRoute(Base):
+    __tablename__ = "transport_routes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, index=True)
+    vehicle_identifier = Column(String, nullable=True)
+    driver_name = Column(String, nullable=True)
+    driver_phone = Column(String, nullable=True)
+    stops = Column(JSON, nullable=True)
+    monthly_fee = Column(Float, default=0)
+    is_active = Column(Boolean, default=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    school = relationship("School")
+
+
+class CanteenMealPlan(Base):
+    __tablename__ = "canteen_meal_plans"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, index=True)
+    day_of_week = Column(String, nullable=True)
+    meal_type = Column(String, nullable=False)
+    menu = Column(Text, nullable=True)
+    price = Column(Float, default=0)
+    is_active = Column(Boolean, default=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    school = relationship("School")
 
 # Library Management Models
 
