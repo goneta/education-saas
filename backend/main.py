@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
 from .migrations import ensure_runtime_schema
-from .routers import auth, students, teachers, chat, education, attendance, grades, dashboard, library, finance, system
+from .routers import auth, students, teachers, chat, education, attendance, grades, dashboard, library, finance, system, pedagogy
 
 # Create Tables (Simple migration for MVP)
 Base.metadata.create_all(bind=engine)
@@ -39,6 +39,7 @@ app.include_router(dashboard.router)
 app.include_router(library.router)
 app.include_router(finance.router)
 app.include_router(system.router)
+app.include_router(pedagogy.router)
 
 @app.get("/")
 def read_root():

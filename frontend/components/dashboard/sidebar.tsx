@@ -50,8 +50,10 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
                 { href: `/${locale}/dashboard/education/classes`, label: "Classes", icon: BookOpen },
                 { href: `/${locale}/dashboard/education/subjects`, label: "Subjects", icon: BookOpen },
                 { href: `/${locale}/dashboard/education/timetable`, label: "Timetable", icon: Calendar },
+                { href: `/${locale}/dashboard/education/pedagogy`, label: "Pedagogy", icon: GraduationCap },
                 { href: `/${locale}/dashboard/grades/assessments`, label: "Grades", icon: ClipboardCheck },
                 { href: `/${locale}/dashboard/library`, label: "Library", icon: BookOpen },
+                { href: `/${locale}/dashboard/portal`, label: "Parent / Student Portal", icon: Users },
             ]
         },
         {

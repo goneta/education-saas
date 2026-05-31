@@ -14,6 +14,10 @@ from .models import (
     CertificateType,
     CertificateStatus,
     CashClosureStatus,
+    AssignmentStatus,
+    SubmissionStatus,
+    AdministrativeRequestType,
+    AdministrativeRequestStatus,
 )
 
 # School Schemas
@@ -556,6 +560,160 @@ class SmsMessageResponse(SmsMessageCreate):
     id: int
     school_id: int
     status: str
+    created_by_id: Optional[int] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Pedagogy and Portal Schemas
+
+class CourseMaterialCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    content_url: Optional[str] = None
+    content_text: Optional[str] = None
+    class_id: int
+    subject_id: Optional[int] = None
+
+
+class CourseMaterialResponse(CourseMaterialCreate):
+    id: int
+    teacher_id: Optional[int] = None
+    school_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AssignmentCreate(BaseModel):
+    title: str
+    instructions: Optional[str] = None
+    due_date: Optional[datetime] = None
+    status: AssignmentStatus = AssignmentStatus.PUBLISHED
+    class_id: int
+    subject_id: Optional[int] = None
+
+
+class AssignmentResponse(AssignmentCreate):
+    id: int
+    teacher_id: Optional[int] = None
+    school_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AssignmentSubmissionCreate(BaseModel):
+    content_text: Optional[str] = None
+    attachment_url: Optional[str] = None
+
+
+class AssignmentSubmissionGrade(BaseModel):
+    score: Optional[float] = None
+    feedback: Optional[str] = None
+
+
+class AssignmentSubmissionResponse(AssignmentSubmissionCreate):
+    id: int
+    assignment_id: int
+    student_id: int
+    status: SubmissionStatus
+    score: Optional[float] = None
+    feedback: Optional[str] = None
+    submitted_at: datetime
+    graded_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ParentStudentLinkCreate(BaseModel):
+    parent_user_id: int
+    student_id: int
+    relationship: Optional[str] = None
+
+
+class ParentStudentLinkResponse(ParentStudentLinkCreate):
+    id: int
+    is_active: bool
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AdministrativeRequestCreate(BaseModel):
+    request_type: AdministrativeRequestType
+    student_id: int
+    details: Optional[str] = None
+
+
+class AdministrativeRequestUpdate(BaseModel):
+    status: AdministrativeRequestStatus
+    response: Optional[str] = None
+
+
+class AdministrativeRequestResponse(BaseModel):
+    id: int
+    request_type: AdministrativeRequestType
+    status: AdministrativeRequestStatus
+    details: Optional[str] = None
+    response: Optional[str] = None
+    student_id: int
+    requested_by_id: Optional[int] = None
+    handled_by_id: Optional[int] = None
+    school_id: int
+    created_at: datetime
+    handled_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class InternshipCreate(BaseModel):
+    student_id: int
+    company_name: str
+    supervisor_name: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    status: str = "planned"
+    notes: Optional[str] = None
+
+
+class InternshipResponse(InternshipCreate):
+    id: int
+    school_id: int
+    created_by_id: Optional[int] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SchoolExitCreate(BaseModel):
+    student_id: int
+    reason: str
+    exit_date: datetime
+    destination: Optional[str] = None
+    is_authorized: bool = False
+
+
+class SchoolExitResponse(SchoolExitCreate):
+    id: int
+    school_id: int
+    created_by_id: Optional[int] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class StudentOrientationCreate(BaseModel):
+    student_id: int
+    recommended_path: str
+    notes: Optional[str] = None
+    decision_date: Optional[datetime] = None
+
+
+class StudentOrientationResponse(StudentOrientationCreate):
+    id: int
+    school_id: int
     created_by_id: Optional[int] = None
     created_at: datetime
 

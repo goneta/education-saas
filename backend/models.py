@@ -40,6 +40,27 @@ class StudentStatus(str, enum.Enum):
     ASSIGNED = "assigned"
     UNASSIGNED = "unassigned"
 
+class AssignmentStatus(str, enum.Enum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    CLOSED = "closed"
+
+class SubmissionStatus(str, enum.Enum):
+    SUBMITTED = "submitted"
+    GRADED = "graded"
+
+class AdministrativeRequestType(str, enum.Enum):
+    REPORT_CARD = "report_card"
+    CERTIFICATE = "certificate"
+    ABSENCE_AUTHORIZATION = "absence_authorization"
+    OTHER = "other"
+
+class AdministrativeRequestStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    DONE = "done"
+
 # Core Models
 
 class School(Base):
@@ -310,6 +331,163 @@ class Attendance(Base):
     recorded_by_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Teacher or Admin who marked it
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class CourseMaterial(Base):
+    __tablename__ = "course_materials"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    content_url = Column(String, nullable=True)
+    content_text = Column(Text, nullable=True)
+    class_id = Column(Integer, ForeignKey("classes.id"), nullable=False)
+    subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=True)
+    teacher_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    class_ = relationship("Class")
+    subject = relationship("Subject")
+    teacher = relationship("User")
+    school = relationship("School")
+
+
+class Assignment(Base):
+    __tablename__ = "assignments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False, index=True)
+    instructions = Column(Text, nullable=True)
+    due_date = Column(DateTime, nullable=True)
+    status = Column(SqEnum(AssignmentStatus), default=AssignmentStatus.PUBLISHED, nullable=False)
+    class_id = Column(Integer, ForeignKey("classes.id"), nullable=False)
+    subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=True)
+    teacher_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    class_ = relationship("Class")
+    subject = relationship("Subject")
+    teacher = relationship("User")
+    school = relationship("School")
+    submissions = relationship("AssignmentSubmission", back_populates="assignment", cascade="all, delete-orphan")
+
+
+class AssignmentSubmission(Base):
+    __tablename__ = "assignment_submissions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    assignment_id = Column(Integer, ForeignKey("assignments.id"), nullable=False)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    content_text = Column(Text, nullable=True)
+    attachment_url = Column(String, nullable=True)
+    status = Column(SqEnum(SubmissionStatus), default=SubmissionStatus.SUBMITTED, nullable=False)
+    score = Column(Float, nullable=True)
+    feedback = Column(Text, nullable=True)
+    submitted_at = Column(DateTime(timezone=True), server_default=func.now())
+    graded_at = Column(DateTime(timezone=True), nullable=True)
+
+    assignment = relationship("Assignment", back_populates="submissions")
+    student = relationship("StudentProfile")
+
+
+class ParentStudentLink(Base):
+    __tablename__ = "parent_student_links"
+
+    id = Column(Integer, primary_key=True, index=True)
+    parent_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    relation = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    parent = relationship("User")
+    student = relationship("StudentProfile")
+
+    __table_args__ = (
+        UniqueConstraint('parent_user_id', 'student_id', name='_parent_student_uc'),
+    )
+
+    @property
+    def relationship(self):
+        return self.relation
+
+
+class AdministrativeRequest(Base):
+    __tablename__ = "administrative_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    request_type = Column(SqEnum(AdministrativeRequestType), nullable=False)
+    status = Column(SqEnum(AdministrativeRequestStatus), default=AdministrativeRequestStatus.PENDING, nullable=False)
+    details = Column(Text, nullable=True)
+    response = Column(Text, nullable=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    requested_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    handled_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    handled_at = Column(DateTime(timezone=True), nullable=True)
+
+    student = relationship("StudentProfile")
+    requested_by = relationship("User", foreign_keys=[requested_by_id])
+    handled_by = relationship("User", foreign_keys=[handled_by_id])
+    school = relationship("School")
+
+
+class Internship(Base):
+    __tablename__ = "internships"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    company_name = Column(String, nullable=False)
+    supervisor_name = Column(String, nullable=True)
+    start_date = Column(DateTime, nullable=True)
+    end_date = Column(DateTime, nullable=True)
+    status = Column(String, default="planned", nullable=False)
+    notes = Column(Text, nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    student = relationship("StudentProfile")
+    school = relationship("School")
+    created_by = relationship("User")
+
+
+class SchoolExit(Base):
+    __tablename__ = "school_exits"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    reason = Column(String, nullable=False)
+    exit_date = Column(DateTime, nullable=False)
+    destination = Column(String, nullable=True)
+    is_authorized = Column(Boolean, default=False)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    student = relationship("StudentProfile")
+    school = relationship("School")
+    created_by = relationship("User")
+
+
+class StudentOrientation(Base):
+    __tablename__ = "student_orientations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    recommended_path = Column(String, nullable=False)
+    notes = Column(Text, nullable=True)
+    decision_date = Column(DateTime, nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    student = relationship("StudentProfile")
+    school = relationship("School")
+    created_by = relationship("User")
 
 # Library Management Models
 
