@@ -8,6 +8,9 @@ from .database import Base
 class UserRole(str, enum.Enum):
     SUPER_ADMIN = "super_admin" # Ministry / Platform Owner
     SCHOOL_ADMIN = "school_admin"
+    CASHIER = "cashier"
+    REGISTRAR = "registrar"
+    DIRECTION = "direction"
     TEACHER = "teacher"
     STUDENT = "student"
     PARENT = "parent"
@@ -32,6 +35,10 @@ class AttendanceStatus(str, enum.Enum):
     ABSENT = "absent"
     LATE = "late"
     EXCUSED = "excused"
+
+class StudentStatus(str, enum.Enum):
+    ASSIGNED = "assigned"
+    UNASSIGNED = "unassigned"
 
 # Core Models
 
@@ -101,6 +108,10 @@ class StudentProfile(Base):
     parent_phone = Column(String)
     parent_email = Column(String, nullable=True)
     parent_address = Column(String, nullable=True) # Added field
+    guardian_relation = Column(String, nullable=True)
+    status = Column(SqEnum(StudentStatus), default=StudentStatus.UNASSIGNED, nullable=False)
+    previous_level = Column(String, nullable=True)
+    previous_class = Column(String, nullable=True)
     
     # Class Linkage
     current_class_id = Column(Integer, ForeignKey("classes.id"), nullable=True)
@@ -109,6 +120,7 @@ class StudentProfile(Base):
     current_class = relationship("Class", back_populates="students")
     grades = relationship("Grade", back_populates="student")
     education_history = relationship("StudentEducationHistory", back_populates="student", cascade="all, delete-orphan")
+    registration_documents = relationship("StudentRegistrationDocument", back_populates="student", cascade="all, delete-orphan")
 
 class StudentEducationHistory(Base):
     __tablename__ = "student_education_history"
@@ -318,6 +330,21 @@ class FeeStatus(str, enum.Enum):
     PAID = "paid"
     OVERDUE = "overdue"
 
+class CertificateType(str, enum.Enum):
+    SCHOOLING = "schooling"
+    ENROLLMENT = "enrollment"
+    ABSENCE_AUTHORIZATION = "absence_authorization"
+    PAYMENT = "payment"
+
+class CertificateStatus(str, enum.Enum):
+    GENERATED = "generated"
+    BLOCKED = "blocked"
+
+class CashClosureStatus(str, enum.Enum):
+    DRAFT = "draft"
+    SUBMITTED = "submitted"
+    APPROVED = "approved"
+
 class ExpenseCategory(str, enum.Enum):
     SALARIES = "salaries"
     UTILITIES = "utilities"
@@ -376,16 +403,32 @@ class Fee(Base):
     due_date = Column(DateTime, nullable=True)
     status = Column(SqEnum(FeeStatus), default=FeeStatus.PENDING, nullable=False)
     description = Column(String, nullable=True)
+    category = Column(String, nullable=True, index=True)
+    category_order = Column(Integer, default=0)
+    is_required = Column(Boolean, default=True)
+    academic_year_id = Column(Integer, ForeignKey("academic_years.id"), nullable=True)
+    class_id = Column(Integer, ForeignKey("classes.id"), nullable=True)
+    covered_by = Column(JSON, nullable=True)
 
     student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=True)
 
     student = relationship("StudentProfile")
     school = relationship("School")
+    academic_year = relationship("AcademicYear")
+    class_ = relationship("Class")
     payments = relationship("Payment", back_populates="fee", cascade="all, delete-orphan")
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    @property
+    def total_paid(self):
+        return sum(payment.amount for payment in self.payments)
+
+    @property
+    def remaining_balance(self):
+        return max(self.amount - self.total_paid, 0)
 
 
 class Payment(Base):
@@ -395,9 +438,14 @@ class Payment(Base):
     amount = Column(Float, nullable=False)
     payment_date = Column(DateTime(timezone=True), server_default=func.now())
     note = Column(String, nullable=True)
+    receipt_number = Column(String, unique=True, index=True, nullable=True)
+    operator_station = Column(String, nullable=True)
+    recorded_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     fee_id = Column(Integer, ForeignKey("fees.id"), nullable=False)
     fee = relationship("Fee", back_populates="payments")
+    recorded_by = relationship("User")
 
 
 class Expense(Base):
@@ -415,6 +463,121 @@ class Expense(Base):
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class FeeSchedule(Base):
+    __tablename__ = "fee_schedules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, index=True)
+    amount = Column(Float, nullable=False)
+    category_order = Column(Integer, default=0)
+    is_required = Column(Boolean, default=True)
+    is_current = Column(Boolean, default=True)
+    academic_year_id = Column(Integer, ForeignKey("academic_years.id"), nullable=True)
+    class_id = Column(Integer, ForeignKey("classes.id"), nullable=True)
+    level = Column(String, nullable=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+
+    school = relationship("School")
+    academic_year = relationship("AcademicYear")
+    class_ = relationship("Class")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class StudentRegistrationDocument(Base):
+    __tablename__ = "student_registration_documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    name = Column(String, nullable=False)
+    is_received = Column(Boolean, default=False)
+    received_at = Column(DateTime(timezone=True), nullable=True)
+    notes = Column(String, nullable=True)
+    updated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    student = relationship("StudentProfile", back_populates="registration_documents")
+    updated_by = relationship("User")
+
+
+class CertificateRequest(Base):
+    __tablename__ = "certificate_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    certificate_type = Column(SqEnum(CertificateType), nullable=False)
+    status = Column(SqEnum(CertificateStatus), default=CertificateStatus.GENERATED, nullable=False)
+    blocked_reason = Column(String, nullable=True)
+    content = Column(Text, nullable=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    generated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    generated_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    student = relationship("StudentProfile")
+    school = relationship("School")
+    generated_by = relationship("User")
+
+
+class CashClosure(Base):
+    __tablename__ = "cash_closures"
+
+    id = Column(Integer, primary_key=True, index=True)
+    closure_date = Column(DateTime, nullable=False, index=True)
+    counted_amount = Column(Float, nullable=False)
+    expected_amount = Column(Float, nullable=False)
+    difference = Column(Float, nullable=False)
+    status = Column(SqEnum(CashClosureStatus), default=CashClosureStatus.SUBMITTED, nullable=False)
+    notes = Column(String, nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    submitted_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    approved_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+
+    school = relationship("School")
+    submitted_by = relationship("User", foreign_keys=[submitted_by_id])
+    approved_by = relationship("User", foreign_keys=[approved_by_id])
+
+
+class BudgetForecast(Base):
+    __tablename__ = "budget_forecasts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    expected_students = Column(Integer, default=0)
+    expected_revenue = Column(Float, default=0)
+    fee_category = Column(String, nullable=True, index=True)
+    level = Column(String, nullable=True, index=True)
+    academic_year_id = Column(Integer, ForeignKey("academic_years.id"), nullable=True)
+    class_id = Column(Integer, ForeignKey("classes.id"), nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    school = relationship("School")
+    academic_year = relationship("AcademicYear")
+    class_ = relationship("Class")
+    created_by = relationship("User")
+
+
+class SmsMessage(Base):
+    __tablename__ = "sms_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    recipient_phone = Column(String, nullable=False)
+    recipient_name = Column(String, nullable=True)
+    event_type = Column(String, nullable=False, index=True)
+    message = Column(Text, nullable=False)
+    status = Column(String, default="queued", nullable=False)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    student = relationship("StudentProfile")
+    school = relationship("School")
+    created_by = relationship("User")
 
 
 

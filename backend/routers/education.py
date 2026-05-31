@@ -44,6 +44,51 @@ def list_classes(
     ).offset(skip).limit(limit).all()
     return classes
 
+
+@router.get("/classes/{class_id}/roster")
+def class_roster(
+    class_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    cls = db.query(models.Class).filter(
+        models.Class.id == class_id,
+        models.Class.school_id == current_user.school_id
+    ).first()
+    if not cls:
+        raise HTTPException(status_code=404, detail="Class not found")
+
+    students = db.query(models.StudentProfile).join(models.User).filter(
+        models.StudentProfile.current_class_id == class_id,
+        models.User.school_id == current_user.school_id,
+    ).all()
+    rows = []
+    anomalies = []
+    for student in students:
+        fees = db.query(models.Fee).filter(models.Fee.student_id == student.id).all()
+        paid = sum(sum(payment.amount for payment in fee.payments) for fee in fees)
+        expected = sum(fee.amount for fee in fees)
+        row = {
+            "student_id": student.id,
+            "student_user_id": student.user_id,
+            "full_name": student.user.full_name if student.user else None,
+            "registration_number": student.registration_number,
+            "parent_name": student.parent_name,
+            "parent_phone": student.parent_phone,
+            "expected": expected,
+            "paid": paid,
+            "remaining": max(expected - paid, 0),
+            "has_finance_record": len(fees) > 0,
+        }
+        rows.append(row)
+        if not fees:
+            anomalies.append({**row, "reason": "Eleve en liste de classe sans fiche frais/paiement"})
+    return {
+        "class": {"id": cls.id, "name": cls.name, "level": cls.level},
+        "students": rows,
+        "anomalies": anomalies,
+    }
+
 @router.put("/classes/{class_id}", response_model=schemas.ClassResponse)
 def update_class(
     class_id: int,

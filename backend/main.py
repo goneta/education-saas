@@ -3,10 +3,12 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
+from .migrations import ensure_runtime_schema
 from .routers import auth, students, teachers, chat, education, attendance, grades, dashboard, library, finance, system
 
 # Create Tables (Simple migration for MVP)
 Base.metadata.create_all(bind=engine)
+ensure_runtime_schema(engine)
 
 app = FastAPI(title="Education SaaS API")
 

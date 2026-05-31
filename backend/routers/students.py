@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+from datetime import datetime
 from .. import models, schemas, security, database
 
 router = APIRouter(prefix="/students", tags=["Students"])
@@ -51,9 +52,21 @@ def register_student(
             parent_phone=student_in.profile.parent_phone,
             parent_email=student_in.profile.parent_email,
             parent_address=student_in.profile.parent_address,
+            guardian_relation=student_in.profile.guardian_relation,
+            status=student_in.profile.status,
+            previous_level=student_in.profile.previous_level,
+            previous_class=student_in.profile.previous_class,
             current_class_id=student_in.profile.current_class_id
         )
         db.add(new_profile)
+        db.flush()
+        for document_name in [
+            "Extrait de naissance",
+            "Bulletin scolaire de l'annee derniere",
+            "Piece d'identite parent 1",
+            "Piece d'identite parent 2 ou representant legal",
+        ]:
+            db.add(models.StudentRegistrationDocument(student_id=new_profile.id, name=document_name))
         db.commit()
         db.refresh(new_user)
         return new_user
@@ -67,6 +80,7 @@ def list_students(
     skip: int = 0, 
     limit: int = 100, 
     class_id: int = None,
+    search: str = None,
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
@@ -80,6 +94,12 @@ def list_students(
     
     if class_id:
         query = query.filter(models.StudentProfile.current_class_id == class_id)
+    if search:
+        pattern = f"%{search}%"
+        query = query.filter(
+            (models.User.full_name.ilike(pattern)) |
+            (models.StudentProfile.registration_number.ilike(pattern))
+        )
         
     students = query.offset(skip).limit(limit).all()
     return students
@@ -100,6 +120,13 @@ def get_student(
         raise HTTPException(status_code=404, detail="Student not found")
         
     return student
+
+
+def _student_outstanding_balance(student_profile: models.StudentProfile) -> float:
+    return sum(
+        max(fee.amount - sum(payment.amount for payment in fee.payments), 0)
+        for fee in getattr(student_profile, "fees", [])
+    )
 
 @router.put("/{student_id}", response_model=schemas.StudentResponse)
 def update_student(
@@ -234,3 +261,110 @@ def delete_education_history(
 
     db.delete(history)
     db.commit()
+
+
+@router.post("/{student_id}/certificates", response_model=schemas.CertificateResponse)
+def generate_certificate(
+    student_id: int,
+    certificate_in: schemas.CertificateCreate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    student = db.query(models.User).filter(
+        models.User.id == student_id,
+        models.User.school_id == current_user.school_id,
+        models.User.role == models.UserRole.STUDENT
+    ).first()
+    if not student or not student.student_profile:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    fees = db.query(models.Fee).filter(models.Fee.student_id == student.student_profile.id).all()
+    outstanding = sum(max(fee.amount - sum(payment.amount for payment in fee.payments), 0) for fee in fees)
+    blocked = certificate_in.certificate_type != models.CertificateType.SCHOOLING and outstanding > 0
+    school = student.school
+    content = None if blocked else (
+        f"{certificate_in.certificate_type.value} - {student.full_name} "
+        f"({student.student_profile.registration_number}) - {school.name if school else ''}"
+    )
+    row = models.CertificateRequest(
+        certificate_type=certificate_in.certificate_type,
+        status=models.CertificateStatus.BLOCKED if blocked else models.CertificateStatus.GENERATED,
+        blocked_reason="Attestation bloquée: solde financier impayé." if blocked else None,
+        content=content,
+        student_id=student.student_profile.id,
+        school_id=current_user.school_id,
+        generated_by_id=current_user.id,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.get("/{student_id}/certificates", response_model=List[schemas.CertificateResponse])
+def list_certificates(
+    student_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    student = db.query(models.User).filter(
+        models.User.id == student_id,
+        models.User.school_id == current_user.school_id,
+        models.User.role == models.UserRole.STUDENT
+    ).first()
+    if not student or not student.student_profile:
+        raise HTTPException(status_code=404, detail="Student not found")
+    return db.query(models.CertificateRequest).filter(
+        models.CertificateRequest.student_id == student.student_profile.id,
+        models.CertificateRequest.school_id == current_user.school_id,
+    ).order_by(models.CertificateRequest.generated_at.desc()).all()
+
+
+@router.get("/{student_id}/documents", response_model=List[schemas.RegistrationDocumentResponse])
+def list_registration_documents(
+    student_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    student = db.query(models.User).filter(
+        models.User.id == student_id,
+        models.User.school_id == current_user.school_id,
+        models.User.role == models.UserRole.STUDENT
+    ).first()
+    if not student or not student.student_profile:
+        raise HTTPException(status_code=404, detail="Student not found")
+    return student.student_profile.registration_documents
+
+
+@router.put("/{student_id}/documents/{document_id}", response_model=schemas.RegistrationDocumentResponse)
+def update_registration_document(
+    student_id: int,
+    document_id: int,
+    document_in: schemas.RegistrationDocumentUpdate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    if current_user.role not in [
+        models.UserRole.SCHOOL_ADMIN,
+        models.UserRole.SUPER_ADMIN,
+        models.UserRole.REGISTRAR,
+        models.UserRole.DIRECTION,
+    ]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    document = db.query(models.StudentRegistrationDocument).join(models.StudentProfile).join(models.User).filter(
+        models.User.id == student_id,
+        models.User.school_id == current_user.school_id,
+        models.StudentRegistrationDocument.id == document_id
+    ).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    document.name = document_in.name
+    document.is_received = document_in.is_received
+    document.notes = document_in.notes
+    document.updated_by_id = current_user.id
+    document.received_at = datetime.utcnow() if document_in.is_received and not document.received_at else None if not document_in.is_received else document.received_at
+    db.commit()
+    db.refresh(document)
+    return document

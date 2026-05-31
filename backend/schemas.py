@@ -1,7 +1,20 @@
 from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional, List
 from datetime import datetime, time, date
-from .models import UserRole, SchoolType, DayOfWeek, AttendanceStatus, BookStatus, LoanStatus, FeeStatus, ExpenseCategory
+from .models import (
+    UserRole,
+    SchoolType,
+    DayOfWeek,
+    AttendanceStatus,
+    BookStatus,
+    LoanStatus,
+    FeeStatus,
+    ExpenseCategory,
+    StudentStatus,
+    CertificateType,
+    CertificateStatus,
+    CashClosureStatus,
+)
 
 # School Schemas
 class SchoolBase(BaseModel):
@@ -55,6 +68,10 @@ class StudentProfileBase(BaseModel):
     parent_phone: str
     parent_email: Optional[EmailStr] = None
     parent_address: Optional[str] = None
+    guardian_relation: Optional[str] = None
+    status: StudentStatus = StudentStatus.UNASSIGNED
+    previous_level: Optional[str] = None
+    previous_class: Optional[str] = None
     current_class_id: Optional[int] = None
 
 class EducationHistoryBase(BaseModel):
@@ -85,6 +102,10 @@ class StudentUpdateProfile(BaseModel):
     parent_phone: Optional[str] = None
     parent_email: Optional[EmailStr] = None
     parent_address: Optional[str] = None
+    guardian_relation: Optional[str] = None
+    status: Optional[StudentStatus] = None
+    previous_level: Optional[str] = None
+    previous_class: Optional[str] = None
     current_class_id: Optional[int] = None
 
 class StudentUpdate(BaseModel):
@@ -363,7 +384,9 @@ class LoanResponse(LoanBase):
 
 class PaymentCreate(BaseModel):
     amount: float
+    payment_date: Optional[datetime] = None
     note: Optional[str] = None
+    operator_station: Optional[str] = None
 
 
 class PaymentResponse(BaseModel):
@@ -371,6 +394,9 @@ class PaymentResponse(BaseModel):
     amount: float
     payment_date: datetime
     note: Optional[str] = None
+    receipt_number: Optional[str] = None
+    operator_station: Optional[str] = None
+    recorded_by_id: Optional[int] = None
     fee_id: int
 
     model_config = ConfigDict(from_attributes=True)
@@ -382,6 +408,12 @@ class FeeBase(BaseModel):
     due_date: Optional[datetime] = None
     status: FeeStatus = FeeStatus.PENDING
     description: Optional[str] = None
+    category: Optional[str] = None
+    category_order: int = 0
+    is_required: bool = True
+    academic_year_id: Optional[int] = None
+    class_id: Optional[int] = None
+    covered_by: Optional[List[dict]] = None
     student_id: Optional[int] = None
 
 
@@ -394,6 +426,132 @@ class FeeResponse(FeeBase):
     school_id: Optional[int] = None
     created_at: datetime
     payments: List[PaymentResponse] = []
+    total_paid: float = 0
+    remaining_balance: float = 0
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FeeScheduleBase(BaseModel):
+    name: str
+    amount: float
+    category_order: int = 0
+    is_required: bool = True
+    is_current: bool = True
+    academic_year_id: Optional[int] = None
+    class_id: Optional[int] = None
+    level: Optional[str] = None
+
+
+class FeeScheduleCreate(FeeScheduleBase):
+    school_id: Optional[int] = None
+
+
+class FeeScheduleResponse(FeeScheduleBase):
+    id: int
+    school_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RegistrationDocumentBase(BaseModel):
+    name: str
+    is_received: bool = False
+    notes: Optional[str] = None
+
+
+class RegistrationDocumentUpdate(RegistrationDocumentBase):
+    pass
+
+
+class RegistrationDocumentResponse(RegistrationDocumentBase):
+    id: int
+    student_id: int
+    received_at: Optional[datetime] = None
+    updated_by_id: Optional[int] = None
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CertificateCreate(BaseModel):
+    certificate_type: CertificateType
+
+
+class CertificateResponse(BaseModel):
+    id: int
+    certificate_type: CertificateType
+    status: CertificateStatus
+    blocked_reason: Optional[str] = None
+    content: Optional[str] = None
+    student_id: int
+    school_id: int
+    generated_by_id: Optional[int] = None
+    generated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CashClosureCreate(BaseModel):
+    closure_date: datetime
+    counted_amount: float
+    notes: Optional[str] = None
+
+
+class CashClosureResponse(BaseModel):
+    id: int
+    closure_date: datetime
+    counted_amount: float
+    expected_amount: float
+    difference: float
+    status: CashClosureStatus
+    notes: Optional[str] = None
+    school_id: int
+    submitted_by_id: Optional[int] = None
+    approved_by_id: Optional[int] = None
+    created_at: datetime
+    approved_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class BudgetForecastBase(BaseModel):
+    expected_students: int = 0
+    expected_revenue: float = 0
+    fee_category: Optional[str] = None
+    level: Optional[str] = None
+    academic_year_id: Optional[int] = None
+    class_id: Optional[int] = None
+
+
+class BudgetForecastCreate(BudgetForecastBase):
+    school_id: Optional[int] = None
+
+
+class BudgetForecastResponse(BudgetForecastBase):
+    id: int
+    school_id: int
+    created_by_id: Optional[int] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SmsMessageCreate(BaseModel):
+    recipient_phone: str
+    recipient_name: Optional[str] = None
+    event_type: str
+    message: str
+    student_id: Optional[int] = None
+
+
+class SmsMessageResponse(SmsMessageCreate):
+    id: int
+    school_id: int
+    status: str
+    created_by_id: Optional[int] = None
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
