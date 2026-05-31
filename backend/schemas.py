@@ -47,8 +47,14 @@ class UserResponse(UserBase):
     id: int
     is_active: bool
     school_id: Optional[int]
+    school: Optional[SchoolResponse] = None
     
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserRoleUpdate(BaseModel):
+    role: UserRole
+    is_active: Optional[bool] = None
 
 # Token Schema
 class Token(BaseModel):

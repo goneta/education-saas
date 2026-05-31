@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Pencil, Trash2, Plus } from "lucide-react"
+import { Pencil, Trash2, Plus, Eye, Printer } from "lucide-react"
 import {
     Select,
     SelectContent,
@@ -36,6 +36,25 @@ interface TeacherOption {
     full_name: string
 }
 
+interface RosterRow {
+    student_user_id: number
+    full_name: string
+    registration_number: string
+    parent_name: string
+    parent_phone: string
+    expected: number
+    paid: number
+    remaining: number
+    has_finance_record: boolean
+    reason?: string
+}
+
+interface Roster {
+    class: { id: number; name: string; level: string }
+    students: RosterRow[]
+    anomalies: RosterRow[]
+}
+
 export default function ClassesPage() {
     const { token } = useAuth()
     const [classes, setClasses] = useState<ClassItem[]>([])
@@ -44,6 +63,7 @@ export default function ClassesPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [currentClass, setCurrentClass] = useState<ClassItem | null>(null)
     const [formData, setFormData] = useState<{ name: string, level: string, main_teacher_id: string | null }>({ name: "", level: "", main_teacher_id: null })
+    const [roster, setRoster] = useState<Roster | null>(null)
 
     useEffect(() => {
         if (token) {
@@ -144,6 +164,13 @@ export default function ClassesPage() {
         setIsDialogOpen(true)
     }
 
+    const openRoster = async (cls: ClassItem) => {
+        const res = await fetch(`${API_BASE_URL}/education/classes/${cls.id}/roster`, {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+        if (res.ok) setRoster(await res.json())
+    }
+
     const resetForm = () => {
         setCurrentClass(null)
         setFormData({ name: "", level: "", main_teacher_id: null })
@@ -240,6 +267,9 @@ export default function ClassesPage() {
                                             : "-"}
                                     </td>
                                     <td className="px-6 py-4 text-right space-x-2">
+                                        <Button variant="ghost" size="sm" onClick={() => openRoster(cls)} title="View roster">
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
                                         <Button variant="ghost" size="sm" onClick={() => openEdit(cls)}>
                                             <Pencil className="h-4 w-4" />
                                         </Button>
@@ -253,6 +283,56 @@ export default function ClassesPage() {
                     </tbody>
                 </table>
             </div>
+
+            {roster && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="text-xl font-semibold text-[#111827]">{roster.class.name} roster</h2>
+                            <p className="text-sm text-[#6B7280]">{roster.students.length} students, {roster.anomalies.length} finance anomalies</p>
+                        </div>
+                        <Button variant="outline" onClick={() => window.print()} className="gap-2">
+                            <Printer className="h-4 w-4" /> Print
+                        </Button>
+                    </div>
+                    {roster.anomalies.length > 0 && (
+                        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                            <h3 className="text-sm font-semibold text-red-800">Anomalies</h3>
+                            <div className="mt-2 space-y-1">
+                                {roster.anomalies.map((row) => (
+                                    <p key={row.student_user_id} className="text-sm text-red-700">{row.full_name} - {row.reason}</p>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    <div className="border rounded-md overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="bg-gray-50 border-b">
+                                <tr>
+                                    <th className="px-4 py-3 text-left font-medium text-gray-500">Student</th>
+                                    <th className="px-4 py-3 text-left font-medium text-gray-500">Matricule</th>
+                                    <th className="px-4 py-3 text-left font-medium text-gray-500">Parent</th>
+                                    <th className="px-4 py-3 text-right font-medium text-gray-500">Expected</th>
+                                    <th className="px-4 py-3 text-right font-medium text-gray-500">Paid</th>
+                                    <th className="px-4 py-3 text-right font-medium text-gray-500">Remaining</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {roster.students.map((row) => (
+                                    <tr key={row.student_user_id} className="border-b last:border-0">
+                                        <td className="px-4 py-3 font-medium">{row.full_name}</td>
+                                        <td className="px-4 py-3">{row.registration_number}</td>
+                                        <td className="px-4 py-3">{row.parent_name} / {row.parent_phone}</td>
+                                        <td className="px-4 py-3 text-right">{row.expected.toLocaleString()} FCFA</td>
+                                        <td className="px-4 py-3 text-right text-green-700">{row.paid.toLocaleString()} FCFA</td>
+                                        <td className="px-4 py-3 text-right text-red-700">{row.remaining.toLocaleString()} FCFA</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

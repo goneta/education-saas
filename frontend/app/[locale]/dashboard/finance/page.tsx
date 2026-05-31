@@ -83,6 +83,12 @@ export default function FinanceDashboard({ params: { locale } }: { params: { loc
                     <Link href={`/${locale}/dashboard/finance/expenses`}>
                         <Button variant="outline">Manage Expenses</Button>
                     </Link>
+                    <Link href={`/${locale}/dashboard/finance/reports`}>
+                        <Button variant="outline">Reports</Button>
+                    </Link>
+                    <Link href={`/${locale}/dashboard/finance/cash-journal`}>
+                        <Button variant="outline">Cash Journal</Button>
+                    </Link>
                 </div>
             </div>
 

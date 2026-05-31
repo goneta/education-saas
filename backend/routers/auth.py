@@ -58,6 +58,8 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    if not user.is_active or (user.school and not user.school.is_active):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account or school is suspended")
     
     access_token_expires = timedelta(minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_access_token(

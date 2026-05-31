@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname, useParams } from "next/navigation"
 import { cn } from "@/lib/utils"
 // We will replace these with Lucide icons later
-import { Home, Users, Settings, BookOpen, GraduationCap, Calendar, ClipboardCheck, ChevronDown } from "lucide-react"
+import { Home, Users, Settings, BookOpen, GraduationCap, Calendar, ClipboardCheck, ChevronDown, CreditCard, BarChart3, MessageSquare } from "lucide-react"
 
 interface SidebarProps {
     isResizablePanel?: boolean;
@@ -52,6 +52,18 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
                 { href: `/${locale}/dashboard/education/timetable`, label: "Timetable", icon: Calendar },
                 { href: `/${locale}/dashboard/grades/assessments`, label: "Grades", icon: ClipboardCheck },
                 { href: `/${locale}/dashboard/library`, label: "Library", icon: BookOpen },
+            ]
+        },
+        {
+            title: "Finance",
+            items: [
+                { href: `/${locale}/dashboard/finance`, label: "Finance", icon: CreditCard },
+                { href: `/${locale}/dashboard/finance/fees`, label: "Fees", icon: CreditCard },
+                { href: `/${locale}/dashboard/finance/reports`, label: "Reports", icon: BarChart3 },
+                { href: `/${locale}/dashboard/finance/cash-journal`, label: "Cash Journal", icon: ClipboardCheck },
+                { href: `/${locale}/dashboard/finance/forecasts`, label: "Forecasts", icon: BarChart3 },
+                { href: `/${locale}/dashboard/finance/settings`, label: "Fee Settings", icon: Settings },
+                { href: `/${locale}/dashboard/finance/sms`, label: "SMS", icon: MessageSquare },
             ]
         },
         {

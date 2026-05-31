@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, ConfigDict
-from .. import models, security, database
+from .. import models, schemas, security, database
 
 router = APIRouter(prefix="/system", tags=["System Configuration"])
 
@@ -23,6 +23,9 @@ class ReferenceDataResponse(ReferenceDataCreate):
     id: int
     is_active: bool
     model_config = ConfigDict(from_attributes=True)
+
+class SchoolStatusUpdate(BaseModel):
+    is_active: bool
 
 @router.post("/reference-data", response_model=ReferenceDataResponse)
 def create_reference_data(
@@ -76,3 +79,58 @@ def get_reference_data(
         query = query.filter(models.ReferenceData.school_id == None)
         
     return query.order_by(models.ReferenceData.order).all()
+
+
+@router.get("/schools", response_model=List[schemas.SchoolResponse])
+def list_schools(
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail="Super admin only")
+    schools = db.query(models.School).order_by(models.School.created_at.desc()).all()
+    return [
+        {
+            "id": school.id,
+            "name": school.name,
+            "domain_prefix": school.domain_prefix,
+            "school_type": school.school_type,
+            "address": school.address,
+            "is_active": school.is_active,
+            "created_at": school.created_at,
+        }
+        for school in schools
+    ]
+
+
+@router.patch("/schools/{school_id}/status")
+def update_school_status(
+    school_id: int,
+    status_update: SchoolStatusUpdate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail="Super admin only")
+    school = db.query(models.School).filter(models.School.id == school_id).first()
+    if not school:
+        raise HTTPException(status_code=404, detail="School not found")
+    school.is_active = status_update.is_active
+    db.commit()
+    db.refresh(school)
+    return {"id": school.id, "is_active": school.is_active}
+
+
+@router.get("/users", response_model=List[schemas.UserResponse])
+def list_users(
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    query = db.query(models.User)
+    if current_user.role == models.UserRole.SUPER_ADMIN:
+        pass
+    elif current_user.role in [models.UserRole.SCHOOL_ADMIN, models.UserRole.DIRECTION]:
+        query = query.filter(models.User.school_id == current_user.school_id)
+    else:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    return query.order_by(models.User.created_at.desc()).all()
