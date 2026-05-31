@@ -60,6 +60,7 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
             title: "Operations",
             items: [
                 { href: `/${locale}/dashboard/operations`, label: "Operations", icon: Settings },
+                { href: `/${locale}/dashboard/enterprise`, label: "Enterprise", icon: BarChart3 },
             ]
         },
         {

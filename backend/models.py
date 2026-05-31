@@ -903,4 +903,350 @@ class SmsMessage(Base):
     created_by = relationship("User")
 
 
+class ApprovalStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    CANCELLED = "cancelled"
+
+class NotificationChannel(str, enum.Enum):
+    SMS = "sms"
+    EMAIL = "email"
+    WHATSAPP = "whatsapp"
+
+class NotificationStatus(str, enum.Enum):
+    QUEUED = "queued"
+    SENT = "sent"
+    FAILED = "failed"
+
+class LeaveStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+class InvoiceStatus(str, enum.Enum):
+    DRAFT = "draft"
+    APPROVED = "approved"
+    PAID = "paid"
+    CANCELLED = "cancelled"
+
+
+class ApprovalWorkflow(Base):
+    __tablename__ = "approval_workflows"
+
+    id = Column(Integer, primary_key=True, index=True)
+    entity_type = Column(String, nullable=False, index=True)
+    entity_id = Column(Integer, nullable=False, index=True)
+    title = Column(String, nullable=False)
+    requested_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    current_step = Column(Integer, default=1)
+    status = Column(SqEnum(ApprovalStatus), default=ApprovalStatus.PENDING, nullable=False)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    decided_at = Column(DateTime(timezone=True), nullable=True)
+
+    school = relationship("School")
+    requested_by = relationship("User")
+    steps = relationship("ApprovalStep", back_populates="workflow", cascade="all, delete-orphan")
+
+
+class ApprovalStep(Base):
+    __tablename__ = "approval_steps"
+
+    id = Column(Integer, primary_key=True, index=True)
+    workflow_id = Column(Integer, ForeignKey("approval_workflows.id"), nullable=False)
+    step_order = Column(Integer, nullable=False)
+    role = Column(SqEnum(UserRole), nullable=False)
+    approver_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    status = Column(SqEnum(ApprovalStatus), default=ApprovalStatus.PENDING, nullable=False)
+    comment = Column(Text, nullable=True)
+    decided_at = Column(DateTime(timezone=True), nullable=True)
+
+    workflow = relationship("ApprovalWorkflow", back_populates="steps")
+    approver = relationship("User")
+
+
+class Semester(Base):
+    __tablename__ = "semesters"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    code = Column(String, nullable=False, index=True)
+    academic_year_id = Column(Integer, ForeignKey("academic_years.id"), nullable=True)
+    start_date = Column(DateTime, nullable=True)
+    end_date = Column(DateTime, nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+
+    academic_year = relationship("AcademicYear")
+    school = relationship("School")
+
+
+class CourseUnit(Base):
+    __tablename__ = "course_units"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String, nullable=False, index=True)
+    name = Column(String, nullable=False)
+    credits = Column(Float, default=0)
+    semester_id = Column(Integer, ForeignKey("semesters.id"), nullable=True)
+    program_id = Column(Integer, ForeignKey("academic_programs.id"), nullable=True)
+    teacher_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+
+    semester = relationship("Semester")
+    program = relationship("AcademicProgram")
+    teacher = relationship("User")
+    school = relationship("School")
+
+
+class UniversityScheduleSlot(Base):
+    __tablename__ = "university_schedule_slots"
+
+    id = Column(Integer, primary_key=True, index=True)
+    course_unit_id = Column(Integer, ForeignKey("course_units.id"), nullable=False)
+    day_of_week = Column(SqEnum(DayOfWeek), nullable=False)
+    start_time = Column(Time, nullable=False)
+    end_time = Column(Time, nullable=False)
+    room = Column(String, nullable=True)
+    group_name = Column(String, nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+
+    course_unit = relationship("CourseUnit")
+    school = relationship("School")
+
+
+class DiplomaRecord(Base):
+    __tablename__ = "diploma_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    program_id = Column(Integer, ForeignKey("academic_programs.id"), nullable=True)
+    diploma_name = Column(String, nullable=False)
+    mention = Column(String, nullable=True)
+    issued_date = Column(DateTime, nullable=True)
+    certificate_number = Column(String, unique=True, nullable=False)
+    total_credits = Column(Float, default=0)
+    is_certified = Column(Boolean, default=False)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    issued_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    student = relationship("StudentProfile")
+    program = relationship("AcademicProgram")
+    school = relationship("School")
+    issued_by = relationship("User")
+
+
+class CertifiedTranscript(Base):
+    __tablename__ = "certified_transcripts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    semester_id = Column(Integer, ForeignKey("semesters.id"), nullable=True)
+    total_credits = Column(Float, default=0)
+    gpa = Column(Float, nullable=True)
+    content = Column(JSON, nullable=True)
+    certificate_number = Column(String, unique=True, nullable=False)
+    is_certified = Column(Boolean, default=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    issued_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    issued_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    student = relationship("StudentProfile")
+    semester = relationship("Semester")
+    school = relationship("School")
+    issued_by = relationship("User")
+
+
+class StaffContract(Base):
+    __tablename__ = "staff_contracts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    staff_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    contract_type = Column(String, nullable=False)
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=True)
+    base_salary = Column(Float, default=0)
+    cnss_number = Column(String, nullable=True)
+    tax_identifier = Column(String, nullable=True)
+    status = Column(String, default="active", nullable=False)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+
+    staff = relationship("User")
+    school = relationship("School")
+
+
+class LeaveRequest(Base):
+    __tablename__ = "leave_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    staff_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    leave_type = Column(String, nullable=False)
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=False)
+    reason = Column(Text, nullable=True)
+    status = Column(SqEnum(LeaveStatus), default=LeaveStatus.PENDING, nullable=False)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    decided_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    staff = relationship("User", foreign_keys=[staff_user_id])
+    school = relationship("School")
+    decided_by = relationship("User", foreign_keys=[decided_by_id])
+
+
+class PayrollAdjustment(Base):
+    __tablename__ = "payroll_adjustments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    payroll_record_id = Column(Integer, ForeignKey("payroll_records.id"), nullable=False)
+    adjustment_type = Column(String, nullable=False)
+    label = Column(String, nullable=False)
+    amount = Column(Float, nullable=False)
+    is_taxable = Column(Boolean, default=True)
+
+    payroll_record = relationship("PayrollRecord")
+
+
+class TransportAssignment(Base):
+    __tablename__ = "transport_assignments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    route_id = Column(Integer, ForeignKey("transport_routes.id"), nullable=False)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    pickup_stop = Column(String, nullable=True)
+    dropoff_stop = Column(String, nullable=True)
+    start_date = Column(DateTime, nullable=True)
+    end_date = Column(DateTime, nullable=True)
+    is_active = Column(Boolean, default=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+
+    route = relationship("TransportRoute")
+    student = relationship("StudentProfile")
+    school = relationship("School")
+
+
+class CanteenSubscription(Base):
+    __tablename__ = "canteen_subscriptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    meal_plan_id = Column(Integer, ForeignKey("canteen_meal_plans.id"), nullable=False)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    start_date = Column(DateTime, nullable=True)
+    end_date = Column(DateTime, nullable=True)
+    is_active = Column(Boolean, default=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+
+    meal_plan = relationship("CanteenMealPlan")
+    student = relationship("StudentProfile")
+    school = relationship("School")
+
+
+class CanteenAttendance(Base):
+    __tablename__ = "canteen_attendance"
+
+    id = Column(Integer, primary_key=True, index=True)
+    subscription_id = Column(Integer, ForeignKey("canteen_subscriptions.id"), nullable=False)
+    served_at = Column(DateTime(timezone=True), server_default=func.now())
+    served_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+
+    subscription = relationship("CanteenSubscription")
+    served_by = relationship("User")
+    school = relationship("School")
+
+
+class ChartAccount(Base):
+    __tablename__ = "chart_accounts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String, nullable=False, index=True)
+    name = Column(String, nullable=False)
+    account_type = Column(String, nullable=False)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+
+    school = relationship("School")
+
+
+class VendorInvoice(Base):
+    __tablename__ = "vendor_invoices"
+
+    id = Column(Integer, primary_key=True, index=True)
+    vendor_name = Column(String, nullable=False)
+    invoice_number = Column(String, nullable=False, index=True)
+    amount = Column(Float, nullable=False)
+    due_date = Column(DateTime, nullable=True)
+    status = Column(SqEnum(InvoiceStatus), default=InvoiceStatus.DRAFT, nullable=False)
+    account_id = Column(Integer, ForeignKey("chart_accounts.id"), nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    account = relationship("ChartAccount")
+    school = relationship("School")
+
+
+class BankTransaction(Base):
+    __tablename__ = "bank_transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    transaction_date = Column(DateTime, nullable=False)
+    description = Column(String, nullable=False)
+    amount = Column(Float, nullable=False)
+    direction = Column(String, nullable=False)
+    account_id = Column(Integer, ForeignKey("chart_accounts.id"), nullable=True)
+    reference = Column(String, nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+
+    account = relationship("ChartAccount")
+    school = relationship("School")
+
+
+class GovernmentExport(Base):
+    __tablename__ = "government_exports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    export_type = Column(String, nullable=False, index=True)
+    period = Column(String, nullable=True)
+    payload = Column(JSON, nullable=False)
+    generated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    generated_by = relationship("User")
+    school = relationship("School")
+
+
+class NotificationProvider(Base):
+    __tablename__ = "notification_providers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    channel = Column(SqEnum(NotificationChannel), nullable=False)
+    provider_name = Column(String, nullable=False)
+    api_key_secret = Column(String, nullable=True)
+    sender_id = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+
+    school = relationship("School")
+
+
+class NotificationMessage(Base):
+    __tablename__ = "notification_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    channel = Column(SqEnum(NotificationChannel), nullable=False)
+    recipient = Column(String, nullable=False)
+    subject = Column(String, nullable=True)
+    message = Column(Text, nullable=False)
+    provider_id = Column(Integer, ForeignKey("notification_providers.id"), nullable=True)
+    status = Column(SqEnum(NotificationStatus), default=NotificationStatus.QUEUED, nullable=False)
+    provider_response = Column(Text, nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    sent_at = Column(DateTime(timezone=True), nullable=True)
+
+    provider = relationship("NotificationProvider")
+    school = relationship("School")
+    created_by = relationship("User")
+
+
 

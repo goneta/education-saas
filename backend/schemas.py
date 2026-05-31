@@ -21,6 +21,11 @@ from .models import (
     AdmissionStatus,
     InventoryStatus,
     PayrollStatus,
+    ApprovalStatus,
+    NotificationChannel,
+    NotificationStatus,
+    LeaveStatus,
+    InvoiceStatus,
 )
 
 # School Schemas
@@ -878,6 +883,299 @@ class ExpenseResponse(ExpenseBase):
     school_id: Optional[int] = None
     created_at: datetime
 
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Enterprise Product Schemas
+
+class ApprovalStepCreate(BaseModel):
+    step_order: int
+    role: UserRole
+
+
+class ApprovalWorkflowCreate(BaseModel):
+    entity_type: str
+    entity_id: int
+    title: str
+    steps: List[ApprovalStepCreate]
+
+
+class ApprovalWorkflowResponse(BaseModel):
+    id: int
+    entity_type: str
+    entity_id: int
+    title: str
+    current_step: int
+    status: ApprovalStatus
+    school_id: int
+    created_at: datetime
+    decided_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ApprovalDecision(BaseModel):
+    status: ApprovalStatus
+    comment: Optional[str] = None
+
+
+class SemesterCreate(BaseModel):
+    name: str
+    code: str
+    academic_year_id: Optional[int] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+
+
+class SemesterResponse(SemesterCreate):
+    id: int
+    school_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CourseUnitCreate(BaseModel):
+    code: str
+    name: str
+    credits: float = 0
+    semester_id: Optional[int] = None
+    program_id: Optional[int] = None
+    teacher_id: Optional[int] = None
+
+
+class CourseUnitResponse(CourseUnitCreate):
+    id: int
+    school_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UniversityScheduleSlotCreate(BaseModel):
+    course_unit_id: int
+    day_of_week: DayOfWeek
+    start_time: time
+    end_time: time
+    room: Optional[str] = None
+    group_name: Optional[str] = None
+
+
+class UniversityScheduleSlotResponse(UniversityScheduleSlotCreate):
+    id: int
+    school_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DiplomaRecordCreate(BaseModel):
+    student_id: int
+    diploma_name: str
+    certificate_number: str
+    program_id: Optional[int] = None
+    mention: Optional[str] = None
+    issued_date: Optional[datetime] = None
+    total_credits: float = 0
+    is_certified: bool = False
+
+
+class DiplomaRecordResponse(DiplomaRecordCreate):
+    id: int
+    school_id: int
+    issued_by_id: Optional[int] = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CertifiedTranscriptCreate(BaseModel):
+    student_id: int
+    certificate_number: str
+    semester_id: Optional[int] = None
+    total_credits: float = 0
+    gpa: Optional[float] = None
+    content: Optional[dict] = None
+
+
+class CertifiedTranscriptResponse(CertifiedTranscriptCreate):
+    id: int
+    is_certified: bool
+    school_id: int
+    issued_by_id: Optional[int] = None
+    issued_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class StaffContractCreate(BaseModel):
+    staff_user_id: int
+    contract_type: str
+    start_date: datetime
+    end_date: Optional[datetime] = None
+    base_salary: float = 0
+    cnss_number: Optional[str] = None
+    tax_identifier: Optional[str] = None
+    status: str = "active"
+
+
+class StaffContractResponse(StaffContractCreate):
+    id: int
+    school_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LeaveRequestCreate(BaseModel):
+    staff_user_id: int
+    leave_type: str
+    start_date: datetime
+    end_date: datetime
+    reason: Optional[str] = None
+
+
+class LeaveRequestResponse(LeaveRequestCreate):
+    id: int
+    status: LeaveStatus
+    school_id: int
+    decided_by_id: Optional[int] = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PayrollAdjustmentCreate(BaseModel):
+    payroll_record_id: int
+    adjustment_type: str
+    label: str
+    amount: float
+    is_taxable: bool = True
+
+
+class PayrollAdjustmentResponse(PayrollAdjustmentCreate):
+    id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TransportAssignmentCreate(BaseModel):
+    route_id: int
+    student_id: int
+    pickup_stop: Optional[str] = None
+    dropoff_stop: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    is_active: bool = True
+
+
+class TransportAssignmentResponse(TransportAssignmentCreate):
+    id: int
+    school_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CanteenSubscriptionCreate(BaseModel):
+    meal_plan_id: int
+    student_id: int
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    is_active: bool = True
+
+
+class CanteenSubscriptionResponse(CanteenSubscriptionCreate):
+    id: int
+    school_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CanteenAttendanceCreate(BaseModel):
+    subscription_id: int
+
+
+class CanteenAttendanceResponse(CanteenAttendanceCreate):
+    id: int
+    served_at: datetime
+    served_by_id: Optional[int] = None
+    school_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ChartAccountCreate(BaseModel):
+    code: str
+    name: str
+    account_type: str
+
+
+class ChartAccountResponse(ChartAccountCreate):
+    id: int
+    school_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class VendorInvoiceCreate(BaseModel):
+    vendor_name: str
+    invoice_number: str
+    amount: float
+    due_date: Optional[datetime] = None
+    status: InvoiceStatus = InvoiceStatus.DRAFT
+    account_id: Optional[int] = None
+
+
+class VendorInvoiceResponse(VendorInvoiceCreate):
+    id: int
+    school_id: int
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class BankTransactionCreate(BaseModel):
+    transaction_date: datetime
+    description: str
+    amount: float
+    direction: str
+    account_id: Optional[int] = None
+    reference: Optional[str] = None
+
+
+class BankTransactionResponse(BankTransactionCreate):
+    id: int
+    school_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class GovernmentExportCreate(BaseModel):
+    export_type: str
+    period: Optional[str] = None
+
+
+class GovernmentExportResponse(BaseModel):
+    id: int
+    export_type: str
+    period: Optional[str] = None
+    payload: dict
+    generated_by_id: Optional[int] = None
+    school_id: int
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class NotificationProviderCreate(BaseModel):
+    channel: NotificationChannel
+    provider_name: str
+    api_key_secret: Optional[str] = None
+    sender_id: Optional[str] = None
+    is_active: bool = True
+
+
+class NotificationProviderResponse(NotificationProviderCreate):
+    id: int
+    school_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class NotificationMessageCreate(BaseModel):
+    channel: NotificationChannel
+    recipient: str
+    message: str
+    subject: Optional[str] = None
+    provider_id: Optional[int] = None
+
+
+class NotificationMessageResponse(NotificationMessageCreate):
+    id: int
+    status: NotificationStatus
+    provider_response: Optional[str] = None
+    school_id: int
+    created_by_id: Optional[int] = None
+    created_at: datetime
+    sent_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
 
 
