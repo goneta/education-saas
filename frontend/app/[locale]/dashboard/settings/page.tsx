@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { useCallback, useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/auth-context"
@@ -41,6 +42,45 @@ interface RolePermission {
     disabled_permissions: string[]
     available_permissions: string[]
 }
+interface CountryProfile {
+    name: string
+    currency: string
+    currency_code: string
+    locale: string
+    timezone: string
+    date_format: string
+    time_format: string
+    phone_code: string
+}
+interface SchoolSettings {
+    name: string
+    school_type: string
+    country_code: string
+    default_currency: string
+    currency_code: string
+    primary_language: string
+    timezone: string
+    date_format: string
+    time_format: string
+    phone: string | null
+    phone_country_code: string | null
+    phone_e164: string | null
+    email: string | null
+    website?: string | null
+    formatted_address: string | null
+    address_structured?: {
+        street?: string
+        district?: string
+        city?: string
+        region?: string
+        postal_code?: string
+        country?: string
+        latitude?: number | null
+        longitude?: number | null
+    } | null
+    localization_profile?: CountryProfile
+    school_type_profile?: { administrative_focus?: string[] }
+}
 
 export default function SettingsPage() {
     const { token, user } = useAuth()
@@ -55,6 +95,9 @@ export default function SettingsPage() {
     const [rolePermissions, setRolePermissions] = useState<RolePermission | null>(null)
     const [permissionDraft, setPermissionDraft] = useState<Set<string>>(new Set())
     const [permissionStatus, setPermissionStatus] = useState("")
+    const [countries, setCountries] = useState<Record<string, CountryProfile>>({})
+    const [schoolSettings, setSchoolSettings] = useState<SchoolSettings | null>(null)
+    const [settingsStatus, setSettingsStatus] = useState("")
 
     const loadSchools = useCallback(async () => {
         if (!token || user?.role !== "super_admin") return
@@ -78,6 +121,13 @@ export default function SettingsPage() {
         if (auditRes.ok) setAuditLogs(await auditRes.json() as AuditLog[])
         const catalogRes = await fetch(`${API_BASE_URL}/system/permissions/catalog`, { headers })
         if (catalogRes.ok) setCatalog(await catalogRes.json() as PermissionCatalog)
+        const countriesRes = await fetch(`${API_BASE_URL}/system/localization/countries`, { headers })
+        if (countriesRes.ok) {
+            const data = await countriesRes.json() as { countries: Record<string, CountryProfile> }
+            setCountries(data.countries)
+        }
+        const settingsRes = await fetch(`${API_BASE_URL}/system/school-settings`, { headers })
+        if (settingsRes.ok) setSchoolSettings(await settingsRes.json() as SchoolSettings)
     }, [token])
 
     const loadRolePermissions = useCallback(async () => {
@@ -136,6 +186,50 @@ export default function SettingsPage() {
         }
     }
 
+    const updateSchoolSetting = (key: keyof SchoolSettings, value: string) => {
+        setSchoolSettings(prev => prev ? { ...prev, [key]: value } : prev)
+    }
+
+    const updateAddress = (key: string, value: string) => {
+        setSchoolSettings(prev => prev ? {
+            ...prev,
+            address_structured: { ...(prev.address_structured || {}), [key]: value }
+        } : prev)
+    }
+
+    const applyCountryDefaults = (countryCode: string) => {
+        const profile = countries[countryCode]
+        setSchoolSettings(prev => prev && profile ? {
+            ...prev,
+            country_code: countryCode,
+            default_currency: profile.currency,
+            currency_code: profile.currency_code,
+            primary_language: profile.locale,
+            timezone: profile.timezone,
+            date_format: profile.date_format,
+            time_format: profile.time_format,
+            phone_country_code: countryCode,
+            address_structured: { ...(prev.address_structured || {}), country: profile.name }
+        } : prev)
+    }
+
+    const saveSchoolSettings = async () => {
+        if (!token || !schoolSettings) return
+        setSettingsStatus("Enregistrement...")
+        const res = await fetch(`${API_BASE_URL}/system/school-settings`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify(schoolSettings)
+        })
+        if (res.ok) {
+            setSchoolSettings(await res.json() as SchoolSettings)
+            setSettingsStatus("Parametres enregistres.")
+        } else {
+            const error = await res.text()
+            setSettingsStatus(`Erreur: ${error.slice(0, 120)}`)
+        }
+    }
+
     useEffect(() => { void loadSchools() }, [loadSchools])
     useEffect(() => { void loadSystemContext() }, [loadSystemContext])
     useEffect(() => { void loadRolePermissions() }, [loadRolePermissions])
@@ -162,6 +256,60 @@ export default function SettingsPage() {
                     {permissions.map(permission => <span key={permission} className="rounded-md border px-2 py-1">{permission}</span>)}
                 </CardContent>
             </Card>
+
+            {schoolSettings && (
+                <Card>
+                    <CardHeader><CardTitle>Configuration internationale</CardTitle></CardHeader>
+                    <CardContent className="space-y-5">
+                        <div className="grid gap-3 md:grid-cols-4">
+                            <Field label="Pays">
+                                <select value={schoolSettings.country_code} onChange={(event) => applyCountryDefaults(event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm">
+                                    {Object.entries(countries).map(([code, profile]) => <option key={code} value={code}>{profile.name}</option>)}
+                                </select>
+                            </Field>
+                            <Field label="Devise">
+                                <select value={schoolSettings.default_currency} onChange={(event) => updateSchoolSetting("default_currency", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm">
+                                    {["FCFA", "GBP", "EUR", "USD"].map(currency => <option key={currency} value={currency}>{currency}</option>)}
+                                </select>
+                            </Field>
+                            <Field label="Langue principale">
+                                <select value={schoolSettings.primary_language} onChange={(event) => updateSchoolSetting("primary_language", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm">
+                                    <option value="fr">Francais</option>
+                                    <option value="en">English</option>
+                                    <option value="es">Espanol</option>
+                                    <option value="sw">Kiswahili</option>
+                                </select>
+                            </Field>
+                            <Field label="Type etablissement">
+                                <select value={schoolSettings.school_type} onChange={(event) => updateSchoolSetting("school_type", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm">
+                                    {["primary", "secondary", "general", "technical", "vocational", "professional", "university"].map(type => <option key={type} value={type}>{type}</option>)}
+                                </select>
+                            </Field>
+                            <Field label="Fuseau horaire"><input value={schoolSettings.timezone} onChange={(event) => updateSchoolSetting("timezone", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
+                            <Field label="Format date"><input value={schoolSettings.date_format} onChange={(event) => updateSchoolSetting("date_format", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
+                            <Field label="Format heure"><input value={schoolSettings.time_format} onChange={(event) => updateSchoolSetting("time_format", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
+                            <Field label="Telephone"><input value={schoolSettings.phone || ""} onChange={(event) => updateSchoolSetting("phone", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
+                        </div>
+                        <div className="grid gap-3 md:grid-cols-3">
+                            <Field label="Rue"><input value={schoolSettings.address_structured?.street || ""} onChange={(event) => updateAddress("street", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
+                            <Field label="Quartier"><input value={schoolSettings.address_structured?.district || ""} onChange={(event) => updateAddress("district", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
+                            <Field label="Ville"><input value={schoolSettings.address_structured?.city || ""} onChange={(event) => updateAddress("city", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
+                            <Field label="Region / Etat"><input value={schoolSettings.address_structured?.region || ""} onChange={(event) => updateAddress("region", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
+                            <Field label="Code postal"><input value={schoolSettings.address_structured?.postal_code || ""} onChange={(event) => updateAddress("postal_code", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
+                            <Field label="Pays adresse"><input value={schoolSettings.address_structured?.country || ""} onChange={(event) => updateAddress("country", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
+                        </div>
+                        <div className="grid gap-3 md:grid-cols-3 text-sm">
+                            <Info label="Adresse formatee" value={schoolSettings.formatted_address || "-"} />
+                            <Info label="Telephone international" value={schoolSettings.phone_e164 || "-"} />
+                            <Info label="Focus administratif" value={schoolSettings.school_type_profile?.administrative_focus?.join(", ") || "-"} />
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Button onClick={saveSchoolSettings}>Enregistrer les parametres</Button>
+                            {settingsStatus && <span className="text-sm text-[#6B7280]">{settingsStatus}</span>}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             {catalog && (
                 <Card>
@@ -240,4 +388,8 @@ export default function SettingsPage() {
 
 function Info({ label, value }: { label: string; value: string }) {
     return <div><p className="text-[#6B7280]">{label}</p><p className="font-medium text-[#111827]">{value}</p></div>
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+    return <label className="space-y-1 text-sm"><span className="text-[#6B7280]">{label}</span>{children}</label>
 }

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, Field
 from typing import Optional, List
 from datetime import datetime, time, date
 from .models import (
@@ -29,11 +29,44 @@ from .models import (
 )
 
 # School Schemas
+class InternationalAddress(BaseModel):
+    street: Optional[str] = None
+    district: Optional[str] = None
+    city: Optional[str] = None
+    region: Optional[str] = None
+    postal_code: Optional[str] = None
+    country: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    formatted: Optional[str] = None
+
+
+class LocalizedSettings(BaseModel):
+    country_code: str = "CI"
+    default_currency: str = "FCFA"
+    currency_code: str = "XOF"
+    primary_language: str = "fr"
+    timezone: str = "Africa/Abidjan"
+    date_format: str = "dd/MM/yyyy"
+    time_format: str = "HH:mm"
+
+
 class SchoolBase(BaseModel):
     name: str
     domain_prefix: str
     school_type: SchoolType = SchoolType.GENERAL
     address: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[EmailStr] = None
+    country_code: Optional[str] = "CI"
+    default_currency: Optional[str] = None
+    currency_code: Optional[str] = None
+    primary_language: Optional[str] = None
+    timezone: Optional[str] = None
+    date_format: Optional[str] = None
+    time_format: Optional[str] = None
+    address_structured: Optional[InternationalAddress] = None
+    phone_country_code: Optional[str] = None
 
 class SchoolCreate(SchoolBase):
     pass
@@ -42,6 +75,8 @@ class SchoolResponse(SchoolBase):
     id: int
     is_active: bool
     created_at: datetime
+    formatted_address: Optional[str] = None
+    phone_e164: Optional[str] = None
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -62,6 +97,28 @@ class UserResponse(UserBase):
     school: Optional[SchoolResponse] = None
     
     model_config = ConfigDict(from_attributes=True)
+
+
+class SchoolSettingsUpdate(BaseModel):
+    name: Optional[str] = None
+    school_type: Optional[SchoolType] = None
+    country_code: Optional[str] = None
+    default_currency: Optional[str] = None
+    currency_code: Optional[str] = None
+    primary_language: Optional[str] = None
+    timezone: Optional[str] = None
+    date_format: Optional[str] = None
+    time_format: Optional[str] = None
+    phone: Optional[str] = None
+    phone_country_code: Optional[str] = None
+    email: Optional[EmailStr] = None
+    website: Optional[str] = None
+    address_structured: Optional[InternationalAddress] = None
+
+
+class SchoolSettingsResponse(SchoolResponse):
+    localization_profile: dict = Field(default_factory=dict)
+    school_type_profile: dict = Field(default_factory=dict)
 
 
 class UserRoleUpdate(BaseModel):
@@ -96,10 +153,13 @@ class StudentProfileBase(BaseModel):
     date_of_birth: datetime
     gender: str
     student_address: Optional[str] = None
+    student_address_structured: Optional[InternationalAddress] = None
     parent_name: str
     parent_phone: str
+    parent_phone_country_code: Optional[str] = None
     parent_email: Optional[EmailStr] = None
     parent_address: Optional[str] = None
+    parent_address_structured: Optional[InternationalAddress] = None
     guardian_relation: Optional[str] = None
     status: StudentStatus = StudentStatus.UNASSIGNED
     previous_level: Optional[str] = None
@@ -130,10 +190,13 @@ class StudentUpdateProfile(BaseModel):
     date_of_birth: Optional[datetime] = None
     gender: Optional[str] = None
     student_address: Optional[str] = None
+    student_address_structured: Optional[InternationalAddress] = None
     parent_name: Optional[str] = None
     parent_phone: Optional[str] = None
+    parent_phone_country_code: Optional[str] = None
     parent_email: Optional[EmailStr] = None
     parent_address: Optional[str] = None
+    parent_address_structured: Optional[InternationalAddress] = None
     guardian_relation: Optional[str] = None
     status: Optional[StudentStatus] = None
     previous_level: Optional[str] = None
@@ -147,6 +210,9 @@ class StudentUpdate(BaseModel):
 
 class StudentProfileResponse(StudentProfileBase):
     id: int
+    student_formatted_address: Optional[str] = None
+    parent_phone_e164: Optional[str] = None
+    parent_formatted_address: Optional[str] = None
     education_history: List[EducationHistoryResponse] = []
     model_config = ConfigDict(from_attributes=True)
 
@@ -171,7 +237,9 @@ class TeacherUpdate(BaseModel):
     full_name: Optional[str] = None
     email: Optional[EmailStr] = None
     phone_number: Optional[str] = None
+    phone_country_code: Optional[str] = None
     address: Optional[str] = None
+    address_structured: Optional[InternationalAddress] = None
     profile: Optional[TeacherUpdateProfile] = None
 
 class TeacherProfileResponse(TeacherProfileBase):
@@ -180,7 +248,11 @@ class TeacherProfileResponse(TeacherProfileBase):
 
 class TeacherResponse(UserResponse):
     phone_number: Optional[str] = None
+    phone_country_code: Optional[str] = None
+    phone_e164: Optional[str] = None
     address: Optional[str] = None
+    address_structured: Optional[InternationalAddress] = None
+    formatted_address: Optional[str] = None
     teacher_profile: Optional[TeacherProfileResponse] = None
 
 # Academic Year & Term Schemas

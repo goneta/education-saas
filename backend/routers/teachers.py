@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from .. import models, schemas, security, database
+from .. import localization, models, schemas, security, database
 
 router = APIRouter(prefix="/teachers", tags=["Teachers"])
 
@@ -112,9 +112,27 @@ def update_teacher(
                  raise HTTPException(status_code=400, detail="Email already registered")
              teacher.email = teacher_in.email
     if teacher_in.phone_number:
+        school = db.query(models.School).filter(models.School.id == current_user.school_id).first()
+        country_code = school.country_code if school else "CI"
+        phone_country = teacher_in.phone_country_code or teacher.phone_country_code or country_code
+        valid_phone, phone_e164, phone_error = localization.validate_phone(teacher_in.phone_number, phone_country)
+        if not valid_phone:
+            raise HTTPException(status_code=400, detail=phone_error)
         teacher.phone_number = teacher_in.phone_number
+        teacher.phone_country_code = phone_country
+        teacher.phone_e164 = phone_e164
     if teacher_in.address:
         teacher.address = teacher_in.address
+    if teacher_in.address_structured:
+        school = db.query(models.School).filter(models.School.id == current_user.school_id).first()
+        country_code = school.country_code if school else "CI"
+        structured = teacher_in.address_structured.model_dump()
+        if not structured.get("country"):
+            structured["country"] = localization.country_profile(country_code)["name"]
+        structured["formatted"] = localization.format_address(structured)
+        teacher.address_structured = structured
+        teacher.formatted_address = structured["formatted"]
+        teacher.address = structured["formatted"]
 
     # Update Profile Fields
     if teacher_in.profile:

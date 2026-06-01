@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
-from .. import models, schemas, security, database
+from .. import localization, models, schemas, security, database
 
 router = APIRouter(prefix="/students", tags=["Students"])
 
@@ -28,6 +28,23 @@ def register_student(
         raise HTTPException(status_code=400, detail="Registration number (matricule) already exists")
 
     try:
+        school = db.query(models.School).filter(models.School.id == current_user.school_id).first()
+        country_code = school.country_code if school else "CI"
+        valid_phone, parent_phone_e164, phone_error = localization.validate_phone(
+            student_in.profile.parent_phone,
+            student_in.profile.parent_phone_country_code or country_code,
+        )
+        if not valid_phone:
+            raise HTTPException(status_code=400, detail=phone_error)
+        student_address_structured = student_in.profile.student_address_structured.model_dump() if student_in.profile.student_address_structured else None
+        parent_address_structured = student_in.profile.parent_address_structured.model_dump() if student_in.profile.parent_address_structured else None
+        if student_address_structured and not student_address_structured.get("country"):
+            student_address_structured["country"] = localization.country_profile(country_code)["name"]
+        if parent_address_structured and not parent_address_structured.get("country"):
+            parent_address_structured["country"] = localization.country_profile(country_code)["name"]
+        student_formatted_address = localization.format_address(student_address_structured) or student_in.profile.student_address
+        parent_formatted_address = localization.format_address(parent_address_structured) or student_in.profile.parent_address
+
         # 4. Create User
         hashed_password = security.get_password_hash(student_in.password)
         new_user = models.User(
@@ -48,10 +65,16 @@ def register_student(
             date_of_birth=student_in.profile.date_of_birth,
             gender=student_in.profile.gender,
             student_address=student_in.profile.student_address,
+            student_address_structured=student_address_structured,
+            student_formatted_address=student_formatted_address,
             parent_name=student_in.profile.parent_name,
             parent_phone=student_in.profile.parent_phone,
+            parent_phone_country_code=student_in.profile.parent_phone_country_code or country_code,
+            parent_phone_e164=parent_phone_e164,
             parent_email=student_in.profile.parent_email,
             parent_address=student_in.profile.parent_address,
+            parent_address_structured=parent_address_structured,
+            parent_formatted_address=parent_formatted_address,
             guardian_relation=student_in.profile.guardian_relation,
             status=student_in.profile.status,
             previous_level=student_in.profile.previous_level,
@@ -71,6 +94,9 @@ def register_student(
         db.refresh(new_user)
         return new_user
         
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
@@ -164,7 +190,27 @@ def update_student(
              # Should not happen ideally if data integrity is kept
              pass 
         else:
-            profile_data = student_in.profile.dict(exclude_unset=True)
+            school = db.query(models.School).filter(models.School.id == current_user.school_id).first()
+            country_code = school.country_code if school else "CI"
+            profile_data = student_in.profile.model_dump(exclude_unset=True)
+            if "parent_phone" in profile_data or "parent_phone_country_code" in profile_data:
+                raw_phone = profile_data.get("parent_phone", student.student_profile.parent_phone)
+                phone_country = profile_data.get("parent_phone_country_code") or student.student_profile.parent_phone_country_code or country_code
+                valid_phone, parent_phone_e164, phone_error = localization.validate_phone(raw_phone, phone_country)
+                if not valid_phone:
+                    raise HTTPException(status_code=400, detail=phone_error)
+                profile_data["parent_phone_e164"] = parent_phone_e164
+                profile_data["parent_phone_country_code"] = phone_country
+            if "student_address_structured" in profile_data:
+                structured = profile_data["student_address_structured"]
+                if structured and not structured.get("country"):
+                    structured["country"] = localization.country_profile(country_code)["name"]
+                profile_data["student_formatted_address"] = localization.format_address(structured)
+            if "parent_address_structured" in profile_data:
+                structured = profile_data["parent_address_structured"]
+                if structured and not structured.get("country"):
+                    structured["country"] = localization.country_profile(country_code)["name"]
+                profile_data["parent_formatted_address"] = localization.format_address(structured)
             for key, value in profile_data.items():
                 setattr(student.student_profile, key, value)
 

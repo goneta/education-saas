@@ -88,7 +88,7 @@ def test_grades_flow():
             "date_of_birth": "2010-01-01T00:00:00",
             "gender": "M",
             "parent_name": "Parent",
-            "parent_phone": "123",
+            "parent_phone": "+2250102030405",
             "current_class_id": class_id
         }
     }, headers=headers)

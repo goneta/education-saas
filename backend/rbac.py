@@ -14,6 +14,7 @@ PERMISSIONS = {
         "finance:read", "finance:write", "finance:approve", "pedagogy:read", "pedagogy:write",
         "operations:read", "operations:write", "enterprise:read", "enterprise:write",
         "reports:read", "documents:issue", "settings:read",
+        "settings:write",
     },
     models.UserRole.REGISTRAR: {
         "students:read", "students:write", "teachers:read",

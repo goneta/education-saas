@@ -1,0 +1,69 @@
+{
+  "app": {
+    "name": "EduSaaS",
+    "title": "Mfumo wa usimamizi wa shule",
+    "loading": "Inapakia...",
+    "search": "Tafuta...",
+    "logout": "Ondoka",
+    "language": "Lugha",
+    "currency": "FCFA"
+  },
+  "auth": {
+    "login": "Ingia",
+    "description": "Weka taarifa zako ili kufikia nafasi yako ya kazi.",
+    "email": "Barua pepe",
+    "password": "Nenosiri",
+    "passwordPlaceholder": "Weka nenosiri lako",
+    "submit": "Ingia",
+    "submitting": "Inaingia...",
+    "failed": "Kuingia kumeshindikana"
+  },
+  "navigation": {
+    "overview": "Muhtasari",
+    "management": "Usimamizi",
+    "students": "Wanafunzi",
+    "teachers": "Walimu",
+    "academics": "Masomo",
+    "classes": "Madarasa",
+    "subjects": "Masomo",
+    "timetable": "Ratiba",
+    "pedagogy": "Ufundishaji",
+    "grades": "Alama",
+    "library": "Maktaba",
+    "portal": "Mzazi / Mwanafunzi",
+    "operations": "Operesheni",
+    "enterprise": "Taasisi",
+    "finance": "Fedha",
+    "fees": "Ada",
+    "reports": "Ripoti",
+    "cashJournal": "Daftari la fedha",
+    "forecasts": "Makadirio",
+    "feeSettings": "Mipangilio ya ada",
+    "sms": "SMS",
+    "system": "Mfumo",
+    "settings": "Mipangilio"
+  },
+  "layout": {
+    "previewTitle": "Hakiki ya maudhui yaliyotengenezwa na AI",
+    "previewEmpty": "Tumia msaidizi wa AI kutengeneza kozi, ripoti au orodha.",
+    "agentGreeting": "Habari. Mimi ni msaidizi wako wa AI.",
+    "agentPlaceholder": "Andika ujumbe...",
+    "agentProcessing": "Inachakata...",
+    "agentError": "Hitilafu",
+    "agentThinking": "Inafikiria...",
+    "agentYou": "Wewe",
+    "agentCommunicationError": "Samahani, kumetokea hitilafu ya mawasiliano na seva.",
+    "agentTimeout": "Ombi limechelewa.",
+    "dashboard": "Dashibodi",
+    "preview": "Hakiki",
+    "previewOutput": "Matokeo ya hakiki",
+    "closePreview": "Funga hakiki"
+  },
+  "settings": {
+    "activeContext": "Muktadha unaotumika",
+    "permissions": "Ruhusa",
+    "schoolTemplates": "Violezo vya shule",
+    "applyTemplate": "Tumia kiolezo",
+    "auditTrail": "Historia ya ukaguzi"
+  }
+}

@@ -1,4 +1,4 @@
-export const SUPPORTED_LOCALES = ["fr", "en", "es"] as const
+export const SUPPORTED_LOCALES = ["fr", "en", "es", "sw"] as const
 
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]
 
@@ -8,6 +8,7 @@ export const LOCALE_LABELS: Record<SupportedLocale, string> = {
   fr: "Francais",
   en: "English",
   es: "Espanol",
+  sw: "Kiswahili",
 }
 
 export function normalizeLocale(locale?: string | string[]): SupportedLocale {

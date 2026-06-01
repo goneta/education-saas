@@ -54,7 +54,7 @@ def _student(headers):
             "date_of_birth": "2010-01-01T00:00:00",
             "gender": "F",
             "parent_name": "Parent",
-            "parent_phone": "0700",
+            "parent_phone": "+2250102030405",
         },
     }).json()
 

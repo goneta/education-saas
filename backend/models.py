@@ -96,6 +96,17 @@ class School(Base):
     email = Column(String)
     website = Column(String)
     logo_url = Column(String)
+    country_code = Column(String, default="CI", nullable=False)
+    default_currency = Column(String, default="FCFA", nullable=False)
+    currency_code = Column(String, default="XOF", nullable=False)
+    primary_language = Column(String, default="fr", nullable=False)
+    timezone = Column(String, default="Africa/Abidjan", nullable=False)
+    date_format = Column(String, default="dd/MM/yyyy", nullable=False)
+    time_format = Column(String, default="HH:mm", nullable=False)
+    address_structured = Column(JSON, nullable=True)
+    formatted_address = Column(String, nullable=True)
+    phone_country_code = Column(String, nullable=True)
+    phone_e164 = Column(String, nullable=True)
     
     subscription_plan = Column(String, default="free")
     is_active = Column(Boolean, default=True)
@@ -127,7 +138,11 @@ class User(Base):
 
     # Profile details
     phone_number = Column(String, nullable=True)
+    phone_country_code = Column(String, nullable=True)
+    phone_e164 = Column(String, nullable=True)
     address = Column(String, nullable=True)
+    address_structured = Column(JSON, nullable=True)
+    formatted_address = Column(String, nullable=True)
 
     # Relationships
     student_profile = relationship("StudentProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
@@ -163,12 +178,18 @@ class StudentProfile(Base):
     date_of_birth = Column(DateTime)
     gender = Column(String) # M/F
     student_address = Column(String, nullable=True) # Added field
+    student_address_structured = Column(JSON, nullable=True)
+    student_formatted_address = Column(String, nullable=True)
     
     # Parent/Guardian Info
     parent_name = Column(String)
     parent_phone = Column(String)
+    parent_phone_country_code = Column(String, nullable=True)
+    parent_phone_e164 = Column(String, nullable=True)
     parent_email = Column(String, nullable=True)
     parent_address = Column(String, nullable=True) # Added field
+    parent_address_structured = Column(JSON, nullable=True)
+    parent_formatted_address = Column(String, nullable=True)
     guardian_relation = Column(String, nullable=True)
     status = Column(SqEnum(StudentStatus), default=StudentStatus.UNASSIGNED, nullable=False)
     previous_level = Column(String, nullable=True)

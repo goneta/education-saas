@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, ConfigDict
-from .. import models, schemas, security, database, rbac
+from .. import localization, models, schemas, security, database, rbac
 
 router = APIRouter(prefix="/system", tags=["System Configuration"])
 
@@ -75,6 +75,33 @@ class SchoolStatusUpdate(BaseModel):
 class ApplyTemplateRequest(BaseModel):
     template: Optional[str] = None
 
+
+def _school_settings_payload(school: models.School) -> dict:
+    return {
+        "id": school.id,
+        "name": school.name,
+        "domain_prefix": school.domain_prefix,
+        "school_type": school.school_type,
+        "address": school.address,
+        "phone": school.phone,
+        "email": school.email,
+        "country_code": school.country_code,
+        "default_currency": school.default_currency,
+        "currency_code": school.currency_code,
+        "primary_language": school.primary_language,
+        "timezone": school.timezone,
+        "date_format": school.date_format,
+        "time_format": school.time_format,
+        "address_structured": school.address_structured,
+        "formatted_address": school.formatted_address,
+        "phone_country_code": school.phone_country_code,
+        "phone_e164": school.phone_e164,
+        "is_active": school.is_active,
+        "created_at": school.created_at,
+        "localization_profile": localization.country_profile(school.country_code),
+        "school_type_profile": localization.localized_school_type_profile(school.school_type.value, school.country_code),
+    }
+
 @router.post("/reference-data", response_model=ReferenceDataResponse)
 def create_reference_data(
     data: ReferenceDataCreate,
@@ -127,6 +154,84 @@ def get_reference_data(
         query = query.filter(models.ReferenceData.school_id == None)
         
     return query.order_by(models.ReferenceData.order).all()
+
+
+@router.get("/localization/countries")
+def list_country_profiles():
+    return {
+        "supported_currencies": sorted(localization.SUPPORTED_CURRENCIES),
+        "supported_locales": sorted(localization.SUPPORTED_LOCALES),
+        "countries": localization.COUNTRY_PROFILES,
+    }
+
+
+@router.get("/school-settings", response_model=schemas.SchoolSettingsResponse)
+def get_school_settings(
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    if not current_user.school_id:
+        raise HTTPException(status_code=400, detail="School context is required")
+    rbac.require_permission(current_user, "settings:read", db)
+    school = db.query(models.School).filter(models.School.id == current_user.school_id).first()
+    if not school:
+        raise HTTPException(status_code=404, detail="School not found")
+    return _school_settings_payload(school)
+
+
+@router.put("/school-settings", response_model=schemas.SchoolSettingsResponse)
+def update_school_settings(
+    payload: schemas.SchoolSettingsUpdate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    if not current_user.school_id:
+        raise HTTPException(status_code=400, detail="School context is required")
+    rbac.require_permission(current_user, "settings:write", db)
+    school = db.query(models.School).filter(models.School.id == current_user.school_id).first()
+    if not school:
+        raise HTTPException(status_code=404, detail="School not found")
+
+    country_changed = bool(payload.country_code and payload.country_code != school.country_code)
+    profile = localization.country_profile(payload.country_code or school.country_code)
+    currency = payload.default_currency or (profile["currency"] if country_changed else school.default_currency) or profile["currency"]
+    if currency not in localization.SUPPORTED_CURRENCIES:
+        raise HTTPException(status_code=400, detail=f"Unsupported currency: {currency}")
+    language = payload.primary_language or (profile["locale"] if country_changed else school.primary_language) or profile["locale"]
+    if language not in localization.SUPPORTED_LOCALES:
+        raise HTTPException(status_code=400, detail=f"Unsupported language: {language}")
+
+    raw_phone = payload.phone if payload.phone is not None else school.phone
+    phone_country = payload.phone_country_code or payload.country_code or school.phone_country_code or profile["country_code"]
+    valid_phone, phone_e164, phone_error = localization.validate_phone(raw_phone, phone_country)
+    if not valid_phone:
+        raise HTTPException(status_code=400, detail=phone_error)
+
+    for field in ["name", "school_type", "email", "website", "phone"]:
+        value = getattr(payload, field)
+        if value is not None:
+            setattr(school, field, value)
+    school.country_code = profile["country_code"]
+    school.default_currency = currency
+    school.currency_code = payload.currency_code or (profile["currency_code"] if country_changed else school.currency_code) or profile["currency_code"]
+    school.primary_language = language
+    school.timezone = payload.timezone or (profile["timezone"] if country_changed else school.timezone) or profile["timezone"]
+    school.date_format = payload.date_format or (profile["date_format"] if country_changed else school.date_format) or profile["date_format"]
+    school.time_format = payload.time_format or (profile["time_format"] if country_changed else school.time_format) or profile["time_format"]
+    school.phone_country_code = phone_country
+    school.phone_e164 = phone_e164
+    if payload.address_structured is not None:
+        structured = payload.address_structured.model_dump()
+        if not structured.get("country"):
+            structured["country"] = profile["name"]
+        structured["formatted"] = localization.format_address(structured)
+        school.address_structured = structured
+        school.formatted_address = structured["formatted"]
+        school.address = structured["formatted"]
+
+    db.commit()
+    db.refresh(school)
+    return _school_settings_payload(school)
 
 
 @router.get("/schools", response_model=List[schemas.SchoolResponse])

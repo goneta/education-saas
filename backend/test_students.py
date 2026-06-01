@@ -37,10 +37,13 @@ def test_student_flow():
             "date_of_birth": datetime.datetime(2010, 5, 15).isoformat(),
             "gender": "M",
             "student_address": "456 Student Lane",
+            "student_address_structured": {"street": "456 Student Lane", "district": "Cocody", "city": "Abidjan"},
             "parent_name": "Papa Eleve",
-            "parent_phone": "+225 07070707",
+            "parent_phone": "+2250102030405",
+            "parent_phone_country_code": "CI",
             "parent_email": f"parent_{unique_id}@test.com",
             "parent_address": "789 Parent Blvd",
+            "parent_address_structured": {"street": "789 Parent Blvd", "city": "Abidjan"},
         },
     }
 
@@ -48,6 +51,8 @@ def test_student_flow():
     assert created.status_code == 200
     data = created.json()
     assert data["student_profile"]["registration_number"] == matricule
+    assert data["student_profile"]["parent_phone_e164"] == "+2250102030405"
+    assert "Abidjan" in data["student_profile"]["student_formatted_address"]
 
     listed = client.get("/students/", headers=headers)
     assert listed.status_code == 200
