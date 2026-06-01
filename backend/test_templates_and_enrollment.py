@@ -9,7 +9,7 @@ client = TestClient(app)
 
 
 def _school_admin(prefix: str, school_type: str = "primary"):
-    password = "pass12345"
+    password = "SecurePass123!"
     email = f"admin_{prefix}_{uuid.uuid4().hex[:6]}@test.com"
     domain = f"{prefix}_{uuid.uuid4().hex[:8]}"
     school = client.post("/auth/register/school", json={

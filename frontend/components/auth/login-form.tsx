@@ -18,6 +18,7 @@ export function LoginForm() {
     const t = useTranslations("auth")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
+    const [otpCode, setOtpCode] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -27,7 +28,7 @@ export function LoginForm() {
         setIsLoading(true)
 
         try {
-            await login(email, password)
+            await login(email, password, otpCode)
             // Redirect to dashboard on success
             router.push(`/${locale}/dashboard`)
         } catch (err) {
@@ -75,6 +76,19 @@ export function LoginForm() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
+                            disabled={isLoading}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="otp">MFA / 2FA code</Label>
+                        <Input
+                            id="otp"
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="123456"
+                            value={otpCode}
+                            onChange={(e) => setOtpCode(e.target.value)}
                             disabled={isLoading}
                         />
                     </div>

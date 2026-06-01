@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from datetime import timedelta
-from .. import localization, models, schemas, security, database
+from datetime import datetime, timedelta
+from .. import crypto_utils, localization, models, schemas, security, database, totp
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -12,6 +12,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 @router.post("/register/school", response_model=schemas.SchoolResponse)
 def register_school(school: schemas.SchoolCreate, owner: schemas.UserCreate, db: Session = Depends(database.get_db)):
     try:
+        security.validate_password_strength(owner.password)
         # 1. Check if school exists
         db_school = db.query(models.School).filter(models.School.domain_prefix == school.domain_prefix).first()
         if db_school:
@@ -67,17 +68,48 @@ def register_school(school: schemas.SchoolCreate, owner: schemas.UserCreate, db:
         db.refresh(new_user)
         
         return new_school
-    except Exception as e:
+    except HTTPException:
         db.rollback()
-        import traceback
-        print("FULL TRACEBACK:")
-        print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
+        raise
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Registration failed")
 
 @router.post("/token", response_model=schemas.Token)
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
+def login_for_access_token(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    otp_code: str | None = Form(default=None),
+    db: Session = Depends(database.get_db),
+):
     user = db.query(models.User).filter(models.User.email == form_data.username).first()
+    now = datetime.utcnow()
+    if user and user.locked_until and user.locked_until > now:
+        db.add(models.SecurityEvent(
+            event_type="login_blocked_locked_account",
+            severity="high",
+            actor_id=user.id,
+            school_id=user.school_id,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+        ))
+        db.commit()
+        raise HTTPException(status_code=423, detail="Account temporarily locked")
     if not user or not security.verify_password(form_data.password, user.hashed_password):
+        if user:
+            user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+            if user.failed_login_attempts >= 5:
+                user.locked_until = now + timedelta(minutes=15)
+            db.add(models.SecurityEvent(
+                event_type="login_failed",
+                severity="medium",
+                actor_id=user.id,
+                school_id=user.school_id,
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+                details={"attempts": user.failed_login_attempts},
+            ))
+            db.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -85,13 +117,83 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
         )
     if not user.is_active or (user.school and not user.school.is_active):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account or school is suspended")
+    if user.mfa_enabled:
+        secret = crypto_utils.decrypt_secret(user.mfa_secret)
+        if not otp_code or not secret or not totp.verify(secret, otp_code, valid_window=1):
+            db.add(models.SecurityEvent(
+                event_type="mfa_failed",
+                severity="high",
+                actor_id=user.id,
+                school_id=user.school_id,
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+            ))
+            db.commit()
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="MFA code is required or invalid")
     
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    user.last_login_at = now
     access_token_expires = timedelta(minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
+        data={"sub": user.email, "ver": user.token_version}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    db.add(models.SecurityEvent(
+        event_type="login_success",
+        severity="info",
+        actor_id=user.id,
+        school_id=user.school_id,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    ))
+    db.commit()
+    return {"access_token": access_token, "token_type": "bearer", "expires_in": security.ACCESS_TOKEN_EXPIRE_MINUTES * 60}
 
 @router.get("/me", response_model=schemas.UserResponse)
 def read_users_me(current_user: models.User = Depends(security.get_current_user)):
     return current_user
+
+
+@router.post("/mfa/setup", response_model=schemas.MfaSetupResponse)
+def setup_mfa(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    secret = totp.random_base32()
+    current_user.mfa_secret = crypto_utils.encrypt_secret(secret)
+    current_user.mfa_enabled = False
+    db.commit()
+    issuer = current_user.school.name if current_user.school else "Education SaaS"
+    return {
+        "secret": secret,
+        "provisioning_uri": totp.provisioning_uri(secret, name=current_user.email, issuer_name=issuer),
+    }
+
+
+@router.post("/mfa/enable", response_model=schemas.MfaStatusResponse)
+def enable_mfa(payload: schemas.MfaVerifyRequest, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    secret = crypto_utils.decrypt_secret(current_user.mfa_secret)
+    if not secret or not totp.verify(secret, payload.code, valid_window=1):
+        raise HTTPException(status_code=400, detail="Invalid MFA code")
+    current_user.mfa_enabled = True
+    current_user.token_version += 1
+    db.add(models.SecurityEvent(event_type="mfa_enabled", severity="medium", actor_id=current_user.id, school_id=current_user.school_id))
+    db.commit()
+    return {"enabled": True}
+
+
+@router.post("/mfa/disable", response_model=schemas.MfaStatusResponse)
+def disable_mfa(payload: schemas.MfaVerifyRequest, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    secret = crypto_utils.decrypt_secret(current_user.mfa_secret)
+    if current_user.mfa_enabled and (not secret or not totp.verify(secret, payload.code, valid_window=1)):
+        raise HTTPException(status_code=400, detail="Invalid MFA code")
+    current_user.mfa_enabled = False
+    current_user.mfa_secret = None
+    current_user.token_version += 1
+    db.add(models.SecurityEvent(event_type="mfa_disabled", severity="medium", actor_id=current_user.id, school_id=current_user.school_id))
+    db.commit()
+    return {"enabled": False}
+
+
+@router.post("/logout")
+def logout(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    current_user.token_version += 1
+    db.commit()
+    return {"message": "Logged out"}

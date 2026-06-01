@@ -9,7 +9,7 @@ def test_flow():
     unique_id = str(uuid.uuid4())[:8]
     domain = f"school_{unique_id}"
     email = f"admin_{unique_id}@test.com"
-    password = "securepassword123"
+    password = "SecurePass123!"
 
     # 1. Register School & Admin
     print(f"Testing Registration with domain={domain}...")

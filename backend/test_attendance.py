@@ -11,7 +11,7 @@ def test_attendance_flow():
     unique_id = str(uuid.uuid4())[:8]
     domain = f"school_{unique_id}"
     email = f"admin_{unique_id}@test.com"
-    password = "securepassword123"
+    password = "SecurePass123!"
     
     # Register School
     school_payload = {
@@ -72,7 +72,7 @@ def test_attendance_flow():
     student_email = f"att_st_{unique_id}@test.com"
     student_res = client.post("/students/", json={
         "email": student_email,
-        "password": "password",
+        "password": "StudentPass123!",
         "school_domain_prefix": domain, # Important: Join the same school
         "full_name": "Attendance Student",
         "role": "student",

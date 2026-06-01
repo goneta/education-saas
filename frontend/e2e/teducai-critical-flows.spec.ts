@@ -60,7 +60,7 @@ function shortDate(daysFromToday = 0): string {
 
 async function bootstrapSchoolAndLogin(request: APIRequestContext, suffix: string): Promise<AuthContext> {
   const email = process.env.E2E_ADMIN_EMAIL || `admin.${suffix}@teducai.test`;
-  const password = process.env.E2E_ADMIN_PASSWORD || 'Admin123!';
+  const password = process.env.E2E_ADMIN_PASSWORD || 'Admin123!Secure';
 
   if (!process.env.E2E_ADMIN_EMAIL) {
     const register = await request.post(`${API_URL}/auth/register/school`, {
@@ -107,7 +107,7 @@ async function createCoreAcademicData(request: APIRequestContext, suffix: string
       data: {
         email: `teacher.${suffix}@teducai.test`,
         full_name: `Teacher ${suffix}`,
-        password: 'Teacher123!',
+        password: 'Teacher123!Secure',
         role: 'teacher',
         phone_number: '+10000000001',
         address: 'Teacher E2E address',
@@ -178,7 +178,7 @@ async function createCoreAcademicData(request: APIRequestContext, suffix: string
       data: {
         email: `student.${suffix}@teducai.test`,
         full_name: `Student ${suffix}`,
-        password: 'Student123!',
+        password: 'Student123!Secure',
         role: 'student',
         profile: {
           registration_number: `REG-${suffix}`,
@@ -363,9 +363,10 @@ async function createLibraryData(request: APIRequestContext, suffix: string, aut
   return { book, loan: returnedLoan };
 }
 
-async function verifyAiChat(request: APIRequestContext) {
+async function verifyAiChat(request: APIRequestContext, auth: AuthContext) {
   const response = await apiJson(
     await request.post(`${API_URL}/chat/`, {
+      headers: auth.headers,
       data: {
         message: 'Give one short practical suggestion to support a parent whose child has attendance issues.',
       },
@@ -404,7 +405,7 @@ test.describe('TeducAI critical end-to-end school workflows', () => {
     await createAttendance(request, auth, academicData);
     const financeData = await createFinanceData(request, suffix, auth, academicData);
     const libraryData = await createLibraryData(request, suffix, auth, academicData);
-    const aiResponse = await verifyAiChat(request);
+    const aiResponse = await verifyAiChat(request, auth);
 
     const seeded: SeededData = {
       suffix,

@@ -11,7 +11,7 @@ client = TestClient(app)
 def _admin():
     unique_id = uuid.uuid4().hex[:8]
     email = f"admin_{unique_id}@test.com"
-    password = "securepassword123"
+    password = "SecurePass123!"
     client.post("/auth/register/school", json={
         "school": {"name": f"Config School {unique_id}", "domain_prefix": f"config_{unique_id}", "school_type": "general", "address": "123 Config St"},
         "owner": {"email": email, "full_name": "Config Admin", "role": "school_admin", "password": password},

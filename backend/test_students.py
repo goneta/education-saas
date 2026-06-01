@@ -13,7 +13,7 @@ def _admin():
     unique_id = uuid.uuid4().hex[:8]
     domain = f"school_{unique_id}"
     email = f"admin_{unique_id}@test.com"
-    password = "securepassword123"
+    password = "SecurePass123!"
     client.post("/auth/register/school", json={
         "school": {"name": f"Test School {unique_id}", "domain_prefix": domain, "school_type": "general", "address": "123 Education St"},
         "owner": {"email": email, "full_name": "Test Admin", "role": "school_admin", "password": password},
@@ -28,7 +28,7 @@ def test_student_flow():
 
     student_payload = {
         "email": f"student_{unique_id}@test.com",
-        "password": "studentpass123",
+        "password": "StudentPass123!",
         "full_name": "Jean Eleve",
         "role": "student",
         "school_domain_prefix": domain,

@@ -95,6 +95,7 @@ class UserResponse(UserBase):
     is_active: bool
     school_id: Optional[int]
     school: Optional[SchoolResponse] = None
+    mfa_enabled: bool = False
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -143,9 +144,24 @@ class RolePermissionResponse(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    expires_in: int
 
 class TokenData(BaseModel):
     email: Optional[str] = None
+    token_version: Optional[int] = None
+
+
+class MfaSetupResponse(BaseModel):
+    secret: str
+    provisioning_uri: str
+
+
+class MfaVerifyRequest(BaseModel):
+    code: str
+
+
+class MfaStatusResponse(BaseModel):
+    enabled: bool
 
 # Student Schemas
 class StudentProfileBase(BaseModel):
@@ -860,7 +876,7 @@ class AdmissionApplicationResponse(AdmissionApplicationCreate):
 
 class AdmissionEnrollmentCreate(BaseModel):
     email: str
-    password: str = "ChangeMe123!"
+    password: str = "ChangeMe123!Secure"
     full_name: Optional[str] = None
     registration_number: Optional[str] = None
     date_of_birth: Optional[datetime] = None
@@ -1370,6 +1386,19 @@ class AuditLogResponse(BaseModel):
     method: Optional[str] = None
     path: Optional[str] = None
     status_code: Optional[int] = None
+    details: Optional[dict] = None
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+    school_id: Optional[int] = None
+    actor_id: Optional[int] = None
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SecurityEventResponse(BaseModel):
+    id: int
+    event_type: str
+    severity: str
     details: Optional[dict] = None
     ip_address: Optional[str] = None
     user_agent: Optional[str] = None

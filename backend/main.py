@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from .audit import audit_mutation_middleware
 from .database import SessionLocal
+from .security_middleware import rate_limit_middleware, security_headers_middleware
 from .routers import auth, students, teachers, chat, education, attendance, grades, dashboard, library, finance, system, pedagogy, operations, enterprise, documents
 
 app = FastAPI(title="Education SaaS API")
@@ -15,6 +16,8 @@ cors_origins = [
     for origin in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000").split(",")
     if origin.strip()
 ]
+if os.getenv("APP_ENV") == "production" and "*" in cors_origins:
+    raise RuntimeError("CORS_ALLOWED_ORIGINS cannot contain '*' in production")
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,6 +27,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.middleware("http")(security_headers_middleware)
+app.middleware("http")(rate_limit_middleware)
 app.middleware("http")(audit_mutation_middleware)
 
 app.include_router(auth.router)

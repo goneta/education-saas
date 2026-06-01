@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useState, useEffect } from "react"
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react"
 import { API_BASE_URL } from "@/lib/config"
 
 interface User {
@@ -16,18 +16,32 @@ interface AuthContextType {
     token: string | null
     isAuthenticated: boolean
     isLoading: boolean
-    login: (email: string, password: string) => Promise<void>
+    login: (email: string, password: string, otpCode?: string) => Promise<void>
     logout: () => void
     error: string | null
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null)
     const [token, setToken] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+
+    const clearSession = useCallback((authToken: string | null) => {
+        if (authToken) {
+            void fetch(`${API_BASE_URL}/auth/logout`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${authToken}` },
+            }).catch(() => undefined)
+        }
+        localStorage.removeItem("access_token")
+        setToken(null)
+        setUser(null)
+        setError(null)
+    }, [])
 
     // Check for existing token on mount
     useEffect(() => {
@@ -40,6 +54,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setIsLoading(false)
         }
     }, [])
+
+    useEffect(() => {
+        if (!token) return
+        let timeout: ReturnType<typeof setTimeout>
+        const reset = () => {
+            clearTimeout(timeout)
+            timeout = setTimeout(() => clearSession(token), IDLE_TIMEOUT_MS)
+        }
+        const events = ["mousemove", "keydown", "click", "scroll", "touchstart"]
+        events.forEach(event => window.addEventListener(event, reset, { passive: true }))
+        reset()
+        return () => {
+            clearTimeout(timeout)
+            events.forEach(event => window.removeEventListener(event, reset))
+        }
+    }, [token, clearSession])
 
     const fetchUserInfo = async (authToken: string) => {
         try {
@@ -66,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     }
 
-    const login = async (email: string, password: string) => {
+    const login = async (email: string, password: string, otpCode?: string) => {
         setError(null)
         setIsLoading(true)
 
@@ -75,6 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const formData = new URLSearchParams()
             formData.append("username", email) // Backend expects 'username' field
             formData.append("password", password)
+            if (otpCode) formData.append("otp_code", otpCode)
 
             const response = await fetch(`${API_BASE_URL}/auth/token`, {
                 method: "POST",
@@ -106,10 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const logout = () => {
-        localStorage.removeItem("access_token")
-        setToken(null)
-        setUser(null)
-        setError(null)
+        clearSession(token)
     }
 
     const value: AuthContextType = {

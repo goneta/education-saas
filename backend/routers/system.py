@@ -445,3 +445,23 @@ def list_audit_logs(
     if path:
         query = query.filter(models.AuditLog.path.like(f"%{path}%"))
     return query.order_by(models.AuditLog.created_at.desc()).limit(min(limit, 500)).all()
+
+
+@router.get("/security-events", response_model=List[schemas.SecurityEventResponse])
+def list_security_events(
+    severity: Optional[str] = None,
+    event_type: Optional[str] = None,
+    limit: int = 100,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    if current_user.role not in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN, models.UserRole.DIRECTION]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    query = db.query(models.SecurityEvent)
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        query = query.filter(models.SecurityEvent.school_id == current_user.school_id)
+    if severity:
+        query = query.filter(models.SecurityEvent.severity == severity)
+    if event_type:
+        query = query.filter(models.SecurityEvent.event_type == event_type)
+    return query.order_by(models.SecurityEvent.created_at.desc()).limit(min(limit, 500)).all()

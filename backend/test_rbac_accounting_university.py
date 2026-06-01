@@ -10,7 +10,7 @@ client = TestClient(app)
 
 
 def _admin(prefix: str):
-    password = "pass12345"
+    password = "SecurePass123!"
     email = f"admin_{prefix}_{uuid.uuid4().hex[:6]}@test.com"
     domain = f"{prefix}_{uuid.uuid4().hex[:8]}"
     client.post("/auth/register/school", json={
@@ -21,7 +21,7 @@ def _admin(prefix: str):
     return {"Authorization": f"Bearer {token}"}, email, password
 
 
-def _create_user(email: str, role: models.UserRole, school_id: int, password: str = "pass12345"):
+def _create_user(email: str, role: models.UserRole, school_id: int, password: str = "SecurePass123!"):
     db = database.SessionLocal()
     try:
         user = models.User(
@@ -46,7 +46,7 @@ def _school_id(headers):
 def _student(headers):
     return client.post("/students/", headers=headers, json={
         "email": f"s_{uuid.uuid4().hex[:8]}@test.com",
-        "password": "pass12345",
+        "password": "SecurePass123!",
         "full_name": "Student",
         "role": "student",
         "profile": {
@@ -64,7 +64,7 @@ def test_school_admin_can_disable_cashier_write_permission():
     school_id = _school_id(admin_headers)
     cashier_email = f"cashier_{uuid.uuid4().hex[:8]}@test.com"
     _create_user(cashier_email, models.UserRole.CASHIER, school_id)
-    cashier_headers = {"Authorization": f"Bearer {client.post('/auth/token', data={'username': cashier_email, 'password': 'pass12345'}).json()['access_token']}"}
+    cashier_headers = {"Authorization": f"Bearer {client.post('/auth/token', data={'username': cashier_email, 'password': 'SecurePass123!'}).json()['access_token']}"}
 
     response = client.put("/system/role-permissions/cashier", headers=admin_headers, json={"permissions": ["finance:read", "reports:read"]})
     assert response.status_code == 200

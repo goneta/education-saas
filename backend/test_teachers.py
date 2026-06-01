@@ -11,7 +11,7 @@ def test_teachers_flow():
     unique_id = str(uuid.uuid4())[:8]
     domain = f"school_{unique_id}"
     admin_email = f"admin_{unique_id}@test.com"
-    password = "securepassword123"
+    password = "SecurePass123!"
 
     print(f"--- Setup: Creating School {domain} ---")
     auth_payload = {
@@ -46,7 +46,7 @@ def test_teachers_flow():
     teacher_email = f"teacher_{unique_id}@test.com"
     teacher_payload = {
          "email": teacher_email,
-         "password": "teacherpassword123",
+         "password": "TeacherPass123!",
          "full_name": "Monsieur Prof",
          "role": "teacher",
          "profile": {

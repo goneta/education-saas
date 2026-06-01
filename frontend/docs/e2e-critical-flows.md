@@ -77,7 +77,7 @@ The script has sensible local defaults, but the following variables can be overr
 | `E2E_BACKEND_PORT` | `8000` | Backend server port when Playwright starts FastAPI. |
 | `E2E_LOCALE` | `en` | Locale prefix used in frontend routes. |
 | `E2E_ADMIN_EMAIL` | Generated dynamically | Optional existing admin email. If omitted, the test creates a temporary school. |
-| `E2E_ADMIN_PASSWORD` | `Admin123!` | Password for the generated or existing admin user. |
+| `E2E_ADMIN_PASSWORD` | `Admin123!Secure` | Password for the generated or existing admin user. |
 
 ## Notes
 

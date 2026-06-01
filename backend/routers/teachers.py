@@ -20,6 +20,7 @@ def register_teacher(
         raise HTTPException(status_code=400, detail="Email already registered")
         
     try:
+        security.validate_password_strength(teacher_in.password)
         # 3. Create User
         hashed_password = security.get_password_hash(teacher_in.password)
         new_user = models.User(
@@ -47,7 +48,7 @@ def register_teacher(
         
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/", response_model=List[schemas.TeacherResponse])
 def list_teachers(
@@ -152,7 +153,7 @@ def update_teacher(
         return teacher
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.delete("/{teacher_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_teacher(
@@ -180,4 +181,4 @@ def delete_teacher(
         db.commit()
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")

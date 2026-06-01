@@ -9,7 +9,7 @@ client = TestClient(app)
 
 
 def _admin(prefix: str):
-    password = "pass12345"
+    password = "SecurePass123!"
     email = f"admin_{prefix}_{uuid.uuid4().hex[:6]}@test.com"
     domain = f"{prefix}_{uuid.uuid4().hex[:8]}"
     client.post("/auth/register/school", json={
@@ -23,7 +23,7 @@ def _admin(prefix: str):
 def _student(headers, prefix: str):
     return client.post("/students/", headers=headers, json={
         "email": f"s_{uuid.uuid4().hex[:8]}@test.com",
-        "password": "pass12345",
+        "password": "SecurePass123!",
         "full_name": f"{prefix} Student",
         "role": "student",
         "profile": {

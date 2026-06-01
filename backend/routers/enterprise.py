@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
-from .. import database, models, rbac, schemas, security
+from .. import crypto_utils, database, models, rbac, schemas, security
 from ..services.notification_service import dispatch_notification
 
 router = APIRouter(prefix="/enterprise", tags=["Enterprise"])
@@ -86,6 +86,8 @@ def update_enterprise_resource(resource: str, row_id: int, payload: dict, db: Se
         raise HTTPException(status_code=404, detail="Record not found")
     for key, value in payload.items():
         if key not in {"id", "school_id", "created_at"} and hasattr(row, key):
+            if resource == "notification-providers" and key == "api_key_secret":
+                value = crypto_utils.encrypt_secret(value)
             setattr(row, key, value)
     db.commit()
     db.refresh(row)
@@ -436,7 +438,25 @@ def create_government_export(payload: schemas.GovernmentExportCreate, db: Sessio
 def list_government_exports(db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)): return _list(db, models.GovernmentExport, current_user)
 
 @router.post("/notification-providers", response_model=schemas.NotificationProviderResponse)
-def create_notification_provider(payload: schemas.NotificationProviderCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)): return _create(db, models.NotificationProvider, payload, current_user)
+def create_notification_provider(payload: schemas.NotificationProviderCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    _manager(current_user)
+    row = models.NotificationProvider(
+        **payload.model_dump(exclude={"api_key_secret"}),
+        api_key_secret=crypto_utils.encrypt_secret(payload.api_key_secret),
+        school_id=_school_id(current_user),
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return {
+        "id": row.id,
+        "channel": row.channel,
+        "provider_name": row.provider_name,
+        "api_key_secret": crypto_utils.mask_secret(row.api_key_secret),
+        "sender_id": row.sender_id,
+        "is_active": row.is_active,
+        "school_id": row.school_id,
+    }
 
 @router.post("/notifications", response_model=schemas.NotificationMessageResponse)
 def send_notification(payload: schemas.NotificationMessageCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):

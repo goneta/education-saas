@@ -11,7 +11,7 @@ def test_grades_flow():
     unique_id = str(uuid.uuid4())[:8]
     domain = f"school_gr_{unique_id}"
     email = f"admin_gr_{unique_id}@test.com"
-    password = "securepassword123"
+    password = "SecurePass123!"
     
     # Register School
     school_payload = {
@@ -79,7 +79,7 @@ def test_grades_flow():
     
     student_res = client.post("/students/", json={
         "email": f"st_gr_{unique_id}@test.com",
-        "password": "password",
+        "password": "StudentPass123!",
         "school_domain_prefix": domain,
         "full_name": "Grades Student",
         "role": "student",

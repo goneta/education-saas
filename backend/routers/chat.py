@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 from typing import Optional, Any
+from backend import models, security
 from backend.services.ai_service import ai_service
 
 router = APIRouter(
@@ -10,7 +11,7 @@ router = APIRouter(
 )
 
 class ChatRequest(BaseModel):
-    message: str
+    message: str = Field(min_length=1, max_length=4000)
 
 class ChatResponse(BaseModel):
     type: str # 'chat' or 'content'
@@ -18,12 +19,9 @@ class ChatResponse(BaseModel):
     data: Optional[Any] = None
 
 @router.post("/", response_model=ChatResponse)
-async def chat_with_ai(request: ChatRequest):
-    print(f"DEBUG: Received chat request: {request.message}")
+async def chat_with_ai(request: ChatRequest, current_user: models.User = Depends(security.get_current_user)):
     try:
         response = ai_service.generate_response(request.message)
-        print(f"DEBUG: Generated response: {response}")
         return response
-    except Exception as e:
-        print(f"DEBUG: Error in chat_with_ai: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=500, detail="AI service failed")

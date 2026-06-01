@@ -7,6 +7,35 @@ from . import database, models, security
 
 MUTATION_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 SKIPPED_PATHS = {"/auth/token"}
+SENSITIVE_DETAIL_KEYS = {
+    "authorization",
+    "api_key",
+    "api_key_secret",
+    "access_token",
+    "refresh_token",
+    "token",
+    "secret",
+    "password",
+    "hashed_password",
+    "mfa_secret",
+    "otp",
+    "otp_code",
+}
+
+
+def sanitize_audit_details(value):
+    if isinstance(value, dict):
+        sanitized = {}
+        for key, item in value.items():
+            key_text = str(key).lower()
+            if any(sensitive in key_text for sensitive in SENSITIVE_DETAIL_KEYS):
+                sanitized[key] = "***"
+            else:
+                sanitized[key] = sanitize_audit_details(item)
+        return sanitized
+    if isinstance(value, list):
+        return [sanitize_audit_details(item) for item in value]
+    return value
 
 
 def record_audit(
@@ -22,7 +51,7 @@ def record_audit(
         action=action,
         entity_type=entity_type,
         entity_id=str(entity_id) if entity_id is not None else None,
-        details=details,
+        details=sanitize_audit_details(details) if details else None,
         actor_id=current_user.id if current_user else None,
         school_id=current_user.school_id if current_user else None,
     )

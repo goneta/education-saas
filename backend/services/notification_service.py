@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 
 import httpx
 
-from .. import models, schemas
+from .. import crypto_utils, models, schemas
 
 
 def _provider_endpoint(provider: models.NotificationProvider) -> Optional[str]:
@@ -26,7 +26,7 @@ def _post(endpoint: str, body: dict, headers: dict) -> Tuple[models.Notification
 
 def _dispatch_twilio(provider: models.NotificationProvider, payload: schemas.NotificationMessageCreate) -> Tuple[models.NotificationStatus, str]:
     account_sid = os.getenv("TWILIO_ACCOUNT_SID", "")
-    token = provider.api_key_secret or os.getenv("TWILIO_AUTH_TOKEN", "")
+    token = crypto_utils.decrypt_secret(provider.api_key_secret) or os.getenv("TWILIO_AUTH_TOKEN", "")
     from_number = provider.sender_id or os.getenv("TWILIO_FROM", "")
     if not account_sid or not token or not from_number:
         return models.NotificationStatus.QUEUED, "Queued: Twilio credentials are not configured."
@@ -39,7 +39,7 @@ def _dispatch_twilio(provider: models.NotificationProvider, payload: schemas.Not
 
 def _dispatch_orange(provider: models.NotificationProvider, payload: schemas.NotificationMessageCreate) -> Tuple[models.NotificationStatus, str]:
     endpoint = os.getenv("ORANGE_SMS_URL") or _provider_endpoint(provider)
-    token = provider.api_key_secret or os.getenv("ORANGE_SMS_TOKEN", "")
+    token = crypto_utils.decrypt_secret(provider.api_key_secret) or os.getenv("ORANGE_SMS_TOKEN", "")
     sender = provider.sender_id or os.getenv("ORANGE_SMS_SENDER", "")
     if not endpoint or not token or not sender:
         return models.NotificationStatus.QUEUED, "Queued: Orange SMS credentials are not configured."
@@ -48,7 +48,7 @@ def _dispatch_orange(provider: models.NotificationProvider, payload: schemas.Not
 
 def _dispatch_whatsapp(provider: models.NotificationProvider, payload: schemas.NotificationMessageCreate) -> Tuple[models.NotificationStatus, str]:
     phone_number_id = provider.sender_id or os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
-    token = provider.api_key_secret or os.getenv("WHATSAPP_ACCESS_TOKEN", "")
+    token = crypto_utils.decrypt_secret(provider.api_key_secret) or os.getenv("WHATSAPP_ACCESS_TOKEN", "")
     if not phone_number_id or not token:
         return models.NotificationStatus.QUEUED, "Queued: WhatsApp Business credentials are not configured."
     endpoint = f"https://graph.facebook.com/v20.0/{phone_number_id}/messages"
@@ -57,7 +57,7 @@ def _dispatch_whatsapp(provider: models.NotificationProvider, payload: schemas.N
 
 
 def _dispatch_sendgrid(provider: models.NotificationProvider, payload: schemas.NotificationMessageCreate) -> Tuple[models.NotificationStatus, str]:
-    token = provider.api_key_secret or os.getenv("SENDGRID_API_KEY", "")
+    token = crypto_utils.decrypt_secret(provider.api_key_secret) or os.getenv("SENDGRID_API_KEY", "")
     sender = provider.sender_id or os.getenv("SENDGRID_FROM_EMAIL", "")
     if not token or not sender:
         return models.NotificationStatus.QUEUED, "Queued: SendGrid credentials are not configured."
@@ -72,7 +72,7 @@ def _dispatch_sendgrid(provider: models.NotificationProvider, payload: schemas.N
 
 def _dispatch_mailgun(provider: models.NotificationProvider, payload: schemas.NotificationMessageCreate) -> Tuple[models.NotificationStatus, str]:
     domain = os.getenv("MAILGUN_DOMAIN", "")
-    token = provider.api_key_secret or os.getenv("MAILGUN_API_KEY", "")
+    token = crypto_utils.decrypt_secret(provider.api_key_secret) or os.getenv("MAILGUN_API_KEY", "")
     sender = provider.sender_id or os.getenv("MAILGUN_FROM_EMAIL", "")
     if not domain or not token or not sender:
         return models.NotificationStatus.QUEUED, "Queued: Mailgun credentials are not configured."
@@ -107,8 +107,9 @@ def dispatch_notification(provider: Optional[models.NotificationProvider], paylo
         return models.NotificationStatus.QUEUED, "Queued: provider webhook URL is not configured."
 
     headers = {"Content-Type": "application/json"}
-    if provider.api_key_secret:
-        headers["Authorization"] = f"Bearer {provider.api_key_secret}"
+    secret = crypto_utils.decrypt_secret(provider.api_key_secret)
+    if secret:
+        headers["Authorization"] = f"Bearer {secret}"
 
     body = {
         "channel": payload.channel.value if hasattr(payload.channel, "value") else str(payload.channel),

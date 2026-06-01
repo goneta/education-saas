@@ -28,6 +28,7 @@ def register_student(
         raise HTTPException(status_code=400, detail="Registration number (matricule) already exists")
 
     try:
+        security.validate_password_strength(student_in.password)
         school = db.query(models.School).filter(models.School.id == current_user.school_id).first()
         country_code = school.country_code if school else "CI"
         valid_phone, parent_phone_e164, phone_error = localization.validate_phone(
@@ -99,7 +100,7 @@ def register_student(
         raise
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/", response_model=List[schemas.StudentResponse])
 def list_students(
@@ -220,7 +221,7 @@ def update_student(
         return student
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.delete("/{student_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_student(
@@ -254,7 +255,7 @@ def delete_student(
         db.commit()
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/{student_id}/history", response_model=schemas.EducationHistoryResponse)
 def add_education_history(
@@ -285,7 +286,7 @@ def add_education_history(
         return new_history
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.delete("/history/{history_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_education_history(

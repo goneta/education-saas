@@ -94,6 +94,7 @@ def enroll_admission(application_id: int, payload: schemas.AdmissionEnrollmentCr
         raise HTTPException(status_code=400, detail="Only submitted or accepted applications can be enrolled")
     if db.query(models.User).filter(models.User.email == payload.email).first():
         raise HTTPException(status_code=400, detail="Email already exists")
+    security.validate_password_strength(payload.password)
 
     cls = None
     if payload.class_id:
