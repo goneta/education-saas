@@ -1408,3 +1408,34 @@ class SecurityEventResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class SecureFileResponse(BaseModel):
+    id: int
+    original_filename: str
+    content_type: str
+    file_extension: Optional[str] = None
+    size_bytes: int
+    checksum_sha256: str
+    storage_backend: str
+    entity_type: Optional[str] = None
+    entity_id: Optional[str] = None
+    status: str
+    scan_status: str
+    scan_details: Optional[str] = None
+    school_id: Optional[int] = None
+    uploaded_by_id: Optional[int] = None
+    created_at: datetime
+    deleted_at: Optional[datetime] = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ComplianceExportResponse(BaseModel):
+    generated_at: datetime
+    school_id: Optional[int] = None
+    user_id: Optional[int] = None
+    payload: dict
+
+
+class ComplianceEraseRequest(BaseModel):
+    user_id: int
+    reason: str
+    anonymize_only: bool = True

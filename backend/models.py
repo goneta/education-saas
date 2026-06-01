@@ -1418,4 +1418,29 @@ class SecurityEvent(Base):
     actor = relationship("User")
 
 
+class SecureFile(Base):
+    __tablename__ = "secure_files"
+
+    id = Column(Integer, primary_key=True, index=True)
+    original_filename = Column(String, nullable=False)
+    stored_filename = Column(String, nullable=False, unique=True, index=True)
+    content_type = Column(String, nullable=False)
+    file_extension = Column(String, nullable=True, index=True)
+    size_bytes = Column(Integer, nullable=False)
+    checksum_sha256 = Column(String, nullable=False, index=True)
+    storage_backend = Column(String, default="local", nullable=False)
+    storage_path = Column(String, nullable=False)
+    entity_type = Column(String, nullable=True, index=True)
+    entity_id = Column(String, nullable=True, index=True)
+    status = Column(String, default="active", nullable=False, index=True)
+    scan_status = Column(String, default="not_configured", nullable=False, index=True)
+    scan_details = Column(String, nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    uploaded_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+
+    school = relationship("School")
+    uploaded_by = relationship("User")
+
 

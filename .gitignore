@@ -7,6 +7,12 @@ node_modules/
 .next/
 dist/
 coverage/
+backups/
+storage/
+playwright-report/
+test-results/
+*.db
+*.sqlite3
 
 # User requested exclusions
 folderexample/

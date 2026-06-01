@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
@@ -435,8 +437,7 @@ def list_audit_logs(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db),
 ):
-    if current_user.role not in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN, models.UserRole.DIRECTION]:
-        raise HTTPException(status_code=403, detail="Not authorized")
+    rbac.require_permission(current_user, "audit:read", db)
     query = db.query(models.AuditLog)
     if current_user.role != models.UserRole.SUPER_ADMIN:
         query = query.filter(models.AuditLog.school_id == current_user.school_id)
@@ -455,8 +456,7 @@ def list_security_events(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db),
 ):
-    if current_user.role not in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN, models.UserRole.DIRECTION]:
-        raise HTTPException(status_code=403, detail="Not authorized")
+    rbac.require_permission(current_user, "security:read", db)
     query = db.query(models.SecurityEvent)
     if current_user.role != models.UserRole.SUPER_ADMIN:
         query = query.filter(models.SecurityEvent.school_id == current_user.school_id)
@@ -465,3 +465,117 @@ def list_security_events(
     if event_type:
         query = query.filter(models.SecurityEvent.event_type == event_type)
     return query.order_by(models.SecurityEvent.created_at.desc()).limit(min(limit, 500)).all()
+
+
+@router.get("/compliance/data-export", response_model=schemas.ComplianceExportResponse)
+def compliance_data_export(
+    user_id: Optional[int] = None,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    rbac.require_permission(current_user, "compliance:export", db)
+    school_id = current_user.school_id if current_user.role != models.UserRole.SUPER_ADMIN else None
+    user_query = db.query(models.User)
+    if school_id:
+        user_query = user_query.filter(models.User.school_id == school_id)
+    if user_id:
+        user_query = user_query.filter(models.User.id == user_id)
+    users = user_query.all()
+    payload = {
+        "users": [
+            {
+                "id": user.id,
+                "email": user.email,
+                "full_name": user.full_name,
+                "role": user.role.value,
+                "school_id": user.school_id,
+                "is_active": user.is_active,
+                "created_at": user.created_at,
+            }
+            for user in users
+        ],
+        "students": [],
+        "teachers": [],
+        "files": [],
+    }
+    for user in users:
+        if user.student_profile:
+            payload["students"].append({
+                "user_id": user.id,
+                "registration_number": user.student_profile.registration_number,
+                "parent_name": user.student_profile.parent_name,
+                "parent_phone_e164": user.student_profile.parent_phone_e164,
+                "status": user.student_profile.status.value,
+            })
+        if user.teacher_profile:
+            payload["teachers"].append({
+                "user_id": user.id,
+                "specialization": user.teacher_profile.specialization,
+                "join_date": user.teacher_profile.join_date,
+            })
+    files_query = db.query(models.SecureFile)
+    if school_id:
+        files_query = files_query.filter(models.SecureFile.school_id == school_id)
+    payload["files"] = [
+        {
+            "id": row.id,
+            "original_filename": row.original_filename,
+            "content_type": row.content_type,
+            "size_bytes": row.size_bytes,
+            "entity_type": row.entity_type,
+            "entity_id": row.entity_id,
+            "status": row.status,
+            "created_at": row.created_at,
+        }
+        for row in files_query.limit(5000).all()
+    ]
+    return {
+        "generated_at": datetime.utcnow(),
+        "school_id": school_id,
+        "user_id": user_id,
+        "payload": payload,
+    }
+
+
+@router.post("/compliance/erase-user")
+def compliance_erase_user(
+    payload: schemas.ComplianceEraseRequest,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    rbac.require_permission(current_user, "compliance:erase", db)
+    query = db.query(models.User).filter(models.User.id == payload.user_id)
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        query = query.filter(models.User.school_id == current_user.school_id)
+    user = query.first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.role in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN] and current_user.role != models.UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail="Only super admin can erase admin accounts")
+    anonymized = f"anonymized-{user.id}@deleted.local"
+    user.email = anonymized
+    user.full_name = "Utilisateur anonymise"
+    user.phone_number = None
+    user.phone_e164 = None
+    user.address = None
+    user.address_structured = None
+    user.formatted_address = None
+    user.is_active = False
+    user.token_version += 1
+    if user.student_profile:
+        user.student_profile.parent_name = "Anonymise"
+        user.student_profile.parent_phone = "Anonymise"
+        user.student_profile.parent_phone_e164 = None
+        user.student_profile.parent_email = None
+        user.student_profile.student_address = None
+        user.student_profile.parent_address = None
+    db.add(models.AuditLog(
+        action="compliance.erase_user",
+        entity_type="user",
+        entity_id=str(user.id),
+        details={"reason": payload.reason, "anonymize_only": payload.anonymize_only},
+        actor_id=current_user.id,
+        school_id=user.school_id,
+    ))
+    db.commit()
+    return {"message": "User data anonymized", "user_id": user.id}

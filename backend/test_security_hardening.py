@@ -10,6 +10,19 @@ from backend.main import app
 client = TestClient(app)
 
 
+def _admin_headers():
+    password = "SecurePass123!"
+    email = f"prod_admin_{uuid.uuid4().hex[:8]}@test.com"
+    response = client.post("/auth/register/school", json={
+        "school": {"name": "Production School", "domain_prefix": f"prod_{uuid.uuid4().hex[:8]}", "school_type": "general", "address": "x"},
+        "owner": {"email": email, "full_name": "Admin", "role": "school_admin", "password": password},
+    })
+    assert response.status_code == 200
+    token = client.post("/auth/token", data={"username": email, "password": password})
+    assert token.status_code == 200
+    return {"Authorization": f"Bearer {token.json()['access_token']}"}
+
+
 def test_weak_password_is_rejected_on_school_registration():
     response = client.post("/auth/register/school", json={
         "school": {"name": "Weak Password School", "domain_prefix": f"weak_{uuid.uuid4().hex[:8]}", "school_type": "general", "address": "x"},
@@ -86,3 +99,43 @@ def test_document_verification_requires_reference_code():
     valid_code = client.get(f"/documents/verify/receipt/{payment_id}", params={"code": receipt_number})
     assert valid_code.status_code == 200
     assert valid_code.json()["valid"] is True
+
+
+def test_secure_file_upload_requires_auth_and_validates_download():
+    denied = client.post("/files/", files={"file": ("doc.pdf", b"%PDF-1.4\n", "application/pdf")})
+    assert denied.status_code == 401
+
+    headers = _admin_headers()
+    uploaded = client.post(
+        "/files/",
+        headers=headers,
+        files={"file": ("doc.pdf", b"%PDF-1.4\n% secure test\n", "application/pdf")},
+        data={"entity_type": "student", "entity_id": "test"},
+    )
+    assert uploaded.status_code == 200
+    payload = uploaded.json()
+    assert payload["content_type"] == "application/pdf"
+    assert payload["status"] == "active"
+
+    listing = client.get("/files/", headers=headers)
+    assert listing.status_code == 200
+    assert any(row["id"] == payload["id"] for row in listing.json())
+
+    download = client.get(f"/files/{payload['id']}/download", headers=headers)
+    assert download.status_code == 200
+    assert download.content.startswith(b"%PDF")
+
+
+def test_compliance_export_and_metrics_are_available_to_admins():
+    headers = _admin_headers()
+    export = client.get("/system/compliance/data-export", headers=headers)
+    assert export.status_code == 200
+    assert "users" in export.json()["payload"]
+
+    ready = client.get("/ready")
+    assert ready.status_code == 200
+    assert "ready" in ready.json()
+
+    metrics = client.get("/metrics")
+    assert metrics.status_code == 200
+    assert "education_saas_uptime_seconds" in metrics.text

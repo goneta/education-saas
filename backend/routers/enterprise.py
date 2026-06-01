@@ -11,6 +11,7 @@ from ..services.notification_service import dispatch_notification
 router = APIRouter(prefix="/enterprise", tags=["Enterprise"])
 
 MANAGER_ROLES = {models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN, models.UserRole.DIRECTION, models.UserRole.REGISTRAR}
+APPROVAL_LOCKED_RESOURCES = {"vendor-invoices", "leaves", "contracts", "diplomas", "transcripts", "bank-transactions"}
 
 
 def _school_id(current_user: models.User) -> int:
@@ -66,6 +67,25 @@ def _enterprise_write(current_user: models.User, db: Session):
     _manager(current_user)
 
 
+def _enterprise_approve(current_user: models.User, db: Session):
+    rbac.require_permission(current_user, "enterprise:approve", db)
+    _manager(current_user)
+
+
+def _ensure_mutation_allowed(resource: str, row) -> None:
+    status = getattr(row, "status", None)
+    if resource in APPROVAL_LOCKED_RESOURCES and status in {
+        models.ApprovalStatus.APPROVED,
+        models.InvoiceStatus.APPROVED,
+        models.InvoiceStatus.PAID,
+        models.LeaveStatus.APPROVED,
+        "approved",
+        "paid",
+        "certified",
+    }:
+        raise HTTPException(status_code=409, detail="Approved or finalized records cannot be modified directly")
+
+
 def _ensure_school_row(db: Session, model: Type, row_id: Optional[int], school_id: int, label: str):
     if row_id is None:
         return None
@@ -84,6 +104,7 @@ def update_enterprise_resource(resource: str, row_id: int, payload: dict, db: Se
     row = db.query(model).filter(model.id == row_id, model.school_id == _school_id(current_user)).first()
     if not row:
         raise HTTPException(status_code=404, detail="Record not found")
+    _ensure_mutation_allowed(resource, row)
     for key, value in payload.items():
         if key not in {"id", "school_id", "created_at"} and hasattr(row, key):
             if resource == "notification-providers" and key == "api_key_secret":
@@ -103,6 +124,7 @@ def delete_enterprise_resource(resource: str, row_id: int, db: Session = Depends
     row = db.query(model).filter(model.id == row_id, model.school_id == _school_id(current_user)).first()
     if not row:
         raise HTTPException(status_code=404, detail="Record not found")
+    _ensure_mutation_allowed(resource, row)
     db.delete(row)
     db.commit()
     return {"message": "Record deleted"}
@@ -129,13 +151,19 @@ def create_approval(workflow: schemas.ApprovalWorkflowCreate, db: Session = Depe
 
 @router.post("/approvals/{workflow_id}/decide", response_model=schemas.ApprovalWorkflowResponse)
 def decide_approval(workflow_id: int, decision: schemas.ApprovalDecision, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
-    _enterprise_write(current_user, db)
+    _enterprise_approve(current_user, db)
     workflow = db.query(models.ApprovalWorkflow).filter(models.ApprovalWorkflow.id == workflow_id, models.ApprovalWorkflow.school_id == _school_id(current_user)).first()
     if not workflow:
         raise HTTPException(status_code=404, detail="Workflow not found")
+    if workflow.status != models.ApprovalStatus.PENDING:
+        raise HTTPException(status_code=409, detail="Workflow is already finalized")
     step = db.query(models.ApprovalStep).filter(models.ApprovalStep.workflow_id == workflow.id, models.ApprovalStep.step_order == workflow.current_step).first()
     if not step or step.role != current_user.role:
         raise HTTPException(status_code=403, detail="Current step is assigned to another role")
+    if step.approver_id and step.approver_id != current_user.id:
+        raise HTTPException(status_code=403, detail="This approval step is assigned to another user")
+    if step.status != models.ApprovalStatus.PENDING:
+        raise HTTPException(status_code=409, detail="Approval step is already decided")
     step.status = decision.status
     step.comment = decision.comment
     step.approver_id = current_user.id

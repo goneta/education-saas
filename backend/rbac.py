@@ -13,28 +13,43 @@ PERMISSIONS = {
         "students:read", "students:write", "teachers:read", "teachers:write",
         "finance:read", "finance:write", "finance:approve", "pedagogy:read", "pedagogy:write",
         "operations:read", "operations:write", "enterprise:read", "enterprise:write",
+        "enterprise:approve", "files:read", "files:write", "files:delete",
         "reports:read", "documents:issue", "settings:read",
-        "settings:write",
+        "settings:write", "audit:read", "security:read", "compliance:export", "monitoring:read",
     },
     models.UserRole.REGISTRAR: {
         "students:read", "students:write", "teachers:read",
         "pedagogy:read", "operations:read", "operations:write",
-        "documents:issue", "reports:read",
+        "documents:issue", "reports:read", "files:read", "files:write",
     },
     models.UserRole.CASHIER: {
-        "students:read", "finance:read", "finance:write", "reports:read", "documents:receipt",
+        "students:read", "finance:read", "finance:write", "reports:read", "documents:receipt", "files:read",
     },
     models.UserRole.TEACHER: {
-        "students:read", "pedagogy:read", "pedagogy:write", "grades:write", "attendance:write",
+        "students:read", "pedagogy:read", "pedagogy:write", "grades:write", "attendance:write", "files:read", "files:write",
     },
-    models.UserRole.PARENT: {"portal:read", "portal:write"},
-    models.UserRole.STUDENT: {"portal:read", "portal:write"},
+    models.UserRole.PARENT: {"portal:read", "portal:write", "files:read", "files:write"},
+    models.UserRole.STUDENT: {"portal:read", "portal:write", "files:read", "files:write"},
     models.UserRole.STAFF: {"portal:read"},
+}
+
+PRODUCTION_PERMISSIONS = {
+    "audit:read",
+    "backup:run",
+    "compliance:erase",
+    "compliance:export",
+    "enterprise:approve",
+    "files:delete",
+    "files:read",
+    "files:write",
+    "monitoring:read",
+    "security:read",
 }
 
 
 def permission_catalog() -> list[str]:
     catalog = {perm for values in PERMISSIONS.values() for perm in values if perm != "*"}
+    catalog.update(PRODUCTION_PERMISSIONS)
     return sorted(catalog)
 
 
