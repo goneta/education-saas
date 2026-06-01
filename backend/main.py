@@ -11,7 +11,7 @@ from .security_middleware import rate_limit_middleware, security_headers_middlew
 from . import models
 from .routers import auth, students, teachers, chat, education, attendance, grades, dashboard, library, finance, system, pedagogy, operations, enterprise, documents, files
 
-app = FastAPI(title="Education SaaS API")
+app = FastAPI(title="TeducAI API")
 START_TIME = time.time()
 
 # Configure CORS
@@ -56,7 +56,7 @@ app.include_router(files.router)
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to Education SaaS API"}
+    return {"message": "Welcome to TeducAI API"}
 
 
 @app.get("/health")

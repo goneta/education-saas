@@ -17,8 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EduSaaS",
-  description: "Plateforme SaaS de gestion scolaire",
+  title: "TeducAI",
+  description:
+    "Plateforme intelligente de gestion des etablissements d'enseignement et de formation",
 };
 
 export default async function RootLayout({

@@ -160,7 +160,7 @@ def setup_mfa(current_user: models.User = Depends(security.get_current_user), db
     current_user.mfa_secret = crypto_utils.encrypt_secret(secret)
     current_user.mfa_enabled = False
     db.commit()
-    issuer = current_user.school.name if current_user.school else "Education SaaS"
+    issuer = current_user.school.name if current_user.school else "TeducAI"
     return {
         "secret": secret,
         "provisioning_uri": totp.provisioning_uri(secret, name=current_user.email, issuer_name=issuer),

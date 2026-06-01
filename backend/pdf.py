@@ -74,7 +74,7 @@ def professional_pdf(title: str, lines: list[str], verification_payload: str | N
     page.setFont("Helvetica-Bold", 18)
     page.drawString(margin, height - 18 * mm, title)
     page.setFont("Helvetica", 9)
-    page.drawString(margin, height - 25 * mm, subtitle or "Education SaaS - document certifie")
+    page.drawString(margin, height - 25 * mm, subtitle or "TeducAI - document certifie")
 
     y = height - 48 * mm
     table_data = []

@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 import { normalizeLocale } from "@/lib/i18n"
 // We will replace these with Lucide icons later
-import { Home, Users, Settings, BookOpen, GraduationCap, Calendar, ClipboardCheck, ChevronDown, CreditCard, BarChart3, MessageSquare } from "lucide-react"
+import { Home, Users, Settings, BookOpen, GraduationCap, Calendar, ClipboardCheck, ChevronDown, CreditCard, BarChart3, MessageSquare, BrainCircuit } from "lucide-react"
 
 interface SidebarProps {
     isResizablePanel?: boolean;
@@ -94,8 +94,8 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
         )}>
             <div className="flex h-14 items-center border-b border-[#E5E7EB] px-4 lg:h-[60px] lg:px-6">
                 <Link href={`/${locale}`} className="flex items-center gap-2 font-semibold text-[#111827]">
-                    <BookOpen className="h-6 w-6 text-primary" />
-                    <span className="">EduSaas</span>
+                    <BrainCircuit className="h-6 w-6 text-primary" />
+                    <span className="">TeducAI</span>
                 </Link>
             </div>
             <div className="flex-1">

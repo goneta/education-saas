@@ -1,7 +1,7 @@
 {
   "app": {
-    "name": "EduSaaS",
-    "title": "Plateforme de gestion scolaire",
+    "name": "TeducAI",
+    "title": "Plateforme intelligente de gestion scolaire",
     "loading": "Chargement...",
     "search": "Rechercher...",
     "logout": "Deconnexion",

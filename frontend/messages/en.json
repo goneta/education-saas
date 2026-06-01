@@ -1,7 +1,7 @@
 {
   "app": {
-    "name": "EduSaaS",
-    "title": "School management platform",
+    "name": "TeducAI",
+    "title": "Intelligent school management platform",
     "loading": "Loading...",
     "search": "Search...",
     "logout": "Logout",
