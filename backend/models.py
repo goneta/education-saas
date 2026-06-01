@@ -133,6 +133,25 @@ class User(Base):
     student_profile = relationship("StudentProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
     teacher_profile = relationship("TeacherProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
+
+class RolePermission(Base):
+    __tablename__ = "role_permissions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    role = Column(SqEnum(UserRole), nullable=False, index=True)
+    permission = Column(String, nullable=False, index=True)
+    is_enabled = Column(Boolean, default=True, nullable=False)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    updated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    school = relationship("School")
+    updated_by = relationship("User")
+
+    __table_args__ = (
+        UniqueConstraint("role", "permission", "school_id", name="_role_permission_scope_uc"),
+    )
+
 class StudentProfile(Base):
     __tablename__ = "student_profiles"
     
@@ -1003,6 +1022,34 @@ class CourseUnit(Base):
     school = relationship("School")
 
 
+class CourseEnrollment(Base):
+    __tablename__ = "course_enrollments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    course_unit_id = Column(Integer, ForeignKey("course_units.id"), nullable=False)
+    semester_id = Column(Integer, ForeignKey("semesters.id"), nullable=True)
+    status = Column(String, default="registered", nullable=False)
+    score = Column(Float, nullable=True)
+    grade = Column(String, nullable=True)
+    grade_point = Column(Float, nullable=True)
+    credits_attempted = Column(Float, default=0)
+    credits_validated = Column(Float, default=0)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    registered_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    registered_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    student = relationship("StudentProfile")
+    course_unit = relationship("CourseUnit")
+    semester = relationship("Semester")
+    school = relationship("School")
+    registered_by = relationship("User")
+
+    __table_args__ = (
+        UniqueConstraint("student_id", "course_unit_id", name="_student_course_unit_uc"),
+    )
+
+
 class UniversityScheduleSlot(Base):
     __tablename__ = "university_schedule_slots"
 
@@ -1201,6 +1248,59 @@ class BankTransaction(Base):
 
     account = relationship("ChartAccount")
     school = relationship("School")
+
+
+class JournalEntry(Base):
+    __tablename__ = "journal_entries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    entry_date = Column(DateTime, nullable=False, index=True)
+    reference = Column(String, nullable=True, index=True)
+    description = Column(String, nullable=False)
+    source_type = Column(String, nullable=True, index=True)
+    source_id = Column(Integer, nullable=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    school = relationship("School")
+    created_by = relationship("User")
+    lines = relationship("JournalLine", back_populates="entry", cascade="all, delete-orphan")
+
+
+class JournalLine(Base):
+    __tablename__ = "journal_lines"
+
+    id = Column(Integer, primary_key=True, index=True)
+    entry_id = Column(Integer, ForeignKey("journal_entries.id"), nullable=False)
+    account_id = Column(Integer, ForeignKey("chart_accounts.id"), nullable=False)
+    label = Column(String, nullable=True)
+    debit = Column(Float, default=0, nullable=False)
+    credit = Column(Float, default=0, nullable=False)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+
+    entry = relationship("JournalEntry", back_populates="lines")
+    account = relationship("ChartAccount")
+    school = relationship("School")
+
+
+class BankReconciliation(Base):
+    __tablename__ = "bank_reconciliations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    bank_transaction_id = Column(Integer, ForeignKey("bank_transactions.id"), nullable=False)
+    journal_entry_id = Column(Integer, ForeignKey("journal_entries.id"), nullable=True)
+    matched_amount = Column(Float, nullable=False)
+    status = Column(String, default="matched", nullable=False)
+    notes = Column(Text, nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    reconciled_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    reconciled_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    bank_transaction = relationship("BankTransaction")
+    journal_entry = relationship("JournalEntry")
+    school = relationship("School")
+    reconciled_by = relationship("User")
 
 
 class GovernmentExport(Base):

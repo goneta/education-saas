@@ -115,6 +115,44 @@ def _recalculate_fee_status(fee: models.Fee) -> None:
         fee.status = models.FeeStatus.PAID
 
 
+def _account(db: Session, school_id: int, code: str, name: str, account_type: str) -> models.ChartAccount:
+    account = db.query(models.ChartAccount).filter(
+        models.ChartAccount.school_id == school_id,
+        models.ChartAccount.code == code,
+    ).first()
+    if account:
+        return account
+    account = models.ChartAccount(code=code, name=name, account_type=account_type, school_id=school_id)
+    db.add(account)
+    db.flush()
+    return account
+
+
+def _create_payment_journal_entry(db: Session, payment: models.Payment, fee: models.Fee, current_user: models.User) -> None:
+    if db.query(models.JournalEntry).filter(
+        models.JournalEntry.source_type == "payment",
+        models.JournalEntry.source_id == payment.id,
+        models.JournalEntry.school_id == fee.school_id,
+    ).first():
+        return
+    cash = _account(db, fee.school_id, "571", "Caisse", "asset")
+    revenue = _account(db, fee.school_id, "706", "Produits scolaires", "revenue")
+    entry = models.JournalEntry(
+        entry_date=payment.payment_date or datetime.utcnow(),
+        reference=payment.receipt_number,
+        description=f"Encaissement {fee.title}",
+        source_type="payment",
+        source_id=payment.id,
+        school_id=fee.school_id,
+        created_by_id=current_user.id,
+    )
+    entry.lines = [
+        models.JournalLine(account_id=cash.id, label="Encaissement caisse", debit=payment.amount, credit=0, school_id=fee.school_id),
+        models.JournalLine(account_id=revenue.id, label=fee.title, debit=0, credit=payment.amount, school_id=fee.school_id),
+    ]
+    db.add(entry)
+
+
 @router.get("/fees", response_model=List[schemas.FeeResponse])
 def get_fees(
     skip: int = 0,
@@ -126,7 +164,7 @@ def get_fees(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:read")
+    rbac.require_permission(current_user, "finance:read", db)
     query = db.query(models.Fee).options(selectinload(models.Fee.payments))
     query = _apply_school_scope(query, models.Fee, current_user)
 
@@ -151,7 +189,7 @@ def create_fee(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:write")
+    rbac.require_permission(current_user, "finance:write", db)
     school_id = current_user.school_id or fee.school_id
 
     if fee.student_id:
@@ -181,7 +219,7 @@ def update_fee(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:write")
+    rbac.require_permission(current_user, "finance:write", db)
     db_fee = _get_fee_or_404(fee_id, db, current_user)
 
     for field, value in fee_update.model_dump(exclude={"school_id"}).items():
@@ -202,7 +240,7 @@ def delete_fee(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:write")
+    rbac.require_permission(current_user, "finance:write", db)
     db_fee = _get_fee_or_404(fee_id, db, current_user)
     db.delete(db_fee)
     db.commit()
@@ -216,7 +254,7 @@ def record_fee_payment(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:write")
+    rbac.require_permission(current_user, "finance:write", db)
     if payment.amount <= 0:
         raise HTTPException(status_code=400, detail="Payment amount must be positive")
 
@@ -235,6 +273,7 @@ def record_fee_payment(
     )
     db_fee.payments.append(db_payment)
     db.flush()
+    _create_payment_journal_entry(db, db_payment, db_fee, current_user)
     _recalculate_fee_status(db_fee)
     db.commit()
     return _serialize_fee(_get_fee_or_404(fee_id, db, current_user))
@@ -250,7 +289,7 @@ def list_payments(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:read")
+    rbac.require_permission(current_user, "finance:read", db)
     query = _payments_query(db, current_user).options(
         selectinload(models.Payment.recorded_by),
         selectinload(models.Payment.fee).selectinload(models.Fee.student).selectinload(models.StudentProfile.user),
@@ -282,7 +321,7 @@ def cash_journal(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:read")
+    rbac.require_permission(current_user, "finance:read", db)
     payments = list_payments(start_date, end_date, operator_id, None, None, db, current_user)
     by_category = {}
     by_operator = {}
@@ -305,7 +344,7 @@ def create_cash_closure(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:write")
+    rbac.require_permission(current_user, "finance:write", db)
     school_id = _school_id_for(current_user)
     day_start = datetime.combine(closure.closure_date.date(), time.min)
     day_end = datetime.combine(closure.closure_date.date(), time.max)
@@ -334,7 +373,7 @@ def approve_cash_closure(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:approve")
+    rbac.require_permission(current_user, "finance:approve", db)
     query = db.query(models.CashClosure).filter(models.CashClosure.id == closure_id)
     query = _apply_school_scope(query, models.CashClosure, current_user)
     closure = query.first()
@@ -358,7 +397,7 @@ def finance_reports(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:read")
+    rbac.require_permission(current_user, "finance:read", db)
     payments = list_payments(start_date, end_date, operator_id, class_id, fee_category, db, current_user)
     fee_query = db.query(models.Fee).options(
         selectinload(models.Fee.payments),
@@ -417,7 +456,7 @@ def get_expenses(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:read")
+    rbac.require_permission(current_user, "finance:read", db)
     query = db.query(models.Expense)
     query = _apply_school_scope(query, models.Expense, current_user)
 
@@ -433,7 +472,7 @@ def create_expense(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:write")
+    rbac.require_permission(current_user, "finance:write", db)
     school_id = current_user.school_id or expense.school_id
     new_expense = models.Expense(**expense.model_dump(exclude={"school_id"}), school_id=school_id)
     db.add(new_expense)
@@ -449,7 +488,7 @@ def update_expense(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:write")
+    rbac.require_permission(current_user, "finance:write", db)
     query = db.query(models.Expense).filter(models.Expense.id == expense_id)
     query = _apply_school_scope(query, models.Expense, current_user)
     db_expense = query.first()
@@ -473,7 +512,7 @@ def delete_expense(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:write")
+    rbac.require_permission(current_user, "finance:write", db)
     query = db.query(models.Expense).filter(models.Expense.id == expense_id)
     query = _apply_school_scope(query, models.Expense, current_user)
     db_expense = query.first()
@@ -494,7 +533,7 @@ def list_fee_schedules(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:read")
+    rbac.require_permission(current_user, "finance:read", db)
     query = db.query(models.FeeSchedule)
     query = _apply_school_scope(query, models.FeeSchedule, current_user)
     if academic_year_id:
@@ -514,7 +553,7 @@ def create_fee_schedule(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:write")
+    rbac.require_permission(current_user, "finance:write", db)
     school_id = _school_id_for(current_user, schedule.school_id)
     row = models.FeeSchedule(**schedule.model_dump(exclude={"school_id"}), school_id=school_id)
     db.add(row)
@@ -530,7 +569,7 @@ def copy_fee_schedules_to_year(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:write")
+    rbac.require_permission(current_user, "finance:write", db)
     school_id = _school_id_for(current_user)
     source_rows = db.query(models.FeeSchedule).filter(
         models.FeeSchedule.school_id == school_id,
@@ -569,7 +608,7 @@ def list_forecasts(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:read")
+    rbac.require_permission(current_user, "finance:read", db)
     query = db.query(models.BudgetForecast)
     query = _apply_school_scope(query, models.BudgetForecast, current_user)
     if academic_year_id:
@@ -583,7 +622,7 @@ def create_forecast(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:write")
+    rbac.require_permission(current_user, "finance:write", db)
     school_id = _school_id_for(current_user, forecast.school_id)
     row = models.BudgetForecast(
         **forecast.model_dump(exclude={"school_id"}),
@@ -602,7 +641,7 @@ def forecast_vs_actual(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:read")
+    rbac.require_permission(current_user, "finance:read", db)
     forecasts = list_forecasts(academic_year_id, db, current_user)
     actual_query = db.query(models.Fee).options(selectinload(models.Fee.payments))
     actual_query = _apply_school_scope(actual_query, models.Fee, current_user)
@@ -623,7 +662,7 @@ def queue_sms(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    rbac.require_permission(current_user, "finance:write")
+    rbac.require_permission(current_user, "finance:write", db)
     school_id = _school_id_for(current_user)
     row = models.SmsMessage(
         **message.model_dump(),

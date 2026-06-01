@@ -5,6 +5,10 @@ const backendPort = Number(process.env.E2E_BACKEND_PORT || 8000);
 
 const baseURL = process.env.E2E_BASE_URL || `http://127.0.0.1:${frontendPort}`;
 const apiURL = process.env.E2E_API_URL || `http://127.0.0.1:${backendPort}`;
+const backendCommand = `cd .. && python -m uvicorn backend.main:app --host 127.0.0.1 --port ${backendPort}`;
+const frontendCommand = process.platform === 'win32'
+  ? `set NEXT_PUBLIC_API_URL=${apiURL}&& npm run dev -- --hostname 127.0.0.1 --port ${frontendPort}`
+  : `NEXT_PUBLIC_API_URL=${apiURL} npm run dev -- --hostname 127.0.0.1 --port ${frontendPort}`;
 
 export default defineConfig({
   testDir: './e2e',
@@ -37,15 +41,15 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `cd ../backend && python3.11 -m uvicorn main:app --host 127.0.0.1 --port ${backendPort}`,
-      url: `${apiURL}/docs`,
+      command: backendCommand,
+      url: `${apiURL}/health`,
       reuseExistingServer: true,
       timeout: 60_000,
       stdout: 'pipe',
       stderr: 'pipe',
     },
     {
-      command: `NEXT_PUBLIC_API_URL=${apiURL} npm run dev -- --hostname 127.0.0.1 --port ${frontendPort}`,
+      command: frontendCommand,
       url: baseURL,
       reuseExistingServer: true,
       timeout: 120_000,

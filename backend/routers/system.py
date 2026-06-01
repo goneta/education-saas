@@ -185,8 +185,83 @@ def list_users(
 
 
 @router.get("/permissions")
-def my_permissions(current_user: models.User = Depends(security.get_current_user)):
-    return rbac.permission_snapshot(current_user)
+def my_permissions(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    return rbac.permission_snapshot(current_user, db)
+
+
+@router.get("/permissions/catalog")
+def permission_catalog(current_user: models.User = Depends(security.get_current_user)):
+    if current_user.role not in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN, models.UserRole.DIRECTION]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    return {
+        "roles": [role.value for role in models.UserRole],
+        "permissions": rbac.permission_catalog(),
+        "defaults": {
+            role.value: sorted(values)
+            for role, values in rbac.PERMISSIONS.items()
+        },
+    }
+
+
+@router.get("/role-permissions/{role}", response_model=schemas.RolePermissionResponse)
+def get_role_permissions(
+    role: models.UserRole,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    if current_user.role not in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN, models.UserRole.DIRECTION]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    school_id = None if current_user.role == models.UserRole.SUPER_ADMIN else current_user.school_id
+    return rbac.role_permission_snapshot(role, school_id, db)
+
+
+@router.put("/role-permissions/{role}", response_model=schemas.RolePermissionResponse)
+def update_role_permissions(
+    role: models.UserRole,
+    payload: schemas.RolePermissionUpdate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    if current_user.role not in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN]:
+        raise HTTPException(status_code=403, detail="Only admins can update role permissions")
+    if role in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN] and current_user.role != models.UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail="Only super admin can edit admin roles")
+
+    available = set(rbac.permission_catalog())
+    requested = set(payload.permissions)
+    unknown = sorted(requested - available - {"*"})
+    if unknown:
+        raise HTTPException(status_code=400, detail={"unknown_permissions": unknown})
+
+    school_id = None if current_user.role == models.UserRole.SUPER_ADMIN else current_user.school_id
+    base = set(rbac.PERMISSIONS.get(role, set()))
+    if "*" in base:
+        base = set(available)
+        base.add("*")
+
+    existing = {
+        row.permission: row
+        for row in db.query(models.RolePermission).filter(
+            models.RolePermission.role == role,
+            models.RolePermission.school_id == school_id,
+        ).all()
+    }
+
+    for permission in sorted((base | requested | set(existing)) - {"*"}):
+        should_enable = permission in requested
+        if permission in existing:
+            existing[permission].is_enabled = should_enable
+            existing[permission].updated_by_id = current_user.id
+        else:
+            db.add(models.RolePermission(
+                role=role,
+                permission=permission,
+                is_enabled=should_enable,
+                school_id=school_id,
+                updated_by_id=current_user.id,
+            ))
+    db.commit()
+    return rbac.role_permission_snapshot(role, school_id, db)
 
 
 @router.get("/school-templates")

@@ -51,3 +51,28 @@ def test_finance_records_are_isolated_by_school():
     fee = client.post("/finance/fees", headers=a, json={"title": "Inscription", "amount": 1000, "student_id": student["id"]}).json()
     assert any(row["id"] == fee["id"] for row in client.get("/finance/fees", headers=a).json())
     assert all(row["id"] != fee["id"] for row in client.get("/finance/fees", headers=b).json())
+
+
+def test_enterprise_records_are_isolated_by_school():
+    a = _admin("enterprise_a")
+    b = _admin("enterprise_b")
+    account = client.post("/enterprise/accounts", headers=a, json={"code": "571", "name": "Caisse", "account_type": "asset"}).json()
+
+    assert any(row["id"] == account["id"] for row in client.get("/enterprise/accounts", headers=a).json())
+    assert all(row["id"] != account["id"] for row in client.get("/enterprise/accounts", headers=b).json())
+    assert client.put(f"/enterprise/accounts/{account['id']}", headers=b, json={"name": "Other"}).status_code == 404
+
+
+def test_operations_records_are_isolated_by_school():
+    a = _admin("operations_a")
+    b = _admin("operations_b")
+    program = client.post("/operations/programs", headers=a, json={
+        "name": "Licence Gestion",
+        "sector": "universite",
+        "level": "L1",
+        "diploma": "Licence",
+        "duration_years": 3,
+    }).json()
+
+    assert any(row["id"] == program["id"] for row in client.get("/operations/programs", headers=a).json())
+    assert all(row["id"] != program["id"] for row in client.get("/operations/programs", headers=b).json())

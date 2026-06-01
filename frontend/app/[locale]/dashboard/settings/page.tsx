@@ -29,6 +29,18 @@ interface AuditLog {
     actor_id: number | null
     created_at: string
 }
+interface PermissionCatalog {
+    roles: string[]
+    permissions: string[]
+    defaults: Record<string, string[]>
+}
+interface RolePermission {
+    role: string
+    base_permissions: string[]
+    enabled_permissions: string[]
+    disabled_permissions: string[]
+    available_permissions: string[]
+}
 
 export default function SettingsPage() {
     const { token, user } = useAuth()
@@ -38,6 +50,11 @@ export default function SettingsPage() {
     const [templates, setTemplates] = useState<Record<string, TemplateSummary>>({})
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
     const [templateChoice, setTemplateChoice] = useState("primary")
+    const [catalog, setCatalog] = useState<PermissionCatalog | null>(null)
+    const [selectedRole, setSelectedRole] = useState("cashier")
+    const [rolePermissions, setRolePermissions] = useState<RolePermission | null>(null)
+    const [permissionDraft, setPermissionDraft] = useState<Set<string>>(new Set())
+    const [permissionStatus, setPermissionStatus] = useState("")
 
     const loadSchools = useCallback(async () => {
         if (!token || user?.role !== "super_admin") return
@@ -59,7 +76,19 @@ export default function SettingsPage() {
         }
         if (templatesRes.ok) setTemplates(await templatesRes.json() as Record<string, TemplateSummary>)
         if (auditRes.ok) setAuditLogs(await auditRes.json() as AuditLog[])
+        const catalogRes = await fetch(`${API_BASE_URL}/system/permissions/catalog`, { headers })
+        if (catalogRes.ok) setCatalog(await catalogRes.json() as PermissionCatalog)
     }, [token])
+
+    const loadRolePermissions = useCallback(async () => {
+        if (!token || !catalog) return
+        const res = await fetch(`${API_BASE_URL}/system/role-permissions/${selectedRole}`, { headers: { Authorization: `Bearer ${token}` } })
+        if (res.ok) {
+            const data = await res.json() as RolePermission
+            setRolePermissions(data)
+            setPermissionDraft(new Set(data.enabled_permissions.filter(permission => permission !== "*")))
+        }
+    }, [catalog, selectedRole, token])
 
     const toggleSchool = async (school: School) => {
         if (!token) return
@@ -80,8 +109,36 @@ export default function SettingsPage() {
         })
     }
 
+    const togglePermission = (permission: string) => {
+        setPermissionDraft(prev => {
+            const next = new Set(prev)
+            if (next.has(permission)) next.delete(permission)
+            else next.add(permission)
+            return next
+        })
+    }
+
+    const saveRolePermissions = async () => {
+        if (!token) return
+        setPermissionStatus("Enregistrement...")
+        const res = await fetch(`${API_BASE_URL}/system/role-permissions/${selectedRole}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ permissions: Array.from(permissionDraft).sort() })
+        })
+        if (res.ok) {
+            const data = await res.json() as RolePermission
+            setRolePermissions(data)
+            setPermissionDraft(new Set(data.enabled_permissions.filter(permission => permission !== "*")))
+            setPermissionStatus("Permissions mises à jour.")
+        } else {
+            setPermissionStatus("Impossible d'enregistrer ces permissions.")
+        }
+    }
+
     useEffect(() => { void loadSchools() }, [loadSchools])
     useEffect(() => { void loadSystemContext() }, [loadSystemContext])
+    useEffect(() => { void loadRolePermissions() }, [loadRolePermissions])
 
     return (
         <div className="space-y-6">
@@ -105,6 +162,37 @@ export default function SettingsPage() {
                     {permissions.map(permission => <span key={permission} className="rounded-md border px-2 py-1">{permission}</span>)}
                 </CardContent>
             </Card>
+
+            {catalog && (
+                <Card>
+                    <CardHeader><CardTitle>Matrice des droits</CardTitle></CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <select value={selectedRole} onChange={(event) => setSelectedRole(event.target.value)} className="border rounded-md px-3 py-2 text-sm">
+                                {catalog.roles.map(role => <option key={role} value={role}>{role}</option>)}
+                            </select>
+                            <Button onClick={saveRolePermissions}>Enregistrer</Button>
+                            {permissionStatus && <span className="text-sm text-[#6B7280]">{permissionStatus}</span>}
+                        </div>
+                        <div className="grid gap-2 md:grid-cols-3">
+                            {catalog.permissions.map(permission => (
+                                <label key={permission} className="flex min-h-10 items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                                    <input
+                                        type="checkbox"
+                                        checked={permissionDraft.has(permission)}
+                                        onChange={() => togglePermission(permission)}
+                                        className="h-4 w-4"
+                                    />
+                                    <span>{permission}</span>
+                                </label>
+                            ))}
+                        </div>
+                        {rolePermissions && rolePermissions.disabled_permissions.length > 0 && (
+                            <p className="text-xs text-[#6B7280]">Droits explicitement retirés: {rolePermissions.disabled_permissions.join(", ")}</p>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
 
             <Card>
                 <CardHeader><CardTitle>{t("schoolTemplates")}</CardTitle></CardHeader>

@@ -2,7 +2,9 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from .audit import audit_mutation_middleware
+from .database import SessionLocal
 from .routers import auth, students, teachers, chat, education, attendance, grades, dashboard, library, finance, system, pedagogy, operations, enterprise, documents
 
 app = FastAPI(title="Education SaaS API")
@@ -44,3 +46,19 @@ app.include_router(documents.router)
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Education SaaS API"}
+
+
+@app.get("/health")
+def health_check():
+    db_status = "ok"
+    try:
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+    except Exception:
+        db_status = "error"
+    return {
+        "status": "ok" if db_status == "ok" else "degraded",
+        "database": db_status,
+        "environment": os.getenv("APP_ENV", "development"),
+    }

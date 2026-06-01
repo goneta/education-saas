@@ -68,6 +68,20 @@ class UserRoleUpdate(BaseModel):
     role: UserRole
     is_active: Optional[bool] = None
 
+
+class RolePermissionUpdate(BaseModel):
+    permissions: List[str]
+    role: Optional[UserRole] = None
+
+
+class RolePermissionResponse(BaseModel):
+    role: UserRole
+    base_permissions: List[str]
+    enabled_permissions: List[str]
+    disabled_permissions: List[str] = []
+    available_permissions: List[str]
+    school_id: Optional[int] = None
+
 # Token Schema
 class Token(BaseModel):
     access_token: str
@@ -984,6 +998,35 @@ class UniversityScheduleSlotResponse(UniversityScheduleSlotCreate):
     model_config = ConfigDict(from_attributes=True)
 
 
+class CourseEnrollmentCreate(BaseModel):
+    student_id: int
+    course_unit_id: int
+    semester_id: Optional[int] = None
+    status: str = "registered"
+    score: Optional[float] = None
+    grade: Optional[str] = None
+    grade_point: Optional[float] = None
+    credits_attempted: Optional[float] = None
+    credits_validated: Optional[float] = None
+
+
+class CourseEnrollmentResponse(CourseEnrollmentCreate):
+    id: int
+    school_id: int
+    registered_by_id: Optional[int] = None
+    registered_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LmdSummaryResponse(BaseModel):
+    student_id: int
+    credits_attempted: float
+    credits_validated: float
+    gpa: Optional[float] = None
+    completion_rate: float
+    enrollments: List[CourseEnrollmentResponse]
+
+
 class DiplomaRecordCreate(BaseModel):
     student_id: int
     diploma_name: str
@@ -1148,6 +1191,53 @@ class BankTransactionCreate(BaseModel):
 class BankTransactionResponse(BankTransactionCreate):
     id: int
     school_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class JournalLineCreate(BaseModel):
+    account_id: int
+    label: Optional[str] = None
+    debit: float = 0
+    credit: float = 0
+
+
+class JournalEntryCreate(BaseModel):
+    entry_date: datetime
+    reference: Optional[str] = None
+    description: str
+    source_type: Optional[str] = None
+    source_id: Optional[int] = None
+    lines: List[JournalLineCreate]
+
+
+class JournalLineResponse(JournalLineCreate):
+    id: int
+    school_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class JournalEntryResponse(JournalEntryCreate):
+    id: int
+    school_id: int
+    created_by_id: Optional[int] = None
+    created_at: datetime
+    lines: List[JournalLineResponse] = []
+    model_config = ConfigDict(from_attributes=True)
+
+
+class BankReconciliationCreate(BaseModel):
+    bank_transaction_id: int
+    journal_entry_id: Optional[int] = None
+    matched_amount: float
+    status: str = "matched"
+    notes: Optional[str] = None
+
+
+class BankReconciliationResponse(BankReconciliationCreate):
+    id: int
+    school_id: int
+    reconciled_by_id: Optional[int] = None
+    reconciled_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
 

@@ -54,7 +54,7 @@ def payment_receipt_pdf(student_user_id: int, payment_id: int, db: Session = Dep
         f"Verification: /documents/verify/receipt/{payment.id}",
         f"QR payload: VERIFY:receipt:{payment.id}:{payment.receipt_number}",
     ]
-    return Response(pdf.simple_pdf("Payment Receipt", lines), media_type="application/pdf")
+    return Response(pdf.professional_pdf("Recu de paiement", lines, f"VERIFY:receipt:{payment.id}:{payment.receipt_number}"), media_type="application/pdf")
 
 
 @router.get("/students/{student_user_id}/certificate/{certificate_id}.pdf")
@@ -75,7 +75,7 @@ def certificate_pdf(student_user_id: int, certificate_id: int, db: Session = Dep
         f"Verification: /documents/verify/certificate/{cert.id}",
         f"QR payload: VERIFY:certificate:{cert.id}:CERT-{cert.id}",
     ]
-    return Response(pdf.simple_pdf("Certificate", lines), media_type="application/pdf")
+    return Response(pdf.professional_pdf("Attestation", lines, f"VERIFY:certificate:{cert.id}:CERT-{cert.id}"), media_type="application/pdf")
 
 
 @router.get("/students/{student_user_id}/report-card.pdf")
@@ -95,7 +95,7 @@ def report_card_pdf(student_user_id: int, db: Session = Depends(database.get_db)
             lines.append(f"{assessment.subject.name if assessment and assessment.subject else '-'} / {assessment.title if assessment else '-'}: {grade.score}")
     else:
         lines.append("No grades recorded.")
-    return Response(pdf.simple_pdf("Report Card", lines), media_type="application/pdf")
+    return Response(pdf.professional_pdf("Bulletin scolaire", lines, f"VERIFY:report-card:{student.student_profile.id}:{student.student_profile.registration_number}"), media_type="application/pdf")
 
 
 @router.get("/diplomas/{diploma_id}.pdf")
@@ -119,4 +119,4 @@ def diploma_pdf(diploma_id: int, db: Session = Depends(database.get_db), current
         f"Verification: /documents/verify/diploma/{diploma.id}",
         f"QR payload: VERIFY:diploma:{diploma.id}:{diploma.certificate_number}",
     ]
-    return Response(pdf.simple_pdf("Diploma", lines), media_type="application/pdf")
+    return Response(pdf.professional_pdf("Diplome certifie", lines, f"VERIFY:diploma:{diploma.id}:{diploma.certificate_number}"), media_type="application/pdf")

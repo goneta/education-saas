@@ -13,3 +13,5 @@ python-multipart
 email-validator
 pytest
 httpx
+reportlab
+qrcode[pil]
