@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { API_BASE_URL } from "@/lib/config"
+import { formatCurrency } from "@/lib/format"
 
 // Types (should ideally be in a types file)
 interface Payment {
@@ -99,7 +100,7 @@ export default function FinanceDashboard({ params: { locale } }: { params: { loc
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-green-600">
-                            ${totalCollected.toLocaleString()}
+                            {formatCurrency(totalCollected, locale)}
                         </div>
                         <p className="text-xs text-muted-foreground">Collected from fees</p>
                     </CardContent>
@@ -111,7 +112,7 @@ export default function FinanceDashboard({ params: { locale } }: { params: { loc
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-red-600">
-                            ${totalExpenses.toLocaleString()}
+                            {formatCurrency(totalExpenses, locale)}
                         </div>
                         <p className="text-xs text-muted-foreground">Operational costs</p>
                     </CardContent>
@@ -123,7 +124,7 @@ export default function FinanceDashboard({ params: { locale } }: { params: { loc
                     </CardHeader>
                     <CardContent>
                         <div className={`text-2xl font-bold ${netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            ${netIncome.toLocaleString()}
+                            {formatCurrency(netIncome, locale)}
                         </div>
                     </CardContent>
                 </Card>
@@ -134,7 +135,7 @@ export default function FinanceDashboard({ params: { locale } }: { params: { loc
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-yellow-600">
-                            ${(totalExpected - totalCollected).toLocaleString()}
+                            {formatCurrency(totalExpected - totalCollected, locale)}
                         </div>
                         <p className="text-xs text-muted-foreground">Pending collection</p>
                     </CardContent>

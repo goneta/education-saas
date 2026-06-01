@@ -6,12 +6,14 @@ import { Mic, Paperclip, Send, PanelLeftClose, PanelLeftOpen, BookOpen } from "l
 import { useLayout } from "@/context/layout-context"
 import { useState, useRef, useEffect } from "react"
 import { API_BASE_URL } from "@/lib/config"
+import { useTranslations } from "next-intl"
 
 export function AgentPanel() {
     const { isAgentPanelOpen, toggleAgentPanel, aiStatus, setAiStatus, agentAction, setAgentAction, setViewMode, setPreviewContent } = useLayout()
+    const t = useTranslations("layout")
     const [inputValue, setInputValue] = useState("")
     const [messages, setMessages] = useState<{ role: 'user' | 'agent', content: string }[]>([
-        { role: 'agent', content: "Hello! I am your AI assistant. I can help you manage students, create courses, or research information. How can I help you today?" }
+        { role: 'agent', content: t("agentGreeting") }
     ])
     const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -34,7 +36,7 @@ export function AgentPanel() {
 
         // Set statuses
         setAiStatus("working")
-        setAgentAction("Processing...")
+        setAgentAction(t("agentProcessing"))
 
         try {
             // Create a timeout for the fetch
@@ -75,14 +77,14 @@ export function AgentPanel() {
         } catch (error: unknown) {
             console.error("AI Error:", error)
             setAiStatus("idle")
-            setAgentAction("Error")
+            setAgentAction(t("agentError"))
 
             // Detailed error message for the user
-            let errorMessage = "Sorry, I encountered an error communicating with the server.";
+            let errorMessage = t("agentCommunicationError");
             const errorName = error instanceof Error ? error.name : undefined
             const errorText = error instanceof Error ? error.message : String(error)
             if (errorName === 'AbortError') {
-                errorMessage = "Request timed out. The server took too long to respond.";
+                errorMessage = t("agentTimeout");
             } else if (errorText) {
                 errorMessage = `Error: ${errorText}`;
             }
@@ -129,7 +131,7 @@ export function AgentPanel() {
                             <div key={i} className="flex gap-3">
                                 <div className={`h-8 w-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs ${msg.role === 'agent' ? 'bg-primary text-primary-foreground' : 'bg-muted-foreground text-secondary'
                                     }`}>
-                                    {msg.role === 'agent' ? 'AI' : 'You'}
+                                    {msg.role === 'agent' ? 'AI' : t("agentYou")}
                                 </div>
                                 <div className="bg-[#EDEFF2] p-3 rounded-lg text-sm whitespace-pre-wrap text-[#111827]">
                                     {msg.content}
@@ -140,7 +142,7 @@ export function AgentPanel() {
                             <div className="flex gap-3">
                                 <div className="h-8 w-8 rounded-full bg-primary flex-shrink-0 flex items-center justify-center text-primary-foreground text-xs">AI</div>
                                 <div className="bg-[#EDEFF2] p-3 rounded-lg text-sm italic text-[#6B7280] flex items-center gap-2">
-                                    <span className="animate-pulse">Thinking...</span>
+                                    <span className="animate-pulse">{t("agentThinking")}</span>
                                 </div>
                             </div>
                         )}
@@ -159,7 +161,7 @@ export function AgentPanel() {
                     <div className="flex gap-2">
                         <input
                             className="flex-1 bg-transparent border-none text-sm focus:outline-none text-[#111827] placeholder:text-[#6B7280]"
-                            placeholder="What would you like to change?"
+                            placeholder={t("agentPlaceholder")}
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}

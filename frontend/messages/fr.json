@@ -1,14 +1,69 @@
 {
-    "Index": {
-        "title": "SaaS Éducatif",
-        "login": "Connexion",
-        "register": "Inscrire une École"
-    },
-    "Auth": {
-        "email": "Adresse Email",
-        "password": "Mot de passe",
-        "schoolName": "Nom de l'École",
-        "domain": "Préfixe Domaine (ex: 'mon-ecole')",
-        "submit": "Soumettre"
-    }
+  "app": {
+    "name": "EduSaaS",
+    "title": "Plateforme de gestion scolaire",
+    "loading": "Chargement...",
+    "search": "Rechercher...",
+    "logout": "Deconnexion",
+    "language": "Langue",
+    "currency": "FCFA"
+  },
+  "auth": {
+    "login": "Connexion",
+    "description": "Entrez vos identifiants pour acceder a votre espace.",
+    "email": "Adresse e-mail",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "Entrez votre mot de passe",
+    "submit": "Se connecter",
+    "submitting": "Connexion en cours...",
+    "failed": "Connexion impossible"
+  },
+  "navigation": {
+    "overview": "Vue d'ensemble",
+    "management": "Gestion",
+    "students": "Eleves",
+    "teachers": "Professeurs",
+    "academics": "Scolarite",
+    "classes": "Classes",
+    "subjects": "Matieres",
+    "timetable": "Emploi du temps",
+    "pedagogy": "Pedagogie",
+    "grades": "Notes",
+    "library": "Bibliotheque",
+    "portal": "Portail parent / eleve",
+    "operations": "Operations",
+    "enterprise": "Entreprise",
+    "finance": "Finance",
+    "fees": "Frais",
+    "reports": "Rapports",
+    "cashJournal": "Journal de caisse",
+    "forecasts": "Previsionnel",
+    "feeSettings": "Parametrage frais",
+    "sms": "SMS",
+    "system": "Systeme",
+    "settings": "Parametres"
+  },
+  "layout": {
+    "previewTitle": "Apercu du contenu genere par l'IA",
+    "previewEmpty": "Utilisez l'assistant IA pour generer des cours, rapports ou listes. Le contenu apparaitra ici.",
+    "agentGreeting": "Bonjour. Je suis votre assistant IA. Je peux aider a gerer les eleves, creer des cours ou preparer des rapports.",
+    "agentPlaceholder": "Ecrivez un message...",
+    "agentProcessing": "Traitement...",
+    "agentError": "Erreur",
+    "agentThinking": "Reflexion...",
+    "agentYou": "Vous",
+    "agentCommunicationError": "Une erreur est survenue pendant la communication avec le serveur.",
+    "agentTimeout": "La requete a expire. Le serveur met trop de temps a repondre.",
+    "dashboard": "Tableau de bord",
+    "preview": "Apercu",
+    "previewOutput": "Sortie apercu",
+    "closePreview": "Fermer l'apercu"
+  },
+  "settings": {
+    "activeContext": "Contexte actif",
+    "permissions": "Permissions",
+    "schoolTemplates": "Modeles d'etablissement",
+    "applyTemplate": "Appliquer le modele",
+    "auditTrail": "Journal d'audit"
+  }
 }

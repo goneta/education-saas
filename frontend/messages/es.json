@@ -1,0 +1,69 @@
+{
+  "app": {
+    "name": "EduSaaS",
+    "title": "Plataforma de gestion escolar",
+    "loading": "Cargando...",
+    "search": "Buscar...",
+    "logout": "Cerrar sesion",
+    "language": "Idioma",
+    "currency": "FCFA"
+  },
+  "auth": {
+    "login": "Inicio de sesion",
+    "description": "Introduce tus credenciales para acceder a tu espacio.",
+    "email": "Correo electronico",
+    "password": "Contrasena",
+    "passwordPlaceholder": "Introduce tu contrasena",
+    "submit": "Iniciar sesion",
+    "submitting": "Iniciando sesion...",
+    "failed": "No se pudo iniciar sesion"
+  },
+  "navigation": {
+    "overview": "Vista general",
+    "management": "Gestion",
+    "students": "Estudiantes",
+    "teachers": "Profesores",
+    "academics": "Escolaridad",
+    "classes": "Clases",
+    "subjects": "Asignaturas",
+    "timetable": "Horario",
+    "pedagogy": "Pedagogia",
+    "grades": "Notas",
+    "library": "Biblioteca",
+    "portal": "Portal padre / estudiante",
+    "operations": "Operaciones",
+    "enterprise": "Empresa",
+    "finance": "Finanzas",
+    "fees": "Cuotas",
+    "reports": "Informes",
+    "cashJournal": "Diario de caja",
+    "forecasts": "Previsiones",
+    "feeSettings": "Configuracion de cuotas",
+    "sms": "SMS",
+    "system": "Sistema",
+    "settings": "Configuracion"
+  },
+  "layout": {
+    "previewTitle": "Vista previa del contenido generado por IA",
+    "previewEmpty": "Usa el asistente de IA para generar cursos, informes o listas. El contenido aparecera aqui.",
+    "agentGreeting": "Hola. Soy tu asistente de IA. Puedo ayudar a gestionar estudiantes, crear cursos o preparar informes.",
+    "agentPlaceholder": "Escribe un mensaje...",
+    "agentProcessing": "Procesando...",
+    "agentError": "Error",
+    "agentThinking": "Pensando...",
+    "agentYou": "Tu",
+    "agentCommunicationError": "Se produjo un error al comunicarse con el servidor.",
+    "agentTimeout": "La solicitud expiro. El servidor tardo demasiado en responder.",
+    "dashboard": "Panel",
+    "preview": "Vista previa",
+    "previewOutput": "Salida de vista previa",
+    "closePreview": "Cerrar vista previa"
+  },
+  "settings": {
+    "activeContext": "Contexto activo",
+    "permissions": "Permisos",
+    "schoolTemplates": "Plantillas de establecimiento",
+    "applyTemplate": "Aplicar plantilla",
+    "auditTrail": "Registro de auditoria"
+  }
+}

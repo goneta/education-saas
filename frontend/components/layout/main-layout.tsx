@@ -1,6 +1,7 @@
 "use client"
 
 import ReactMarkdown from 'react-markdown'
+import { useTranslations } from 'next-intl'
 
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { AgentPanel } from "@/components/ai-agent/agent-panel"
@@ -13,6 +14,7 @@ import { LayoutDashboard, Eye } from "lucide-react"
 
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
     const { isAgentPanelOpen, viewMode, setViewMode, previewContent } = useLayout()
+    const t = useTranslations("layout")
 
     return (
         <ResizablePanelGroup direction="horizontal" className="min-h-screen w-full">
@@ -45,7 +47,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                             onClick={() => setViewMode('dashboard')}
                         >
                             <LayoutDashboard className="h-3 w-3 mr-1" />
-                            Dashboard
+                            {t("dashboard")}
                         </Button>
                         <Button
                             variant={viewMode === 'preview' ? 'default' : 'ghost'}
@@ -54,7 +56,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                             onClick={() => setViewMode('preview')}
                         >
                             <Eye className="h-3 w-3 mr-1" />
-                            Preview
+                            {t("preview")}
                         </Button>
                     </div>
                     <div className="flex-1 overflow-hidden">
@@ -78,8 +80,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                     ) : (
                         <div className="h-full flex flex-col bg-white">
                             <div className="h-14 border-b border-[#E5E7EB] flex items-center px-4 font-semibold text-lg bg-white justify-between">
-                                <span>Preview Output</span>
-                                <Button variant="ghost" size="sm" onClick={() => setViewMode('dashboard')}>Close Preview</Button>
+                                <span>{t("previewOutput")}</span>
+                                <Button variant="ghost" size="sm" onClick={() => setViewMode('dashboard')}>{t("closePreview")}</Button>
                             </div>
                             <div className="flex-1 overflow-y-auto p-4 md:p-8">
                                 {previewContent ? (
@@ -90,10 +92,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                                     <div className="flex items-center justify-center text-[#6B7280] flex-col gap-4 h-full">
                                         <div className="p-6 border-2 border-dashed border-[#E5E7EB] rounded-lg bg-[#F6F7F9]">
                                             <Eye className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                                            <p>AI Generated Content Preview</p>
+                                            <p>{t("previewTitle")}</p>
                                         </div>
                                         <p className="text-sm max-w-md text-center">
-                                            Use the AI Agent to generate courses, reports, or lists. The content will appear here.
+                                            {t("previewEmpty")}
                                         </p>
                                     </div>
                                 )}

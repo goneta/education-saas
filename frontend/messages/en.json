@@ -1,14 +1,69 @@
 {
-    "Index": {
-        "title": "Educational SaaS",
-        "login": "Login",
-        "register": "Register School"
-    },
-    "Auth": {
-        "email": "Email Address",
-        "password": "Password",
-        "schoolName": "School Name",
-        "domain": "Domain Prefix (e.g. 'my-school')",
-        "submit": "Submit"
-    }
+  "app": {
+    "name": "EduSaaS",
+    "title": "School management platform",
+    "loading": "Loading...",
+    "search": "Search...",
+    "logout": "Logout",
+    "language": "Language",
+    "currency": "FCFA"
+  },
+  "auth": {
+    "login": "Login",
+    "description": "Enter your credentials to access your workspace.",
+    "email": "Email address",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "submit": "Log in",
+    "submitting": "Logging in...",
+    "failed": "Login failed"
+  },
+  "navigation": {
+    "overview": "Overview",
+    "management": "Management",
+    "students": "Students",
+    "teachers": "Teachers",
+    "academics": "Academics",
+    "classes": "Classes",
+    "subjects": "Subjects",
+    "timetable": "Timetable",
+    "pedagogy": "Pedagogy",
+    "grades": "Grades",
+    "library": "Library",
+    "portal": "Parent / Student Portal",
+    "operations": "Operations",
+    "enterprise": "Enterprise",
+    "finance": "Finance",
+    "fees": "Fees",
+    "reports": "Reports",
+    "cashJournal": "Cash Journal",
+    "forecasts": "Forecasts",
+    "feeSettings": "Fee Settings",
+    "sms": "SMS",
+    "system": "System",
+    "settings": "Settings"
+  },
+  "layout": {
+    "previewTitle": "AI Generated Content Preview",
+    "previewEmpty": "Use the AI assistant to generate courses, reports, or lists. The content will appear here.",
+    "agentGreeting": "Hello. I am your AI assistant. I can help manage students, create courses, or prepare reports.",
+    "agentPlaceholder": "Write a message...",
+    "agentProcessing": "Processing...",
+    "agentError": "Error",
+    "agentThinking": "Thinking...",
+    "agentYou": "You",
+    "agentCommunicationError": "Sorry, I encountered an error communicating with the server.",
+    "agentTimeout": "Request timed out. The server took too long to respond.",
+    "dashboard": "Dashboard",
+    "preview": "Preview",
+    "previewOutput": "Preview Output",
+    "closePreview": "Close Preview"
+  },
+  "settings": {
+    "activeContext": "Active Context",
+    "permissions": "Permissions",
+    "schoolTemplates": "School Templates",
+    "applyTemplate": "Apply Template",
+    "auditTrail": "Audit Trail"
+  }
 }

@@ -2,17 +2,20 @@
 
 import { useState } from "react"
 import { useRouter, useParams } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { normalizeLocale } from "@/lib/i18n"
 
 export function LoginForm() {
     const router = useRouter()
     const { login } = useAuth()
     const params = useParams()
-    const locale = params.locale as string || "en"
+    const locale = normalizeLocale(params.locale as string)
+    const t = useTranslations("auth")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [isLoading, setIsLoading] = useState(false)
@@ -28,7 +31,7 @@ export function LoginForm() {
             // Redirect to dashboard on success
             router.push(`/${locale}/dashboard`)
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Login failed")
+            setError(err instanceof Error ? err.message : t("failed"))
         } finally {
             setIsLoading(false)
         }
@@ -37,9 +40,9 @@ export function LoginForm() {
     return (
         <Card className="w-full max-w-md rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
             <CardHeader>
-                <CardTitle className="text-2xl text-[#111827]">Login</CardTitle>
+                <CardTitle className="text-2xl text-[#111827]">{t("login")}</CardTitle>
                 <CardDescription className="text-[#6B7280]">
-                    Enter your credentials to access your account
+                    {t("description")}
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -51,7 +54,7 @@ export function LoginForm() {
                     )}
 
                     <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="email">{t("email")}</Label>
                         <Input
                             id="email"
                             type="email"
@@ -64,11 +67,11 @@ export function LoginForm() {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
+                        <Label htmlFor="password">{t("password")}</Label>
                         <Input
                             id="password"
                             type="password"
-                            placeholder="Enter your password"
+                            placeholder={t("passwordPlaceholder")}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
@@ -81,7 +84,7 @@ export function LoginForm() {
                         className="w-full bg-black text-white hover:bg-black/90 rounded-lg"
                         disabled={isLoading}
                     >
-                        {isLoading ? "Logging in..." : "Login"}
+                        {isLoading ? t("submitting") : t("submit")}
                     </Button>
                 </form>
             </CardContent>

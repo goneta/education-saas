@@ -3,7 +3,9 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useParams } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
+import { normalizeLocale } from "@/lib/i18n"
 // We will replace these with Lucide icons later
 import { Home, Users, Settings, BookOpen, GraduationCap, Calendar, ClipboardCheck, ChevronDown, CreditCard, BarChart3, MessageSquare } from "lucide-react"
 
@@ -14,7 +16,8 @@ interface SidebarProps {
 export function Sidebar({ isResizablePanel = false }: SidebarProps) {
     const pathname = usePathname()
     const params = useParams()
-    const locale = params.locale as string
+    const locale = normalizeLocale(params.locale as string)
+    const t = useTranslations("navigation")
 
     // State to track open sections. Initially empty means all closed? 
     // Or maybe we want them open by default? 
@@ -34,51 +37,51 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
         {
             title: "",
             items: [
-                { href: `/${locale}/dashboard`, label: "Overview", icon: Home },
+                { href: `/${locale}/dashboard`, label: t("overview"), icon: Home },
             ]
         },
         {
-            title: "Management",
+            title: t("management"),
             items: [
-                { href: `/${locale}/dashboard/students`, label: "Students", icon: Users },
-                { href: `/${locale}/dashboard/teachers`, label: "Teachers", icon: GraduationCap },
+                { href: `/${locale}/dashboard/students`, label: t("students"), icon: Users },
+                { href: `/${locale}/dashboard/teachers`, label: t("teachers"), icon: GraduationCap },
             ]
         },
         {
-            title: "Academics",
+            title: t("academics"),
             items: [
-                { href: `/${locale}/dashboard/education/classes`, label: "Classes", icon: BookOpen },
-                { href: `/${locale}/dashboard/education/subjects`, label: "Subjects", icon: BookOpen },
-                { href: `/${locale}/dashboard/education/timetable`, label: "Timetable", icon: Calendar },
-                { href: `/${locale}/dashboard/education/pedagogy`, label: "Pedagogy", icon: GraduationCap },
-                { href: `/${locale}/dashboard/grades/assessments`, label: "Grades", icon: ClipboardCheck },
-                { href: `/${locale}/dashboard/library`, label: "Library", icon: BookOpen },
-                { href: `/${locale}/dashboard/portal`, label: "Parent / Student Portal", icon: Users },
+                { href: `/${locale}/dashboard/education/classes`, label: t("classes"), icon: BookOpen },
+                { href: `/${locale}/dashboard/education/subjects`, label: t("subjects"), icon: BookOpen },
+                { href: `/${locale}/dashboard/education/timetable`, label: t("timetable"), icon: Calendar },
+                { href: `/${locale}/dashboard/education/pedagogy`, label: t("pedagogy"), icon: GraduationCap },
+                { href: `/${locale}/dashboard/grades/assessments`, label: t("grades"), icon: ClipboardCheck },
+                { href: `/${locale}/dashboard/library`, label: t("library"), icon: BookOpen },
+                { href: `/${locale}/dashboard/portal`, label: t("portal"), icon: Users },
             ]
         },
         {
-            title: "Operations",
+            title: t("operations"),
             items: [
-                { href: `/${locale}/dashboard/operations`, label: "Operations", icon: Settings },
-                { href: `/${locale}/dashboard/enterprise`, label: "Enterprise", icon: BarChart3 },
+                { href: `/${locale}/dashboard/operations`, label: t("operations"), icon: Settings },
+                { href: `/${locale}/dashboard/enterprise`, label: t("enterprise"), icon: BarChart3 },
             ]
         },
         {
-            title: "Finance",
+            title: t("finance"),
             items: [
-                { href: `/${locale}/dashboard/finance`, label: "Finance", icon: CreditCard },
-                { href: `/${locale}/dashboard/finance/fees`, label: "Fees", icon: CreditCard },
-                { href: `/${locale}/dashboard/finance/reports`, label: "Reports", icon: BarChart3 },
-                { href: `/${locale}/dashboard/finance/cash-journal`, label: "Cash Journal", icon: ClipboardCheck },
-                { href: `/${locale}/dashboard/finance/forecasts`, label: "Forecasts", icon: BarChart3 },
-                { href: `/${locale}/dashboard/finance/settings`, label: "Fee Settings", icon: Settings },
-                { href: `/${locale}/dashboard/finance/sms`, label: "SMS", icon: MessageSquare },
+                { href: `/${locale}/dashboard/finance`, label: t("finance"), icon: CreditCard },
+                { href: `/${locale}/dashboard/finance/fees`, label: t("fees"), icon: CreditCard },
+                { href: `/${locale}/dashboard/finance/reports`, label: t("reports"), icon: BarChart3 },
+                { href: `/${locale}/dashboard/finance/cash-journal`, label: t("cashJournal"), icon: ClipboardCheck },
+                { href: `/${locale}/dashboard/finance/forecasts`, label: t("forecasts"), icon: BarChart3 },
+                { href: `/${locale}/dashboard/finance/settings`, label: t("feeSettings"), icon: Settings },
+                { href: `/${locale}/dashboard/finance/sms`, label: t("sms"), icon: MessageSquare },
             ]
         },
         {
-            title: "System",
+            title: t("system"),
             items: [
-                { href: `/${locale}/dashboard/settings`, label: "Settings", icon: Settings },
+                { href: `/${locale}/dashboard/settings`, label: t("settings"), icon: Settings },
             ]
         }
     ]

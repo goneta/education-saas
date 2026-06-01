@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,6 +32,7 @@ interface AuditLog {
 
 export default function SettingsPage() {
     const { token, user } = useAuth()
+    const t = useTranslations("settings")
     const [schools, setSchools] = useState<School[]>([])
     const [permissions, setPermissions] = useState<string[]>([])
     const [templates, setTemplates] = useState<Record<string, TemplateSummary>>({})
@@ -89,7 +91,7 @@ export default function SettingsPage() {
             </div>
 
             <Card>
-                <CardHeader><CardTitle>Active Context</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t("activeContext")}</CardTitle></CardHeader>
                 <CardContent className="grid gap-3 md:grid-cols-3 text-sm">
                     <Info label="User" value={user?.full_name || "-"} />
                     <Info label="Role" value={user?.role || "-"} />
@@ -98,20 +100,20 @@ export default function SettingsPage() {
             </Card>
 
             <Card>
-                <CardHeader><CardTitle>Permissions</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t("permissions")}</CardTitle></CardHeader>
                 <CardContent className="flex flex-wrap gap-2 text-sm">
                     {permissions.map(permission => <span key={permission} className="rounded-md border px-2 py-1">{permission}</span>)}
                 </CardContent>
             </Card>
 
             <Card>
-                <CardHeader><CardTitle>School Templates</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t("schoolTemplates")}</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex flex-wrap gap-3">
                         <select value={templateChoice} onChange={(e) => setTemplateChoice(e.target.value)} className="border rounded-md px-3 py-2 text-sm">
                             {Object.keys(templates).map(template => <option key={template} value={template}>{template}</option>)}
                         </select>
-                        <Button onClick={applyTemplate}>Apply Template</Button>
+                        <Button onClick={applyTemplate}>{t("applyTemplate")}</Button>
                     </div>
                     {templates[templateChoice] && (
                         <div className="grid gap-3 md:grid-cols-3 text-sm">
@@ -124,7 +126,7 @@ export default function SettingsPage() {
             </Card>
 
             <Card>
-                <CardHeader><CardTitle>Audit Trail</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t("auditTrail")}</CardTitle></CardHeader>
                 <CardContent>
                     <table className="w-full text-sm">
                         <thead><tr className="border-b"><th className="py-2 text-left">Date</th><th className="py-2 text-left">Action</th><th className="py-2 text-left">Actor</th><th className="py-2 text-left">Status</th></tr></thead>
