@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,13 +21,13 @@ export default function CashJournalPage() {
     const [counted, setCounted] = useState("")
     const [message, setMessage] = useState<string | null>(null)
 
-    const loadJournal = async () => {
+    const loadJournal = useCallback(async () => {
         if (!token) return
         const qs = new URLSearchParams()
         Object.entries(filters).forEach(([key, value]) => value && qs.set(key, value))
         const res = await fetch(`${API_BASE_URL}/finance/cash-journal?${qs.toString()}`, { headers: { Authorization: `Bearer ${token}` } })
         if (res.ok) setJournal(await res.json())
-    }
+    }, [filters, token])
 
     const closeDay = async () => {
         if (!token || !counted) return
@@ -39,7 +39,7 @@ export default function CashJournalPage() {
         setMessage(res.ok ? "Cash closure submitted for management validation." : "Unable to submit closure.")
     }
 
-    useEffect(() => { loadJournal() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [token])
+    useEffect(() => { void loadJournal() }, [loadJournal])
 
     return (
         <div className="space-y-6">

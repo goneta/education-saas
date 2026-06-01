@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,10 +21,9 @@ export default function PortalPage() {
     const [requestForm, setRequestForm] = useState({ request_type: "report_card", details: "" })
     const [submissionText, setSubmissionText] = useState<Record<number, string>>({})
 
-    const headers = token ? { Authorization: `Bearer ${token}` } : undefined
-
-    const load = async () => {
+    const load = useCallback(async () => {
         if (!token) return
+        const headers = { Authorization: `Bearer ${token}` }
         const [childrenRes, assignmentsRes, materialsRes, requestsRes] = await Promise.all([
             fetch(`${API_BASE_URL}/pedagogy/portal/children`, { headers }),
             fetch(`${API_BASE_URL}/pedagogy/assignments`, { headers }),
@@ -39,7 +38,7 @@ export default function PortalPage() {
         if (assignmentsRes.ok) setAssignments(await assignmentsRes.json())
         if (materialsRes.ok) setMaterials(await materialsRes.json())
         if (requestsRes.ok) setRequests(await requestsRes.json())
-    }
+    }, [selectedStudentId, token])
 
     const createRequest = async () => {
         if (!token || !selectedStudentId) return
@@ -50,7 +49,7 @@ export default function PortalPage() {
         })
         if (res.ok) {
             setRequestForm({ request_type: "report_card", details: "" })
-            load()
+            void load()
         }
     }
 
@@ -64,7 +63,7 @@ export default function PortalPage() {
         if (res.ok) setSubmissionText({ ...submissionText, [assignmentId]: "" })
     }
 
-    useEffect(() => { load() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [token])
+    useEffect(() => { void load() }, [load])
 
     return (
         <div className="space-y-6">

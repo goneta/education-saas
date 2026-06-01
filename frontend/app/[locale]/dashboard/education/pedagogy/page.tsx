@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,7 +20,7 @@ export default function PedagogyPage() {
     const [assignmentForm, setAssignmentForm] = useState({ title: "", class_id: "", due_date: "", instructions: "" })
     const [materialForm, setMaterialForm] = useState({ title: "", class_id: "", content_url: "", content_text: "" })
 
-    const load = async () => {
+    const load = useCallback(async () => {
         if (!token) return
         const headers = { Authorization: `Bearer ${token}` }
         const [classesRes, assignmentsRes, materialsRes, requestsRes] = await Promise.all([
@@ -33,7 +33,7 @@ export default function PedagogyPage() {
         if (assignmentsRes.ok) setAssignments(await assignmentsRes.json())
         if (materialsRes.ok) setMaterials(await materialsRes.json())
         if (requestsRes.ok) setRequests(await requestsRes.json())
-    }
+    }, [token])
 
     const createAssignment = async () => {
         if (!token || !assignmentForm.title || !assignmentForm.class_id) return
@@ -50,7 +50,7 @@ export default function PedagogyPage() {
         })
         if (res.ok) {
             setAssignmentForm({ title: "", class_id: "", due_date: "", instructions: "" })
-            load()
+            void load()
         }
     }
 
@@ -68,7 +68,7 @@ export default function PedagogyPage() {
         })
         if (res.ok) {
             setMaterialForm({ title: "", class_id: "", content_url: "", content_text: "" })
-            load()
+            void load()
         }
     }
 
@@ -79,10 +79,10 @@ export default function PedagogyPage() {
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ status, response: status === "approved" ? "Approved by school office." : "Updated by school office." })
         })
-        if (res.ok) load()
+        if (res.ok) void load()
     }
 
-    useEffect(() => { load() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [token])
+    useEffect(() => { void load() }, [load])
 
     return (
         <div className="space-y-6">

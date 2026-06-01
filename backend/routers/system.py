@@ -2,9 +2,54 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, ConfigDict
-from .. import models, schemas, security, database
+from .. import models, schemas, security, database, rbac
 
 router = APIRouter(prefix="/system", tags=["System Configuration"])
+
+SCHOOL_TEMPLATES = {
+    "primary": {
+        "classes": [("CP1", "CP1"), ("CP2", "CP2"), ("CE1", "CE1"), ("CE2", "CE2"), ("CM1", "CM1"), ("CM2", "CM2")],
+        "subjects": ["Francais", "Mathematiques", "Sciences", "Histoire-Geographie", "Education civique"],
+        "programs": [],
+        "fees": [("Inscription", 25000, 1, True), ("Scolarite", 150000, 2, True), ("Assurance", 5000, 3, True)],
+    },
+    "secondary": {
+        "classes": [("6eme", "6eme"), ("5eme", "5eme"), ("4eme", "4eme"), ("3eme", "3eme"), ("2nde", "2nde"), ("1ere", "1ere"), ("Terminale", "Terminale")],
+        "subjects": ["Francais", "Mathematiques", "Physique-Chimie", "SVT", "Anglais", "Histoire-Geographie", "Philosophie"],
+        "programs": [],
+        "fees": [("Inscription", 35000, 1, True), ("Scolarite", 250000, 2, True), ("Assurance", 5000, 3, True), ("Examens", 15000, 4, False)],
+    },
+    "general": {
+        "classes": [("6eme", "6eme"), ("5eme", "5eme"), ("4eme", "4eme"), ("3eme", "3eme"), ("2nde", "2nde"), ("1ere", "1ere"), ("Terminale", "Terminale")],
+        "subjects": ["Francais", "Mathematiques", "Physique-Chimie", "SVT", "Anglais", "Histoire-Geographie"],
+        "programs": [],
+        "fees": [("Inscription", 35000, 1, True), ("Scolarite", 250000, 2, True), ("Assurance", 5000, 3, True)],
+    },
+    "technical": {
+        "classes": [("2nde Technique", "2nde"), ("1ere Technique", "1ere"), ("Terminale Technique", "Terminale"), ("BTS 1", "BTS1"), ("BTS 2", "BTS2")],
+        "subjects": ["Mathematiques appliquees", "Technologie", "Atelier", "Gestion", "Anglais technique"],
+        "programs": [("Electrotechnique", "technique", "BTS", "BTS", 2), ("Maintenance industrielle", "technique", "BTS", "BTS", 2)],
+        "fees": [("Inscription", 50000, 1, True), ("Scolarite", 400000, 2, True), ("Atelier", 60000, 3, True), ("Assurance", 10000, 4, True)],
+    },
+    "vocational": {
+        "classes": [("CAP 1", "CAP1"), ("CAP 2", "CAP2"), ("BEP 1", "BEP1"), ("BEP 2", "BEP2")],
+        "subjects": ["Pratique professionnelle", "Technologie", "Entrepreneuriat", "Francais professionnel"],
+        "programs": [("Cuisine", "professionnel", "CAP", "CAP", 2), ("Mecanique", "professionnel", "CAP", "CAP", 2)],
+        "fees": [("Inscription", 40000, 1, True), ("Scolarite", 300000, 2, True), ("Equipement", 50000, 3, True)],
+    },
+    "professional": {
+        "classes": [("CAP 1", "CAP1"), ("CAP 2", "CAP2"), ("BTS Pro 1", "BTS1"), ("BTS Pro 2", "BTS2")],
+        "subjects": ["Pratique professionnelle", "Gestion projet", "Stage", "Communication professionnelle"],
+        "programs": [("Commerce", "professionnel", "BTS", "BTS", 2), ("Informatique de gestion", "professionnel", "BTS", "BTS", 2)],
+        "fees": [("Inscription", 45000, 1, True), ("Scolarite", 350000, 2, True), ("Stage", 25000, 3, False)],
+    },
+    "university": {
+        "classes": [("Licence 1", "L1"), ("Licence 2", "L2"), ("Licence 3", "L3"), ("Master 1", "M1"), ("Master 2", "M2")],
+        "subjects": ["Methodologie", "Anglais", "Informatique", "Projet tutoré"],
+        "programs": [("Licence Gestion", "universite", "Licence", "Licence", 3), ("Master Management", "universite", "Master", "Master", 2)],
+        "fees": [("Inscription", 75000, 1, True), ("Credits pedagogiques", 500000, 2, True), ("Bibliotheque", 25000, 3, False)],
+    },
+}
 
 # Schemas (Internal for now, can move to schemas.py later)
 class ReferenceDataCreate(BaseModel):
@@ -26,6 +71,9 @@ class ReferenceDataResponse(ReferenceDataCreate):
 
 class SchoolStatusUpdate(BaseModel):
     is_active: bool
+
+class ApplyTemplateRequest(BaseModel):
+    template: Optional[str] = None
 
 @router.post("/reference-data", response_model=ReferenceDataResponse)
 def create_reference_data(
@@ -134,3 +182,86 @@ def list_users(
     else:
         raise HTTPException(status_code=403, detail="Not authorized")
     return query.order_by(models.User.created_at.desc()).all()
+
+
+@router.get("/permissions")
+def my_permissions(current_user: models.User = Depends(security.get_current_user)):
+    return rbac.permission_snapshot(current_user)
+
+
+@router.get("/school-templates")
+def list_school_templates():
+    return {
+        key: {
+            "classes": [name for name, _level in value["classes"]],
+            "subjects": value["subjects"],
+            "programs": [program[0] for program in value["programs"]],
+            "fees": [{"name": row[0], "amount": row[1], "order": row[2], "required": row[3]} for row in value["fees"]],
+        }
+        for key, value in SCHOOL_TEMPLATES.items()
+    }
+
+
+@router.post("/schools/{school_id}/apply-template")
+def apply_school_template(
+    school_id: int,
+    payload: ApplyTemplateRequest,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    if current_user.role == models.UserRole.SUPER_ADMIN:
+        school = db.query(models.School).filter(models.School.id == school_id).first()
+    elif current_user.role == models.UserRole.SCHOOL_ADMIN and current_user.school_id == school_id:
+        school = db.query(models.School).filter(models.School.id == school_id).first()
+    else:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    if not school:
+        raise HTTPException(status_code=404, detail="School not found")
+    template_key = payload.template or school.school_type.value
+    template = SCHOOL_TEMPLATES.get(template_key)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    created = {"classes": 0, "subjects": 0, "programs": 0, "fees": 0}
+    for name, level in template["classes"]:
+        exists = db.query(models.Class).filter(models.Class.school_id == school.id, models.Class.name == name).first()
+        if not exists:
+            db.add(models.Class(name=name, level=level, school_id=school.id))
+            created["classes"] += 1
+    for name in template["subjects"]:
+        exists = db.query(models.Subject).filter(models.Subject.school_id == school.id, models.Subject.name == name).first()
+        if not exists:
+            db.add(models.Subject(name=name, code=name.upper().replace(" ", "_")[:20], school_id=school.id))
+            created["subjects"] += 1
+    for name, sector, level, diploma, duration in template["programs"]:
+        exists = db.query(models.AcademicProgram).filter(models.AcademicProgram.school_id == school.id, models.AcademicProgram.name == name).first()
+        if not exists:
+            db.add(models.AcademicProgram(name=name, sector=sector, level=level, diploma=diploma, duration_years=duration, school_id=school.id))
+            created["programs"] += 1
+    for name, amount, order, required in template["fees"]:
+        exists = db.query(models.FeeSchedule).filter(models.FeeSchedule.school_id == school.id, models.FeeSchedule.name == name, models.FeeSchedule.level == None, models.FeeSchedule.class_id == None).first()
+        if not exists:
+            db.add(models.FeeSchedule(name=name, amount=amount, category_order=order, is_required=required, is_current=True, school_id=school.id))
+            created["fees"] += 1
+    db.commit()
+    return {"template": template_key, "created": created}
+
+
+@router.get("/audit-logs", response_model=List[schemas.AuditLogResponse])
+def list_audit_logs(
+    actor_id: Optional[int] = None,
+    path: Optional[str] = None,
+    limit: int = 100,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    if current_user.role not in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN, models.UserRole.DIRECTION]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    query = db.query(models.AuditLog)
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        query = query.filter(models.AuditLog.school_id == current_user.school_id)
+    if actor_id:
+        query = query.filter(models.AuditLog.actor_id == actor_id)
+    if path:
+        query = query.filter(models.AuditLog.path.like(f"%{path}%"))
+    return query.order_by(models.AuditLog.created_at.desc()).limit(min(limit, 500)).all()

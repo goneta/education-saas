@@ -6,6 +6,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .. import database, models, schemas, security
+from ..services.notification_service import dispatch_notification
 
 router = APIRouter(prefix="/enterprise", tags=["Enterprise"])
 
@@ -34,6 +35,54 @@ def _create(db: Session, model: Type, payload, current_user: models.User, extra=
     db.commit()
     db.refresh(row)
     return row
+
+
+RESOURCE_MODELS = {
+    "semesters": models.Semester,
+    "course-units": models.CourseUnit,
+    "university-schedule": models.UniversityScheduleSlot,
+    "diplomas": models.DiplomaRecord,
+    "transcripts": models.CertifiedTranscript,
+    "contracts": models.StaffContract,
+    "leaves": models.LeaveRequest,
+    "transport-assignments": models.TransportAssignment,
+    "canteen-subscriptions": models.CanteenSubscription,
+    "accounts": models.ChartAccount,
+    "vendor-invoices": models.VendorInvoice,
+    "bank-transactions": models.BankTransaction,
+    "notification-providers": models.NotificationProvider,
+}
+
+
+@router.put("/{resource}/{row_id}")
+def update_enterprise_resource(resource: str, row_id: int, payload: dict, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    _manager(current_user)
+    model = RESOURCE_MODELS.get(resource)
+    if not model:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    row = db.query(model).filter(model.id == row_id, model.school_id == _school_id(current_user)).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Record not found")
+    for key, value in payload.items():
+        if key not in {"id", "school_id", "created_at"} and hasattr(row, key):
+            setattr(row, key, value)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.delete("/{resource}/{row_id}")
+def delete_enterprise_resource(resource: str, row_id: int, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    _manager(current_user)
+    model = RESOURCE_MODELS.get(resource)
+    if not model:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    row = db.query(model).filter(model.id == row_id, model.school_id == _school_id(current_user)).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Record not found")
+    db.delete(row)
+    db.commit()
+    return {"message": "Record deleted"}
 
 
 @router.get("/approvals", response_model=List[schemas.ApprovalWorkflowResponse])
@@ -185,8 +234,9 @@ def send_notification(payload: schemas.NotificationMessageCreate, db: Session = 
     provider = None
     if payload.provider_id:
         provider = db.query(models.NotificationProvider).filter(models.NotificationProvider.id == payload.provider_id, models.NotificationProvider.school_id == _school_id(current_user)).first()
-    status = models.NotificationStatus.SENT if provider and provider.api_key_secret else models.NotificationStatus.QUEUED
-    response = "Provider configured; marked sent." if status == models.NotificationStatus.SENT else "Queued: configure provider API key for real delivery."
+        if not provider:
+            raise HTTPException(status_code=404, detail="Notification provider not found")
+    status, response = dispatch_notification(provider, payload)
     row = models.NotificationMessage(**payload.model_dump(), status=status, provider_response=response, school_id=_school_id(current_user), created_by_id=current_user.id, sent_at=datetime.utcnow() if status == models.NotificationStatus.SENT else None)
     db.add(row)
     db.commit()

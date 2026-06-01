@@ -772,6 +772,27 @@ class AdmissionApplicationResponse(AdmissionApplicationCreate):
     model_config = ConfigDict(from_attributes=True)
 
 
+class AdmissionEnrollmentCreate(BaseModel):
+    email: str
+    password: str = "ChangeMe123!"
+    full_name: Optional[str] = None
+    registration_number: Optional[str] = None
+    date_of_birth: Optional[datetime] = None
+    gender: Optional[str] = None
+    class_id: Optional[int] = None
+    generate_fees: bool = True
+    create_registration_documents: bool = True
+
+
+class AdmissionEnrollmentResponse(BaseModel):
+    application_id: int
+    student_user_id: int
+    student_profile_id: int
+    class_id: Optional[int] = None
+    generated_fees: int
+    registration_documents: int
+
+
 class ExamSessionCreate(BaseModel):
     name: str
     exam_type: str
@@ -1176,6 +1197,23 @@ class NotificationMessageResponse(NotificationMessageCreate):
     created_by_id: Optional[int] = None
     created_at: datetime
     sent_at: Optional[datetime] = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AuditLogResponse(BaseModel):
+    id: int
+    action: str
+    entity_type: Optional[str] = None
+    entity_id: Optional[str] = None
+    method: Optional[str] = None
+    path: Optional[str] = None
+    status_code: Optional[int] = None
+    details: Optional[dict] = None
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+    school_id: Optional[int] = None
+    actor_id: Optional[int] = None
+    created_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
 

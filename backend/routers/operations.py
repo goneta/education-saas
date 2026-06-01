@@ -4,7 +4,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from .. import database, models, schemas, security
+from .. import audit, database, models, schemas, security
 
 router = APIRouter(prefix="/operations", tags=["Institution Operations"])
 
@@ -78,6 +78,98 @@ def update_admission(application_id: int, update: schemas.AdmissionApplicationUp
     db.commit()
     db.refresh(row)
     return row
+
+
+@router.post("/admissions/{application_id}/enroll", response_model=schemas.AdmissionEnrollmentResponse)
+def enroll_admission(application_id: int, payload: schemas.AdmissionEnrollmentCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manager(current_user)
+    school_id = _school_id(current_user)
+    application = db.query(models.AdmissionApplication).filter(
+        models.AdmissionApplication.id == application_id,
+        models.AdmissionApplication.school_id == school_id,
+    ).first()
+    if not application:
+        raise HTTPException(status_code=404, detail="Admission application not found")
+    if application.status not in [models.AdmissionStatus.SUBMITTED, models.AdmissionStatus.ACCEPTED]:
+        raise HTTPException(status_code=400, detail="Only submitted or accepted applications can be enrolled")
+    if db.query(models.User).filter(models.User.email == payload.email).first():
+        raise HTTPException(status_code=400, detail="Email already exists")
+
+    cls = None
+    if payload.class_id:
+        cls = db.query(models.Class).filter(models.Class.id == payload.class_id, models.Class.school_id == school_id).first()
+        if not cls:
+            raise HTTPException(status_code=404, detail="Class not found")
+
+    student_user = models.User(
+        email=payload.email,
+        hashed_password=security.get_password_hash(payload.password),
+        full_name=payload.full_name or application.applicant_name,
+        role=models.UserRole.STUDENT,
+        school_id=school_id,
+        phone_number=application.applicant_phone,
+    )
+    db.add(student_user)
+    db.flush()
+
+    student = models.StudentProfile(
+        user_id=student_user.id,
+        registration_number=payload.registration_number or f"ADM-{application.id:05d}-{student_user.id:05d}",
+        date_of_birth=payload.date_of_birth,
+        gender=payload.gender,
+        parent_name=application.applicant_name,
+        parent_phone=application.applicant_phone,
+        parent_email=application.applicant_email,
+        previous_level=application.desired_level,
+        current_class_id=cls.id if cls else None,
+        status=models.StudentStatus.ASSIGNED if cls else models.StudentStatus.UNASSIGNED,
+    )
+    db.add(student)
+    db.flush()
+
+    documents_count = 0
+    if payload.create_registration_documents:
+        for name in ["Extrait de naissance", "Bulletin scolaire precedent", "Piece d'identite parent ou representant"]:
+            db.add(models.StudentRegistrationDocument(student_id=student.id, name=name, is_received=False, updated_by_id=current_user.id))
+            documents_count += 1
+
+    generated_fees = 0
+    if payload.generate_fees:
+        schedule_query = db.query(models.FeeSchedule).filter(models.FeeSchedule.school_id == school_id, models.FeeSchedule.is_current == True)
+        schedules = schedule_query.all()
+        for schedule in schedules:
+            if schedule.class_id and (not cls or schedule.class_id != cls.id):
+                continue
+            if schedule.level and (not cls or schedule.level != cls.level):
+                continue
+            db.add(models.Fee(
+                title=schedule.name,
+                amount=schedule.amount,
+                category=schedule.name,
+                category_order=schedule.category_order,
+                is_required=schedule.is_required,
+                academic_year_id=schedule.academic_year_id,
+                class_id=cls.id if cls else None,
+                student_id=student.id,
+                school_id=school_id,
+                due_date=datetime.utcnow(),
+            ))
+            generated_fees += 1
+
+    application.status = models.AdmissionStatus.ENROLLED
+    application.handled_by_id = current_user.id
+    application.notes = (application.notes or "") + f"\nEnrolled as student #{student.id}."
+    audit.record_audit(db, action="admission.enrolled", current_user=current_user, entity_type="admission_application", entity_id=application.id, details={"student_profile_id": student.id})
+    db.commit()
+    db.refresh(student)
+    return {
+        "application_id": application.id,
+        "student_user_id": student_user.id,
+        "student_profile_id": student.id,
+        "class_id": student.current_class_id,
+        "generated_fees": generated_fees,
+        "registration_documents": documents_count,
+    }
 
 
 @router.get("/exams", response_model=List[schemas.ExamSessionResponse])

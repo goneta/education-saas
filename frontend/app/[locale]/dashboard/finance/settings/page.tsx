@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,11 +24,11 @@ export default function FeeSettingsPage() {
     const [copy, setCopy] = useState({ source: "", target: "" })
     const [message, setMessage] = useState<string | null>(null)
 
-    const loadRows = async () => {
+    const loadRows = useCallback(async () => {
         if (!token) return
         const res = await fetch(`${API_BASE_URL}/finance/fee-schedules`, { headers: { Authorization: `Bearer ${token}` } })
         if (res.ok) setRows(await res.json())
-    }
+    }, [token])
 
     const save = async () => {
         if (!token || !form.name || !form.amount) return
@@ -47,7 +47,7 @@ export default function FeeSettingsPage() {
         })
         if (res.ok) {
             setForm({ name: "", amount: "", category_order: "0", is_required: true, level: "", class_id: "", academic_year_id: "" })
-            loadRows()
+            void loadRows()
         }
     }
 
@@ -58,10 +58,10 @@ export default function FeeSettingsPage() {
             headers: { Authorization: `Bearer ${token}` }
         })
         setMessage(res.ok ? "Previous year amounts copied where missing." : "Copy failed.")
-        if (res.ok) loadRows()
+        if (res.ok) void loadRows()
     }
 
-    useEffect(() => { loadRows() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [token])
+    useEffect(() => { void loadRows() }, [loadRows])
 
     return (
         <div className="space-y-6">

@@ -1,22 +1,23 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
 type Section = "programs" | "admissions" | "exams" | "inventory" | "payroll" | "transport" | "canteen"
+type OperationRow = Record<string, unknown> & { id?: number }
 
 export default function OperationsPage() {
     const { token } = useAuth()
     const [active, setActive] = useState<Section>("programs")
-    const [rows, setRows] = useState<Record<Section, any[]>>({
+    const [rows, setRows] = useState<Record<Section, OperationRow[]>>({
         programs: [], admissions: [], exams: [], inventory: [], payroll: [], transport: [], canteen: []
     })
     const [form, setForm] = useState<Record<string, string>>({})
 
-    const load = async () => {
+    const load = useCallback(async () => {
         if (!token) return
         const endpoints: Record<Section, string> = {
             programs: "programs",
@@ -27,13 +28,15 @@ export default function OperationsPage() {
             transport: "transport",
             canteen: "canteen",
         }
-        const loaded = { ...rows }
+        const loaded: Record<Section, OperationRow[]> = {
+            programs: [], admissions: [], exams: [], inventory: [], payroll: [], transport: [], canteen: []
+        }
         for (const key of Object.keys(endpoints) as Section[]) {
             const res = await fetch(`${API_BASE_URL}/operations/${endpoints[key]}`, { headers: { Authorization: `Bearer ${token}` } })
-            if (res.ok) loaded[key] = await res.json()
+            if (res.ok) loaded[key] = await res.json() as OperationRow[]
         }
         setRows(loaded)
-    }
+    }, [token])
 
     const create = async () => {
         if (!token) return
@@ -45,11 +48,28 @@ export default function OperationsPage() {
         })
         if (res.ok) {
             setForm({})
-            load()
+            void load()
         }
     }
 
-    useEffect(() => { load() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [token])
+    const enrollAdmission = async (row: OperationRow) => {
+        if (!token || typeof row.id !== "number") return
+        const email = window.prompt("Student email")
+        if (!email) return
+        const classId = window.prompt("Class ID for assignment")
+        const res = await fetch(`${API_BASE_URL}/operations/admissions/${row.id}/enroll`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({
+                email,
+                full_name: typeof row.applicant_name === "string" ? row.applicant_name : undefined,
+                class_id: classId ? Number(classId) : undefined,
+            })
+        })
+        if (res.ok) void load()
+    }
+
+    useEffect(() => { void load() }, [load])
 
     const fields = fieldsFor(active)
     const displayRows = rows[active] || []
@@ -94,12 +114,14 @@ export default function OperationsPage() {
                             <thead>
                                 <tr className="border-b">
                                     {columnsFor(active).map(col => <th key={col} className="py-2 text-left">{col}</th>)}
+                                    {active === "admissions" && <th className="py-2 text-right">Actions</th>}
                                 </tr>
                             </thead>
                             <tbody>
                                 {displayRows.map(row => (
                                     <tr key={row.id} className="border-b last:border-0">
                                         {columnsFor(active).map(col => <td key={col} className="py-2">{formatCell(row, col)}</td>)}
+                                        {active === "admissions" && <td className="py-2 text-right"><Button size="sm" variant="outline" onClick={() => enrollAdmission(row)}>Enroll</Button></td>}
                                     </tr>
                                 ))}
                             </tbody>
@@ -143,7 +165,7 @@ function columnsFor(section: Section) {
 
 function buildPayload(section: Section, form: Record<string, string>) {
     const numeric = new Set(["duration_years", "desired_program_id", "class_id", "program_id", "quantity", "minimum_quantity", "staff_user_id", "gross_amount", "deductions", "monthly_fee", "price"])
-    const payload: Record<string, any> = {}
+    const payload: Record<string, unknown> = {}
     for (const field of fieldsFor(section)) {
         const value = form[field.name]
         if (!value) continue
@@ -152,10 +174,12 @@ function buildPayload(section: Section, form: Record<string, string>) {
     return payload
 }
 
-function formatCell(row: any, col: string) {
+function formatCell(row: OperationRow, col: string) {
     const value = row[col]
     if (value === null || value === undefined) return "-"
     if (typeof value === "number") return value.toLocaleString()
-    if (col.includes("date") || col === "created_at") return new Date(value).toLocaleDateString()
+    if ((col.includes("date") || col === "created_at") && (typeof value === "string" || value instanceof Date)) {
+        return new Date(value).toLocaleDateString()
+    }
     return String(value)
 }

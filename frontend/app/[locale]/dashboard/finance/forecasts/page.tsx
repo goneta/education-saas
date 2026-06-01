@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,7 +27,7 @@ export default function ForecastsPage() {
     const [variance, setVariance] = useState<Variance | null>(null)
     const [form, setForm] = useState({ expected_students: "", expected_revenue: "", fee_category: "", level: "", class_id: "", academic_year_id: "" })
 
-    const load = async () => {
+    const load = useCallback(async () => {
         if (!token) return
         const [rowsRes, varianceRes] = await Promise.all([
             fetch(`${API_BASE_URL}/finance/forecasts`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -35,7 +35,7 @@ export default function ForecastsPage() {
         ])
         if (rowsRes.ok) setRows(await rowsRes.json())
         if (varianceRes.ok) setVariance(await varianceRes.json())
-    }
+    }, [token])
 
     const save = async () => {
         if (!token) return
@@ -53,11 +53,11 @@ export default function ForecastsPage() {
         })
         if (res.ok) {
             setForm({ expected_students: "", expected_revenue: "", fee_category: "", level: "", class_id: "", academic_year_id: "" })
-            load()
+            void load()
         }
     }
 
-    useEffect(() => { load() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [token])
+    useEffect(() => { void load() }, [load])
 
     return (
         <div className="space-y-6">

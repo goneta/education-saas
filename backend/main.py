@@ -2,13 +2,8 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .database import engine, Base
-from .migrations import ensure_runtime_schema
-from .routers import auth, students, teachers, chat, education, attendance, grades, dashboard, library, finance, system, pedagogy, operations, enterprise
-
-# Create Tables (Simple migration for MVP)
-Base.metadata.create_all(bind=engine)
-ensure_runtime_schema(engine)
+from .audit import audit_mutation_middleware
+from .routers import auth, students, teachers, chat, education, attendance, grades, dashboard, library, finance, system, pedagogy, operations, enterprise, documents
 
 app = FastAPI(title="Education SaaS API")
 
@@ -27,6 +22,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.middleware("http")(audit_mutation_middleware)
+
 app.include_router(auth.router)
 # app.include_router(tenants.router)
 app.include_router(students.router)
@@ -42,6 +39,7 @@ app.include_router(system.router)
 app.include_router(pedagogy.router)
 app.include_router(operations.router)
 app.include_router(enterprise.router)
+app.include_router(documents.router)
 
 @app.get("/")
 def read_root():
