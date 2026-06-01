@@ -13,6 +13,24 @@ AUTH_RATE_LIMIT_MAX_REQUESTS = int(os.getenv("AUTH_RATE_LIMIT_MAX_REQUESTS", "60
 MAX_REQUEST_BODY_BYTES = int(os.getenv("MAX_REQUEST_BODY_BYTES", str(2 * 1024 * 1024)))
 
 _requests: dict[str, deque[float]] = defaultdict(deque)
+_redis_client = None
+
+
+def _redis():
+    global _redis_client
+    redis_url = os.getenv("REDIS_URL")
+    if not redis_url:
+        return None
+    if _redis_client is not None:
+        return _redis_client
+    try:
+        import redis  # type: ignore
+        _redis_client = redis.from_url(redis_url, decode_responses=True)
+        _redis_client.ping()
+        return _redis_client
+    except Exception:
+        _redis_client = False
+        return None
 
 
 def _client_key(request: Request) -> str:
@@ -27,12 +45,22 @@ async def rate_limit_middleware(request: Request, call_next):
         raise HTTPException(status_code=413, detail="Request body too large")
 
     key = _client_key(request)
+    max_requests = AUTH_RATE_LIMIT_MAX_REQUESTS if request.url.path.startswith("/auth/") else RATE_LIMIT_MAX_REQUESTS
+    redis_client = _redis()
+    if redis_client:
+        redis_key = f"rate:{key}"
+        count = redis_client.incr(redis_key)
+        if count == 1:
+            redis_client.expire(redis_key, RATE_LIMIT_WINDOW_SECONDS)
+        if count > max_requests:
+            raise HTTPException(status_code=429, detail="Too many requests")
+        return await call_next(request)
+
     now = time.monotonic()
     bucket = _requests[key]
     while bucket and now - bucket[0] > RATE_LIMIT_WINDOW_SECONDS:
         bucket.popleft()
 
-    max_requests = AUTH_RATE_LIMIT_MAX_REQUESTS if request.url.path.startswith("/auth/") else RATE_LIMIT_MAX_REQUESTS
     if len(bucket) >= max_requests:
         raise HTTPException(status_code=429, detail="Too many requests")
     bucket.append(now)

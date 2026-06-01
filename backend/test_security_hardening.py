@@ -125,6 +125,10 @@ def test_secure_file_upload_requires_auth_and_validates_download():
     assert download.status_code == 200
     assert download.content.startswith(b"%PDF")
 
+    signed = client.get(f"/files/{payload['id']}/signed-url", headers=headers)
+    assert signed.status_code == 200
+    assert signed.json()["signed_url"]
+
 
 def test_compliance_export_and_metrics_are_available_to_admins():
     headers = _admin_headers()
@@ -139,3 +143,42 @@ def test_compliance_export_and_metrics_are_available_to_admins():
     metrics = client.get("/metrics")
     assert metrics.status_code == 200
     assert "education_saas_uptime_seconds" in metrics.text
+
+
+def test_compliance_consent_and_retention_registry():
+    headers = _admin_headers()
+    users = client.get("/system/users", headers=headers)
+    assert users.status_code == 200
+    user_id = users.json()[0]["id"]
+
+    consent = client.post("/system/compliance/consents", headers=headers, json={
+        "subject_user_id": user_id,
+        "consent_type": "communications",
+        "granted": True,
+        "source": "admin",
+        "locale": "fr",
+        "policy_version": "2026-06",
+    })
+    assert consent.status_code == 200
+    assert consent.json()["consent_type"] == "communications"
+
+    rule = client.post("/system/compliance/retention-rules", headers=headers, json={
+        "data_category": "student_records",
+        "retention_days": 3650,
+        "legal_basis": "school administration",
+        "action": "review",
+    })
+    assert rule.status_code == 200
+
+
+def test_csv_student_import_creates_students():
+    headers = _admin_headers()
+    suffix = uuid.uuid4().hex[:8]
+    csv_body = f"email,full_name,registration_number,parent_name,parent_phone\nimported_{suffix}@test.com,Imported Student,IMP-{suffix},Parent,+2250102030405\n"
+    response = client.post(
+        "/operations/imports/students",
+        headers=headers,
+        files={"file": ("students.csv", csv_body.encode("utf-8"), "text/csv")},
+    )
+    assert response.status_code == 200
+    assert response.json()["created"] == 1

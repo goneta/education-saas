@@ -122,6 +122,13 @@ class SchoolSettingsResponse(SchoolResponse):
     school_type_profile: dict = Field(default_factory=dict)
 
 
+class SubscriptionSettingsUpdate(BaseModel):
+    subscription_plan: Optional[str] = None
+    subscription_status: Optional[str] = None
+    storage_quota_mb: Optional[int] = None
+    current_billing_period_end: Optional[datetime] = None
+
+
 class UserRoleUpdate(BaseModel):
     role: UserRole
     is_active: Optional[bool] = None
@@ -1365,12 +1372,16 @@ class NotificationMessageCreate(BaseModel):
     message: str
     subject: Optional[str] = None
     provider_id: Optional[int] = None
+    template_key: Optional[str] = None
+    locale: str = "fr"
 
 
 class NotificationMessageResponse(NotificationMessageCreate):
     id: int
     status: NotificationStatus
     provider_response: Optional[str] = None
+    attempts: int = 0
+    next_retry_at: Optional[datetime] = None
     school_id: int
     created_by_id: Optional[int] = None
     created_at: datetime
@@ -1439,3 +1450,45 @@ class ComplianceEraseRequest(BaseModel):
     user_id: int
     reason: str
     anonymize_only: bool = True
+
+
+class DataConsentCreate(BaseModel):
+    subject_user_id: int
+    consent_type: str
+    granted: bool = True
+    source: Optional[str] = None
+    locale: str = "fr"
+    policy_version: Optional[str] = None
+
+
+class DataConsentResponse(DataConsentCreate):
+    id: int
+    school_id: Optional[int] = None
+    recorded_by_id: Optional[int] = None
+    recorded_at: datetime
+    revoked_at: Optional[datetime] = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DataRetentionRuleCreate(BaseModel):
+    data_category: str
+    retention_days: int
+    legal_basis: Optional[str] = None
+    action: str = "review"
+
+
+class DataRetentionRuleResponse(DataRetentionRuleCreate):
+    id: int
+    school_id: Optional[int] = None
+    created_by_id: Optional[int] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+class StartupWizardRequest(BaseModel):
+    academic_year_name: str
+    start_date: datetime
+    end_date: datetime
+    template: Optional[str] = None
+    create_defaults: bool = True

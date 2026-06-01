@@ -1,7 +1,9 @@
 from datetime import datetime
+import csv
+from io import BytesIO, StringIO
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from .. import audit, database, models, schemas, security
@@ -25,6 +27,23 @@ def _school_id(current_user: models.User) -> int:
 def _ensure_manager(current_user: models.User) -> None:
     if current_user.role not in OPERATIONS_ROLES:
         raise HTTPException(status_code=403, detail="Not authorized")
+
+
+def _rows_from_upload(upload: UploadFile) -> list[dict]:
+    content = upload.file.read()
+    filename = upload.filename or ""
+    if filename.lower().endswith(".xlsx"):
+        try:
+            from openpyxl import load_workbook  # type: ignore
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail="XLSX import requires openpyxl") from exc
+        workbook = load_workbook(BytesIO(content), read_only=True, data_only=True)
+        rows = list(workbook.active.iter_rows(values_only=True))
+        if not rows:
+            return []
+        headers = [str(value or "").strip() for value in rows[0]]
+        return [dict(zip(headers, row)) for row in rows[1:] if any(cell is not None for cell in row)]
+    return list(csv.DictReader(StringIO(content.decode("utf-8-sig"))))
 
 
 def _inventory_status(quantity: int, minimum_quantity: int) -> models.InventoryStatus:
@@ -171,6 +190,52 @@ def enroll_admission(application_id: int, payload: schemas.AdmissionEnrollmentCr
         "generated_fees": generated_fees,
         "registration_documents": documents_count,
     }
+
+
+@router.post("/imports/students")
+def import_students(
+    file: UploadFile = File(...),
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    _ensure_manager(current_user)
+    school_id = _school_id(current_user)
+    rows = _rows_from_upload(file)
+    created = 0
+    skipped: list[dict] = []
+    for index, row in enumerate(rows, start=2):
+        email = str(row.get("email") or "").strip()
+        full_name = str(row.get("full_name") or row.get("name") or "").strip()
+        registration_number = str(row.get("registration_number") or row.get("matricule") or "").strip()
+        if not email or not full_name or not registration_number:
+            skipped.append({"row": index, "reason": "email, full_name and registration_number are required"})
+            continue
+        if db.query(models.User).filter(models.User.email == email).first():
+            skipped.append({"row": index, "reason": "email already exists"})
+            continue
+        if db.query(models.StudentProfile).filter(models.StudentProfile.registration_number == registration_number).first():
+            skipped.append({"row": index, "reason": "registration number already exists"})
+            continue
+        user = models.User(
+            email=email,
+            full_name=full_name,
+            hashed_password=security.get_password_hash(str(row.get("password") or "ChangeMe123!Secure")),
+            role=models.UserRole.STUDENT,
+            school_id=school_id,
+        )
+        db.add(user)
+        db.flush()
+        db.add(models.StudentProfile(
+            user_id=user.id,
+            registration_number=registration_number,
+            parent_name=str(row.get("parent_name") or "Parent"),
+            parent_phone=str(row.get("parent_phone") or "+2250102030405"),
+            gender=str(row.get("gender") or "N/A"),
+            status=models.StudentStatus.UNASSIGNED,
+        ))
+        created += 1
+    db.commit()
+    return {"created": created, "skipped": skipped}
 
 
 @router.get("/exams", response_model=List[schemas.ExamSessionResponse])

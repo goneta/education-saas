@@ -10,8 +10,13 @@
 - `RATE_LIMIT_WINDOW_SECONDS`, `RATE_LIMIT_MAX_REQUESTS`, `AUTH_RATE_LIMIT_MAX_REQUESTS`: limites anti-abus par fenetre.
 - `MAX_REQUEST_BODY_BYTES`: taille maximale acceptee pour un corps de requete.
 - `FILE_STORAGE_BACKEND`, `FILE_STORAGE_LOCAL_PATH`, `MAX_UPLOAD_BYTES`, `ALLOWED_UPLOAD_MIME_TYPES`: stockage documentaire securise.
+- `FILE_STORAGE_BUCKET`, `S3_ENDPOINT_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION`: configuration S3/MinIO.
+- `SIGNED_URL_EXPIRES_SECONDS`: duree de validite des URLs signees.
 - `CLAMAV_SCAN_COMMAND`: commande antivirus optionnelle pour scanner les fichiers uploades.
 - `BACKUP_DIR`: dossier de sortie des sauvegardes applicatives.
+- `ENCRYPT_BACKUPS=true`: chiffre les artefacts de sauvegarde avec la cle applicative.
+- `REDIS_URL`: active le rate limiting distribue multi-instance.
+- `SLOW_REQUEST_MS`: seuil de journalisation des requetes lentes.
 
 ## Migrations
 
@@ -28,6 +33,7 @@ python -m alembic upgrade head
 - Export separe des fichiers uploades si `FILE_STORAGE_BACKEND=s3`.
 - Script de sauvegarde: `python -m backend.scripts.backup_database`.
 - Script de restauration: `ALLOW_RESTORE=true BACKUP_FILE=<artifact> python -m backend.scripts.restore_database`.
+- Activer `ENCRYPT_BACKUPS=true` et conserver `FIELD_ENCRYPTION_KEY` dans un coffre de secrets.
 
 ## Monitoring
 
@@ -36,6 +42,7 @@ python -m alembic upgrade head
 - Endpoint de metriques Prometheus simples: `/metrics`.
 - Alertes conseillees: erreur DB, latence API, volume 5xx, disque, files de notifications.
 - Logs applicatifs a router vers un collecteur centralise avec correlation par `actor_id`, `school_id`, `path`.
+- Les requetes 5xx et lentes creent aussi des `security_events` exploitables par les alertes.
 
 ## Secrets
 
@@ -58,6 +65,8 @@ python -m alembic upgrade head
 - Les uploads parent/eleve/prof doivent etre analyses avant publication.
 - Les fichiers acceptes sont limites par type MIME, extension, taille et scan antivirus optionnel.
 - Les fichiers supprimes sont d'abord marques `deleted` pour garder la tracabilite.
+- En backend S3/MinIO, les telechargements passent par des URLs signees temporaires.
+- Les quotas de stockage sont controles par etablissement via `storage_quota_mb`.
 
 ## CI/CD
 
@@ -68,4 +77,6 @@ python -m alembic upgrade head
 
 - Export donnees personnelles: `/system/compliance/data-export`.
 - Anonymisation utilisateur: `/system/compliance/erase-user`.
+- Registre consentements: `/system/compliance/consents`.
+- Regles de retention: `/system/compliance/retention-rules`.
 - Les operations de conformite doivent etre journalisees et limitees aux roles disposant des permissions `compliance:export` et `compliance:erase`.

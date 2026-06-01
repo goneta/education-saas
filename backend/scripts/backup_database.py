@@ -14,6 +14,8 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
+from backend.crypto_utils import encrypt_secret
+
 
 BACKUP_DIR = Path(os.getenv("BACKUP_DIR", "backups")).resolve()
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./education_saas.db")
@@ -50,12 +52,21 @@ def main() -> None:
     else:
         raise SystemExit(f"Unsupported database URL scheme: {parsed.scheme}")
 
+    encrypted = False
+    if os.getenv("ENCRYPT_BACKUPS", "false").lower() == "true":
+        encrypted_target = target.with_suffix(target.suffix + ".enc")
+        encrypted_target.write_text(encrypt_secret(target.read_bytes().hex()) or "", encoding="utf-8")
+        target.unlink()
+        target = encrypted_target
+        encrypted = True
+
     metadata = {
         "created_at": datetime.utcnow().isoformat() + "Z",
         "database_scheme": parsed.scheme or "sqlite",
         "artifact": str(target),
         "size_bytes": target.stat().st_size,
         "sha256": _sha256(target),
+        "encrypted": encrypted,
     }
     metadata_path = target.with_suffix(target.suffix + ".json")
     metadata_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")

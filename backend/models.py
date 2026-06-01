@@ -109,6 +109,9 @@ class School(Base):
     phone_e164 = Column(String, nullable=True)
     
     subscription_plan = Column(String, default="free")
+    subscription_status = Column(String, default="active", nullable=False)
+    storage_quota_mb = Column(Integer, default=1024, nullable=False)
+    current_billing_period_end = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -1370,6 +1373,10 @@ class NotificationMessage(Base):
     provider_id = Column(Integer, ForeignKey("notification_providers.id"), nullable=True)
     status = Column(SqEnum(NotificationStatus), default=NotificationStatus.QUEUED, nullable=False)
     provider_response = Column(Text, nullable=True)
+    attempts = Column(Integer, default=0, nullable=False)
+    next_retry_at = Column(DateTime(timezone=True), nullable=True)
+    template_key = Column(String, nullable=True, index=True)
+    locale = Column(String, default="fr", nullable=False)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
     created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -1444,3 +1451,38 @@ class SecureFile(Base):
     uploaded_by = relationship("User")
 
 
+class DataConsent(Base):
+    __tablename__ = "data_consents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    subject_user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    consent_type = Column(String, nullable=False, index=True)
+    granted = Column(Boolean, default=True, nullable=False)
+    source = Column(String, nullable=True)
+    locale = Column(String, default="fr", nullable=False)
+    policy_version = Column(String, nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    recorded_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    recorded_at = Column(DateTime(timezone=True), server_default=func.now())
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+
+    subject_user = relationship("User", foreign_keys=[subject_user_id])
+    school = relationship("School")
+    recorded_by = relationship("User", foreign_keys=[recorded_by_id])
+
+
+class DataRetentionRule(Base):
+    __tablename__ = "data_retention_rules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    data_category = Column(String, nullable=False, index=True)
+    retention_days = Column(Integer, nullable=False)
+    legal_basis = Column(String, nullable=True)
+    action = Column(String, default="review", nullable=False)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    school = relationship("School")
+    created_by = relationship("User")

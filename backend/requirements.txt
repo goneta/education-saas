@@ -15,3 +15,6 @@ pytest
 httpx
 reportlab
 qrcode[pil]
+boto3
+redis
+openpyxl

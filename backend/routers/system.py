@@ -99,6 +99,10 @@ def _school_settings_payload(school: models.School) -> dict:
         "phone_country_code": school.phone_country_code,
         "phone_e164": school.phone_e164,
         "is_active": school.is_active,
+        "subscription_plan": school.subscription_plan,
+        "subscription_status": school.subscription_status,
+        "storage_quota_mb": school.storage_quota_mb,
+        "current_billing_period_end": school.current_billing_period_end,
         "created_at": school.created_at,
         "localization_profile": localization.country_profile(school.country_code),
         "school_type_profile": localization.localized_school_type_profile(school.school_type.value, school.country_code),
@@ -276,6 +280,27 @@ def update_school_status(
     return {"id": school.id, "is_active": school.is_active}
 
 
+@router.put("/schools/{school_id}/subscription")
+def update_school_subscription(
+    school_id: int,
+    payload: schemas.SubscriptionSettingsUpdate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail="Super admin only")
+    school = db.query(models.School).filter(models.School.id == school_id).first()
+    if not school:
+        raise HTTPException(status_code=404, detail="School not found")
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        if value is not None:
+            setattr(school, field, value)
+    school.is_active = school.subscription_status != "suspended"
+    db.commit()
+    db.refresh(school)
+    return _school_settings_payload(school)
+
+
 @router.get("/users", response_model=List[schemas.UserResponse])
 def list_users(
     current_user: models.User = Depends(security.get_current_user),
@@ -429,6 +454,55 @@ def apply_school_template(
     return {"template": template_key, "created": created}
 
 
+@router.post("/startup-wizard")
+def startup_wizard(
+    payload: schemas.StartupWizardRequest,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    if not current_user.school_id:
+        raise HTTPException(status_code=400, detail="School context is required")
+    rbac.require_permission(current_user, "settings:write", db)
+    school = db.query(models.School).filter(models.School.id == current_user.school_id).first()
+    if not school:
+        raise HTTPException(status_code=404, detail="School not found")
+    year = db.query(models.AcademicYear).filter(
+        models.AcademicYear.school_id == school.id,
+        models.AcademicYear.name == payload.academic_year_name,
+    ).first()
+    if not year:
+        year = models.AcademicYear(
+            name=payload.academic_year_name,
+            start_date=payload.start_date,
+            end_date=payload.end_date,
+            is_current=True,
+            school_id=school.id,
+        )
+        db.add(year)
+        db.flush()
+    template_created = {}
+    if payload.create_defaults:
+        template_key = payload.template or school.school_type.value
+        template = SCHOOL_TEMPLATES.get(template_key)
+        if not template:
+            raise HTTPException(status_code=404, detail="Template not found")
+        template_created = {"classes": 0, "subjects": 0, "programs": 0, "fees": 0}
+        for name, level in template["classes"]:
+            if not db.query(models.Class).filter(models.Class.school_id == school.id, models.Class.name == name).first():
+                db.add(models.Class(name=name, level=level, school_id=school.id))
+                template_created["classes"] += 1
+        for name in template["subjects"]:
+            if not db.query(models.Subject).filter(models.Subject.school_id == school.id, models.Subject.name == name).first():
+                db.add(models.Subject(name=name, code=name.upper().replace(" ", "_")[:20], school_id=school.id))
+                template_created["subjects"] += 1
+        for name, amount, order, required in template["fees"]:
+            if not db.query(models.FeeSchedule).filter(models.FeeSchedule.school_id == school.id, models.FeeSchedule.name == name, models.FeeSchedule.academic_year_id == year.id).first():
+                db.add(models.FeeSchedule(name=name, amount=amount, category_order=order, is_required=required, is_current=True, academic_year_id=year.id, school_id=school.id))
+                template_created["fees"] += 1
+    db.commit()
+    return {"academic_year_id": year.id, "created": template_created}
+
+
 @router.get("/audit-logs", response_model=List[schemas.AuditLogResponse])
 def list_audit_logs(
     actor_id: Optional[int] = None,
@@ -579,3 +653,62 @@ def compliance_erase_user(
     ))
     db.commit()
     return {"message": "User data anonymized", "user_id": user.id}
+
+
+@router.get("/compliance/consents", response_model=List[schemas.DataConsentResponse])
+def list_consents(
+    subject_user_id: Optional[int] = None,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    rbac.require_permission(current_user, "compliance:export", db)
+    query = db.query(models.DataConsent)
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        query = query.filter(models.DataConsent.school_id == current_user.school_id)
+    if subject_user_id:
+        query = query.filter(models.DataConsent.subject_user_id == subject_user_id)
+    return query.order_by(models.DataConsent.recorded_at.desc()).limit(500).all()
+
+
+@router.post("/compliance/consents", response_model=schemas.DataConsentResponse)
+def record_consent(
+    payload: schemas.DataConsentCreate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    rbac.require_permission(current_user, "compliance:export", db)
+    subject = db.query(models.User).filter(models.User.id == payload.subject_user_id).first()
+    if not subject or (current_user.role != models.UserRole.SUPER_ADMIN and subject.school_id != current_user.school_id):
+        raise HTTPException(status_code=404, detail="Subject user not found")
+    row = models.DataConsent(**payload.model_dump(), school_id=subject.school_id, recorded_by_id=current_user.id)
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.get("/compliance/retention-rules", response_model=List[schemas.DataRetentionRuleResponse])
+def list_retention_rules(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    rbac.require_permission(current_user, "compliance:export", db)
+    query = db.query(models.DataRetentionRule)
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        query = query.filter((models.DataRetentionRule.school_id == current_user.school_id) | (models.DataRetentionRule.school_id == None))
+    return query.order_by(models.DataRetentionRule.data_category.asc()).all()
+
+
+@router.post("/compliance/retention-rules", response_model=schemas.DataRetentionRuleResponse)
+def create_retention_rule(
+    payload: schemas.DataRetentionRuleCreate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    rbac.require_permission(current_user, "compliance:erase", db)
+    row = models.DataRetentionRule(
+        **payload.model_dump(),
+        school_id=None if current_user.role == models.UserRole.SUPER_ADMIN else current_user.school_id,
+        created_by_id=current_user.id,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row

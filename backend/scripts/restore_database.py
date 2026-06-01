@@ -7,8 +7,11 @@ operator from restoring over a live database by accident.
 import os
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 from urllib.parse import urlparse
+
+from backend.crypto_utils import decrypt_secret
 
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./education_saas.db")
@@ -45,3 +48,11 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    if backup_path.suffix == ".enc":
+        plaintext_hex = decrypt_secret(backup_path.read_text(encoding="utf-8"))
+        if not plaintext_hex:
+            raise SystemExit("Unable to decrypt backup artifact")
+        tmp = tempfile.NamedTemporaryFile(delete=False)
+        tmp.write(bytes.fromhex(plaintext_hex))
+        tmp.close()
+        backup_path = Path(tmp.name)

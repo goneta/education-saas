@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func, text
 from .audit import audit_mutation_middleware
 from .database import SessionLocal
+from .observability import observability_middleware
 from .security_middleware import rate_limit_middleware, security_headers_middleware
 from . import models
 from .routers import auth, students, teachers, chat, education, attendance, grades, dashboard, library, finance, system, pedagogy, operations, enterprise, documents, files
@@ -33,6 +34,7 @@ app.add_middleware(
 app.middleware("http")(security_headers_middleware)
 app.middleware("http")(rate_limit_middleware)
 app.middleware("http")(audit_mutation_middleware)
+app.middleware("http")(observability_middleware)
 
 app.include_router(auth.router)
 # app.include_router(tenants.router)

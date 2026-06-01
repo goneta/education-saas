@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional, Type
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -495,7 +495,16 @@ def send_notification(payload: schemas.NotificationMessageCreate, db: Session = 
         if not provider:
             raise HTTPException(status_code=404, detail="Notification provider not found")
     status, response = dispatch_notification(provider, payload)
-    row = models.NotificationMessage(**payload.model_dump(), status=status, provider_response=response, school_id=_school_id(current_user), created_by_id=current_user.id, sent_at=datetime.utcnow() if status == models.NotificationStatus.SENT else None)
+    row = models.NotificationMessage(
+        **payload.model_dump(),
+        status=status,
+        provider_response=response,
+        attempts=1,
+        next_retry_at=None if status == models.NotificationStatus.SENT else datetime.utcnow() + timedelta(minutes=5),
+        school_id=_school_id(current_user),
+        created_by_id=current_user.id,
+        sent_at=datetime.utcnow() if status == models.NotificationStatus.SENT else None,
+    )
     db.add(row)
     db.commit()
     db.refresh(row)
@@ -503,6 +512,40 @@ def send_notification(payload: schemas.NotificationMessageCreate, db: Session = 
 
 @router.get("/notifications", response_model=List[schemas.NotificationMessageResponse])
 def list_notifications(db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)): return _list(db, models.NotificationMessage, current_user)
+
+
+@router.post("/notifications/process-queue")
+def process_notification_queue(limit: int = 25, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    _manager(current_user)
+    school_id = _school_id(current_user)
+    now = datetime.utcnow()
+    rows = db.query(models.NotificationMessage).filter(
+        models.NotificationMessage.school_id == school_id,
+        models.NotificationMessage.status.in_([models.NotificationStatus.QUEUED, models.NotificationStatus.FAILED]),
+        (models.NotificationMessage.next_retry_at == None) | (models.NotificationMessage.next_retry_at <= now),
+        models.NotificationMessage.attempts < 5,
+    ).order_by(models.NotificationMessage.created_at.asc()).limit(min(limit, 100)).all()
+    processed = []
+    for row in rows:
+        provider = row.provider
+        payload = schemas.NotificationMessageCreate(
+            channel=row.channel,
+            recipient=row.recipient,
+            subject=row.subject,
+            message=row.message,
+            provider_id=row.provider_id,
+            template_key=row.template_key,
+            locale=row.locale,
+        )
+        status, response = dispatch_notification(provider, payload)
+        row.attempts += 1
+        row.status = status
+        row.provider_response = response
+        row.sent_at = now if status == models.NotificationStatus.SENT else row.sent_at
+        row.next_retry_at = None if status == models.NotificationStatus.SENT else now + timedelta(minutes=min(60, 5 * row.attempts))
+        processed.append({"id": row.id, "status": row.status.value, "attempts": row.attempts})
+    db.commit()
+    return {"processed": processed}
 
 @router.get("/direction-dashboard")
 def direction_dashboard(db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):

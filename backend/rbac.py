@@ -16,6 +16,7 @@ PERMISSIONS = {
         "enterprise:approve", "files:read", "files:write", "files:delete",
         "reports:read", "documents:issue", "settings:read",
         "settings:write", "audit:read", "security:read", "compliance:export", "monitoring:read",
+        "compliance:erase", "backup:run",
     },
     models.UserRole.REGISTRAR: {
         "students:read", "students:write", "teachers:read",
