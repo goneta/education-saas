@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, ConfigDict
-from .. import localization, models, schemas, security, database, rbac
+from .. import audit, localization, models, schemas, security, database, rbac
 
 router = APIRouter(prefix="/system", tags=["System Configuration"])
 
@@ -76,6 +76,132 @@ class SchoolStatusUpdate(BaseModel):
 
 class ApplyTemplateRequest(BaseModel):
     template: Optional[str] = None
+
+
+class RoleDefinitionCreate(BaseModel):
+    key: Optional[str] = None
+    name: str
+    category: Optional[str] = None
+    description: Optional[str] = None
+    color: str = "#0F766E"
+    parent_role_key: Optional[str] = None
+    permissions: List[str] = []
+
+
+class RoleDefinitionUpdate(BaseModel):
+    name: Optional[str] = None
+    category: Optional[str] = None
+    description: Optional[str] = None
+    color: Optional[str] = None
+    is_active: Optional[bool] = None
+    parent_role_key: Optional[str] = None
+
+
+class RoleDuplicateRequest(BaseModel):
+    key: str
+    name: str
+    description: Optional[str] = None
+    color: str = "#0F766E"
+
+
+class RolePermissionMatrixUpdate(BaseModel):
+    permissions: List[str]
+
+
+class UserAdminCreate(BaseModel):
+    email: str
+    full_name: str
+    password: str
+    role: models.UserRole = models.UserRole.STAFF
+    role_keys: List[str] = []
+    school_id: Optional[int] = None
+    phone_number: Optional[str] = None
+
+
+class UserAdminUpdate(BaseModel):
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    role: Optional[models.UserRole] = None
+    is_active: Optional[bool] = None
+    phone_number: Optional[str] = None
+    role_keys: Optional[List[str]] = None
+
+
+class PasswordResetRequest(BaseModel):
+    new_password: str
+
+
+class UserRolesUpdate(BaseModel):
+    role_keys: List[str]
+
+
+def _slugify_role_key(name: str) -> str:
+    return "".join(ch.lower() if ch.isalnum() else "_" for ch in name).strip("_")
+
+
+def _rbac_school_id(current_user: models.User) -> Optional[int]:
+    return None if current_user.role == models.UserRole.SUPER_ADMIN else current_user.school_id
+
+
+def _assert_role_admin(current_user: models.User, db: Session) -> None:
+    rbac.require_permission(current_user, "roles:manage_settings", db)
+
+
+def _assert_user_admin(current_user: models.User, db: Session) -> None:
+    rbac.require_permission(current_user, "users:manage_settings", db)
+
+
+def _role_definition_payload(role: models.RoleDefinition, db: Session) -> dict:
+    users_count = db.query(models.UserRoleAssignment).filter(
+        models.UserRoleAssignment.role_key == role.key,
+        models.UserRoleAssignment.school_id == role.school_id,
+    ).count()
+    return {
+        "id": role.id,
+        "key": role.key,
+        "name": role.name,
+        "category": role.category,
+        "description": role.description,
+        "color": role.color,
+        "is_system": role.is_system,
+        "is_active": role.is_active,
+        "parent_role_key": role.parent_role_key,
+        "school_id": role.school_id,
+        "users_count": users_count,
+    }
+
+
+def _ensure_default_roles(db: Session, school_id: Optional[int] = None) -> None:
+    for role in rbac.default_role_definitions():
+        exists = db.query(models.RoleDefinition).filter(
+            models.RoleDefinition.key == role["key"],
+            models.RoleDefinition.school_id == school_id,
+        ).first()
+        if not exists:
+            db.add(models.RoleDefinition(**role, school_id=school_id))
+    db.flush()
+
+
+def _assign_user_roles(db: Session, user: models.User, role_keys: List[str], current_user: models.User) -> None:
+    scoped_role_keys = sorted(set(role_keys + [user.role.value]))
+    existing = {
+        row.role_key: row
+        for row in db.query(models.UserRoleAssignment).filter(
+            models.UserRoleAssignment.user_id == user.id,
+            models.UserRoleAssignment.school_id == user.school_id,
+        ).all()
+    }
+    for key, row in list(existing.items()):
+        if key not in scoped_role_keys:
+            db.delete(row)
+    for key in scoped_role_keys:
+        if key not in existing:
+            db.add(models.UserRoleAssignment(
+                user_id=user.id,
+                role_key=key,
+                school_id=user.school_id,
+                assigned_by_id=current_user.id,
+            ))
 
 
 def _school_settings_payload(school: models.School) -> dict:
@@ -316,17 +442,184 @@ def list_users(
     return query.order_by(models.User.created_at.desc()).all()
 
 
+@router.post("/users", response_model=schemas.UserResponse)
+def create_user_admin(
+    payload: UserAdminCreate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _assert_user_admin(current_user, db)
+    security.validate_password_strength(payload.password)
+    school_id = payload.school_id if current_user.role == models.UserRole.SUPER_ADMIN else current_user.school_id
+    if not school_id and payload.role != models.UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=400, detail="School context is required")
+    if db.query(models.User).filter(models.User.email == payload.email).first():
+        raise HTTPException(status_code=400, detail="Email already exists")
+    if payload.role in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN] and current_user.role != models.UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail="Only super admin can create admin accounts")
+    user = models.User(
+        email=payload.email,
+        full_name=payload.full_name,
+        hashed_password=security.get_password_hash(payload.password),
+        role=payload.role,
+        school_id=school_id,
+        phone_number=payload.phone_number,
+        is_active=True,
+    )
+    db.add(user)
+    db.flush()
+    _assign_user_roles(db, user, payload.role_keys, current_user)
+    audit.record_audit(db, action="rbac.user.created", current_user=current_user, entity_type="user", entity_id=user.id, details={"email": user.email, "roles": payload.role_keys})
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.put("/users/{user_id}", response_model=schemas.UserResponse)
+def update_user_admin(
+    user_id: int,
+    payload: UserAdminUpdate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _assert_user_admin(current_user, db)
+    query = db.query(models.User).filter(models.User.id == user_id)
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        query = query.filter(models.User.school_id == current_user.school_id)
+    user = query.first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    old = {"email": user.email, "full_name": user.full_name, "role": user.role.value, "is_active": user.is_active}
+    if payload.email is not None:
+        duplicate = db.query(models.User).filter(models.User.email == payload.email, models.User.id != user.id).first()
+        if duplicate:
+            raise HTTPException(status_code=400, detail="Email already exists")
+        user.email = payload.email
+    if payload.full_name is not None:
+        user.full_name = payload.full_name
+    if payload.phone_number is not None:
+        user.phone_number = payload.phone_number
+    if payload.role is not None:
+        if payload.role in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN] and current_user.role != models.UserRole.SUPER_ADMIN:
+            raise HTTPException(status_code=403, detail="Only super admin can assign admin roles")
+        user.role = payload.role
+    if payload.is_active is not None:
+        user.is_active = payload.is_active
+        user.token_version += 1
+    if payload.role_keys is not None:
+        _assign_user_roles(db, user, payload.role_keys, current_user)
+    audit.record_audit(
+        db,
+        action="rbac.user.updated",
+        current_user=current_user,
+        entity_type="user",
+        entity_id=user.id,
+        details={"old": old, "new": {"email": user.email, "full_name": user.full_name, "role": user.role.value, "is_active": user.is_active, "roles": payload.role_keys}},
+    )
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user_admin(
+    user_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _assert_user_admin(current_user, db)
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="You cannot delete your own account")
+    query = db.query(models.User).filter(models.User.id == user_id)
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        query = query.filter(models.User.school_id == current_user.school_id)
+    user = query.first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.role in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN] and current_user.role != models.UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail="Only super admin can delete admin accounts")
+    audit.record_audit(db, action="rbac.user.deleted", current_user=current_user, entity_type="user", entity_id=user.id, details={"email": user.email})
+    db.delete(user)
+    db.commit()
+
+
+@router.post("/users/{user_id}/reset-password")
+def reset_user_password(
+    user_id: int,
+    payload: PasswordResetRequest,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _assert_user_admin(current_user, db)
+    security.validate_password_strength(payload.new_password)
+    query = db.query(models.User).filter(models.User.id == user_id)
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        query = query.filter(models.User.school_id == current_user.school_id)
+    user = query.first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.hashed_password = security.get_password_hash(payload.new_password)
+    user.token_version += 1
+    audit.record_audit(db, action="rbac.user.password_reset", current_user=current_user, entity_type="user", entity_id=user.id)
+    db.commit()
+    return {"message": "Password reset", "user_id": user.id}
+
+
+@router.get("/users/{user_id}/actions", response_model=List[schemas.AuditLogResponse])
+def user_action_history(
+    user_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    rbac.require_permission(current_user, "audit:view", db)
+    query = db.query(models.AuditLog).filter(models.AuditLog.actor_id == user_id)
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        query = query.filter(models.AuditLog.school_id == current_user.school_id)
+    return query.order_by(models.AuditLog.created_at.desc()).limit(200).all()
+
+
+@router.put("/users/{user_id}/roles")
+def assign_user_roles(
+    user_id: int,
+    payload: UserRolesUpdate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _assert_user_admin(current_user, db)
+    query = db.query(models.User).filter(models.User.id == user_id)
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        query = query.filter(models.User.school_id == current_user.school_id)
+    user = query.first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    old = [row.role_key for row in db.query(models.UserRoleAssignment).filter(models.UserRoleAssignment.user_id == user.id).all()]
+    _assign_user_roles(db, user, payload.role_keys, current_user)
+    audit.record_audit(db, action="rbac.user.roles_assigned", current_user=current_user, entity_type="user", entity_id=user.id, details={"old": old, "new": payload.role_keys})
+    db.commit()
+    return {"user_id": user.id, "role_keys": sorted(set(payload.role_keys + [user.role.value]))}
+
+
 @router.get("/permissions")
 def my_permissions(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     return rbac.permission_snapshot(current_user, db)
 
 
 @router.get("/permissions/catalog")
-def permission_catalog(current_user: models.User = Depends(security.get_current_user)):
+def permission_catalog(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     if current_user.role not in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN, models.UserRole.DIRECTION]:
         raise HTTPException(status_code=403, detail="Not authorized")
+    school_id = _rbac_school_id(current_user)
+    _ensure_default_roles(db, school_id)
+    db.commit()
+    roles = db.query(models.RoleDefinition).filter(
+        (models.RoleDefinition.school_id == school_id) | (models.RoleDefinition.school_id == None)
+    ).order_by(models.RoleDefinition.category.asc(), models.RoleDefinition.name.asc()).all()
     return {
-        "roles": [role.value for role in models.UserRole],
+        "roles": [role.key for role in roles],
+        "role_definitions": [_role_definition_payload(role, db) for role in roles],
+        "modules": rbac.permission_modules(),
+        "actions": rbac.STANDARD_ACTIONS,
+        "custom_role_examples": rbac.CUSTOM_ROLE_EXAMPLES,
         "permissions": rbac.permission_catalog(),
         "defaults": {
             role.value: sorted(values)
@@ -394,6 +687,211 @@ def update_role_permissions(
             ))
     db.commit()
     return rbac.role_permission_snapshot(role, school_id, db)
+
+
+@router.get("/role-management/roles")
+def list_role_definitions(
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _assert_role_admin(current_user, db)
+    school_id = _rbac_school_id(current_user)
+    _ensure_default_roles(db, school_id)
+    db.commit()
+    roles = db.query(models.RoleDefinition).filter(
+        (models.RoleDefinition.school_id == school_id) | (models.RoleDefinition.school_id == None)
+    ).order_by(models.RoleDefinition.category.asc(), models.RoleDefinition.name.asc()).all()
+    return [_role_definition_payload(role, db) for role in roles]
+
+
+@router.post("/role-management/roles")
+def create_role_definition(
+    payload: RoleDefinitionCreate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _assert_role_admin(current_user, db)
+    school_id = _rbac_school_id(current_user)
+    key = payload.key or _slugify_role_key(payload.name)
+    if not key:
+        raise HTTPException(status_code=400, detail="Role key is required")
+    if db.query(models.RoleDefinition).filter(models.RoleDefinition.key == key, models.RoleDefinition.school_id == school_id).first():
+        raise HTTPException(status_code=400, detail="Role already exists")
+    role = models.RoleDefinition(
+        key=key,
+        name=payload.name,
+        category=payload.category or "Roles personnalises",
+        description=payload.description,
+        color=payload.color,
+        is_system=False,
+        is_active=True,
+        parent_role_key=payload.parent_role_key,
+        school_id=school_id,
+        created_by_id=current_user.id,
+    )
+    db.add(role)
+    db.flush()
+    inherited = []
+    if payload.parent_role_key:
+        parent = rbac.role_key_permission_snapshot(payload.parent_role_key, school_id, db)
+        inherited = parent["enabled_permissions"]
+    for permission in sorted(set(inherited + payload.permissions)):
+        if permission not in rbac.permission_catalog() and permission != "*":
+            raise HTTPException(status_code=400, detail=f"Unknown permission: {permission}")
+        if permission == "*":
+            continue
+        module, action = permission.split(":", 1)
+        db.add(models.RolePermissionMatrix(
+            role_key=key,
+            module=module,
+            action=action,
+            permission=permission,
+            is_enabled=True,
+            school_id=school_id,
+            updated_by_id=current_user.id,
+        ))
+    audit.record_audit(db, action="rbac.role.created", current_user=current_user, entity_type="role", entity_id=key, details=payload.model_dump())
+    db.commit()
+    db.refresh(role)
+    return _role_definition_payload(role, db)
+
+
+@router.put("/role-management/roles/{role_key}")
+def update_role_definition(
+    role_key: str,
+    payload: RoleDefinitionUpdate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _assert_role_admin(current_user, db)
+    school_id = _rbac_school_id(current_user)
+    role = db.query(models.RoleDefinition).filter(models.RoleDefinition.key == role_key, models.RoleDefinition.school_id == school_id).first()
+    if not role:
+        raise HTTPException(status_code=404, detail="Role not found")
+    old = _role_definition_payload(role, db)
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(role, field, value)
+    audit.record_audit(db, action="rbac.role.updated", current_user=current_user, entity_type="role", entity_id=role.key, details={"old": old, "new": payload.model_dump(exclude_unset=True)})
+    db.commit()
+    db.refresh(role)
+    return _role_definition_payload(role, db)
+
+
+@router.delete("/role-management/roles/{role_key}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_role_definition(
+    role_key: str,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _assert_role_admin(current_user, db)
+    school_id = _rbac_school_id(current_user)
+    role = db.query(models.RoleDefinition).filter(models.RoleDefinition.key == role_key, models.RoleDefinition.school_id == school_id).first()
+    if not role:
+        raise HTTPException(status_code=404, detail="Role not found")
+    if role.is_system:
+        raise HTTPException(status_code=400, detail="System roles cannot be deleted")
+    db.query(models.UserRoleAssignment).filter(models.UserRoleAssignment.role_key == role_key, models.UserRoleAssignment.school_id == school_id).delete()
+    db.query(models.RolePermissionMatrix).filter(models.RolePermissionMatrix.role_key == role_key, models.RolePermissionMatrix.school_id == school_id).delete()
+    audit.record_audit(db, action="rbac.role.deleted", current_user=current_user, entity_type="role", entity_id=role.key, details={"name": role.name})
+    db.delete(role)
+    db.commit()
+
+
+@router.post("/role-management/roles/{role_key}/duplicate")
+def duplicate_role_definition(
+    role_key: str,
+    payload: RoleDuplicateRequest,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    source = rbac.role_key_permission_snapshot(role_key, _rbac_school_id(current_user), db)
+    return create_role_definition(
+        RoleDefinitionCreate(
+            key=payload.key,
+            name=payload.name,
+            category="Roles personnalises",
+            description=payload.description,
+            color=payload.color,
+            parent_role_key=role_key,
+            permissions=source["enabled_permissions"],
+        ),
+        current_user,
+        db,
+    )
+
+
+@router.get("/role-management/roles/{role_key}/permissions")
+def get_role_matrix_permissions(
+    role_key: str,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _assert_role_admin(current_user, db)
+    school_id = _rbac_school_id(current_user)
+    return rbac.role_key_permission_snapshot(role_key, school_id, db) | {
+        "modules": rbac.permission_modules(),
+        "actions": rbac.STANDARD_ACTIONS,
+    }
+
+
+@router.put("/role-management/roles/{role_key}/permissions")
+def update_role_matrix_permissions(
+    role_key: str,
+    payload: RolePermissionMatrixUpdate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _assert_role_admin(current_user, db)
+    school_id = _rbac_school_id(current_user)
+    available = set(rbac.permission_catalog())
+    requested = set(payload.permissions)
+    unknown = sorted(requested - available - {"*"})
+    if unknown:
+        raise HTTPException(status_code=400, detail={"unknown_permissions": unknown})
+    old = rbac.role_key_permission_snapshot(role_key, school_id, db)["enabled_permissions"]
+    existing = {
+        row.permission: row
+        for row in db.query(models.RolePermissionMatrix).filter(
+            models.RolePermissionMatrix.role_key == role_key,
+            models.RolePermissionMatrix.school_id == school_id,
+        ).all()
+    }
+    for permission in sorted((available | requested | set(existing)) - {"*"}):
+        module, action = permission.split(":", 1)
+        should_enable = permission in requested
+        if permission in existing:
+            existing[permission].is_enabled = should_enable
+            existing[permission].updated_by_id = current_user.id
+        else:
+            db.add(models.RolePermissionMatrix(
+                role_key=role_key,
+                module=module,
+                action=action,
+                permission=permission,
+                is_enabled=should_enable,
+                school_id=school_id,
+                updated_by_id=current_user.id,
+            ))
+    audit.record_audit(db, action="rbac.role.permissions_updated", current_user=current_user, entity_type="role", entity_id=role_key, details={"old": old, "new": sorted(requested)})
+    db.commit()
+    return rbac.role_key_permission_snapshot(role_key, school_id, db)
+
+
+@router.get("/role-management/roles/{role_key}/users")
+def list_role_users(
+    role_key: str,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _assert_role_admin(current_user, db)
+    school_id = _rbac_school_id(current_user)
+    assignments = db.query(models.UserRoleAssignment).filter(
+        models.UserRoleAssignment.role_key == role_key,
+        models.UserRoleAssignment.school_id == school_id,
+    ).all()
+    user_ids = [row.user_id for row in assignments]
+    users = db.query(models.User).filter(models.User.id.in_(user_ids)).all() if user_ids else []
+    return [{"id": user.id, "email": user.email, "full_name": user.full_name, "is_active": user.is_active, "role": user.role.value} for user in users]
 
 
 @router.get("/school-templates")

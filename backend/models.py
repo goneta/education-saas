@@ -8,11 +8,23 @@ from .database import Base
 class UserRole(str, enum.Enum):
     SUPER_ADMIN = "super_admin" # Ministry / Platform Owner
     SCHOOL_ADMIN = "school_admin"
+    ADMIN = "admin"
     CASHIER = "cashier"
+    ACCOUNTANT = "accountant"
     REGISTRAR = "registrar"
+    RECEPTIONIST = "receptionist"
+    SECRETARY = "secretary"
     DIRECTION = "direction"
+    DIRECTOR = "director"
+    PRINCIPAL = "principal"
+    DEPARTMENT_HEAD = "department_head"
+    PEDAGOGY_COORDINATOR = "pedagogy_coordinator"
+    EDUCATOR = "educator"
+    TRAINER = "trainer"
+    INSTRUCTOR = "instructor"
     TEACHER = "teacher"
     STUDENT = "student"
+    PUPIL = "pupil"
     PARENT = "parent"
     STAFF = "staff"
 
@@ -174,6 +186,71 @@ class RolePermission(Base):
 
     __table_args__ = (
         UniqueConstraint("role", "permission", "school_id", name="_role_permission_scope_uc"),
+    )
+
+
+class RoleDefinition(Base):
+    __tablename__ = "role_definitions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String, nullable=False, index=True)
+    name = Column(String, nullable=False)
+    category = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
+    color = Column(String, default="#0F766E", nullable=False)
+    is_system = Column(Boolean, default=False, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    parent_role_key = Column(String, nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    school = relationship("School")
+    created_by = relationship("User")
+
+    __table_args__ = (
+        UniqueConstraint("key", "school_id", name="_role_definition_scope_uc"),
+    )
+
+
+class RolePermissionMatrix(Base):
+    __tablename__ = "role_permission_matrix"
+
+    id = Column(Integer, primary_key=True, index=True)
+    role_key = Column(String, nullable=False, index=True)
+    module = Column(String, nullable=False, index=True)
+    action = Column(String, nullable=False, index=True)
+    permission = Column(String, nullable=False, index=True)
+    is_enabled = Column(Boolean, default=False, nullable=False)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    updated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    school = relationship("School")
+    updated_by = relationship("User")
+
+    __table_args__ = (
+        UniqueConstraint("role_key", "permission", "school_id", name="_role_permission_matrix_scope_uc"),
+    )
+
+
+class UserRoleAssignment(Base):
+    __tablename__ = "user_role_assignments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    role_key = Column(String, nullable=False, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    assigned_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    assigned_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", foreign_keys=[user_id])
+    school = relationship("School")
+    assigned_by = relationship("User", foreign_keys=[assigned_by_id])
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "role_key", "school_id", name="_user_role_assignment_uc"),
     )
 
 class StudentProfile(Base):
