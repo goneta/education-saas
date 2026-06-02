@@ -1,5 +1,15 @@
 # Deploiement SaaS
 
+Pour le VPS OVH deja deployee sur `https://teducai.com/`, utiliser aussi la
+checklist operationnelle:
+
+- `docs/teducai-production-go-live.md`
+- `scripts/production/teducai-prod-audit.sh`
+- `scripts/production/teducai-smoke-test.sh`
+- `scripts/production/teducai-backup-now.sh`
+- `scripts/production/teducai-restore-drill.sh`
+- `scripts/production/teducai-cron.example`
+
 ## Variables obligatoires
 
 - `DATABASE_URL`: base PostgreSQL de production.

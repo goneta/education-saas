@@ -1,0 +1,19 @@
+# TeducAI production cron example.
+# Install on VPS with:
+#   crontab scripts/production/teducai-cron.example
+#
+# Adjust paths to match the real OVH deployment directory.
+
+SHELL=/bin/bash
+APP_DIR=/var/www/teducai/education-saas
+APP_URL=https://teducai.com
+ENV_FILE=/var/www/teducai/education-saas/.env.production
+
+# Daily encrypted database backup at 02:15.
+15 2 * * * cd $APP_DIR && mkdir -p logs && ENV_FILE=$ENV_FILE bash scripts/production/teducai-backup-now.sh >> logs/backup.log 2>&1
+
+# Public smoke test every 10 minutes.
+*/10 * * * * cd $APP_DIR && mkdir -p logs && APP_URL=$APP_URL bash scripts/production/teducai-smoke-test.sh >> logs/smoke.log 2>&1
+
+# Production audit every morning.
+30 6 * * * cd $APP_DIR && mkdir -p logs && APP_URL=$APP_URL ENV_FILE=$ENV_FILE bash scripts/production/teducai-prod-audit.sh >> logs/prod-audit.log 2>&1
