@@ -6,6 +6,7 @@ from datetime import datetime, time
 from uuid import uuid4
 
 from .. import models, schemas, database, rbac, security
+from ..services import automation
 
 router = APIRouter(
     prefix="/finance",
@@ -207,6 +208,8 @@ def create_fee(
     fee_data["due_date"] = fee_data["due_date"] or datetime.utcnow()
     new_fee = models.Fee(**fee_data, school_id=school_id)
     db.add(new_fee)
+    db.flush()
+    automation.automate_fee_change(db, new_fee, current_user)
     db.commit()
     db.refresh(new_fee)
     return _serialize_fee(new_fee)
@@ -229,6 +232,7 @@ def update_fee(
         db_fee.school_id = fee_update.school_id
 
     _recalculate_fee_status(db_fee)
+    automation.automate_fee_change(db, db_fee, current_user)
     db.commit()
     db.refresh(db_fee)
     return _serialize_fee(db_fee)
@@ -275,6 +279,7 @@ def record_fee_payment(
     db.flush()
     _create_payment_journal_entry(db, db_payment, db_fee, current_user)
     _recalculate_fee_status(db_fee)
+    automation.automate_payment(db, db_payment, db_fee, current_user)
     db.commit()
     return _serialize_fee(_get_fee_or_404(fee_id, db, current_user))
 
@@ -476,6 +481,8 @@ def create_expense(
     school_id = current_user.school_id or expense.school_id
     new_expense = models.Expense(**expense.model_dump(exclude={"school_id"}), school_id=school_id)
     db.add(new_expense)
+    db.flush()
+    automation.automate_expense(db, new_expense, current_user)
     db.commit()
     db.refresh(new_expense)
     return new_expense
@@ -501,6 +508,7 @@ def update_expense(
     if not current_user.school_id:
         db_expense.school_id = expense_update.school_id
 
+    automation.automate_expense(db, db_expense, current_user)
     db.commit()
     db.refresh(db_expense)
     return db_expense

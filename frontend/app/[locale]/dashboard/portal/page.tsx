@@ -10,6 +10,9 @@ interface StudentProfile { id: number; registration_number: string; parent_name?
 interface Assignment { id: number; title: string; due_date: string | null; instructions: string | null }
 interface Material { id: number; title: string; content_url: string | null; content_text: string | null }
 interface RequestRow { id: number; request_type: string; status: string; details: string | null; response: string | null }
+interface PortalDocument { id: number; document_type: string; title: string; reference: string | null; generated_at: string; download_url: string | null }
+interface PortalInvoice { id: number; invoice_number: string; title: string; amount_due: number; amount_paid: number; remaining_balance: number; status: string }
+interface PortalNotification { id: number; event_type: string; subject: string | null; message: string; channel: string; created_at: string }
 
 export default function PortalPage() {
     const { token, user } = useAuth()
@@ -18,17 +21,22 @@ export default function PortalPage() {
     const [assignments, setAssignments] = useState<Assignment[]>([])
     const [materials, setMaterials] = useState<Material[]>([])
     const [requests, setRequests] = useState<RequestRow[]>([])
+    const [portalDocs, setPortalDocs] = useState<PortalDocument[]>([])
+    const [portalInvoices, setPortalInvoices] = useState<PortalInvoice[]>([])
+    const [portalNotifications, setPortalNotifications] = useState<PortalNotification[]>([])
+    const [documentFilter, setDocumentFilter] = useState("")
     const [requestForm, setRequestForm] = useState({ request_type: "report_card", details: "" })
     const [submissionText, setSubmissionText] = useState<Record<number, string>>({})
 
     const load = useCallback(async () => {
         if (!token) return
         const headers = { Authorization: `Bearer ${token}` }
-        const [childrenRes, assignmentsRes, materialsRes, requestsRes] = await Promise.all([
+        const [childrenRes, assignmentsRes, materialsRes, requestsRes, portalRes] = await Promise.all([
             fetch(`${API_BASE_URL}/pedagogy/portal/children`, { headers }),
             fetch(`${API_BASE_URL}/pedagogy/assignments`, { headers }),
             fetch(`${API_BASE_URL}/pedagogy/materials`, { headers }),
             fetch(`${API_BASE_URL}/pedagogy/requests`, { headers }),
+            fetch(`${API_BASE_URL}/documents/portal${selectedStudentId ? `?student_id=${selectedStudentId}${documentFilter ? `&document_type=${documentFilter}` : ""}` : ""}`, { headers }),
         ])
         if (childrenRes.ok) {
             const data = await childrenRes.json()
@@ -38,7 +46,13 @@ export default function PortalPage() {
         if (assignmentsRes.ok) setAssignments(await assignmentsRes.json())
         if (materialsRes.ok) setMaterials(await materialsRes.json())
         if (requestsRes.ok) setRequests(await requestsRes.json())
-    }, [selectedStudentId, token])
+        if (portalRes.ok) {
+            const data = await portalRes.json()
+            setPortalDocs(data.documents || [])
+            setPortalInvoices(data.invoices || [])
+            setPortalNotifications(data.notifications || [])
+        }
+    }, [documentFilter, selectedStudentId, token])
 
     const createRequest = async () => {
         if (!token || !selectedStudentId) return
@@ -77,6 +91,30 @@ export default function PortalPage() {
                     {children.map(child => <option key={child.id} value={child.id}>{child.user?.full_name || child.registration_number}</option>)}
                 </select>
             </CardContent></Card>
+
+            <div className="grid gap-4 lg:grid-cols-3">
+                <Card><CardHeader><CardTitle>Documents disponibles</CardTitle></CardHeader><CardContent className="space-y-3">
+                    <select value={documentFilter} onChange={(event) => setDocumentFilter(event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm">
+                        <option value="">Tous les documents</option>
+                        <option value="receipt">Reçus</option>
+                        <option value="certificate">Attestations</option>
+                        <option value="report_card">Bulletins</option>
+                        <option value="invoice">Factures</option>
+                    </select>
+                    {portalDocs.map(doc => <div key={doc.id} className="rounded-md border p-3 text-sm"><div className="flex items-start justify-between gap-3"><div><p className="font-medium">{doc.title}</p><p className="text-[#6B7280]">{doc.document_type} • {doc.reference || "-"}</p><p className="text-xs text-[#6B7280]">{new Date(doc.generated_at).toLocaleString()}</p></div>{doc.download_url && <a className="text-[#0F766E] font-medium" href={`${API_BASE_URL}${doc.download_url}`} target="_blank">Télécharger</a>}</div></div>)}
+                    {!portalDocs.length && <p className="text-sm text-[#6B7280]">Aucun document disponible.</p>}
+                </CardContent></Card>
+
+                <Card><CardHeader><CardTitle>Factures et soldes</CardTitle></CardHeader><CardContent className="space-y-3">
+                    {portalInvoices.map(invoice => <div key={invoice.id} className="rounded-md border p-3 text-sm"><p className="font-medium">{invoice.title}</p><p className="text-[#6B7280]">{invoice.invoice_number} • {invoice.status}</p><p className="mt-1">Payé: {invoice.amount_paid.toLocaleString()} / Dû: {invoice.amount_due.toLocaleString()}</p><p className="font-semibold text-[#0F766E]">Solde: {invoice.remaining_balance.toLocaleString()}</p></div>)}
+                    {!portalInvoices.length && <p className="text-sm text-[#6B7280]">Aucune facture disponible.</p>}
+                </CardContent></Card>
+
+                <Card><CardHeader><CardTitle>Notifications</CardTitle></CardHeader><CardContent className="space-y-3">
+                    {portalNotifications.map(notification => <div key={notification.id} className="rounded-md border p-3 text-sm"><p className="font-medium">{notification.subject || notification.event_type}</p><p className="text-[#6B7280]">{notification.channel} • {new Date(notification.created_at).toLocaleString()}</p><p className="mt-1">{notification.message}</p></div>)}
+                    {!portalNotifications.length && <p className="text-sm text-[#6B7280]">Aucune notification enregistrée.</p>}
+                </CardContent></Card>
+            </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
                 <Card><CardHeader><CardTitle>Assignments</CardTitle></CardHeader><CardContent className="space-y-4">

@@ -783,6 +783,21 @@ class FeeStatus(str, enum.Enum):
     PAID = "paid"
     OVERDUE = "overdue"
 
+class StudentInvoiceStatus(str, enum.Enum):
+    UNPAID = "unpaid"
+    PARTIAL = "partial"
+    PAID = "paid"
+    OVERDUE = "overdue"
+
+class GeneratedDocumentType(str, enum.Enum):
+    RECEIPT = "receipt"
+    CERTIFICATE = "certificate"
+    REPORT_CARD = "report_card"
+    INVOICE = "invoice"
+    TRANSCRIPT = "transcript"
+    DIPLOMA = "diploma"
+    OTHER = "other"
+
 class CertificateType(str, enum.Enum):
     SCHOOLING = "schooling"
     ENROLLMENT = "enrollment"
@@ -899,6 +914,145 @@ class Payment(Base):
     fee_id = Column(Integer, ForeignKey("fees.id"), nullable=False)
     fee = relationship("Fee", back_populates="payments")
     recorded_by = relationship("User")
+
+
+class StudentInvoice(Base):
+    __tablename__ = "student_invoices"
+
+    id = Column(Integer, primary_key=True, index=True)
+    invoice_number = Column(String, unique=True, index=True, nullable=False)
+    title = Column(String, nullable=False)
+    amount_due = Column(Float, nullable=False)
+    amount_paid = Column(Float, default=0, nullable=False)
+    remaining_balance = Column(Float, default=0, nullable=False)
+    due_date = Column(DateTime, nullable=True)
+    status = Column(SqEnum(StudentInvoiceStatus), default=StudentInvoiceStatus.UNPAID, nullable=False)
+    source_type = Column(String, default="fee", nullable=False, index=True)
+    source_id = Column(Integer, nullable=True, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True, index=True)
+    fee_id = Column(Integer, ForeignKey("fees.id"), nullable=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    student = relationship("StudentProfile")
+    fee = relationship("Fee")
+    school = relationship("School")
+    created_by = relationship("User")
+
+
+class OutstandingBalance(Base):
+    __tablename__ = "outstanding_balances"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True, index=True)
+    invoice_id = Column(Integer, ForeignKey("student_invoices.id"), nullable=True, index=True)
+    fee_id = Column(Integer, ForeignKey("fees.id"), nullable=True, index=True)
+    due_date = Column(DateTime, nullable=True)
+    amount_due = Column(Float, nullable=False)
+    amount_paid = Column(Float, default=0, nullable=False)
+    remaining_balance = Column(Float, default=0, nullable=False)
+    status = Column(SqEnum(StudentInvoiceStatus), default=StudentInvoiceStatus.UNPAID, nullable=False)
+    last_payment_at = Column(DateTime(timezone=True), nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    student = relationship("StudentProfile")
+    invoice = relationship("StudentInvoice")
+    fee = relationship("Fee")
+    school = relationship("School")
+
+
+class CashJournalEntry(Base):
+    __tablename__ = "cash_journal_entries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    entry_date = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    entry_type = Column(String, nullable=False, index=True)
+    amount = Column(Float, nullable=False)
+    reference = Column(String, nullable=True, index=True)
+    description = Column(String, nullable=True)
+    payment_id = Column(Integer, ForeignKey("payments.id"), nullable=True)
+    expense_id = Column(Integer, ForeignKey("expenses.id"), nullable=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True)
+    operator_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    payment = relationship("Payment")
+    expense = relationship("Expense")
+    student = relationship("StudentProfile")
+    operator = relationship("User")
+    school = relationship("School")
+
+
+class GeneratedDocument(Base):
+    __tablename__ = "generated_documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    document_type = Column(SqEnum(GeneratedDocumentType), nullable=False, index=True)
+    title = Column(String, nullable=False)
+    reference = Column(String, nullable=True, index=True)
+    source_type = Column(String, nullable=True, index=True)
+    source_id = Column(Integer, nullable=True, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True, index=True)
+    parent_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    academic_year_id = Column(Integer, ForeignKey("academic_years.id"), nullable=True)
+    content = Column(JSON, nullable=True)
+    download_url = Column(String, nullable=True)
+    generated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    generated_at = Column(DateTime(timezone=True), server_default=func.now())
+    downloaded_at = Column(DateTime(timezone=True), nullable=True)
+
+    student = relationship("StudentProfile")
+    parent = relationship("User", foreign_keys=[parent_user_id])
+    school = relationship("School")
+    academic_year = relationship("AcademicYear")
+    generated_by = relationship("User", foreign_keys=[generated_by_id])
+
+
+class NotificationHistory(Base):
+    __tablename__ = "notification_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    event_type = Column(String, nullable=False, index=True)
+    recipient_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    recipient_name = Column(String, nullable=True)
+    recipient_contact = Column(String, nullable=True)
+    channel = Column(String, nullable=False, default="system")
+    subject = Column(String, nullable=True)
+    message = Column(Text, nullable=False)
+    status = Column(String, default="recorded", nullable=False)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True, index=True)
+    source_type = Column(String, nullable=True, index=True)
+    source_id = Column(Integer, nullable=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    recipient = relationship("User", foreign_keys=[recipient_user_id])
+    student = relationship("StudentProfile")
+    school = relationship("School")
+    created_by = relationship("User", foreign_keys=[created_by_id])
+
+
+class FinancialReportSnapshot(Base):
+    __tablename__ = "financial_report_snapshots"
+
+    id = Column(Integer, primary_key=True, index=True)
+    period_key = Column(String, nullable=False, index=True)
+    total_invoiced = Column(Float, default=0, nullable=False)
+    total_paid = Column(Float, default=0, nullable=False)
+    total_expenses = Column(Float, default=0, nullable=False)
+    total_outstanding = Column(Float, default=0, nullable=False)
+    cash_total = Column(Float, default=0, nullable=False)
+    payload = Column(JSON, nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    school = relationship("School")
 
 
 class Expense(Base):

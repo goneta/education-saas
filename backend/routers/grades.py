@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from .. import models, schemas, security, database
+from ..services import automation
 
 router = APIRouter(prefix="/grades", tags=["Grades & Evaluations"])
 
@@ -130,6 +131,7 @@ def enter_grades_bulk(
         
     # Process each grade
     count = 0
+    touched_students = set()
     for g in bulk_in.grades:
         # Check existing
         existing = db.query(models.Grade).filter(
@@ -148,8 +150,12 @@ def enter_grades_bulk(
                 comment=g.comment
             )
             db.add(new_grade)
+        touched_students.add(g.student_id)
         count += 1
-        
+    school_id = assessment.current_class.school_id if assessment.current_class else current_user.school_id
+    if school_id:
+        for student_id in touched_students:
+            automation.automate_report_card(db, student_id, assessment.term_id, school_id, current_user)
     db.commit()
     return {"message": f"Successfully processed {count} grades"}
 

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
 from .. import localization, models, schemas, security, database
+from ..services import automation
 
 router = APIRouter(prefix="/students", tags=["Students"])
 
@@ -343,6 +344,8 @@ def generate_certificate(
         generated_by_id=current_user.id,
     )
     db.add(row)
+    db.flush()
+    automation.automate_certificate(db, row, current_user)
     db.commit()
     db.refresh(row)
     return row

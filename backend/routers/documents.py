@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from .. import database, models, pdf, rbac, security
+from .. import audit, database, models, pdf, rbac, security
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
@@ -51,6 +51,15 @@ def payment_receipt_pdf(student_user_id: int, payment_id: int, db: Session = Dep
     payment = db.query(models.Payment).join(models.Fee).filter(models.Payment.id == payment_id, models.Fee.student_id == student.student_profile.id).first()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
+    generated = db.query(models.GeneratedDocument).filter(
+        models.GeneratedDocument.source_type == "payment",
+        models.GeneratedDocument.source_id == payment.id,
+        models.GeneratedDocument.document_type == models.GeneratedDocumentType.RECEIPT,
+    ).first()
+    if generated:
+        generated.downloaded_at = __import__("datetime").datetime.utcnow()
+        audit.record_audit(db, action="automation.document.downloaded", current_user=current_user, entity_type="generated_document", entity_id=generated.id, details={"type": "receipt"})
+        db.commit()
     lines = [
         f"Student: {student.full_name}",
         f"Matricule: {student.student_profile.registration_number}",
@@ -75,6 +84,15 @@ def certificate_pdf(student_user_id: int, certificate_id: int, db: Session = Dep
         raise HTTPException(status_code=404, detail="Certificate not found")
     if cert.status == models.CertificateStatus.BLOCKED:
         raise HTTPException(status_code=400, detail=cert.blocked_reason or "Certificate is blocked")
+    generated = db.query(models.GeneratedDocument).filter(
+        models.GeneratedDocument.source_type == "certificate",
+        models.GeneratedDocument.source_id == cert.id,
+        models.GeneratedDocument.document_type == models.GeneratedDocumentType.CERTIFICATE,
+    ).first()
+    if generated:
+        generated.downloaded_at = __import__("datetime").datetime.utcnow()
+        audit.record_audit(db, action="automation.document.downloaded", current_user=current_user, entity_type="generated_document", entity_id=generated.id, details={"type": "certificate"})
+        db.commit()
     lines = [
         f"Student: {student.full_name}",
         f"Matricule: {student.student_profile.registration_number}",
@@ -92,6 +110,14 @@ def certificate_pdf(student_user_id: int, certificate_id: int, db: Session = Dep
 def report_card_pdf(student_user_id: int, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
     rbac.require_permission(current_user, "reports:read")
     student = _student(db, student_user_id, current_user)
+    generated = db.query(models.GeneratedDocument).filter(
+        models.GeneratedDocument.student_id == student.student_profile.id,
+        models.GeneratedDocument.document_type == models.GeneratedDocumentType.REPORT_CARD,
+    ).order_by(models.GeneratedDocument.generated_at.desc()).first()
+    if generated:
+        generated.downloaded_at = __import__("datetime").datetime.utcnow()
+        audit.record_audit(db, action="automation.document.downloaded", current_user=current_user, entity_type="generated_document", entity_id=generated.id, details={"type": "report_card"})
+        db.commit()
     grades = db.query(models.Grade).filter(models.Grade.student_id == student.student_profile.id).all()
     lines = [
         f"Student: {student.full_name}",
@@ -107,6 +133,107 @@ def report_card_pdf(student_user_id: int, db: Session = Depends(database.get_db)
     else:
         lines.append("No grades recorded.")
     return Response(pdf.professional_pdf("Bulletin scolaire", lines, f"VERIFY:report-card:{student.student_profile.id}:{student.student_profile.registration_number}"), media_type="application/pdf")
+
+
+@router.get("/portal")
+def portal_documents(
+    student_id: int | None = None,
+    document_type: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    allowed_student_ids: list[int] = []
+    if current_user.role in [models.UserRole.STUDENT, models.UserRole.PUPIL] and current_user.student_profile:
+        allowed_student_ids = [current_user.student_profile.id]
+    elif current_user.role == models.UserRole.PARENT:
+        allowed_student_ids = [
+            row.student_id for row in db.query(models.ParentStudentLink).filter(
+                models.ParentStudentLink.parent_user_id == current_user.id,
+                models.ParentStudentLink.is_active == True,
+            ).all()
+        ]
+    else:
+        rbac.require_permission(current_user, "files:read", db)
+        if current_user.school_id:
+            allowed_student_ids = [
+                row.id for row in db.query(models.StudentProfile).join(models.User).filter(models.User.school_id == current_user.school_id).all()
+            ]
+    if student_id:
+        if allowed_student_ids and student_id not in allowed_student_ids:
+            raise HTTPException(status_code=403, detail="Not authorized for this student")
+        allowed_student_ids = [student_id]
+    doc_query = db.query(models.GeneratedDocument).filter(models.GeneratedDocument.school_id == current_user.school_id)
+    notif_query = db.query(models.NotificationHistory).filter(models.NotificationHistory.school_id == current_user.school_id)
+    if allowed_student_ids:
+        doc_query = doc_query.filter(models.GeneratedDocument.student_id.in_(allowed_student_ids))
+        notif_query = notif_query.filter(models.NotificationHistory.student_id.in_(allowed_student_ids))
+    if document_type:
+        doc_query = doc_query.filter(models.GeneratedDocument.document_type == document_type)
+    if start_date:
+        doc_query = doc_query.filter(models.GeneratedDocument.generated_at >= start_date)
+        notif_query = notif_query.filter(models.NotificationHistory.created_at >= start_date)
+    if end_date:
+        doc_query = doc_query.filter(models.GeneratedDocument.generated_at <= end_date)
+        notif_query = notif_query.filter(models.NotificationHistory.created_at <= end_date)
+    documents = doc_query.order_by(models.GeneratedDocument.generated_at.desc()).limit(500).all()
+    notifications = notif_query.order_by(models.NotificationHistory.created_at.desc()).limit(500).all()
+    invoices = db.query(models.StudentInvoice).filter(models.StudentInvoice.school_id == current_user.school_id)
+    balances = db.query(models.OutstandingBalance).filter(models.OutstandingBalance.school_id == current_user.school_id)
+    if allowed_student_ids:
+        invoices = invoices.filter(models.StudentInvoice.student_id.in_(allowed_student_ids))
+        balances = balances.filter(models.OutstandingBalance.student_id.in_(allowed_student_ids))
+    return {
+        "documents": [
+            {
+                "id": doc.id,
+                "document_type": doc.document_type.value,
+                "title": doc.title,
+                "reference": doc.reference,
+                "student_id": doc.student_id,
+                "generated_at": doc.generated_at,
+                "download_url": doc.download_url,
+            }
+            for doc in documents
+        ],
+        "notifications": [
+            {
+                "id": row.id,
+                "event_type": row.event_type,
+                "subject": row.subject,
+                "message": row.message,
+                "channel": row.channel,
+                "student_id": row.student_id,
+                "created_at": row.created_at,
+            }
+            for row in notifications
+        ],
+        "invoices": [
+            {
+                "id": row.id,
+                "invoice_number": row.invoice_number,
+                "title": row.title,
+                "amount_due": row.amount_due,
+                "amount_paid": row.amount_paid,
+                "remaining_balance": row.remaining_balance,
+                "status": row.status.value,
+                "student_id": row.student_id,
+            }
+            for row in invoices.order_by(models.StudentInvoice.created_at.desc()).limit(500).all()
+        ],
+        "balances": [
+            {
+                "id": row.id,
+                "amount_due": row.amount_due,
+                "amount_paid": row.amount_paid,
+                "remaining_balance": row.remaining_balance,
+                "status": row.status.value,
+                "student_id": row.student_id,
+            }
+            for row in balances.order_by(models.OutstandingBalance.updated_at.desc()).limit(500).all()
+        ],
+    }
 
 
 @router.get("/diplomas/{diploma_id}.pdf")
