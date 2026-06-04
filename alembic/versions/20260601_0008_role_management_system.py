@@ -18,18 +18,18 @@ depends_on = None
 def upgrade() -> None:
     if op.get_bind().dialect.name == "postgresql":
         for value in [
-            "admin",
-            "accountant",
-            "receptionist",
-            "secretary",
-            "director",
-            "principal",
-            "department_head",
-            "pedagogy_coordinator",
-            "educator",
-            "trainer",
-            "instructor",
-            "pupil",
+            "ADMIN",
+            "ACCOUNTANT",
+            "RECEPTIONIST",
+            "SECRETARY",
+            "DIRECTOR",
+            "PRINCIPAL",
+            "DEPARTMENT_HEAD",
+            "PEDAGOGY_COORDINATOR",
+            "EDUCATOR",
+            "TRAINER",
+            "INSTRUCTOR",
+            "PUPIL",
         ]:
             op.execute(f"ALTER TYPE userrole ADD VALUE IF NOT EXISTS '{value}'")
     op.create_table(
