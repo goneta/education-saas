@@ -18,3 +18,4 @@ test-results/
 folderexample/
 reference/
 ai_docs/references/
+.env.production
