@@ -152,6 +152,21 @@
     @apply h-11 w-full rounded-full border border-[#e0e0e0] bg-white px-5 text-[15px] text-[#1d1d1f] outline-none transition focus:border-[#0066cc] focus:ring-4 focus:ring-[#0066cc]/15;
   }
 
+  .teducai-primary-action {
+    width: auto !important;
+    min-width: max-content;
+    border-radius: 9999px;
+    background: #000 !important;
+    color: #fff !important;
+    padding: 0.625rem 1.25rem;
+    font-weight: 500;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  .teducai-primary-action:hover {
+    background: rgba(0, 0, 0, 0.9) !important;
+  }
+
   .apple-table {
     @apply w-full text-[15px];
   }

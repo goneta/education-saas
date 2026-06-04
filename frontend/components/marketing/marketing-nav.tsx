@@ -30,16 +30,16 @@ export function MarketingNav({ locale }: MarketingNavProps) {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Button asChild className="hidden bg-[#0F766E] text-white hover:bg-[#115E59] sm:inline-flex">
+          <Button asChild className="hidden bg-black text-white hover:bg-black/90 sm:inline-flex">
             <Link href={`/${locale}/contact`}>
-              S’Enregistrer
+              S&apos;enregistrer
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
           <Button asChild variant="outline" className="border-[#CBD5E1] text-[#0F172A]">
             <Link href={`/${locale}/login`}>
               <LogIn className="h-4 w-4" />
-              Se Connecter
+              Se connecter
             </Link>
           </Button>
         </div>

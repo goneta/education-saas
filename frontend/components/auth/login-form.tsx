@@ -39,15 +39,15 @@ export function LoginForm() {
     }
 
     return (
-        <Card className="w-full max-w-md rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
+        <Card className="w-full max-w-md rounded-[32px] border border-[#E2E8F0] bg-white/95 shadow-[0_28px_90px_rgba(15,23,42,0.14)] backdrop-blur">
             <CardHeader>
-                <CardTitle className="text-2xl text-[#111827]">{t("login")}</CardTitle>
-                <CardDescription className="text-[#6B7280]">
+                <CardTitle className="text-3xl font-semibold tracking-normal text-[#111827]">{t("login")}</CardTitle>
+                <CardDescription className="text-[15px] leading-6 text-[#64748B]">
                     {t("description")}
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-5">
                     {error && (
                         <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
                             {error}
@@ -81,7 +81,7 @@ export function LoginForm() {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="otp">MFA / 2FA code</Label>
+                        <Label htmlFor="otp">Code MFA / 2FA</Label>
                         <Input
                             id="otp"
                             type="text"
@@ -95,7 +95,7 @@ export function LoginForm() {
 
                     <Button
                         type="submit"
-                        className="w-full bg-black text-white hover:bg-black/90 rounded-lg"
+                        className="w-full justify-center bg-black text-white hover:bg-black/90"
                         disabled={isLoading}
                     >
                         {isLoading ? t("submitting") : t("submit")}

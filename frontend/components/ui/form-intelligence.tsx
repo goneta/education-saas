@@ -18,7 +18,6 @@ function inferLabel(field: HTMLInputElement | HTMLSelectElement | HTMLTextAreaEl
 }
 
 function enhanceField(field: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement) {
-  if (field.dataset.teducaiEnhanced === "true") return
   const label = inferLabel(field)
   const localizedPlaceholder = field.getAttribute("placeholder")
   if (localizedPlaceholder) field.setAttribute("placeholder", localizeUiText(localizedPlaceholder))
@@ -29,23 +28,53 @@ function enhanceField(field: HTMLInputElement | HTMLSelectElement | HTMLTextArea
 
 function enhanceLabels(root: ParentNode) {
   root.querySelectorAll("label").forEach(label => {
-    if ((label as HTMLElement).dataset.teducaiHelp === "true") return
     const text = textFromElement(label)
-    if (!text || label.querySelector("[data-teducai-info]")) return
+    if (!text) return
+    label.querySelectorAll("[data-teducai-info]").forEach(node => node.remove())
     const localized = localizeUiText(text)
     if (localized !== text) {
       for (const node of Array.from(label.childNodes)) {
         if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) node.textContent = node.textContent.replace(text.trim(), localized)
       }
     }
-    const info = document.createElement("span")
-    info.dataset.teducaiInfo = "true"
-    info.textContent = "i"
-    info.title = helpForLabel(localized)
-    info.setAttribute("aria-label", helpForLabel(localized))
-    info.className = "ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#0066cc] text-[10px] font-semibold text-white"
-    label.appendChild(info)
     ;(label as HTMLElement).dataset.teducaiHelp = "true"
+  })
+}
+
+function localizeTextElement(element: HTMLElement) {
+  if (element.dataset.teducaiTextLocalized === "true") return
+  if (element.children.length > 0) return
+  const text = element.textContent?.replace(/\s+/g, " ").trim()
+  if (!text) return
+  const localized = localizeUiText(text)
+  if (localized !== text) element.textContent = localized
+  element.dataset.teducaiTextLocalized = "true"
+}
+
+function enhanceButtons(root: ParentNode) {
+  root.querySelectorAll("button").forEach(button => {
+    const text = button.textContent?.replace(/\s+/g, " ").trim()
+    if (!text) return
+    const localized = localizeUiText(text)
+    if (localized !== text && button.childElementCount === 0) button.textContent = localized
+    const normalized = localized.toLowerCase()
+    const isPrimaryAction = /^(enregistrer|save|guardar|hifadhi|ajouter|add|agregar|ongeza)/i.test(localized)
+      || normalized.includes("enregistrer")
+      || normalized.includes("save")
+      || normalized.includes("ajouter")
+      || normalized.includes("add")
+    if (isPrimaryAction) {
+      button.classList.add("teducai-primary-action")
+      button.title ||= helpForLabel(localized)
+    }
+  })
+}
+
+function enhanceStaticText(root: ParentNode) {
+  root.querySelectorAll("th, caption, h1, h2, h3, h4, p, span").forEach(node => {
+    const element = node as HTMLElement
+    if (element.closest("svg, [data-teducai-no-localize]")) return
+    localizeTextElement(element)
   })
 }
 
@@ -54,6 +83,8 @@ function enhance(root: ParentNode = document) {
     enhanceField(field as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)
   })
   enhanceLabels(root)
+  enhanceButtons(root)
+  enhanceStaticText(root)
 }
 
 export function FormIntelligence() {
