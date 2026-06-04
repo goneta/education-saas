@@ -7,6 +7,7 @@ Create Date: 2026-06-02
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 revision = "20260602_0009"
@@ -15,15 +16,43 @@ branch_labels = None
 depends_on = None
 
 
-invoice_status = sa.Enum("UNPAID", "PARTIAL", "PAID", "OVERDUE", name="studentinvoicestatus")
-document_type = sa.Enum("RECEIPT", "CERTIFICATE", "REPORT_CARD", "INVOICE", "TRANSCRIPT", "DIPLOMA", "OTHER", name="generateddocumenttype")
+INVOICE_STATUS_VALUES = ("UNPAID", "PARTIAL", "PAID", "OVERDUE")
+DOCUMENT_TYPE_VALUES = ("RECEIPT", "CERTIFICATE", "REPORT_CARD", "INVOICE", "TRANSCRIPT", "DIPLOMA", "OTHER")
+
+invoice_status = sa.Enum(*INVOICE_STATUS_VALUES, name="studentinvoicestatus")
+document_type = sa.Enum(*DOCUMENT_TYPE_VALUES, name="generateddocumenttype")
+
+
+def _create_postgresql_enum_if_missing(name: str, values: tuple[str, ...]) -> None:
+    quoted_values = ", ".join(f"'{value}'" for value in values)
+    op.execute(
+        f"""
+        DO $$
+        BEGIN
+            CREATE TYPE {name} AS ENUM ({quoted_values});
+        EXCEPTION
+            WHEN duplicate_object THEN NULL;
+        END
+        $$;
+        """
+    )
+
+
+def _column_enum_types(bind):
+    if bind.dialect.name == "postgresql":
+        return (
+            postgresql.ENUM(*INVOICE_STATUS_VALUES, name="studentinvoicestatus", create_type=False),
+            postgresql.ENUM(*DOCUMENT_TYPE_VALUES, name="generateddocumenttype", create_type=False),
+        )
+    return invoice_status, document_type
 
 
 def upgrade() -> None:
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
-        invoice_status.create(bind, checkfirst=True)
-        document_type.create(bind, checkfirst=True)
+        _create_postgresql_enum_if_missing("studentinvoicestatus", INVOICE_STATUS_VALUES)
+        _create_postgresql_enum_if_missing("generateddocumenttype", DOCUMENT_TYPE_VALUES)
+    invoice_status_type, document_type_type = _column_enum_types(bind)
 
     op.create_table(
         "student_invoices",
@@ -34,7 +63,7 @@ def upgrade() -> None:
         sa.Column("amount_paid", sa.Float(), nullable=False, server_default="0"),
         sa.Column("remaining_balance", sa.Float(), nullable=False, server_default="0"),
         sa.Column("due_date", sa.DateTime(), nullable=True),
-        sa.Column("status", invoice_status, nullable=False, server_default="UNPAID"),
+        sa.Column("status", invoice_status_type, nullable=False, server_default="UNPAID"),
         sa.Column("source_type", sa.String(), nullable=False, server_default="fee", index=True),
         sa.Column("source_id", sa.Integer(), nullable=True, index=True),
         sa.Column("student_id", sa.Integer(), sa.ForeignKey("student_profiles.id"), nullable=True, index=True),
@@ -54,7 +83,7 @@ def upgrade() -> None:
         sa.Column("amount_due", sa.Float(), nullable=False),
         sa.Column("amount_paid", sa.Float(), nullable=False, server_default="0"),
         sa.Column("remaining_balance", sa.Float(), nullable=False, server_default="0"),
-        sa.Column("status", invoice_status, nullable=False, server_default="UNPAID"),
+        sa.Column("status", invoice_status_type, nullable=False, server_default="UNPAID"),
         sa.Column("last_payment_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("school_id", sa.Integer(), sa.ForeignKey("schools.id"), nullable=False, index=True),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
@@ -77,7 +106,7 @@ def upgrade() -> None:
     op.create_table(
         "generated_documents",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("document_type", document_type, nullable=False, index=True),
+        sa.Column("document_type", document_type_type, nullable=False, index=True),
         sa.Column("title", sa.String(), nullable=False),
         sa.Column("reference", sa.String(), nullable=True, index=True),
         sa.Column("source_type", sa.String(), nullable=True, index=True),
