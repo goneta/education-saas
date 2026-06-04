@@ -2,21 +2,25 @@ import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import { Check, ChevronDown, ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { helpForLabel, localizeUiText } from "@/lib/ui-localization"
 
 const Select = SelectPrimitive.Root
 const SelectGroup = SelectPrimitive.Group
-const SelectValue = SelectPrimitive.Value
+const SelectValue = ({ placeholder, ...props }: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Value>) => (
+    <SelectPrimitive.Value placeholder={typeof placeholder === "string" ? localizeUiText(placeholder) : placeholder} {...props} />
+)
 
 const SelectTrigger = React.forwardRef<
     React.ElementRef<typeof SelectPrimitive.Trigger>,
     React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
+>(({ className, children, title, ...props }, ref) => (
     <SelectPrimitive.Trigger
         ref={ref}
         className={cn(
-            "flex h-10 w-full items-center justify-between rounded-lg border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-[#111827] placeholder:text-[#6B7280] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50",
+            "flex h-11 w-full items-center justify-between rounded-full border border-[#e0e0e0] bg-white px-5 py-2 text-[15px] text-[#1d1d1f] placeholder:text-[#7a7a7a] focus:outline-none focus:ring-4 focus:ring-[#0066cc]/15 focus:border-[#0066cc] disabled:cursor-not-allowed disabled:opacity-50",
             className
         )}
+        title={title || helpForLabel("Selection")}
         {...props}
     >
         {children}
@@ -102,7 +106,9 @@ const SelectLabel = React.forwardRef<
         ref={ref}
         className={cn("py-1.5 pl-8 pr-2 text-sm font-semibold", className)}
         {...props}
-    />
+    >
+        {typeof props.children === "string" ? localizeUiText(props.children) : props.children}
+    </SelectPrimitive.Label>
 ))
 SelectLabel.displayName = SelectPrimitive.Label.displayName
 
@@ -124,7 +130,7 @@ const SelectItem = React.forwardRef<
             </SelectPrimitive.ItemIndicator>
         </span>
 
-        <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+        <SelectPrimitive.ItemText>{typeof children === "string" ? localizeUiText(children) : children}</SelectPrimitive.ItemText>
     </SelectPrimitive.Item>
 ))
 SelectItem.displayName = SelectPrimitive.Item.displayName

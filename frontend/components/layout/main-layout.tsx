@@ -11,6 +11,7 @@ import { LayoutProvider, useLayout } from "@/context/layout-context"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { LayoutDashboard, Eye } from "lucide-react"
+import { FormIntelligence } from "@/components/ui/form-intelligence"
 
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
     const { isAgentPanelOpen, viewMode, setViewMode, previewContent } = useLayout()
@@ -18,6 +19,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
     return (
         <ResizablePanelGroup direction="horizontal" className="min-h-screen w-full">
+            <FormIntelligence />
             {/* Left Panel: AI Agent - Light grey/off-white background */}
             <ResizablePanel
                 defaultSize={25}

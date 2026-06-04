@@ -7,9 +7,11 @@ import { useLayout } from "@/context/layout-context"
 import { useState, useRef, useEffect } from "react"
 import { API_BASE_URL } from "@/lib/config"
 import { useTranslations } from "next-intl"
+import { useAuth } from "@/contexts/auth-context"
 
 export function AgentPanel() {
     const { isAgentPanelOpen, toggleAgentPanel, aiStatus, setAiStatus, agentAction, setAgentAction, setViewMode, setPreviewContent } = useLayout()
+    const { token, user } = useAuth()
     const t = useTranslations("layout")
     const [inputValue, setInputValue] = useState("")
     const [messages, setMessages] = useState<{ role: 'user' | 'agent', content: string }[]>([
@@ -49,6 +51,7 @@ export function AgentPanel() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
                 body: JSON.stringify({ message: userMsg }),
                 signal: controller.signal
@@ -113,9 +116,12 @@ export function AgentPanel() {
                     </div>
 
                     <div className="flex flex-col">
-                        <span className="text-sm leading-none">AI Agent</span>
+                        <span className="text-sm leading-none">Agent IA</span>
                         {agentAction && (
                             <span className="text-[10px] text-muted-foreground animate-pulse">{agentAction}</span>
+                        )}
+                        {user?.role && (
+                            <span className="text-[10px] text-muted-foreground">Rôle: {user.role}</span>
                         )}
                     </div>
                 </div>

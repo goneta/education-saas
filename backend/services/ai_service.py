@@ -42,7 +42,7 @@ class AIService:
                 "is not configured or the openai package is unavailable."
             )
 
-    def generate_response(self, message: str) -> AIResponse:
+    def generate_response(self, message: str, user_context: Optional[Dict[str, Any]] = None) -> AIResponse:
         if not message.strip():
             return {
                 "type": "chat",
@@ -51,14 +51,18 @@ class AIService:
             }
 
         if self.client:
-            return self._call_openai(message)
+            return self._call_openai(message, user_context or {})
 
-        return self._call_fallback(message)
+        return self._call_fallback(message, user_context or {})
 
-    def _call_openai(self, message: str) -> AIResponse:
+    def _call_openai(self, message: str, user_context: Dict[str, Any]) -> AIResponse:
         try:
             system_prompt = """
 You are TeducAI, an expert assistant for a school-management SaaS platform.
+You must strictly obey the connected user's RBAC context. Never reveal, infer,
+fetch, or claim access to data outside the user's school, children, student
+profile, assigned class scope, or effective permissions. If a request is outside
+the allowed scope, refuse with the exact refusal sentence supplied in context.
 Return only a JSON object with this exact structure:
 {
   "type": "chat" | "content",
@@ -74,6 +78,7 @@ for short guidance and operational answers. Keep school data privacy in mind.
                 model=self.model,
                 messages=[
                     {"role": "system", "content": system_prompt},
+                    {"role": "system", "content": json.dumps({"rbac_context": user_context}, ensure_ascii=False)},
                     {"role": "user", "content": message},
                 ],
                 response_format={"type": "json_object"},
@@ -105,13 +110,15 @@ for short guidance and operational answers. Keep school data privacy in mind.
 
         return {"type": response_type, "message": message, "data": data}
 
-    def _call_fallback(self, message: str) -> AIResponse:
+    def _call_fallback(self, message: str, user_context: Dict[str, Any]) -> AIResponse:
         msg_lower = message.lower()
+        role = user_context.get("role", "utilisateur")
+        scope = user_context.get("scope_summary", "vos donnees autorisees")
 
         if any(keyword in msg_lower for keyword in ["course", "curriculum", "lesson", "cours", "leçon"]):
             return {
                 "type": "content",
-                "message": "I drafted a lesson outline that you can review in the preview panel.",
+                "message": f"J'ai prepare un brouillon pedagogique adapte a votre role ({role}) et limite a {scope}.",
                 "data": """# Lesson Outline: Introduction to Digital Skills
 
 ## Learning Objectives
@@ -134,7 +141,7 @@ Teachers can assess participation, completion of the guided activity, and the qu
         if any(keyword in msg_lower for keyword in ["report", "list", "rapport", "liste"]):
             return {
                 "type": "content",
-                "message": "I prepared a structured draft in the preview panel.",
+                "message": f"J'ai prepare un brouillon structure dans le perimetre autorise pour votre role ({role}).",
                 "data": """## School Operations Checklist
 
 1. Verify pupil registration records.
@@ -148,8 +155,8 @@ Teachers can assess participation, completion of the guided activity, and the qu
         return {
             "type": "chat",
             "message": (
-                "The AI provider is not configured in this environment, so I am using a local fallback response. "
-                "Configure OPENAI_API_KEY to enable full AI-assisted parent support and document generation."
+                f"Je peux vous aider dans le perimetre de votre role ({role}): {scope}. "
+                "Le fournisseur IA complet n'est pas configure dans cet environnement; j'utilise donc une reponse locale securisee."
             ),
             "data": None,
         }
