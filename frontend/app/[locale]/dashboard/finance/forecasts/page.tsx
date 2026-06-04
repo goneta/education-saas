@@ -1,10 +1,14 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { ExplainedField } from "@/components/ui/explained-field"
+import { normalizeLocale } from "@/lib/i18n"
+import { tx } from "@/lib/product-copy"
 
 interface ForecastRow {
     id: number
@@ -23,6 +27,8 @@ interface Variance {
 
 export default function ForecastsPage() {
     const { token } = useAuth()
+    const params = useParams<{ locale: string }>()
+    const locale = normalizeLocale(params?.locale)
     const [rows, setRows] = useState<ForecastRow[]>([])
     const [variance, setVariance] = useState<Variance | null>(null)
     const [form, setForm] = useState({ expected_students: "", expected_revenue: "", fee_category: "", level: "", class_id: "", academic_year_id: "" })
@@ -61,22 +67,22 @@ export default function ForecastsPage() {
 
     return (
         <div className="space-y-6">
-            <div><h1 className="text-2xl font-bold text-[#111827]">Forecasts</h1><p className="text-sm text-[#6B7280] mt-1">Expected enrollment and revenue versus actual collections.</p></div>
+            <div><h1 className="apple-page-title">{tx(locale, "forecasts")}</h1><p className="apple-page-description">{tx(locale, "forecastsDescription")}</p></div>
             <div className="grid gap-4 md:grid-cols-3">
-                <Metric title="Expected" value={variance?.expected_revenue || 0} />
-                <Metric title="Actual" value={variance?.actual_revenue || 0} tone="green" />
-                <Metric title="Variance" value={variance?.difference || 0} tone={(variance?.difference || 0) >= 0 ? "green" : "red"} />
+                <Metric title={tx(locale, "expected")} value={variance?.expected_revenue || 0} />
+                <Metric title="Réalisé" value={variance?.actual_revenue || 0} tone="green" />
+                <Metric title={tx(locale, "variance")} value={variance?.difference || 0} tone={(variance?.difference || 0) >= 0 ? "green" : "red"} />
             </div>
-            <Card><CardHeader><CardTitle>Add Forecast</CardTitle></CardHeader><CardContent className="grid gap-3 md:grid-cols-4">
-                <input type="number" placeholder="Expected students" value={form.expected_students} onChange={(e) => setForm({ ...form, expected_students: e.target.value })} className="border rounded-md px-3 py-2 text-sm" />
-                <input type="number" placeholder="Expected revenue" value={form.expected_revenue} onChange={(e) => setForm({ ...form, expected_revenue: e.target.value })} className="border rounded-md px-3 py-2 text-sm" />
-                <input placeholder="Fee category" value={form.fee_category} onChange={(e) => setForm({ ...form, fee_category: e.target.value })} className="border rounded-md px-3 py-2 text-sm" />
-                <input placeholder="Level" value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })} className="border rounded-md px-3 py-2 text-sm" />
-                <input type="number" placeholder="Class ID" value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value })} className="border rounded-md px-3 py-2 text-sm" />
-                <input type="number" placeholder="Academic Year ID" value={form.academic_year_id} onChange={(e) => setForm({ ...form, academic_year_id: e.target.value })} className="border rounded-md px-3 py-2 text-sm" />
-                <Button onClick={save}>Save</Button>
+            <Card><CardHeader><CardTitle>{tx(locale, "addForecast")}</CardTitle></CardHeader><CardContent className="grid gap-3 md:grid-cols-4">
+                <ExplainedField label={tx(locale, "expectedStudents")} help="Effectif attendu pour la classe, le niveau ou l'établissement. Format: nombre entier positif."><input type="number" placeholder={tx(locale, "expectedStudents")} value={form.expected_students} onChange={(e) => setForm({ ...form, expected_students: e.target.value })} className="apple-input" /></ExplainedField>
+                <ExplainedField label={tx(locale, "expectedRevenue")} help="Recettes attendues dans la devise de l'établissement. Elles seront comparées aux encaissements réels."><input type="number" placeholder={tx(locale, "expectedRevenue")} value={form.expected_revenue} onChange={(e) => setForm({ ...form, expected_revenue: e.target.value })} className="apple-input" /></ExplainedField>
+                <ExplainedField label={tx(locale, "feeCategory")} help="Rubrique concernée: inscription, scolarité, assurance, transport, cantine, etc."><input placeholder={tx(locale, "feeCategory")} value={form.fee_category} onChange={(e) => setForm({ ...form, fee_category: e.target.value })} className="apple-input" /></ExplainedField>
+                <ExplainedField label={tx(locale, "level")} help="Niveau ou cycle concerné. Laisser vide pour un prévisionnel global."><input placeholder={tx(locale, "level")} value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })} className="apple-input" /></ExplainedField>
+                <ExplainedField label={tx(locale, "classId")} help="Identifiant classe si le prévisionnel est calculé par classe."><input type="number" placeholder={tx(locale, "classId")} value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value })} className="apple-input" /></ExplainedField>
+                <ExplainedField label={tx(locale, "academicYearId")} help="Année académique associée au prévisionnel."><input type="number" placeholder={tx(locale, "academicYearId")} value={form.academic_year_id} onChange={(e) => setForm({ ...form, academic_year_id: e.target.value })} className="apple-input" /></ExplainedField>
+                <Button onClick={save}>{tx(locale, "save")}</Button>
             </CardContent></Card>
-            <Card><CardHeader><CardTitle>Forecast Rows</CardTitle></CardHeader><CardContent><table className="w-full text-sm"><thead><tr className="border-b"><th className="py-2 text-left">Category</th><th className="py-2 text-left">Level</th><th className="py-2 text-right">Students</th><th className="py-2 text-right">Revenue</th></tr></thead><tbody>{rows.map(row => <tr key={row.id} className="border-b last:border-0"><td className="py-2">{row.fee_category || "Global"}</td><td className="py-2">{row.level || "-"}</td><td className="py-2 text-right">{row.expected_students}</td><td className="py-2 text-right">{row.expected_revenue.toLocaleString()} FCFA</td></tr>)}</tbody></table></CardContent></Card>
+            <Card><CardHeader><CardTitle>{tx(locale, "forecastRows")}</CardTitle></CardHeader><CardContent><table className="apple-table"><thead><tr><th>{tx(locale, "category")}</th><th>{tx(locale, "level")}</th><th className="text-right">Élèves</th><th className="text-right">{tx(locale, "revenue")}</th></tr></thead><tbody>{rows.map(row => <tr key={row.id}><td>{row.fee_category || tx(locale, "global")}</td><td>{row.level || "-"}</td><td className="text-right">{row.expected_students}</td><td className="text-right">{row.expected_revenue.toLocaleString()} FCFA</td></tr>)}</tbody></table></CardContent></Card>
         </div>
     )
 }

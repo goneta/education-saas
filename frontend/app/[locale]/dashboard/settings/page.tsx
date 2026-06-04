@@ -1,13 +1,16 @@
 "use client"
 
-import type { ReactNode } from "react"
 import { useCallback, useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
+import { useParams } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ExplainedField, fieldHelp } from "@/components/ui/explained-field"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { tx, humanizeKey } from "@/lib/product-copy"
+import { normalizeLocale } from "@/lib/i18n"
 
 interface School {
     id: number
@@ -19,8 +22,14 @@ interface School {
 }
 interface TemplateSummary {
     classes: string[]
+    levels?: string[]
     subjects: string[]
     programs: string[]
+    diplomas?: string[]
+    semesters?: string[]
+    certifications?: string[]
+    assessment_types?: string[]
+    academic_years?: string[]
     fees: Array<{ name: string; amount: number; order: number; required: boolean }>
 }
 interface AuditLog {
@@ -34,6 +43,7 @@ interface AuditLog {
 interface PermissionModule {
     key: string
     label: string
+    category?: string
     actions: string[]
 }
 interface RoleDefinition {
@@ -138,6 +148,8 @@ const PRIMARY_ROLE_KEYS = [
 
 export default function SettingsPage() {
     const { token, user } = useAuth()
+    const params = useParams<{ locale: string }>()
+    const locale = normalizeLocale(params?.locale)
     const t = useTranslations("settings")
     const [schools, setSchools] = useState<School[]>([])
     const [permissions, setPermissions] = useState<string[]>([])
@@ -158,6 +170,7 @@ export default function SettingsPage() {
     const [countries, setCountries] = useState<Record<string, CountryProfile>>({})
     const [schoolSettings, setSchoolSettings] = useState<SchoolSettings | null>(null)
     const [settingsStatus, setSettingsStatus] = useState("")
+    const [selectedPermissionCategory, setSelectedPermissionCategory] = useState("all")
 
     const loadSchools = useCallback(async () => {
         if (!token || user?.role !== "super_admin") return
@@ -395,19 +408,22 @@ export default function SettingsPage() {
     useEffect(() => { void loadSystemContext() }, [loadSystemContext])
     useEffect(() => { void loadRolePermissions() }, [loadRolePermissions])
 
+    const permissionCategories = catalog ? ["all", ...Array.from(new Set(catalog.modules.map(module => module.category || "Autres"))).sort()] : []
+    const visibleModules = catalog?.modules.filter(module => selectedPermissionCategory === "all" || (module.category || "Autres") === selectedPermissionCategory) || []
+
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-[#111827]">Settings</h1>
-                <p className="text-sm text-[#6B7280] mt-1">Tenant context, roles, permissions and platform administration.</p>
+                <h1 className="apple-page-title">{tx(locale, "settings")}</h1>
+                <p className="apple-page-description">Contexte établissement, rôles, permissions, localisation et administration de la plateforme.</p>
             </div>
 
             <Card>
                 <CardHeader><CardTitle>{t("activeContext")}</CardTitle></CardHeader>
                 <CardContent className="grid gap-3 md:grid-cols-3 text-sm">
-                    <Info label="User" value={user?.full_name || "-"} />
-                    <Info label="Role" value={user?.role || "-"} />
-                    <Info label="School ID" value={user?.school_id?.toString() || "Platform"} />
+                    <Info label={tx(locale, "users")} value={user?.full_name || "-"} />
+                    <Info label="Rôle" value={user?.role || "-"} />
+                    <Info label="ID établissement" value={user?.school_id?.toString() || "Plateforme"} />
                 </CardContent>
             </Card>
 
@@ -423,29 +439,24 @@ export default function SettingsPage() {
                     <CardHeader><CardTitle>Configuration internationale</CardTitle></CardHeader>
                     <CardContent className="space-y-5">
                         <div className="grid gap-3 md:grid-cols-4">
-                            <Field label="Pays"><select value={schoolSettings.country_code} onChange={(event) => applyCountryDefaults(event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm">{Object.entries(countries).map(([code, profile]) => <option key={code} value={code}>{profile.name}</option>)}</select></Field>
-                            <Field label="Devise"><select value={schoolSettings.default_currency} onChange={(event) => updateSchoolSetting("default_currency", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm">{["FCFA", "GBP", "EUR", "USD"].map(currency => <option key={currency} value={currency}>{currency}</option>)}</select></Field>
-                            <Field label="Langue principale"><select value={schoolSettings.primary_language} onChange={(event) => updateSchoolSetting("primary_language", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm"><option value="fr">Francais</option><option value="en">English</option><option value="es">Espanol</option><option value="sw">Kiswahili</option></select></Field>
-                            <Field label="Type etablissement"><select value={schoolSettings.school_type} onChange={(event) => updateSchoolSetting("school_type", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm">{["primary", "secondary", "general", "technical", "vocational", "professional", "university"].map(type => <option key={type} value={type}>{type}</option>)}</select></Field>
-                            <Field label="Fuseau horaire"><input value={schoolSettings.timezone} onChange={(event) => updateSchoolSetting("timezone", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
-                            <Field label="Format date"><input value={schoolSettings.date_format} onChange={(event) => updateSchoolSetting("date_format", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
-                            <Field label="Format heure"><input value={schoolSettings.time_format} onChange={(event) => updateSchoolSetting("time_format", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
-                            <Field label="Telephone"><input value={schoolSettings.phone || ""} onChange={(event) => updateSchoolSetting("phone", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
+                            <ExplainedField label="Pays" help="Détermine automatiquement la devise, la langue, le fuseau horaire et les formats locaux. Exemple: Côte d'Ivoire applique FCFA et français."><select value={schoolSettings.country_code} onChange={(event) => applyCountryDefaults(event.target.value)} className="apple-select">{Object.entries(countries).map(([code, profile]) => <option key={code} value={code}>{profile.name}</option>)}</select></ExplainedField>
+                            <ExplainedField label="Devise" help="Devise utilisée dans les frais, paiements, reçus et rapports financiers. Elle est préremplie depuis le pays mais reste modifiable."><select value={schoolSettings.default_currency} onChange={(event) => updateSchoolSetting("default_currency", event.target.value)} className="apple-select">{["FCFA", "GBP", "EUR", "USD"].map(currency => <option key={currency} value={currency}>{currency}</option>)}</select></ExplainedField>
+                            <ExplainedField label="Langue principale" help="Langue par défaut des interfaces, rapports et documents générés. Le français reste la langue par défaut de TeducAI."><select value={schoolSettings.primary_language} onChange={(event) => updateSchoolSetting("primary_language", event.target.value)} className="apple-select"><option value="fr">Français</option><option value="en">English</option><option value="es">Español</option><option value="sw">Kiswahili</option></select></ExplainedField>
+                            <ExplainedField label="Type établissement" help="Détermine les modèles académiques: classes, niveaux, filières, diplômes, semestres, certifications et évaluations."><select value={schoolSettings.school_type} onChange={(event) => updateSchoolSetting("school_type", event.target.value)} className="apple-select">{["primary", "secondary", "general", "technical", "vocational", "professional", "university"].map(type => <option key={type} value={type}>{type}</option>)}</select></ExplainedField>
+                            <ExplainedField label="Fuseau horaire" help="Utilisé pour les horaires, journaux d'audit, clôtures de caisse et notifications. Format attendu: Area/City."><input value={schoolSettings.timezone} onChange={(event) => updateSchoolSetting("timezone", event.target.value)} className="apple-input" /></ExplainedField>
+                            <ExplainedField label="Format date" help="Format d'affichage dans l'interface et les documents. Exemple: dd/MM/yyyy pour la Côte d'Ivoire et l'Europe."><input value={schoolSettings.date_format} onChange={(event) => updateSchoolSetting("date_format", event.target.value)} className="apple-input" /></ExplainedField>
+                            <ExplainedField label="Format heure" help="Format d'heure des emplois du temps, absences, caisse et notifications. Exemple: HH:mm."><input value={schoolSettings.time_format} onChange={(event) => updateSchoolSetting("time_format", event.target.value)} className="apple-input" /></ExplainedField>
+                            <ExplainedField label="Téléphone" help="Numéro de l'établissement. Il est normalisé au format international selon le pays sélectionné."><input value={schoolSettings.phone || ""} onChange={(event) => updateSchoolSetting("phone", event.target.value)} className="apple-input" /></ExplainedField>
                         </div>
                         <div className="grid gap-3 md:grid-cols-3">
-                            <Field label="Rue"><input value={schoolSettings.address_structured?.street || ""} onChange={(event) => updateAddress("street", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
-                            <Field label="Quartier"><input value={schoolSettings.address_structured?.district || ""} onChange={(event) => updateAddress("district", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
-                            <Field label="Ville"><input value={schoolSettings.address_structured?.city || ""} onChange={(event) => updateAddress("city", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
-                            <Field label="Region / Etat"><input value={schoolSettings.address_structured?.region || ""} onChange={(event) => updateAddress("region", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
-                            <Field label="Code postal"><input value={schoolSettings.address_structured?.postal_code || ""} onChange={(event) => updateAddress("postal_code", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
-                            <Field label="Pays adresse"><input value={schoolSettings.address_structured?.country || ""} onChange={(event) => updateAddress("country", event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" /></Field>
+                            {["street", "district", "city", "region", "postal_code", "country"].map(key => <ExplainedField key={key} label={humanizeKey(key)} help={fieldHelp(humanizeKey(key), "Adresse internationalisée utilisée sur les factures, attestations, exports officiels et documents administratifs.")}><input value={(schoolSettings.address_structured as Record<string, string> | undefined)?.[key] || ""} onChange={(event) => updateAddress(key, event.target.value)} className="apple-input" /></ExplainedField>)}
                         </div>
                         <div className="grid gap-3 md:grid-cols-3 text-sm">
                             <Info label="Adresse formatee" value={schoolSettings.formatted_address || "-"} />
                             <Info label="Telephone international" value={schoolSettings.phone_e164 || "-"} />
                             <Info label="Focus administratif" value={schoolSettings.school_type_profile?.administrative_focus?.join(", ") || "-"} />
                         </div>
-                        <div className="flex items-center gap-3"><Button onClick={saveSchoolSettings}>Enregistrer les parametres</Button>{settingsStatus && <span className="text-sm text-[#6B7280]">{settingsStatus}</span>}</div>
+                        <div className="flex items-center gap-3"><Button onClick={saveSchoolSettings}>Enregistrer les paramètres</Button>{settingsStatus && <span className="text-sm text-[#6B7280]">{settingsStatus}</span>}</div>
                     </CardContent>
                 </Card>
             )}
@@ -455,9 +466,9 @@ export default function SettingsPage() {
                     <CardHeader><CardTitle>Gestion des roles et permissions</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto_auto]">
-                            <input value={newRole.name} onChange={(event) => setNewRole({ ...newRole, name: event.target.value })} placeholder="Nom du role personnalise" className="rounded-md border px-3 py-2 text-sm" />
-                            <input value={newRole.description} onChange={(event) => setNewRole({ ...newRole, description: event.target.value })} placeholder="Description" className="rounded-md border px-3 py-2 text-sm" />
-                            <select value={newRole.parent_role_key} onChange={(event) => setNewRole({ ...newRole, parent_role_key: event.target.value })} className="rounded-md border px-3 py-2 text-sm"><option value="">Sans heritage</option>{catalog.roles.map(role => <option key={role} value={role}>Heriter de {role}</option>)}</select>
+                            <input value={newRole.name} onChange={(event) => setNewRole({ ...newRole, name: event.target.value })} placeholder="Nom du rôle personnalisé" className="apple-input" />
+                            <input value={newRole.description} onChange={(event) => setNewRole({ ...newRole, description: event.target.value })} placeholder={tx(locale, "description")} className="apple-input" />
+                            <select value={newRole.parent_role_key} onChange={(event) => setNewRole({ ...newRole, parent_role_key: event.target.value })} className="apple-select"><option value="">Sans héritage</option>{catalog.roles.map(role => <option key={role} value={role}>Hériter de {role}</option>)}</select>
                             <Button onClick={createRole}>Creer</Button>
                             <Button variant="outline" onClick={duplicateRole}>Dupliquer</Button>
                         </div>
@@ -471,8 +482,11 @@ export default function SettingsPage() {
                             ))}
                         </div>
                         <div className="flex flex-wrap items-center gap-3">
-                            <select value={selectedRole} onChange={(event) => setSelectedRole(event.target.value)} className="border rounded-md px-3 py-2 text-sm">{catalog.roles.map(role => <option key={role} value={role}>{role}</option>)}</select>
-                            <Button onClick={saveRolePermissions}>Enregistrer</Button>
+                            <select value={selectedRole} onChange={(event) => setSelectedRole(event.target.value)} className="apple-select max-w-xs">{catalog.roles.map(role => <option key={role} value={role}>{role}</option>)}</select>
+                            <select value={selectedPermissionCategory} onChange={(event) => setSelectedPermissionCategory(event.target.value)} className="apple-select max-w-xs">
+                                {permissionCategories.map(category => <option key={category} value={category}>{category === "all" ? "Toutes les catégories" : category}</option>)}
+                            </select>
+                            <Button onClick={saveRolePermissions}>{tx(locale, "save")}</Button>
                             {roleDefinitions.find(role => role.key === selectedRole && !role.is_system) && (
                                 <>
                                     <Button variant="outline" onClick={() => { const role = roleDefinitions.find(item => item.key === selectedRole); if (role) void toggleRoleStatus(role) }}>Activer / desactiver</Button>
@@ -481,10 +495,13 @@ export default function SettingsPage() {
                             )}
                             {permissionStatus && <span className="text-sm text-[#6B7280]">{permissionStatus}</span>}
                         </div>
-                        <div className="overflow-x-auto rounded-lg border">
+                        <div className="flex flex-wrap gap-2">
+                            {permissionCategories.map(category => <Button key={category} variant={selectedPermissionCategory === category ? "default" : "outline"} size="sm" onClick={() => setSelectedPermissionCategory(category)}>{category === "all" ? "Toutes" : category}</Button>)}
+                        </div>
+                        <div className="overflow-x-auto rounded-[18px] border border-[#e0e0e0]">
                             <table className="w-full min-w-[980px] text-sm">
-                                <thead className="bg-[#F8FAFC]"><tr className="border-b"><th className="px-3 py-3 text-left">Module</th>{MATRIX_ACTIONS.map(action => <th key={action} className="px-3 py-3 text-center">{action}</th>)}</tr></thead>
-                                <tbody>{catalog.modules.map(module => <tr key={module.key} className="border-b last:border-0"><td className="px-3 py-2 font-medium text-[#111827]">{module.label}</td>{MATRIX_ACTIONS.map(action => { const permission = `${module.key}:${action}`; return <td key={permission} className="px-3 py-2 text-center"><input type="checkbox" checked={permissionDraft.has(permission)} onChange={() => togglePermission(permission)} className="h-4 w-4" /></td> })}</tr>)}</tbody>
+                                <thead className="bg-[#f5f5f7]"><tr className="border-b"><th className="px-3 py-3 text-left">Catégorie</th><th className="px-3 py-3 text-left">Module</th>{MATRIX_ACTIONS.map(action => <th key={action} className="px-3 py-3 text-center">{action === "full_access" ? tx(locale, "fullAccess") : humanizeKey(action)}</th>)}</tr></thead>
+                                <tbody>{visibleModules.map(module => <tr key={module.key} className="border-b last:border-0"><td className="px-3 py-2 text-[#6e6e73]">{module.category || "Autres"}</td><td className="px-3 py-2 font-medium text-[#1d1d1f]">{module.label}</td>{MATRIX_ACTIONS.map(action => { const permission = `${module.key}:${action}`; return <td key={permission} className="px-3 py-2 text-center"><input type="checkbox" checked={permissionDraft.has(permission)} onChange={() => togglePermission(permission)} className="h-4 w-4 accent-[#0066cc]" /></td> })}</tr>)}</tbody>
                             </table>
                         </div>
                         {rolePermissions && rolePermissions.disabled_permissions.length > 0 && <p className="text-xs text-[#6B7280]">Droits explicitement retires: {rolePermissions.disabled_permissions.join(", ")}</p>}
@@ -498,12 +515,12 @@ export default function SettingsPage() {
                     <CardHeader><CardTitle>Gestion des utilisateurs</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_0.8fr_1fr_auto]">
-                            <input value={newUser.full_name} onChange={(event) => setNewUser({ ...newUser, full_name: event.target.value })} placeholder="Nom complet" className="rounded-md border px-3 py-2 text-sm" />
-                            <input value={newUser.email} onChange={(event) => setNewUser({ ...newUser, email: event.target.value })} placeholder="Email" className="rounded-md border px-3 py-2 text-sm" />
-                            <input value={newUser.password} onChange={(event) => setNewUser({ ...newUser, password: event.target.value })} placeholder="Mot de passe initial" className="rounded-md border px-3 py-2 text-sm" />
-                            <select value={newUser.role} onChange={(event) => setNewUser({ ...newUser, role: event.target.value })} className="rounded-md border px-3 py-2 text-sm">{catalog.roles.filter(role => PRIMARY_ROLE_KEYS.includes(role)).map(role => <option key={role} value={role}>{role}</option>)}</select>
-                            <input value={newUser.role_keys} onChange={(event) => setNewUser({ ...newUser, role_keys: event.target.value })} placeholder="Roles additionnels separes par virgule" className="rounded-md border px-3 py-2 text-sm" />
-                            <Button onClick={createManagedUser}>Creer</Button>
+                            <input value={newUser.full_name} onChange={(event) => setNewUser({ ...newUser, full_name: event.target.value })} placeholder="Nom complet" className="apple-input" />
+                            <input value={newUser.email} onChange={(event) => setNewUser({ ...newUser, email: event.target.value })} placeholder="Email" className="apple-input" />
+                            <input value={newUser.password} onChange={(event) => setNewUser({ ...newUser, password: event.target.value })} placeholder="Mot de passe initial" className="apple-input" />
+                            <select value={newUser.role} onChange={(event) => setNewUser({ ...newUser, role: event.target.value })} className="apple-select">{catalog.roles.filter(role => PRIMARY_ROLE_KEYS.includes(role)).map(role => <option key={role} value={role}>{role}</option>)}</select>
+                            <input value={newUser.role_keys} onChange={(event) => setNewUser({ ...newUser, role_keys: event.target.value })} placeholder="Rôles additionnels séparés par virgule" className="apple-input" />
+                            <Button onClick={createManagedUser}>{tx(locale, "create")}</Button>
                         </div>
                         {userStatus && <p className="text-sm text-[#6B7280]">{userStatus}</p>}
                         <div className="overflow-x-auto rounded-lg border"><table className="w-full min-w-[760px] text-sm"><thead className="bg-[#F8FAFC]"><tr className="border-b"><th className="px-3 py-2 text-left">Utilisateur</th><th className="px-3 py-2 text-left">Email</th><th className="px-3 py-2 text-left">Role principal</th><th className="px-3 py-2 text-left">Statut</th><th className="px-3 py-2 text-right">Actions</th></tr></thead><tbody>{users.map(managedUser => <tr key={managedUser.id} className="border-b last:border-0"><td className="px-3 py-2 font-medium">{managedUser.full_name || "-"}</td><td className="px-3 py-2">{managedUser.email}</td><td className="px-3 py-2">{managedUser.role}</td><td className="px-3 py-2">{managedUser.is_active ? "Actif" : "Inactif"}</td><td className="px-3 py-2 text-right"><Button variant="outline" size="sm" onClick={() => toggleUserStatus(managedUser)}>{managedUser.is_active ? "Desactiver" : "Reactiver"}</Button><Button variant="outline" size="sm" className="ml-2" onClick={() => resetUserPassword(managedUser)}>Reset MDP</Button></td></tr>)}</tbody></table></div>
@@ -514,8 +531,8 @@ export default function SettingsPage() {
             <Card>
                 <CardHeader><CardTitle>{t("schoolTemplates")}</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex flex-wrap gap-3"><select value={templateChoice} onChange={(e) => setTemplateChoice(e.target.value)} className="border rounded-md px-3 py-2 text-sm">{Object.keys(templates).map(template => <option key={template} value={template}>{template}</option>)}</select><Button onClick={applyTemplate}>{t("applyTemplate")}</Button></div>
-                    {templates[templateChoice] && <div className="grid gap-3 md:grid-cols-3 text-sm"><Info label="Classes" value={templates[templateChoice].classes.join(", ")} /><Info label="Subjects" value={templates[templateChoice].subjects.join(", ")} /><Info label="Fee rubrics" value={templates[templateChoice].fees.map(fee => fee.name).join(", ")} /></div>}
+                    <div className="flex flex-wrap gap-3"><select value={templateChoice} onChange={(e) => setTemplateChoice(e.target.value)} className="apple-select max-w-xs">{Object.keys(templates).map(template => <option key={template} value={template}>{template}</option>)}</select><Button onClick={applyTemplate}>{t("applyTemplate")}</Button></div>
+                    {templates[templateChoice] && <div className="grid gap-3 md:grid-cols-3 text-sm"><Info label="Classes" value={templates[templateChoice].classes.join(", ")} /><Info label="Niveaux" value={(templates[templateChoice].levels || []).join(", ")} /><Info label="Matières" value={templates[templateChoice].subjects.join(", ")} /><Info label="Filières / programmes" value={templates[templateChoice].programs.join(", ") || "-"} /><Info label="Diplômes" value={(templates[templateChoice].diplomas || []).join(", ")} /><Info label="Semestres" value={(templates[templateChoice].semesters || []).join(", ")} /><Info label="Certifications" value={(templates[templateChoice].certifications || []).join(", ")} /><Info label="Types d'évaluation" value={(templates[templateChoice].assessment_types || []).join(", ")} /><Info label="Rubriques frais" value={templates[templateChoice].fees.map(fee => fee.name).join(", ")} /></div>}
                 </CardContent>
             </Card>
 
@@ -540,8 +557,4 @@ export default function SettingsPage() {
 
 function Info({ label, value }: { label: string; value: string }) {
     return <div><p className="text-[#6B7280]">{label}</p><p className="font-medium text-[#111827]">{value}</p></div>
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-    return <label className="space-y-1 text-sm"><span className="text-[#6B7280]">{label}</span>{children}</label>
 }

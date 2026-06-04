@@ -1,0 +1,128 @@
+import { DEFAULT_LOCALE, type SupportedLocale } from "@/lib/i18n"
+
+type CopyDictionary = Record<string, Record<SupportedLocale, string>>
+
+export const PRODUCT_COPY: CopyDictionary = {
+  actions: { fr: "Actions", en: "Actions", es: "Acciones", sw: "Vitendo" },
+  active: { fr: "Actif", en: "Active", es: "Activo", sw: "Hai" },
+  addFee: { fr: "Ajouter un frais", en: "Add fee", es: "Agregar tasa", sw: "Ongeza ada" },
+  addFeeRubric: { fr: "Ajouter une rubrique de frais", en: "Add fee rubric", es: "Agregar concepto de cobro", sw: "Ongeza kipengele cha ada" },
+  addForecast: { fr: "Ajouter un prévisionnel", en: "Add forecast", es: "Agregar previsión", sw: "Ongeza makadirio" },
+  admissions: { fr: "Admissions", en: "Admissions", es: "Admisiones", sw: "Udahili" },
+  academic: { fr: "Académique", en: "Academic", es: "Académico", sw: "Masomo" },
+  academicYearId: { fr: "ID année académique", en: "Academic year ID", es: "ID del año académico", sw: "Kitambulisho cha mwaka wa masomo" },
+  accounting: { fr: "Comptabilité", en: "Accounting", es: "Contabilidad", sw: "Uhasibu" },
+  accountCode: { fr: "Code du compte", en: "Account code", es: "Código de cuenta", sw: "Msimbo wa akaunti" },
+  accountName: { fr: "Nom du compte", en: "Account name", es: "Nombre de cuenta", sw: "Jina la akaunti" },
+  amount: { fr: "Montant", en: "Amount", es: "Importe", sw: "Kiasi" },
+  apply: { fr: "Appliquer", en: "Apply", es: "Aplicar", sw: "Tumia" },
+  approvals: { fr: "Approbations", en: "Approvals", es: "Aprobaciones", sw: "Idhini" },
+  audit: { fr: "Audit", en: "Audit", es: "Auditoría", sw: "Ukaguzi" },
+  byClass: { fr: "Par classe", en: "By class", es: "Por clase", sw: "Kwa darasa" },
+  byFeeType: { fr: "Par type de frais", en: "By fee type", es: "Por tipo de tasa", sw: "Kwa aina ya ada" },
+  byOperator: { fr: "Par opérateur", en: "By operator", es: "Por operador", sw: "Kwa mhudumu" },
+  canteen: { fr: "Cantine", en: "Canteen", es: "Comedor", sw: "Kantini" },
+  cancel: { fr: "Annuler", en: "Cancel", es: "Cancelar", sw: "Ghairi" },
+  cashJournal: { fr: "Journal de caisse", en: "Cash journal", es: "Diario de caja", sw: "Daftari la fedha" },
+  cashJournalDescription: { fr: "Paiements journaliers, ventilation des frais et rapprochement de caisse.", en: "Daily payments, fee breakdown and cashier reconciliation.", es: "Pagos diarios, desglose de tasas y conciliación de caja.", sw: "Malipo ya kila siku, mgawanyo wa ada na ulinganisho wa fedha." },
+  category: { fr: "Catégorie", en: "Category", es: "Categoría", sw: "Kategoria" },
+  class: { fr: "Classe", en: "Class", es: "Clase", sw: "Darasa" },
+  classId: { fr: "ID classe", en: "Class ID", es: "ID de clase", sw: "Kitambulisho cha darasa" },
+  collected: { fr: "Encaissé", en: "Collected", es: "Cobrado", sw: "Iliyokusanywa" },
+  communication: { fr: "Communication", en: "Communication", es: "Comunicación", sw: "Mawasiliano" },
+  configuredRubrics: { fr: "Rubriques configurées", en: "Configured rubrics", es: "Conceptos configurados", sw: "Vipengele vilivyowekwa" },
+  copyAmounts: { fr: "Copier les montants", en: "Copy amounts", es: "Copiar importes", sw: "Nakili kiasi" },
+  copyPreviousYear: { fr: "Copier l'année précédente", en: "Copy previous year", es: "Copiar año anterior", sw: "Nakili mwaka uliopita" },
+  create: { fr: "Créer", en: "Create", es: "Crear", sw: "Unda" },
+  createRecord: { fr: "Créer {name}", en: "Create {name}", es: "Crear {name}", sw: "Unda {name}" },
+  credits: { fr: "Crédits", en: "Credits", es: "Créditos", sw: "Mikopo" },
+  dashboards: { fr: "Tableaux de bord", en: "Dashboards", es: "Paneles", sw: "Dashibodi" },
+  date: { fr: "Date", en: "Date", es: "Fecha", sw: "Tarehe" },
+  debtors: { fr: "Débiteurs", en: "Debtors", es: "Deudores", sw: "Wadaiwa" },
+  delete: { fr: "Supprimer", en: "Delete", es: "Eliminar", sw: "Futa" },
+  description: { fr: "Description", en: "Description", es: "Descripción", sw: "Maelezo" },
+  diplomas: { fr: "Diplômes", en: "Diplomas", es: "Diplomas", sw: "Stashahada" },
+  documents: { fr: "Documents", en: "Documents", es: "Documentos", sw: "Nyaraka" },
+  dueDate: { fr: "Date d'échéance", en: "Due date", es: "Fecha límite", sw: "Tarehe ya mwisho" },
+  edit: { fr: "Modifier", en: "Edit", es: "Editar", sw: "Hariri" },
+  education: { fr: "Scolarité", en: "Education", es: "Educación", sw: "Elimu" },
+  email: { fr: "Email", en: "Email", es: "Correo", sw: "Barua pepe" },
+  enterpriseTitle: { fr: "Gestion enterprise", en: "Enterprise management", es: "Gestión enterprise", sw: "Usimamizi wa taasisi" },
+  enterpriseDescription: { fr: "Workflows avancés, LMD/ECTS, RH, comptabilité, inspection et notifications.", en: "Advanced workflows, LMD/ECTS, HR, accounting, inspection and notifications.", es: "Flujos avanzados, LMD/ECTS, RR. HH., contabilidad, inspección y notificaciones.", sw: "Mtiririko wa juu, LMD/ECTS, rasilimali watu, uhasibu, ukaguzi na arifa." },
+  exams: { fr: "Examens", en: "Exams", es: "Exámenes", sw: "Mitihani" },
+  expected: { fr: "Prévu", en: "Expected", es: "Previsto", sw: "Inayotarajiwa" },
+  expectedRevenue: { fr: "Revenus attendus", en: "Expected revenue", es: "Ingresos esperados", sw: "Mapato yanayotarajiwa" },
+  expectedStudents: { fr: "Effectif attendu", en: "Expected students", es: "Estudiantes esperados", sw: "Wanafunzi wanaotarajiwa" },
+  export: { fr: "Exporter", en: "Export", es: "Exportar", sw: "Hamisha" },
+  fee: { fr: "Frais", en: "Fee", es: "Tasa", sw: "Ada" },
+  feeCategory: { fr: "Catégorie de frais", en: "Fee category", es: "Categoría de tasa", sw: "Kategoria ya ada" },
+  feeSettings: { fr: "Paramétrage des frais", en: "Fee settings", es: "Configuración de tasas", sw: "Mipangilio ya ada" },
+  feeSettingsDescription: { fr: "Configurez les rubriques par ordre, montant, année, niveau et classe.", en: "Configure fee rubrics by order, amount, year, level and class.", es: "Configure conceptos por orden, importe, año, nivel y clase.", sw: "Sanidi ada kwa mpangilio, kiasi, mwaka, kiwango na darasa." },
+  finance: { fr: "Finance", en: "Finance", es: "Finanzas", sw: "Fedha" },
+  financeReports: { fr: "Rapports financiers", en: "Finance reports", es: "Informes financieros", sw: "Ripoti za fedha" },
+  financeReportsDescription: { fr: "Paiements, débiteurs et ventilations des frais par période.", en: "Payments, debtors and fee breakdowns by period.", es: "Pagos, deudores y desglose de tasas por período.", sw: "Malipo, wadaiwa na mgawanyo wa ada kwa kipindi." },
+  forecastRows: { fr: "Lignes prévisionnelles", en: "Forecast rows", es: "Líneas de previsión", sw: "Mistari ya makadirio" },
+  forecasts: { fr: "Prévisionnels", en: "Forecasts", es: "Previsiones", sw: "Makadirio" },
+  forecastsDescription: { fr: "Effectifs et revenus attendus comparés aux encaissements réels.", en: "Expected enrollment and revenue versus actual collections.", es: "Matrícula e ingresos previstos frente a cobros reales.", sw: "Usajili na mapato yanayotarajiwa dhidi ya mapato halisi." },
+  fullAccess: { fr: "Accès complet", en: "Full access", es: "Acceso completo", sw: "Ufikiaji kamili" },
+  global: { fr: "Global", en: "Global", es: "Global", sw: "Jumla" },
+  governmentExports: { fr: "Exports gouvernement", en: "Government exports", es: "Exportaciones oficiales", sw: "Hamisho za serikali" },
+  gpa: { fr: "Moyenne GPA", en: "GPA", es: "GPA", sw: "GPA" },
+  hr: { fr: "RH", en: "HR", es: "RR. HH.", sw: "Rasilimali watu" },
+  inspection: { fr: "Inspection", en: "Inspection", es: "Inspección", sw: "Ukaguzi" },
+  inventory: { fr: "Inventaire", en: "Inventory", es: "Inventario", sw: "Stoo" },
+  journalTotal: { fr: "Total du journal", en: "Journal total", es: "Total del diario", sw: "Jumla ya daftari" },
+  level: { fr: "Niveau", en: "Level", es: "Nivel", sw: "Kiwango" },
+  library: { fr: "Bibliothèque", en: "Library", es: "Biblioteca", sw: "Maktaba" },
+  lmdEcts: { fr: "LMD / ECTS", en: "LMD / ECTS", es: "LMD / ECTS", sw: "LMD / ECTS" },
+  lowStock: { fr: "Stock bas", en: "Low stock", es: "Stock bajo", sw: "Bidhaa chache" },
+  name: { fr: "Nom", en: "Name", es: "Nombre", sw: "Jina" },
+  notifications: { fr: "Notifications", en: "Notifications", es: "Notificaciones", sw: "Arifa" },
+  operatorId: { fr: "ID opérateur", en: "Operator ID", es: "ID operador", sw: "Kitambulisho cha mhudumu" },
+  order: { fr: "Ordre", en: "Order", es: "Orden", sw: "Mpangilio" },
+  outstanding: { fr: "Reste dû", en: "Outstanding", es: "Pendiente", sw: "Baki" },
+  paid: { fr: "Payé", en: "Paid", es: "Pagado", sw: "Imelipwa" },
+  payments: { fr: "Paiements", en: "Payments", es: "Pagos", sw: "Malipo" },
+  pendingApprovals: { fr: "Approbations en attente", en: "Pending approvals", es: "Aprobaciones pendientes", sw: "Idhini zinazosubiri" },
+  period: { fr: "Période", en: "Period", es: "Período", sw: "Kipindi" },
+  print: { fr: "Imprimer", en: "Print", es: "Imprimir", sw: "Chapisha" },
+  receipt: { fr: "Reçu", en: "Receipt", es: "Recibo", sw: "Risiti" },
+  refresh: { fr: "Actualiser", en: "Refresh", es: "Actualizar", sw: "Sasisha" },
+  remaining: { fr: "Restant", en: "Remaining", es: "Restante", sw: "Iliyobaki" },
+  reports: { fr: "Rapports", en: "Reports", es: "Informes", sw: "Ripoti" },
+  required: { fr: "Obligatoire", en: "Required", es: "Obligatorio", sw: "Lazima" },
+  revenue: { fr: "Revenus", en: "Revenue", es: "Ingresos", sw: "Mapato" },
+  save: { fr: "Enregistrer", en: "Save", es: "Guardar", sw: "Hifadhi" },
+  security: { fr: "Sécurité", en: "Security", es: "Seguridad", sw: "Usalama" },
+  settings: { fr: "Paramètres", en: "Settings", es: "Configuración", sw: "Mipangilio" },
+  sourceYearId: { fr: "ID année source", en: "Source year ID", es: "ID año origen", sw: "Kitambulisho cha mwaka chanzo" },
+  status: { fr: "Statut", en: "Status", es: "Estado", sw: "Hali" },
+  student: { fr: "Élève", en: "Student", es: "Estudiante", sw: "Mwanafunzi" },
+  submitClosure: { fr: "Soumettre la clôture", en: "Submit closure", es: "Enviar cierre", sw: "Wasilisha kufunga" },
+  targetYearId: { fr: "ID année cible", en: "Target year ID", es: "ID año destino", sw: "Kitambulisho cha mwaka lengwa" },
+  title: { fr: "Titre", en: "Title", es: "Título", sw: "Kichwa" },
+  transport: { fr: "Transport", en: "Transport", es: "Transporte", sw: "Usafiri" },
+  transportCanteen: { fr: "Transport / Cantine", en: "Transport / Canteen", es: "Transporte / Comedor", sw: "Usafiri / Kantini" },
+  type: { fr: "Type", en: "Type", es: "Tipo", sw: "Aina" },
+  users: { fr: "Utilisateurs", en: "Users", es: "Usuarios", sw: "Watumiaji" },
+  variance: { fr: "Écart", en: "Variance", es: "Desviación", sw: "Tofauti" },
+  view: { fr: "Voir", en: "View", es: "Ver", sw: "Tazama" },
+}
+
+export function tx(locale: string | undefined, key: string, values?: Record<string, string | number>) {
+  const safeLocale = (["fr", "en", "es", "sw"].includes(locale || "") ? locale : DEFAULT_LOCALE) as SupportedLocale
+  const entry = PRODUCT_COPY[key]
+  let value = entry?.[safeLocale] || entry?.[DEFAULT_LOCALE] || key
+  if (values) {
+    for (const [name, replacement] of Object.entries(values)) {
+      value = value.replace(`{${name}}`, String(replacement))
+    }
+  }
+  return value
+}
+
+export function humanizeKey(value: string) {
+  return value
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, character => character.toUpperCase())
+}

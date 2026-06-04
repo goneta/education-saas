@@ -53,6 +53,89 @@ SCHOOL_TEMPLATES = {
     },
 }
 
+TEMPLATE_REFERENCE_DEFAULTS = {
+    "primary": {
+        "diplomas": ["Certificat de fin de cycle primaire"],
+        "semesters": ["Trimestre 1", "Trimestre 2", "Trimestre 3"],
+        "certifications": ["Passage en classe superieure", "Assiduite"],
+        "assessment_types": ["Devoir", "Composition", "Lecture", "Evaluation continue"],
+    },
+    "secondary": {
+        "diplomas": ["BEPC", "Baccalaureat"],
+        "semesters": ["Trimestre 1", "Trimestre 2", "Trimestre 3"],
+        "certifications": ["BEPC", "Baccalaureat", "Attestation de scolarite"],
+        "assessment_types": ["Interrogation", "Devoir surveille", "Composition", "Examen blanc"],
+    },
+    "general": {
+        "diplomas": ["BEPC", "Baccalaureat general"],
+        "semesters": ["Trimestre 1", "Trimestre 2", "Trimestre 3"],
+        "certifications": ["BEPC", "Baccalaureat", "Attestation de scolarite"],
+        "assessment_types": ["Interrogation", "Devoir surveille", "Composition", "Examen blanc"],
+    },
+    "technical": {
+        "diplomas": ["BT", "BTS", "Certificat technique"],
+        "semesters": ["Semestre 1", "Semestre 2", "Semestre 3", "Semestre 4"],
+        "certifications": ["Certification atelier", "Attestation de stage", "BTS"],
+        "assessment_types": ["Controle continu", "Pratique atelier", "Rapport de stage", "Examen final"],
+    },
+    "vocational": {
+        "diplomas": ["CAP", "BEP", "Certificat professionnel"],
+        "semesters": ["Session 1", "Session 2"],
+        "certifications": ["Competence metier", "Attestation de stage", "Certification pratique"],
+        "assessment_types": ["Evaluation pratique", "Competence", "Projet", "Examen final"],
+    },
+    "professional": {
+        "diplomas": ["CAP", "BTS Pro", "Certificat professionnel"],
+        "semesters": ["Session 1", "Session 2", "Session 3", "Session 4"],
+        "certifications": ["Certification metier", "Attestation de stage", "Certification pratique"],
+        "assessment_types": ["Evaluation pratique", "Competence", "Projet", "Rapport de stage"],
+    },
+    "university": {
+        "diplomas": ["Licence", "Master", "Doctorat"],
+        "semesters": ["Semestre 1", "Semestre 2", "Semestre 3", "Semestre 4", "Semestre 5", "Semestre 6"],
+        "certifications": ["Releve certifie", "Diplome certifie", "Attestation ECTS"],
+        "assessment_types": ["Controle continu", "Partiel", "Examen final", "Memoire", "Soutenance"],
+    },
+}
+
+
+def _template_summary(template_key: str, template: dict) -> dict:
+    references = TEMPLATE_REFERENCE_DEFAULTS.get(template_key, TEMPLATE_REFERENCE_DEFAULTS["primary"])
+    levels = sorted({level for _name, level in template["classes"]})
+    return {
+        "classes": [name for name, _level in template["classes"]],
+        "levels": levels,
+        "subjects": template["subjects"],
+        "programs": [program[0] for program in template["programs"]],
+        "diplomas": references["diplomas"],
+        "semesters": references["semesters"],
+        "certifications": references["certifications"],
+        "assessment_types": references["assessment_types"],
+        "academic_years": [f"{datetime.utcnow().year}-{datetime.utcnow().year + 1}"],
+        "fees": [{"name": row[0], "amount": row[1], "order": row[2], "required": row[3]} for row in template["fees"]],
+    }
+
+
+def _upsert_reference_data(db: Session, school_id: int, category: str, values: list[str]) -> int:
+    created = 0
+    for order, value in enumerate(values, start=1):
+        key = value.lower().replace(" ", "_").replace("/", "_").replace("-", "_")
+        exists = db.query(models.ReferenceData).filter(
+            models.ReferenceData.school_id == school_id,
+            models.ReferenceData.category == category,
+            models.ReferenceData.key == key,
+        ).first()
+        if not exists:
+            db.add(models.ReferenceData(
+                category=category,
+                key=key,
+                value={"fr": value, "en": value, "es": value, "sw": value},
+                order=order,
+                school_id=school_id,
+            ))
+            created += 1
+    return created
+
 # Schemas (Internal for now, can move to schemas.py later)
 class ReferenceDataCreate(BaseModel):
     category: str
@@ -897,12 +980,7 @@ def list_role_users(
 @router.get("/school-templates")
 def list_school_templates():
     return {
-        key: {
-            "classes": [name for name, _level in value["classes"]],
-            "subjects": value["subjects"],
-            "programs": [program[0] for program in value["programs"]],
-            "fees": [{"name": row[0], "amount": row[1], "order": row[2], "required": row[3]} for row in value["fees"]],
-        }
+        key: _template_summary(key, value)
         for key, value in SCHOOL_TEMPLATES.items()
     }
 
@@ -927,7 +1005,25 @@ def apply_school_template(
     if not template:
         raise HTTPException(status_code=404, detail="Template not found")
 
-    created = {"classes": 0, "subjects": 0, "programs": 0, "fees": 0}
+    summary = _template_summary(template_key, template)
+    created = {"academic_years": 0, "classes": 0, "subjects": 0, "programs": 0, "fees": 0, "reference_data": 0, "semesters": 0}
+    current_year_name = summary["academic_years"][0]
+    current_year = db.query(models.AcademicYear).filter(
+        models.AcademicYear.school_id == school.id,
+        models.AcademicYear.name == current_year_name,
+    ).first()
+    if not current_year:
+        year = datetime.utcnow().year
+        current_year = models.AcademicYear(
+            name=current_year_name,
+            start_date=datetime(year, 9, 1),
+            end_date=datetime(year + 1, 7, 31),
+            is_current=True,
+            school_id=school.id,
+        )
+        db.add(current_year)
+        db.flush()
+        created["academic_years"] += 1
     for name, level in template["classes"]:
         exists = db.query(models.Class).filter(models.Class.school_id == school.id, models.Class.name == name).first()
         if not exists:
@@ -946,8 +1042,16 @@ def apply_school_template(
     for name, amount, order, required in template["fees"]:
         exists = db.query(models.FeeSchedule).filter(models.FeeSchedule.school_id == school.id, models.FeeSchedule.name == name, models.FeeSchedule.level == None, models.FeeSchedule.class_id == None).first()
         if not exists:
-            db.add(models.FeeSchedule(name=name, amount=amount, category_order=order, is_required=required, is_current=True, school_id=school.id))
+            db.add(models.FeeSchedule(name=name, amount=amount, category_order=order, is_required=required, is_current=True, academic_year_id=current_year.id, school_id=school.id))
             created["fees"] += 1
+    for order, name in enumerate(summary["semesters"], start=1):
+        code = f"S{order}"
+        exists = db.query(models.Semester).filter(models.Semester.school_id == school.id, models.Semester.name == name).first()
+        if not exists:
+            db.add(models.Semester(name=name, code=code, academic_year_id=current_year.id, school_id=school.id))
+            created["semesters"] += 1
+    for category in ["levels", "diplomas", "certifications", "assessment_types"]:
+        created["reference_data"] += _upsert_reference_data(db, school.id, category, summary[category])
     db.commit()
     return {"template": template_key, "created": created}
 

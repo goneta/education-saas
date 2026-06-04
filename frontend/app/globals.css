@@ -1,28 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  /* Clean Light Theme */
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  /* Apple-inspired production theme */
+  --background: 240 14% 96%;
+  --foreground: 240 3% 12%;
   --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
+  --card-foreground: 240 3% 12%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 27 96% 61%;
-  /* Orange */
+  --popover-foreground: 240 3% 12%;
+  --primary: 210 100% 40%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+  --secondary: 240 14% 98%;
+  --secondary-foreground: 240 3% 20%;
+  --muted: 240 14% 96%;
+  --muted-foreground: 240 4% 48%;
+  --accent: 210 100% 40%;
+  --accent-foreground: 0 0% 100%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 27 96% 61%;
-  --radius: 0.5rem;
+  --border: 240 6% 88%;
+  --input: 240 6% 88%;
+  --ring: 210 100% 44%;
+  --radius: 1.125rem;
   --chart-1: 12 76% 61%;
   --chart-2: 173 58% 39%;
   --chart-3: 197 37% 24%;
@@ -31,29 +30,25 @@
 }
 
 .dark {
-  /* Cote d'Ivoire Inspired Dark Theme */
-  --background: 146 100% 11%;
-  /* Dark Green #003817 approx */
+  --background: 240 3% 12%;
   --foreground: 0 0% 100%;
-  --card: 146 80% 15%;
-  /* Slightly lighter green for cards */
+  --card: 240 3% 16%;
   --card-foreground: 0 0% 100%;
-  --popover: 146 80% 15%;
+  --popover: 240 3% 16%;
   --popover-foreground: 0 0% 100%;
-  --primary: 36 99% 51%;
-  /* Orange */
+  --primary: 207 100% 58%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 146 60% 25%;
+  --secondary: 240 3% 18%;
   --secondary-foreground: 0 0% 100%;
-  --muted: 146 60% 25%;
-  --muted-foreground: 146 20% 70%;
-  --accent: 36 99% 51%;
+  --muted: 240 3% 18%;
+  --muted-foreground: 240 4% 78%;
+  --accent: 207 100% 58%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 100%;
-  --border: 146 80% 20%;
-  --input: 146 80% 20%;
-  --ring: 36 99% 51%;
+  --border: 240 3% 24%;
+  --input: 240 3% 24%;
+  --ring: 207 100% 58%;
   --chart-1: 220 70% 50%;
   --chart-2: 160 60% 45%;
   --chart-3: 30 80% 55%;
@@ -91,7 +86,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  --font-sans: var(--font-geist-sans);
+  --font-sans: "SF Pro Text", "SF Pro Display", system-ui, -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
@@ -101,6 +96,71 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-size: 17px;
+    line-height: 1.47;
+    letter-spacing: -0.01em;
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.01em;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+  }
+
+  table th {
+    color: hsl(var(--muted-foreground));
+    font-weight: 600;
+  }
+
+  ::selection {
+    background: rgba(0, 102, 204, 0.18);
+  }
+}
+
+@layer components {
+  .apple-page {
+    @apply space-y-8;
+  }
+
+  .apple-page-title {
+    @apply text-[34px] font-semibold leading-tight text-[#1d1d1f] md:text-[40px];
+  }
+
+  .apple-page-description {
+    @apply mt-2 max-w-3xl text-[17px] leading-7 text-[#6e6e73];
+  }
+
+  .apple-input {
+    @apply h-11 w-full rounded-full border border-[#e0e0e0] bg-white px-5 text-[15px] text-[#1d1d1f] placeholder:text-[#7a7a7a] outline-none transition focus:border-[#0066cc] focus:ring-4 focus:ring-[#0066cc]/15;
+  }
+
+  .apple-select {
+    @apply h-11 w-full rounded-full border border-[#e0e0e0] bg-white px-5 text-[15px] text-[#1d1d1f] outline-none transition focus:border-[#0066cc] focus:ring-4 focus:ring-[#0066cc]/15;
+  }
+
+  .apple-table {
+    @apply w-full text-[15px];
+  }
+
+  .apple-table th {
+    @apply border-b border-[#e0e0e0] px-4 py-3 text-left;
+  }
+
+  .apple-table td {
+    @apply border-b border-[#f0f0f0] px-4 py-3;
   }
 }

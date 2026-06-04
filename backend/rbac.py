@@ -25,43 +25,47 @@ STANDARD_ACTIONS = [
 ]
 
 PERMISSION_MODULES = [
-    ("students", "Gestion des etudiants"),
-    ("parents", "Gestion des parents"),
-    ("teachers", "Gestion des enseignants"),
-    ("classes", "Classes"),
-    ("programs", "Filieres"),
-    ("levels", "Niveaux"),
-    ("subjects", "Matieres"),
-    ("timetable", "Emplois du temps"),
-    ("exams", "Examens"),
-    ("grades", "Notes"),
-    ("report_cards", "Bulletins"),
-    ("finance_fees", "Frais scolaires"),
-    ("invoices", "Factures"),
-    ("payments", "Paiements"),
-    ("receipts", "Recus"),
-    ("expenses", "Depenses"),
-    ("accounting", "Comptabilite"),
-    ("messages", "Messages"),
-    ("notifications", "Notifications"),
-    ("emails", "Emails"),
-    ("sms", "SMS"),
-    ("ai_assistant", "Assistant IA"),
-    ("ai_reports", "Rapports IA"),
-    ("ai_predictive", "Analyse predictive"),
-    ("ai_automation", "Automatisation IA"),
-    ("settings", "Parametres generaux"),
-    ("roles", "Gestion des roles"),
-    ("users", "Gestion des utilisateurs"),
-    ("audit", "Journaux d'activite"),
-    ("backups", "Sauvegardes"),
-    ("security", "Securite"),
-    ("files", "Documents"),
-    ("portal", "Portails"),
-    ("operations", "Admissions et operations"),
-    ("enterprise", "Modules enterprise"),
-    ("compliance", "Conformite"),
-    ("monitoring", "Monitoring"),
+    ("students", "Gestion des etudiants", "Academique"),
+    ("parents", "Gestion des parents", "Utilisateurs"),
+    ("teachers", "Gestion des enseignants", "Ressources Humaines"),
+    ("classes", "Classes", "Academique"),
+    ("programs", "Filieres", "Academique"),
+    ("levels", "Niveaux", "Academique"),
+    ("subjects", "Matieres", "Academique"),
+    ("timetable", "Emplois du temps", "Academique"),
+    ("exams", "Examens", "Academique"),
+    ("grades", "Notes", "Academique"),
+    ("report_cards", "Bulletins", "Documents"),
+    ("finance_fees", "Frais scolaires", "Finance"),
+    ("invoices", "Factures", "Finance"),
+    ("payments", "Paiements", "Finance"),
+    ("receipts", "Recus", "Finance"),
+    ("expenses", "Depenses", "Depenses"),
+    ("accounting", "Comptabilite", "Comptabilite"),
+    ("messages", "Messages", "Communication"),
+    ("notifications", "Notifications", "Notifications"),
+    ("emails", "Emails", "Email"),
+    ("sms", "SMS", "Communication"),
+    ("ai_assistant", "Assistant IA", "Intelligence Artificielle"),
+    ("ai_reports", "Rapports IA", "Intelligence Artificielle"),
+    ("ai_predictive", "Analyse predictive", "Intelligence Artificielle"),
+    ("ai_automation", "Automatisation IA", "Intelligence Artificielle"),
+    ("settings", "Parametres generaux", "Parametres"),
+    ("roles", "Gestion des roles", "Securite"),
+    ("users", "Gestion des utilisateurs", "Utilisateurs"),
+    ("audit", "Journaux d'activite", "Audit"),
+    ("backups", "Sauvegardes", "Securite"),
+    ("security", "Securite", "Securite"),
+    ("files", "Documents", "Documents"),
+    ("portal", "Portails", "Utilisateurs"),
+    ("operations", "Admissions et operations", "Admissions"),
+    ("enterprise", "Modules enterprise", "Rapports"),
+    ("compliance", "Conformite", "Securite"),
+    ("monitoring", "Monitoring", "Audit"),
+    ("library", "Bibliotheque", "Bibliotheque"),
+    ("transport", "Transport", "Transport"),
+    ("canteen", "Cantine", "Transport"),
+    ("inventory", "Inventaire", "Inventaire"),
 ]
 
 ACTION_ALIASES = {
@@ -131,7 +135,7 @@ CUSTOM_ROLE_EXAMPLES = [
 
 ALL_PERMISSIONS = [
     f"{module}:{action}"
-    for module, _label in PERMISSION_MODULES
+    for module, _label, _category in PERMISSION_MODULES
     for action in STANDARD_ACTIONS
 ]
 
@@ -216,8 +220,8 @@ def permission_catalog() -> list[str]:
 
 def permission_modules() -> list[dict]:
     return [
-        {"key": key, "label": label, "actions": STANDARD_ACTIONS}
-        for key, label in PERMISSION_MODULES
+        {"key": key, "label": label, "category": category, "actions": STANDARD_ACTIONS}
+        for key, label, category in PERMISSION_MODULES
     ]
 
 

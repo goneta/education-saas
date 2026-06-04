@@ -1,14 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Plus, Pencil, Trash2, Search, CreditCard } from "lucide-react"
+import { ExplainedField } from "@/components/ui/explained-field"
+import { normalizeLocale } from "@/lib/i18n"
+import { tx } from "@/lib/product-copy"
 
 interface Fee {
     id: number
@@ -36,6 +39,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function FeesPage() {
     const { token } = useAuth()
+    const params = useParams<{ locale: string }>()
+    const locale = normalizeLocale(params?.locale)
     const [fees, setFees] = useState<Fee[]>([])
     const [students, setStudents] = useState<Student[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -127,7 +132,7 @@ export default function FeesPage() {
 
     const handleSave = async () => {
         if (!formData.title.trim() || !formData.amount) {
-            setError("Title and amount are required")
+            setError("Le titre et le montant sont obligatoires")
             return
         }
         setSaving(true)
@@ -155,10 +160,10 @@ export default function FeesPage() {
                 fetchFees()
             } else {
                 const data = await res.json()
-                setError(data.detail || "Failed to save fee")
+                setError(data.detail || "Enregistrement du frais impossible")
             }
         } catch {
-            setError("An error occurred")
+            setError("Une erreur est survenue")
         } finally {
             setSaving(false)
         }
@@ -166,7 +171,7 @@ export default function FeesPage() {
 
     const handleAddPayment = async () => {
         if (!selectedFee || !paymentAmount) {
-            setError("Payment amount is required")
+            setError("Le montant du paiement est obligatoire")
             return
         }
         setSaving(true)
@@ -182,17 +187,17 @@ export default function FeesPage() {
                 fetchFees()
             } else {
                 const data = await res.json()
-                setError(data.detail || "Failed to add payment")
+                setError(data.detail || "Enregistrement du paiement impossible")
             }
         } catch {
-            setError("An error occurred")
+            setError("Une erreur est survenue")
         } finally {
             setSaving(false)
         }
     }
 
     const handleDelete = async (fee: Fee) => {
-        if (!confirm(`Delete fee "${fee.title}"? This cannot be undone.`)) return
+        if (!confirm(`Supprimer le frais "${fee.title}" ? Cette action est definitive.`)) return
         try {
             const res = await fetch(`${API_BASE_URL}/finance/fees/${fee.id}`, {
                 method: "DELETE",
@@ -218,12 +223,12 @@ export default function FeesPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#111827]">Fees</h1>
-                    <p className="text-sm text-[#6B7280] mt-1">Manage student fees and payments</p>
+                    <h1 className="apple-page-title">{tx(locale, "fee")}</h1>
+                    <p className="apple-page-description">Gerez les frais, echeances, paiements partiels, recus et soldes restants.</p>
                 </div>
                 <Button onClick={openCreate} className="bg-black text-white hover:bg-black/90 rounded-lg">
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Fee
+                    {tx(locale, "addFee")}
                 </Button>
             </div>
 
@@ -232,7 +237,7 @@ export default function FeesPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280]" />
                     <input
                         type="search"
-                        placeholder="Search fees..."
+                        placeholder="Rechercher un frais..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border border-[#E5E7EB] rounded-lg bg-white text-[#111827] placeholder:text-[#6B7280] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -243,36 +248,36 @@ export default function FeesPage() {
                     onChange={(e) => setFilterStatus(e.target.value)}
                     className="border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 >
-                    <option value="">All Statuses</option>
-                    <option value="pending">Pending</option>
-                    <option value="partial">Partial</option>
-                    <option value="paid">Paid</option>
-                    <option value="overdue">Overdue</option>
+                    <option value="">Tous les statuts</option>
+                    <option value="pending">En attente</option>
+                    <option value="partial">Partiel</option>
+                    <option value="paid">Paye</option>
+                    <option value="overdue">En retard</option>
                 </select>
             </div>
 
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-[#111827]">Fee List ({filtered.length})</CardTitle>
+                    <CardTitle className="text-[#111827]">Liste des frais ({filtered.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
-                        <div className="text-center py-12 text-[#6B7280]">Loading fees...</div>
+                        <div className="text-center py-12 text-[#6B7280]">Chargement des frais...</div>
                     ) : filtered.length === 0 ? (
                         <div className="text-center py-12 text-[#6B7280]">
-                            {searchQuery ? `No fees found matching "${searchQuery}"` : "No fees yet. Add your first fee!"}
+                            {searchQuery ? `Aucun frais ne correspond a "${searchQuery}"` : "Aucun frais pour le moment. Ajoutez votre premier frais."}
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-[#E5E7EB]">
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Title</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Student</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Amount</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Due Date</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Status</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Actions</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "title")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "student")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "amount")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "dueDate")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "status")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "actions")}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -331,22 +336,23 @@ export default function FeesPage() {
             <Dialog open={showModal} onOpenChange={setShowModal}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>{editingFee ? "Edit Fee" : "Add Fee"}</DialogTitle>
+                        <DialogTitle>{editingFee ? "Modifier le frais" : tx(locale, "addFee")}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         {error && (
                             <div className="bg-red-50 border border-red-200 text-red-800 px-3 py-2 rounded text-sm">{error}</div>
                         )}
                         <div className="space-y-2">
-                            <Label>Title *</Label>
+                            <ExplainedField label={tx(locale, "title")} required help="Titre clair du frais. Exemple: Scolarite trimestre 1. Il apparait sur la facture, le recu et le portail parent/eleve.">
                             <Input
                                 placeholder="e.g. Tuition Fee Term 1"
                                 value={formData.title}
                                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                             />
+                            </ExplainedField>
                         </div>
                         <div className="space-y-2">
-                            <Label>Amount (FCFA) *</Label>
+                            <ExplainedField label="Montant (FCFA)" required help="Montant du frais dans la devise de l'etablissement. Format attendu: nombre positif.">
                             <Input
                                 type="number"
                                 min="0"
@@ -354,53 +360,58 @@ export default function FeesPage() {
                                 value={formData.amount}
                                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                             />
+                            </ExplainedField>
                         </div>
                         <div className="space-y-2">
-                            <Label>Student</Label>
+                            <ExplainedField label={tx(locale, "student")} help="Selectionnez un eleve pour un frais individuel. Laissez vide pour un frais applicable a toute l'ecole.">
                             <select
                                 value={formData.student_id}
                                 onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
                                 className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                             >
-                                <option value="">School-wide fee</option>
+                                <option value="">Frais etablissement</option>
                                 {students.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
                             </select>
+                            </ExplainedField>
                         </div>
                         <div className="space-y-2">
-                            <Label>Due Date</Label>
+                            <ExplainedField label={tx(locale, "dueDate")} help="Date limite de paiement. Elle sert au suivi des retards, rappels et rapports d'impayes.">
                             <input
                                 type="date"
                                 value={formData.due_date}
                                 onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
                                 className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                             />
+                            </ExplainedField>
                         </div>
                         <div className="space-y-2">
-                            <Label>Status</Label>
+                            <ExplainedField label={tx(locale, "status")} help="Statut financier du frais. Il peut etre mis a jour automatiquement par les paiements.">
                             <select
                                 value={formData.status}
                                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                                 className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                             >
-                                <option value="pending">Pending</option>
-                                <option value="partial">Partial</option>
-                                <option value="paid">Paid</option>
-                                <option value="overdue">Overdue</option>
+                                <option value="pending">En attente</option>
+                                <option value="partial">Partiel</option>
+                                <option value="paid">Paye</option>
+                                <option value="overdue">En retard</option>
                             </select>
+                            </ExplainedField>
                         </div>
                         <div className="space-y-2">
-                            <Label>Description</Label>
+                            <ExplainedField label={tx(locale, "description")} help="Notes facultatives pour preciser la periode, la prise en charge ou le contexte comptable.">
                             <Input
-                                placeholder="Optional notes"
+                                placeholder="Notes facultatives"
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             />
+                            </ExplainedField>
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
+                        <Button variant="outline" onClick={() => setShowModal(false)}>{tx(locale, "cancel")}</Button>
                         <Button onClick={handleSave} disabled={saving} className="bg-black text-white hover:bg-black/90">
-                            {saving ? "Saving..." : "Save"}
+                            {saving ? "Enregistrement..." : tx(locale, "save")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -410,7 +421,7 @@ export default function FeesPage() {
             <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
                 <DialogContent className="sm:max-w-[350px]">
                     <DialogHeader>
-                        <DialogTitle>Record Payment</DialogTitle>
+                        <DialogTitle>Enregistrer un paiement</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         {error && (
@@ -418,12 +429,12 @@ export default function FeesPage() {
                         )}
                         {selectedFee && (
                             <p className="text-sm text-[#6B7280]">
-                                Fee: <span className="font-medium text-[#111827]">{selectedFee.title}</span>
+                                Frais: <span className="font-medium text-[#111827]">{selectedFee.title}</span>
                                 {" "}— Total: <span className="font-medium text-[#111827]">{selectedFee.amount.toLocaleString()} FCFA</span>
                             </p>
                         )}
                         <div className="space-y-2">
-                            <Label>Payment Amount (FCFA) *</Label>
+                            <ExplainedField label="Montant paye (FCFA)" required help="Montant reellement encaisse. Les paiements partiels sont autorises et le recu est genere automatiquement.">
                             <Input
                                 type="number"
                                 min="0"
@@ -431,12 +442,13 @@ export default function FeesPage() {
                                 value={paymentAmount}
                                 onChange={(e) => setPaymentAmount(e.target.value)}
                             />
+                            </ExplainedField>
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowPaymentModal(false)}>Cancel</Button>
+                        <Button variant="outline" onClick={() => setShowPaymentModal(false)}>{tx(locale, "cancel")}</Button>
                         <Button onClick={handleAddPayment} disabled={saving} className="bg-black text-white hover:bg-black/90">
-                            {saving ? "Saving..." : "Record Payment"}
+                            {saving ? "Enregistrement..." : "Enregistrer le paiement"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

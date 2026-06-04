@@ -1,10 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { ExplainedField } from "@/components/ui/explained-field"
+import { normalizeLocale } from "@/lib/i18n"
+import { tx } from "@/lib/product-copy"
 
 interface FinanceReport {
     total_expected: number
@@ -17,6 +21,8 @@ interface FinanceReport {
 
 export default function FinanceReportsPage() {
     const { token } = useAuth()
+    const params = useParams<{ locale: string }>()
+    const locale = normalizeLocale(params?.locale)
     const [report, setReport] = useState<FinanceReport | null>(null)
     const [filters, setFilters] = useState({ start_date: "", end_date: "", fee_category: "", operator_id: "" })
 
@@ -39,37 +45,37 @@ export default function FinanceReportsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#111827]">Finance Reports</h1>
-                    <p className="text-sm text-[#6B7280] mt-1">Payments, debtors and fee breakdowns by period.</p>
+                    <h1 className="apple-page-title">{tx(locale, "financeReports")}</h1>
+                    <p className="apple-page-description">{tx(locale, "financeReportsDescription")}</p>
                 </div>
-                <Button variant="outline" onClick={() => window.print()}>Print</Button>
+                <Button variant="outline" onClick={() => window.print()}>{tx(locale, "print")}</Button>
             </div>
 
             <div className="grid gap-3 md:grid-cols-5">
-                <input type="date" value={filters.start_date} onChange={(e) => setFilters({ ...filters, start_date: e.target.value })} className="border rounded-md px-3 py-2 text-sm" />
-                <input type="date" value={filters.end_date} onChange={(e) => setFilters({ ...filters, end_date: e.target.value })} className="border rounded-md px-3 py-2 text-sm" />
-                <input placeholder="Fee category" value={filters.fee_category} onChange={(e) => setFilters({ ...filters, fee_category: e.target.value })} className="border rounded-md px-3 py-2 text-sm" />
-                <input placeholder="Operator ID" value={filters.operator_id} onChange={(e) => setFilters({ ...filters, operator_id: e.target.value })} className="border rounded-md px-3 py-2 text-sm" />
-                <Button onClick={loadReport}>Apply</Button>
+                <ExplainedField label="Date début" help="Début de la période de rapport. Les paiements hors période sont exclus."><input type="date" value={filters.start_date} onChange={(e) => setFilters({ ...filters, start_date: e.target.value })} className="apple-input" /></ExplainedField>
+                <ExplainedField label="Date fin" help="Fin de la période de rapport. Utilisée pour calculer encaissé, dû et restant."><input type="date" value={filters.end_date} onChange={(e) => setFilters({ ...filters, end_date: e.target.value })} className="apple-input" /></ExplainedField>
+                <ExplainedField label={tx(locale, "feeCategory")} help="Filtre optionnel par rubrique: inscription, scolarité, assurance, annexe, etc."><input placeholder={tx(locale, "feeCategory")} value={filters.fee_category} onChange={(e) => setFilters({ ...filters, fee_category: e.target.value })} className="apple-input" /></ExplainedField>
+                <ExplainedField label={tx(locale, "operatorId")} help="Filtre optionnel pour auditer les opérations enregistrées par un caissier ou opérateur."><input placeholder={tx(locale, "operatorId")} value={filters.operator_id} onChange={(e) => setFilters({ ...filters, operator_id: e.target.value })} className="apple-input" /></ExplainedField>
+                <Button onClick={loadReport}>{tx(locale, "apply")}</Button>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
-                <Metric title="Expected" value={report?.total_expected || 0} />
-                <Metric title="Collected" value={report?.total_paid || 0} tone="green" />
-                <Metric title="Remaining" value={report?.total_remaining || 0} tone="red" />
+                <Metric title={tx(locale, "expected")} value={report?.total_expected || 0} />
+                <Metric title={tx(locale, "collected")} value={report?.total_paid || 0} tone="green" />
+                <Metric title={tx(locale, "remaining")} value={report?.total_remaining || 0} tone="red" />
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
-                <Breakdown title="By Class" rows={report?.payments_by_class || {}} />
-                <Breakdown title="By Fee Type" rows={report?.payments_by_category || {}} />
+                <Breakdown title={tx(locale, "byClass")} rows={report?.payments_by_class || {}} />
+                <Breakdown title={tx(locale, "byFeeType")} rows={report?.payments_by_category || {}} />
             </div>
 
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
-                <CardHeader><CardTitle>Debtors</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{tx(locale, "debtors")}</CardTitle></CardHeader>
                 <CardContent>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead><tr className="border-b"><th className="py-2 text-left">Student</th><th className="py-2 text-left">Class</th><th className="py-2 text-left">Fee</th><th className="py-2 text-right">Paid</th><th className="py-2 text-right">Remaining</th></tr></thead>
+                            <thead><tr className="border-b"><th className="py-2 text-left">{tx(locale, "student")}</th><th className="py-2 text-left">{tx(locale, "class")}</th><th className="py-2 text-left">{tx(locale, "fee")}</th><th className="py-2 text-right">{tx(locale, "paid")}</th><th className="py-2 text-right">{tx(locale, "remaining")}</th></tr></thead>
                             <tbody>
                                 {(report?.debtors || []).map((row, idx) => (
                                     <tr key={idx} className="border-b last:border-0">

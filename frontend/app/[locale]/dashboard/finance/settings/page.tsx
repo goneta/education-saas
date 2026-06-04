@@ -1,10 +1,14 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { ExplainedField } from "@/components/ui/explained-field"
+import { normalizeLocale } from "@/lib/i18n"
+import { tx } from "@/lib/product-copy"
 
 interface FeeSchedule {
     id: number
@@ -19,6 +23,8 @@ interface FeeSchedule {
 
 export default function FeeSettingsPage() {
     const { token } = useAuth()
+    const params = useParams<{ locale: string }>()
+    const locale = normalizeLocale(params?.locale)
     const [rows, setRows] = useState<FeeSchedule[]>([])
     const [form, setForm] = useState({ name: "", amount: "", category_order: "0", is_required: true, level: "", class_id: "", academic_year_id: "" })
     const [copy, setCopy] = useState({ source: "", target: "" })
@@ -66,31 +72,31 @@ export default function FeeSettingsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-[#111827]">Fee Settings</h1>
-                <p className="text-sm text-[#6B7280] mt-1">Configure fee rubrics by order, amount, year, level and class.</p>
+                <h1 className="apple-page-title">{tx(locale, "feeSettings")}</h1>
+                <p className="apple-page-description">{tx(locale, "feeSettingsDescription")}</p>
             </div>
 
-            <Card><CardHeader><CardTitle>Add Fee Rubric</CardTitle></CardHeader><CardContent className="grid gap-3 md:grid-cols-4">
-                <input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border rounded-md px-3 py-2 text-sm" />
-                <input type="number" placeholder="Amount" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} className="border rounded-md px-3 py-2 text-sm" />
-                <input type="number" placeholder="Order" value={form.category_order} onChange={(e) => setForm({ ...form, category_order: e.target.value })} className="border rounded-md px-3 py-2 text-sm" />
-                <input placeholder="Level" value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })} className="border rounded-md px-3 py-2 text-sm" />
-                <input type="number" placeholder="Class ID" value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value })} className="border rounded-md px-3 py-2 text-sm" />
-                <input type="number" placeholder="Academic Year ID" value={form.academic_year_id} onChange={(e) => setForm({ ...form, academic_year_id: e.target.value })} className="border rounded-md px-3 py-2 text-sm" />
-                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_required} onChange={(e) => setForm({ ...form, is_required: e.target.checked })} /> Required</label>
-                <Button onClick={save}>Save</Button>
+            <Card><CardHeader><CardTitle>{tx(locale, "addFeeRubric")}</CardTitle></CardHeader><CardContent className="grid gap-3 md:grid-cols-4">
+                <ExplainedField label={tx(locale, "name")} required help="Nom officiel de la rubrique de frais tel qu'il apparaîtra sur les factures, reçus et rapports."><input placeholder={tx(locale, "name")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="apple-input" /></ExplainedField>
+                <ExplainedField label={tx(locale, "amount")} required help="Montant attendu dans la devise de l'établissement. Format: nombre positif, sans séparateur de milliers."><input type="number" placeholder={tx(locale, "amount")} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} className="apple-input" /></ExplainedField>
+                <ExplainedField label={tx(locale, "order")} help="Ordre d'affichage et de priorité de la rubrique dans les listes et documents."><input type="number" placeholder={tx(locale, "order")} value={form.category_order} onChange={(e) => setForm({ ...form, category_order: e.target.value })} className="apple-input" /></ExplainedField>
+                <ExplainedField label={tx(locale, "level")} help="Niveau concerné: CP1, 6ème, Terminale, Licence 1, BTS 1, etc. Laisser vide pour global."><input placeholder={tx(locale, "level")} value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })} className="apple-input" /></ExplainedField>
+                <ExplainedField label={tx(locale, "classId")} help="Identifiant de classe si la rubrique s'applique à une classe précise. Laisser vide pour tout le niveau."><input type="number" placeholder={tx(locale, "classId")} value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value })} className="apple-input" /></ExplainedField>
+                <ExplainedField label={tx(locale, "academicYearId")} help="Identifiant de l'année académique. Permet la reprise automatique des montants d'une année à l'autre."><input type="number" placeholder={tx(locale, "academicYearId")} value={form.academic_year_id} onChange={(e) => setForm({ ...form, academic_year_id: e.target.value })} className="apple-input" /></ExplainedField>
+                <ExplainedField label={tx(locale, "required")} help="Cochez si ce frais est obligatoire pour l'inscription ou la scolarité. Les impayés seront calculés dessus."><span className="flex h-11 items-center gap-2"><input type="checkbox" checked={form.is_required} onChange={(e) => setForm({ ...form, is_required: e.target.checked })} className="h-4 w-4 accent-[#0066cc]" /> {tx(locale, "required")}</span></ExplainedField>
+                <Button onClick={save}>{tx(locale, "save")}</Button>
             </CardContent></Card>
 
-            <Card><CardHeader><CardTitle>Copy Previous Year</CardTitle></CardHeader><CardContent className="grid gap-3 md:grid-cols-4">
-                <input type="number" placeholder="Source year ID" value={copy.source} onChange={(e) => setCopy({ ...copy, source: e.target.value })} className="border rounded-md px-3 py-2 text-sm" />
-                <input type="number" placeholder="Target year ID" value={copy.target} onChange={(e) => setCopy({ ...copy, target: e.target.value })} className="border rounded-md px-3 py-2 text-sm" />
-                <Button onClick={copyYear}>Copy Amounts</Button>
+            <Card><CardHeader><CardTitle>{tx(locale, "copyPreviousYear")}</CardTitle></CardHeader><CardContent className="grid gap-3 md:grid-cols-4">
+                <ExplainedField label={tx(locale, "sourceYearId")} help="Année académique source contenant les montants existants à reprendre."><input type="number" placeholder={tx(locale, "sourceYearId")} value={copy.source} onChange={(e) => setCopy({ ...copy, source: e.target.value })} className="apple-input" /></ExplainedField>
+                <ExplainedField label={tx(locale, "targetYearId")} help="Année académique cible qui recevra les montants si aucune rubrique équivalente n'existe déjà."><input type="number" placeholder={tx(locale, "targetYearId")} value={copy.target} onChange={(e) => setCopy({ ...copy, target: e.target.value })} className="apple-input" /></ExplainedField>
+                <Button onClick={copyYear}>{tx(locale, "copyAmounts")}</Button>
                 {message && <p className="text-sm text-[#6B7280] self-center">{message}</p>}
             </CardContent></Card>
 
-            <Card><CardHeader><CardTitle>Configured Rubrics</CardTitle></CardHeader><CardContent>
-                <table className="w-full text-sm"><thead><tr className="border-b"><th className="py-2 text-left">Order</th><th className="py-2 text-left">Name</th><th className="py-2 text-left">Level</th><th className="py-2 text-right">Amount</th><th className="py-2 text-left">Type</th></tr></thead>
-                    <tbody>{rows.map(row => <tr key={row.id} className="border-b last:border-0"><td className="py-2">{row.category_order}</td><td className="py-2">{row.name}</td><td className="py-2">{row.level || "-"}</td><td className="py-2 text-right">{row.amount.toLocaleString()} FCFA</td><td className="py-2">{row.is_required ? "Required" : "Optional"}</td></tr>)}</tbody>
+            <Card><CardHeader><CardTitle>{tx(locale, "configuredRubrics")}</CardTitle></CardHeader><CardContent>
+                <table className="apple-table"><thead><tr><th>{tx(locale, "order")}</th><th>{tx(locale, "name")}</th><th>{tx(locale, "level")}</th><th className="text-right">{tx(locale, "amount")}</th><th>{tx(locale, "type")}</th></tr></thead>
+                    <tbody>{rows.map(row => <tr key={row.id}><td>{row.category_order}</td><td>{row.name}</td><td>{row.level || "-"}</td><td className="text-right">{row.amount.toLocaleString()} FCFA</td><td>{row.is_required ? tx(locale, "required") : "Optionnel"}</td></tr>)}</tbody>
                 </table>
             </CardContent></Card>
         </div>
