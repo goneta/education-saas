@@ -98,7 +98,7 @@ export function AgentPanel() {
 
     if (!isAgentPanelOpen) {
         return (
-            <div className="h-full flex flex-col items-center py-4 gap-4">
+            <div className="flex h-full flex-col items-center gap-4 py-4">
                 <Button variant="ghost" size="icon" onClick={toggleAgentPanel}>
                     <PanelLeftOpen className="h-4 w-4" />
                 </Button>
@@ -107,7 +107,7 @@ export function AgentPanel() {
     }
 
     return (
-        <div className="flex h-full flex-col">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden font-sans">
             <div className="flex h-[60px] items-center justify-between border-b border-[#E5E7EB] px-4">
                 <div className="flex items-center gap-2 font-semibold">
                     {/* Logo */}
@@ -130,8 +130,8 @@ export function AgentPanel() {
                 </Button>
             </div>
 
-            <div className="flex-1 p-4 flex flex-col gap-4 overflow-hidden">
-                <ScrollArea className="flex-1 bg-background rounded-lg border p-4 shadow-sm" ref={scrollRef}>
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4">
+                <ScrollArea className="min-h-0 flex-1 rounded-lg border bg-background p-4 shadow-sm" ref={scrollRef}>
                     <div className="space-y-4">
                         {messages.map((msg, i) => (
                             <div key={i} className="flex gap-3">

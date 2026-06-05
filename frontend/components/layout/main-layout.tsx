@@ -18,7 +18,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     const t = useTranslations("layout")
 
     return (
-        <ResizablePanelGroup direction="horizontal" className="min-h-screen w-full">
+        <ResizablePanelGroup direction="horizontal" className="h-screen w-full overflow-hidden font-sans">
             <FormIntelligence />
             {/* Left Panel: AI Agent - Light grey/off-white background */}
             <ResizablePanel
@@ -28,7 +28,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                 collapsible={true}
                 collapsedSize={4}
                 className={cn(
-                    "transition-all duration-300 ease-in-out bg-[#F7F8FA]",
+                    "min-h-0 overflow-hidden transition-all duration-300 ease-in-out bg-[#F7F8FA]",
                     !isAgentPanelOpen && "min-w-[50px] max-w-[50px]"
                 )}
             >
@@ -38,8 +38,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             <ResizableHandle withHandle className="bg-[#E5E7EB]" />
 
             {/* Middle Panel: Navigation/Sidebar - Pure white background */}
-            <ResizablePanel defaultSize={20} minSize={15} maxSize={25}>
-                <div className="h-full bg-white flex flex-col border-r border-[#E5E7EB]">
+            <ResizablePanel defaultSize={20} minSize={15} maxSize={25} className="overflow-visible">
+                <div className="relative z-40 flex h-full min-h-0 flex-col overflow-visible border-r border-[#E5E7EB] bg-white">
                     {/* Toggle Buttons Area */}
                     <div className="p-2 flex gap-1 border-b border-[#E5E7EB] bg-white">
                         <Button
@@ -61,7 +61,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                             {t("preview")}
                         </Button>
                     </div>
-                    <div className="flex-1 overflow-hidden">
+                    <div className="min-h-0 flex-1 overflow-visible">
                         <Sidebar isResizablePanel={true} />
                     </div>
                 </div>
@@ -70,12 +70,12 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             <ResizableHandle withHandle className="bg-[#E5E7EB]" />
 
             {/* Right Panel: Main Content - Very light grey background */}
-            <ResizablePanel defaultSize={55}>
-                <div className="flex flex-col h-full overflow-hidden bg-[#F6F7F9]">
+            <ResizablePanel defaultSize={55} className="min-h-0 overflow-hidden">
+                <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#F6F7F9]">
                     {viewMode === 'dashboard' ? (
                         <>
                             <Header isResizablePanel={true} />
-                            <main className="flex-1 overflow-y-auto p-4 md:p-6">
+                            <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 md:p-6">
                                 {children}
                             </main>
                         </>

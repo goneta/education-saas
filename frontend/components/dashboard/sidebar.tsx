@@ -22,7 +22,6 @@ import {
     Home,
     LogOut,
     MessageSquare,
-    Plus,
     Settings,
     ShieldCheck,
     UserCircle,
@@ -197,9 +196,9 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
 
     return (
         <div className={cn(
-            "hidden md:flex w-64 h-full flex-col bg-white",
-            !isResizablePanel && "fixed top-0 left-0 bottom-0 z-30",
-            isResizablePanel && "w-full border-r-0"
+            "hidden h-full min-h-0 w-64 flex-col bg-white font-sans",
+            !isResizablePanel && "fixed bottom-0 left-0 top-0 z-[80]",
+            isResizablePanel && "relative z-[80] w-full overflow-visible border-r-0"
         )}>
             <div className="flex h-14 items-center border-b border-[#E5E7EB] px-4 lg:h-[60px] lg:px-6">
                 <Link href={`/${locale}`} className="flex items-center gap-2 font-semibold text-[#111827]">
@@ -207,7 +206,7 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
                     <span className="">TeducAI</span>
                 </Link>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                 <nav className="grid items-start px-2 text-sm font-medium lg:px-4 space-y-2 mt-4">
                     {sidebarSections.map((section, idx) => {
                         const isOpen = !section.title || openSections.includes(section.title)
@@ -268,9 +267,9 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
                 </nav>
             </div>
             {user && (
-                <div className="relative border-t border-[#E5E7EB] p-3">
+                <div className="relative z-[120] border-t border-[#E5E7EB] bg-white p-3">
                     {accountMenuOpen && (
-                        <div className="absolute bottom-[76px] left-3 z-50 w-[280px] rounded-[24px] border border-[#E5E7EB] bg-white p-3 shadow-[0_22px_60px_rgba(15,23,42,0.18)]">
+                        <div className="absolute bottom-[76px] left-3 z-[1000] w-[280px] rounded-[24px] border border-[#E5E7EB] bg-white p-3 shadow-[0_22px_60px_rgba(15,23,42,0.18)]">
                             <button
                                 type="button"
                                 onClick={() => setSwitcherOpen(prev => !prev)}
@@ -284,7 +283,7 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
                                 <ChevronRight className="h-5 w-5 text-[#111827]" />
                             </button>
                             {switcherOpen && (
-                                <div className="absolute bottom-[190px] left-[260px] z-[60] w-[320px] rounded-[24px] border border-[#E5E7EB] bg-white p-4 shadow-[0_22px_60px_rgba(15,23,42,0.18)]">
+                                <div className="absolute bottom-[120px] left-[260px] z-[1100] w-[320px] rounded-[24px] border border-[#E5E7EB] bg-white p-4 shadow-[0_22px_60px_rgba(15,23,42,0.18)]">
                                     <div className="flex items-center gap-3 text-[#4B5563]">
                                         <UserCircle className="h-6 w-6" />
                                         <span className="truncate text-[15px]">{user.email}</span>
@@ -297,10 +296,9 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
                                     <button
                                         type="button"
                                         onClick={() => { setAddAccountOpen(true); setSwitcherOpen(false); setAccountMenuOpen(false) }}
-                                        className="mt-3 flex w-full items-center gap-3 rounded-[16px] px-2 py-3 text-left text-[16px] text-[#111827] transition hover:bg-[#F5F5F7]"
+                                        className="mt-3 flex w-full items-center rounded-[16px] px-2 py-3 text-left text-[16px] text-[#111827] transition hover:bg-[#F5F5F7]"
                                     >
-                                        <Plus className="h-6 w-6" />
-                                        + Ajouter un compte
+                                        Ajouter un compte
                                     </button>
                                 </div>
                             )}
@@ -313,14 +311,6 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
                                 <Link href={`/${locale}/contact`} className="flex items-center gap-3 rounded-[16px] px-3 py-2.5 text-[#111827] transition hover:bg-[#F5F5F7]"><HelpCircle className="h-5 w-5" />Aide</Link>
                                 <button type="button" onClick={handleLogout} className="flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left text-[#111827] transition hover:bg-[#F5F5F7]"><LogOut className="h-5 w-5" />Déconnexion</button>
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => { setAddAccountOpen(true); setAccountMenuOpen(false) }}
-                                className="mt-3 flex w-full items-center gap-3 rounded-[16px] border border-[#E5E7EB] px-3 py-2.5 text-left text-[#111827] transition hover:bg-[#F5F5F7]"
-                            >
-                                <Plus className="h-5 w-5" />
-                                + Ajouter un compte
-                            </button>
                         </div>
                     )}
                     <button
