@@ -196,7 +196,7 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
 
     return (
         <div className={cn(
-            "hidden h-full min-h-0 w-64 flex-col bg-white font-sans",
+            "hidden h-full min-h-0 w-64 flex-col bg-white font-sans md:flex",
             !isResizablePanel && "fixed bottom-0 left-0 top-0 z-[80]",
             isResizablePanel && "relative z-[80] w-full overflow-visible border-r-0"
         )}>
