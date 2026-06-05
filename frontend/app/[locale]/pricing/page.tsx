@@ -9,11 +9,12 @@ import { normalizeLocale } from "@/lib/i18n"
 const plans = [
   {
     name: "Free",
+    slug: "free",
     price: "0 FCFA",
     description: "Pour découvrir TeducAI avec une petite équipe pilote.",
     features: [
       "1 établissement",
-      "Jusqu’à 50 élèves / étudiants",
+      "Jusqu'à 50 élèves / étudiants",
       "Dossiers numériques de base",
       "Tableau de bord essentiel",
       "Support communautaire",
@@ -21,7 +22,8 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "À définir",
+    slug: "pro",
+    billingOptions: ["99 000 FCFA / Mois", "900 000 FCFA / An"],
     description: "Pour les écoles, centres et établissements en croissance.",
     highlighted: true,
     features: [
@@ -34,10 +36,11 @@ const plans = [
   },
   {
     name: "Max",
-    price: "À définir",
-    description: "Pour les groupes scolaires, universités et réseaux multi-sites.",
+    slug: "max",
+    billingOptions: ["199 000 FCFA / Mois", "1 700 000 FCFA / An"],
+    description: "Pour les groupes scolaires, universités et réseaux avancés.",
     features: [
-      "Multi-établissements et multi-pays",
+      "Tous les outils inclus dans le Plan PRO",
       "Comptabilité, RH, transport et cantine",
       "Exports officiels et conformité avancée",
       "IA TeducAI et analytique direction",
@@ -60,7 +63,7 @@ export default async function PricingPage({
       <main>
         <section className="border-b border-[#DDE5E8] bg-white py-20">
           <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-            <p className="text-sm font-bold uppercase tracking-wide text-[#0F766E]">
+            <p className="text-sm font-bold uppercase tracking-normal text-[#0F766E]">
               Tarification
             </p>
             <h1 className="mt-4 text-4xl font-bold tracking-normal sm:text-5xl">
@@ -68,8 +71,8 @@ export default async function PricingPage({
             </h1>
             <p className="mt-5 text-lg leading-8 text-[#475569]">
               Les offres Pro et Max sont configurées selon le pays, la taille,
-              les modules activés, les volumes SMS et le niveau
-              d’accompagnement souhaité.
+              les modules activés, les volumes de notification et le niveau
+              d&apos;accompagnement souhaité.
             </p>
           </div>
         </section>
@@ -79,7 +82,7 @@ export default async function PricingPage({
             {plans.map((plan) => (
               <article
                 key={plan.name}
-                className={`relative rounded-lg border bg-white p-7 shadow-sm ${
+                className={`relative rounded-[22px] border bg-white p-7 shadow-sm ${
                   plan.highlighted
                     ? "border-[#0F766E] ring-2 ring-[#99F6E4]"
                     : "border-[#DDE5E8]"
@@ -93,7 +96,25 @@ export default async function PricingPage({
                 ) : null}
                 <h2 className="text-2xl font-bold">{plan.name}</h2>
                 <p className="mt-3 text-sm leading-6 text-[#475569]">{plan.description}</p>
-                <p className="mt-6 text-3xl font-bold text-[#0F766E]">{plan.price}</p>
+                {plan.billingOptions ? (
+                  <fieldset className="mt-6 space-y-3">
+                    <legend className="sr-only">Choix de facturation {plan.name}</legend>
+                    {plan.billingOptions.map((option, index) => (
+                      <label key={option} className="flex items-center gap-3 rounded-[16px] border border-[#DDE5E8] px-4 py-3 text-sm font-semibold text-[#0F172A]">
+                        <input
+                          type="radio"
+                          name={`billing-${plan.slug}`}
+                          value={option}
+                          defaultChecked={index === 0}
+                          className="h-4 w-4 accent-black"
+                        />
+                        {option}
+                      </label>
+                    ))}
+                  </fieldset>
+                ) : (
+                  <p className="mt-6 text-3xl font-bold text-[#0F766E]">{plan.price}</p>
+                )}
                 <div className="mt-7 space-y-3">
                   {plan.features.map((feature) => (
                     <p key={feature} className="flex gap-2 text-sm text-[#334155]">
@@ -102,8 +123,8 @@ export default async function PricingPage({
                     </p>
                   ))}
                 </div>
-                <Button asChild className="mt-8 w-full bg-[#0F766E] hover:bg-[#115E59]">
-                  <Link href={`/${locale}/contact`}>Souscrire</Link>
+                <Button asChild className="mt-8 w-full bg-black hover:bg-black/90">
+                  <Link href={`/${locale}/contact?plan=${plan.slug}`}>Souscrire</Link>
                 </Button>
               </article>
             ))}

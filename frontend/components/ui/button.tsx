@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { localizeUiText } from "@/lib/ui-localization"
 
 const buttonVariants = cva(
-  "inline-flex min-h-11 w-auto items-center justify-center gap-2 whitespace-nowrap rounded-full text-[15px] font-normal tracking-[-0.01em] transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-black/20 focus-visible:ring-[4px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex min-h-11 w-auto items-center justify-center gap-2 whitespace-nowrap rounded-full text-[15px] font-normal tracking-normal transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-black/20 focus-visible:ring-[4px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
   {
     variants: {
       variant: {

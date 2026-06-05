@@ -119,6 +119,9 @@ interface SchoolSettings {
     } | null
     localization_profile?: CountryProfile
     school_type_profile?: { administrative_focus?: string[] }
+    subscription_plan?: string | null
+    subscription_status?: string | null
+    current_billing_period_end?: string | null
 }
 
 const MATRIX_ACTIONS = ["view", "create", "edit", "delete", "approve", "export", "full_access"]
@@ -145,6 +148,19 @@ const PRIMARY_ROLE_KEYS = [
     "parent",
     "staff",
 ]
+
+const SUBSCRIPTION_PLANS = {
+    free: { label: "Free", monthly: 0, yearly: 0 },
+    pro: { label: "Pro", monthly: 99000, yearly: 900000 },
+    max: { label: "Max", monthly: 199000, yearly: 1700000 },
+}
+
+const SUBSCRIPTION_STATUS_LABELS: Record<string, string> = {
+    active: "Actif",
+    expired: "Expiré",
+    suspended: "Suspendu",
+    pending: "En attente",
+}
 
 export default function SettingsPage() {
     const { token, user } = useAuth()
@@ -387,21 +403,61 @@ export default function SettingsPage() {
         } : prev)
     }
 
-    const saveSchoolSettings = async () => {
-        if (!token || !schoolSettings) return
+    const persistSchoolSettings = async (nextSettings: SchoolSettings, successMessage = "Parametres enregistres.") => {
+        if (!token) return
         setSettingsStatus("Enregistrement...")
         const res = await fetch(`${API_BASE_URL}/system/school-settings`, {
             method: "PUT",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify(schoolSettings)
+            body: JSON.stringify(nextSettings)
         })
         if (res.ok) {
             setSchoolSettings(await res.json() as SchoolSettings)
-            setSettingsStatus("Parametres enregistres.")
+            setSettingsStatus(successMessage)
         } else {
             const error = await res.text()
             setSettingsStatus(`Erreur: ${error.slice(0, 120)}`)
         }
+    }
+
+    const saveSchoolSettings = async () => {
+        if (!schoolSettings) return
+        await persistSchoolSettings(schoolSettings)
+    }
+
+    const updateSubscription = async (plan: keyof typeof SUBSCRIPTION_PLANS) => {
+        if (!schoolSettings) return
+        const nextRenewal = new Date()
+        nextRenewal.setFullYear(nextRenewal.getFullYear() + 1)
+        await persistSchoolSettings({
+            ...schoolSettings,
+            subscription_plan: plan,
+            subscription_status: "active",
+            current_billing_period_end: nextRenewal.toISOString(),
+        }, `Abonnement ${SUBSCRIPTION_PLANS[plan].label} mis a jour.`)
+    }
+
+    const downloadSubscriptionDocument = (type: "invoice" | "receipt") => {
+        if (!schoolSettings) return
+        const planKey = (schoolSettings.subscription_plan || "free") as keyof typeof SUBSCRIPTION_PLANS
+        const plan = SUBSCRIPTION_PLANS[planKey] || SUBSCRIPTION_PLANS.free
+        const content = [
+            `TeducAI - ${type === "invoice" ? "Facture" : "Recu"} abonnement`,
+            `Etablissement: ${schoolSettings.name}`,
+            `Plan: ${plan.label}`,
+            `Montant annuel: ${plan.yearly.toLocaleString("fr-FR")} FCFA`,
+            `Statut: ${SUBSCRIPTION_STATUS_LABELS[schoolSettings.subscription_status || "pending"] || "En attente"}`,
+            `Echeance: ${schoolSettings.current_billing_period_end || "-"}`,
+        ].join("\n")
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement("a")
+        link.href = url
+        link.download = `teducai-${type}-${schoolSettings.name.replace(/\s+/g, "-").toLowerCase()}.txt`
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        URL.revokeObjectURL(url)
     }
 
     useEffect(() => { void loadSchools() }, [loadSchools])
@@ -435,9 +491,10 @@ export default function SettingsPage() {
             </Card>
 
             {schoolSettings && (
-                <Card>
-                    <CardHeader><CardTitle>Configuration internationale</CardTitle></CardHeader>
-                    <CardContent className="space-y-5">
+                <>
+                    <Card>
+                        <CardHeader><CardTitle>Configuration internationale</CardTitle></CardHeader>
+                        <CardContent className="space-y-5">
                         <div className="grid gap-3 md:grid-cols-4">
                             <ExplainedField label="Pays" help="Détermine automatiquement la devise, la langue, le fuseau horaire et les formats locaux. Exemple: Côte d'Ivoire applique FCFA et français."><select value={schoolSettings.country_code} onChange={(event) => applyCountryDefaults(event.target.value)} className="apple-select">{Object.entries(countries).map(([code, profile]) => <option key={code} value={code}>{profile.name}</option>)}</select></ExplainedField>
                             <ExplainedField label="Devise" help="Devise utilisée dans les frais, paiements, reçus et rapports financiers. Elle est préremplie depuis le pays mais reste modifiable."><select value={schoolSettings.default_currency} onChange={(event) => updateSchoolSetting("default_currency", event.target.value)} className="apple-select">{["FCFA", "GBP", "EUR", "USD"].map(currency => <option key={currency} value={currency}>{currency}</option>)}</select></ExplainedField>
@@ -457,8 +514,16 @@ export default function SettingsPage() {
                             <Info label="Focus administratif" value={schoolSettings.school_type_profile?.administrative_focus?.join(", ") || "-"} />
                         </div>
                         <div className="flex items-center gap-3"><Button onClick={saveSchoolSettings}>Enregistrer les paramètres</Button>{settingsStatus && <span className="text-sm text-[#6B7280]">{settingsStatus}</span>}</div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+
+                    <SubscriptionManagement
+                        settings={schoolSettings}
+                        onChangePlan={updateSubscription}
+                        onRenew={() => updateSubscription((schoolSettings.subscription_plan || "pro") as keyof typeof SUBSCRIPTION_PLANS)}
+                        onDownload={downloadSubscriptionDocument}
+                    />
+                </>
             )}
 
             {catalog && (
@@ -557,4 +622,112 @@ export default function SettingsPage() {
 
 function Info({ label, value }: { label: string; value: string }) {
     return <div><p className="text-[#6B7280]">{label}</p><p className="font-medium text-[#111827]">{value}</p></div>
+}
+
+function SubscriptionManagement({
+    settings,
+    onChangePlan,
+    onRenew,
+    onDownload,
+}: {
+    settings: SchoolSettings
+    onChangePlan: (plan: keyof typeof SUBSCRIPTION_PLANS) => void | Promise<void>
+    onRenew: () => void | Promise<void>
+    onDownload: (type: "invoice" | "receipt") => void
+}) {
+    const [renderTime, setRenderTime] = useState(0)
+
+    useEffect(() => {
+        setRenderTime(Date.now())
+    }, [])
+
+    const planKey = ((settings.subscription_plan || "free") in SUBSCRIPTION_PLANS ? settings.subscription_plan || "free" : "free") as keyof typeof SUBSCRIPTION_PLANS
+    const plan = SUBSCRIPTION_PLANS[planKey]
+    const renewalDate = settings.current_billing_period_end ? new Date(settings.current_billing_period_end) : null
+    const daysRemaining = renewalDate && renderTime ? Math.max(0, Math.ceil((renewalDate.getTime() - renderTime) / 86400000)) : 0
+    const status = settings.subscription_status || "pending"
+    const statusLabel = SUBSCRIPTION_STATUS_LABELS[status] || "En attente"
+    const paymentRows = planKey === "free" ? [] : [
+        {
+            id: "PAY-SAA-001",
+            date: renewalDate ? renewalDate.toLocaleDateString("fr-FR") : "-",
+            amount: `${plan.yearly.toLocaleString("fr-FR")} FCFA`,
+            status: "Payé",
+        },
+    ]
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Gestion des abonnements</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                    <SubscriptionMetric label="Plan actuel" value={plan.label} />
+                    <SubscriptionMetric label="Montant payé" value={`${plan.yearly.toLocaleString("fr-FR")} FCFA`} />
+                    <SubscriptionMetric label="Prochain renouvellement" value={renewalDate ? renewalDate.toLocaleDateString("fr-FR") : "-"} />
+                    <SubscriptionMetric label="Jours restants" value={`${daysRemaining}`} />
+                    <SubscriptionMetric label="Statut" value={statusLabel} />
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-3">
+                    {Object.entries(SUBSCRIPTION_PLANS).map(([key, item]) => (
+                        <button
+                            key={key}
+                            type="button"
+                            onClick={() => onChangePlan(key as keyof typeof SUBSCRIPTION_PLANS)}
+                            className={`rounded-[22px] border p-4 text-left transition ${planKey === key ? "border-black bg-black text-white" : "border-[#E5E7EB] bg-white text-[#111827] hover:bg-[#F5F5F7]"}`}
+                        >
+                            <p className="text-lg font-semibold">{item.label}</p>
+                            <p className={`mt-2 text-sm ${planKey === key ? "text-white/80" : "text-[#6B7280]"}`}>{item.monthly.toLocaleString("fr-FR")} FCFA / Mois</p>
+                            <p className={`text-sm ${planKey === key ? "text-white/80" : "text-[#6B7280]"}`}>{item.yearly.toLocaleString("fr-FR")} FCFA / An</p>
+                        </button>
+                    ))}
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                    <div className="rounded-[22px] border border-[#E5E7EB] bg-white p-4">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <h3 className="text-lg font-semibold text-[#111827]">Historique des paiements</h3>
+                                <p className="text-sm text-[#6B7280]">Paiements liés à l&apos;abonnement SaaS de l&apos;établissement.</p>
+                            </div>
+                            <Button variant="outline" onClick={() => onRenew()}>Renouveler</Button>
+                        </div>
+                        <div className="mt-4 overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead><tr className="border-b"><th className="py-2 text-left">Date</th><th className="py-2 text-left">Montant</th><th className="py-2 text-left">Statut</th></tr></thead>
+                                <tbody>
+                                    {paymentRows.length ? paymentRows.map(row => (
+                                        <tr key={row.id} className="border-b last:border-0"><td className="py-2">{row.date}</td><td className="py-2">{row.amount}</td><td className="py-2">{row.status}</td></tr>
+                                    )) : (
+                                        <tr><td colSpan={3} className="py-4 text-[#6B7280]">Aucun paiement d&apos;abonnement enregistré.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div className="rounded-[22px] border border-[#E5E7EB] bg-white p-4">
+                        <h3 className="text-lg font-semibold text-[#111827]">Factures et reçus</h3>
+                        <p className="mt-1 text-sm text-[#6B7280]">Téléchargez les justificatifs de l&apos;abonnement pour la comptabilité de l&apos;établissement.</p>
+                        <div className="mt-5 flex flex-wrap gap-3">
+                            <Button onClick={() => onDownload("invoice")}>Télécharger la facture</Button>
+                            <Button variant="outline" onClick={() => onDownload("receipt")}>Télécharger le reçu</Button>
+                            <Button variant="outline" onClick={() => onChangePlan(planKey === "max" ? "pro" : "max")}>Changer de plan</Button>
+                            <Button variant="outline" onClick={() => onChangePlan("max")}>Mettre à niveau</Button>
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+
+function SubscriptionMetric({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="rounded-[22px] border border-[#E5E7EB] bg-[#F8FAFC] p-4">
+            <p className="text-sm text-[#6B7280]">{label}</p>
+            <p className="mt-2 text-xl font-semibold text-[#111827]">{value}</p>
+        </div>
+    )
 }

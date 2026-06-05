@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
 import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { UserMenu } from "@/components/layout/user-menu"
 import { LanguageSwitcher } from "@/components/layout/language-switcher"
 import { API_BASE_URL } from "@/lib/config"
 import { useAuth } from "@/contexts/auth-context"
@@ -23,6 +22,7 @@ export function Header({ isResizablePanel = false }: HeaderProps) {
             setSchoolName("")
             return
         }
+        setSchoolName(`Établissement #${user.school_id}`)
         let cancelled = false
         fetch(`${API_BASE_URL}/system/school-settings`, {
             headers: { Authorization: `Bearer ${token}` },
@@ -61,7 +61,6 @@ export function Header({ isResizablePanel = false }: HeaderProps) {
                 )}
             </div>
             <LanguageSwitcher />
-            <UserMenu />
         </header>
     )
 }
