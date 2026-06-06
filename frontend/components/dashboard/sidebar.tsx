@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useEffect, useMemo, useState } from "react"
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname, useParams, useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
@@ -13,7 +13,6 @@ import {
     BookOpen,
     BrainCircuit,
     Calendar,
-    Check,
     ChevronDown,
     ChevronRight,
     ClipboardCheck,
@@ -23,7 +22,6 @@ import {
     LogOut,
     MessageSquare,
     Settings,
-    ShieldCheck,
     UserCircle,
     Users,
     GraduationCap,
@@ -48,7 +46,6 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
     // Let's start with all CLOSED except maybe 'Overview' which has no title.
     const [openSections, setOpenSections] = useState<string[]>([])
     const [accountMenuOpen, setAccountMenuOpen] = useState(false)
-    const [switcherOpen, setSwitcherOpen] = useState(false)
     const [addAccountOpen, setAddAccountOpen] = useState(false)
     const [roleOptions, setRoleOptions] = useState<string[]>([])
     const [accountStatus, setAccountStatus] = useState("")
@@ -59,6 +56,9 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
         role: "teacher",
         role_keys: "",
     })
+    const accountMenuRef = useRef<HTMLDivElement | null>(null)
+
+    const sidebarItemClass = "flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left text-[16px] font-normal text-[#111827] transition hover:bg-[#F5F5F7]"
 
     const toggleSection = (title: string) => {
         setOpenSections(prev =>
@@ -163,6 +163,21 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
             .catch(() => undefined)
     }, [addAccountOpen, token])
 
+    useEffect(() => {
+        if (!accountMenuOpen) return
+        const closeOnOutsideClick = (event: MouseEvent | TouchEvent) => {
+            if (accountMenuRef.current && !accountMenuRef.current.contains(event.target as Node)) {
+                setAccountMenuOpen(false)
+            }
+        }
+        document.addEventListener("mousedown", closeOnOutsideClick)
+        document.addEventListener("touchstart", closeOnOutsideClick, { passive: true })
+        return () => {
+            document.removeEventListener("mousedown", closeOnOutsideClick)
+            document.removeEventListener("touchstart", closeOnOutsideClick)
+        }
+    }, [accountMenuOpen])
+
     const createAccount = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         if (!token) return
@@ -216,9 +231,9 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
                                 {section.title ? (
                                     <button
                                         onClick={() => toggleSection(section.title)}
-                                        className="flex w-full items-center justify-between px-4 py-2 hover:bg-gray-50 rounded-md transition-colors group"
+                                        className="group flex w-full items-center justify-between rounded-[16px] px-3 py-2.5 text-left text-[16px] font-normal text-[#111827] transition hover:bg-[#F5F5F7]"
                                     >
-                                        <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600">
+                                        <h4 className="font-normal">
                                             {section.title}
                                         </h4>
                                         <ChevronDown className={cn(
@@ -247,10 +262,10 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
                                                         key={item.href}
                                                         href={item.href}
                                                         className={cn(
-                                                            "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
+                                                            sidebarItemClass,
                                                             isActive
-                                                                ? "bg-[#F0F1F3] text-[#111827] font-medium"
-                                                                : "text-[#6B7280] hover:text-[#111827]"
+                                                                ? "bg-[#F0F1F3] font-medium"
+                                                                : ""
                                                         )}
                                                     >
                                                         <Icon className="h-4 w-4" />
@@ -267,49 +282,17 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
                 </nav>
             </div>
             {user && (
-                <div className="relative z-[120] border-t border-[#E5E7EB] bg-white p-3">
+                <div ref={accountMenuRef} className="relative z-[120] border-t border-[#E5E7EB] bg-white p-3">
                     {accountMenuOpen && (
                         <div className="absolute bottom-[76px] left-3 z-[1000] w-[280px] rounded-[24px] border border-[#E5E7EB] bg-white p-3 shadow-[0_22px_60px_rgba(15,23,42,0.18)]">
-                            <button
-                                type="button"
-                                onClick={() => setSwitcherOpen(prev => !prev)}
-                                className="flex w-full items-center gap-3 rounded-[18px] bg-[#F5F5F7] px-3 py-3 text-left transition hover:bg-[#EEEEF1]"
-                            >
-                                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EF4444] text-sm font-semibold text-white">{initials}</span>
-                                <span className="min-w-0 flex-1">
-                                    <span className="block truncate text-[15px] font-semibold text-[#111827]">{displayName}</span>
-                                    <span className="block truncate text-sm text-[#6B7280]">{user.role}</span>
-                                </span>
-                                <ChevronRight className="h-5 w-5 text-[#111827]" />
-                            </button>
-                            {switcherOpen && (
-                                <div className="absolute bottom-[120px] left-[260px] z-[1100] w-[320px] rounded-[24px] border border-[#E5E7EB] bg-white p-4 shadow-[0_22px_60px_rgba(15,23,42,0.18)]">
-                                    <div className="flex items-center gap-3 text-[#4B5563]">
-                                        <UserCircle className="h-6 w-6" />
-                                        <span className="truncate text-[15px]">{user.email}</span>
-                                    </div>
-                                    <div className="mt-4 flex items-center gap-3 border-b border-[#E5E7EB] pb-4">
-                                        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#EF4444] text-xs font-semibold text-white">{initials}</span>
-                                        <span className="min-w-0 flex-1 truncate font-semibold text-[#111827]">{displayName}</span>
-                                        <Check className="h-5 w-5 text-[#111827]" />
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => { setAddAccountOpen(true); setSwitcherOpen(false); setAccountMenuOpen(false) }}
-                                        className="mt-3 flex w-full items-center rounded-[16px] px-2 py-3 text-left text-[16px] text-[#111827] transition hover:bg-[#F5F5F7]"
-                                    >
-                                        Ajouter un compte
-                                    </button>
-                                </div>
-                            )}
-                            <div className="mt-3 space-y-1 border-t border-[#E5E7EB] pt-3">
-                                <Link href={`/${locale}/dashboard/settings`} className="flex items-center gap-3 rounded-[16px] px-3 py-2.5 text-[#111827] transition hover:bg-[#F5F5F7]"><UserCircle className="h-5 w-5" />Mon Profil</Link>
-                                <Link href={`/${locale}/dashboard/settings`} className="flex items-center gap-3 rounded-[16px] px-3 py-2.5 text-[#111827] transition hover:bg-[#F5F5F7]"><Settings className="h-5 w-5" />Paramètres du compte</Link>
-                                <Link href={`/${locale}/dashboard/enterprise`} className="flex items-center gap-3 rounded-[16px] px-3 py-2.5 text-[#111827] transition hover:bg-[#F5F5F7]"><Bell className="h-5 w-5" />Notifications</Link>
-                                <button type="button" onClick={() => setSwitcherOpen(prev => !prev)} className="flex w-full items-center justify-between rounded-[16px] px-3 py-2.5 text-left text-[#111827] transition hover:bg-[#F5F5F7]"><span className="flex items-center gap-3"><ShieldCheck className="h-5 w-5" />Changer de compte</span><ChevronRight className="h-4 w-4" /></button>
-                                <Link href={`/${locale}/pricing`} className="flex items-center gap-3 rounded-[16px] px-3 py-2.5 text-[#111827] transition hover:bg-[#F5F5F7]"><CreditCard className="h-5 w-5" />Mettre à niveau</Link>
-                                <Link href={`/${locale}/contact`} className="flex items-center gap-3 rounded-[16px] px-3 py-2.5 text-[#111827] transition hover:bg-[#F5F5F7]"><HelpCircle className="h-5 w-5" />Aide</Link>
-                                <button type="button" onClick={handleLogout} className="flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left text-[#111827] transition hover:bg-[#F5F5F7]"><LogOut className="h-5 w-5" />Déconnexion</button>
+                            <div className="space-y-1">
+                                <Link href={`/${locale}/dashboard/settings`} className={sidebarItemClass}><UserCircle className="h-5 w-5" />Mon Profil</Link>
+                                <Link href={`/${locale}/dashboard/settings`} className={sidebarItemClass}><Settings className="h-5 w-5" />Paramètres du compte</Link>
+                                <Link href={`/${locale}/dashboard/enterprise`} className={sidebarItemClass}><Bell className="h-5 w-5" />Notifications</Link>
+                                <Link href={`/${locale}/pricing`} className={sidebarItemClass}><CreditCard className="h-5 w-5" />Mettre à niveau</Link>
+                                <Link href={`/${locale}/contact`} className={sidebarItemClass}><HelpCircle className="h-5 w-5" />Aide</Link>
+                                <button type="button" onClick={handleLogout} className={sidebarItemClass}><LogOut className="h-5 w-5" />Déconnexion</button>
+                                <button type="button" onClick={() => { setAddAccountOpen(true); setAccountMenuOpen(false) }} className={sidebarItemClass}><Users className="h-5 w-5" />Ajouter un compte</button>
                             </div>
                         </div>
                     )}

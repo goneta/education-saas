@@ -22,7 +22,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
-const IDLE_TIMEOUT_MS = 30 * 60 * 1000
+const IDLE_TIMEOUT_MS = 5 * 60 * 1000
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null)
@@ -43,6 +43,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setError(null)
     }, [])
 
+    const expireSession = useCallback((authToken: string | null) => {
+        clearSession(authToken)
+        sessionStorage.setItem("teducai_session_expired", "Votre session a expiré pour cause d'inactivité.")
+        const currentLocale = window.location.pathname.split("/").filter(Boolean)[0] || "fr"
+        window.location.href = `/${currentLocale}/login?session=expired`
+    }, [clearSession])
+
     // Check for existing token on mount
     useEffect(() => {
         const storedToken = localStorage.getItem("access_token")
@@ -60,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         let timeout: ReturnType<typeof setTimeout>
         const reset = () => {
             clearTimeout(timeout)
-            timeout = setTimeout(() => clearSession(token), IDLE_TIMEOUT_MS)
+            timeout = setTimeout(() => expireSession(token), IDLE_TIMEOUT_MS)
         }
         const events = ["mousemove", "keydown", "click", "scroll", "touchstart"]
         events.forEach(event => window.addEventListener(event, reset, { passive: true }))
@@ -69,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             clearTimeout(timeout)
             events.forEach(event => window.removeEventListener(event, reset))
         }
-    }, [token, clearSession])
+    }, [token, expireSession])
 
     const fetchUserInfo = async (authToken: string) => {
         try {

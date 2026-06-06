@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/auth-context"
@@ -21,6 +21,15 @@ export function LoginForm() {
     const [otpCode, setOtpCode] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [sessionMessage, setSessionMessage] = useState<string | null>(null)
+
+    useEffect(() => {
+        const message = sessionStorage.getItem("teducai_session_expired")
+        if (message) {
+            setSessionMessage(message)
+            sessionStorage.removeItem("teducai_session_expired")
+        }
+    }, [])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -51,6 +60,11 @@ export function LoginForm() {
                     {error && (
                         <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
                             {error}
+                        </div>
+                    )}
+                    {sessionMessage && !error && (
+                        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                            {sessionMessage}
                         </div>
                     )}
 

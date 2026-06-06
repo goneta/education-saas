@@ -51,8 +51,8 @@ export default function DashboardPage() {
     }, [token])
 
     return (
-        <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-3">
-            <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+        <div className="grid w-full auto-rows-max items-start gap-4 md:gap-8">
+            <div className="grid w-full gap-4 md:grid-cols-3 md:gap-8">
                 <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-[#111827]">
@@ -99,8 +99,8 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </div>
-            <div className="grid gap-4 md:gap-8 lg:grid-cols-3">
-                <Card className="col-span-3 rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
+            <div className="grid w-full gap-4 md:gap-8">
+                <Card className="w-full rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
                     <CardHeader>
                         <CardTitle className="text-[#111827]">Recent Activity</CardTitle>
                     </CardHeader>

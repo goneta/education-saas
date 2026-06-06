@@ -1,20 +1,31 @@
+"use client"
+
 import Link from "next/link"
-import { ArrowRight, LogIn } from "lucide-react"
+import { LayoutDashboard, LogOut } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { TeducAILogo } from "@/components/marketing/teducai-logo"
+import { useAuth } from "@/contexts/auth-context"
 
 type MarketingNavProps = {
   locale: string
 }
 
 export function MarketingNav({ locale }: MarketingNavProps) {
+  const router = useRouter()
+  const { isAuthenticated, isLoading, logout } = useAuth()
   const links = [
     { href: `/${locale}`, label: "Accueil" },
     { href: `/${locale}#fonctionnalites`, label: "Fonctionnalités" },
     { href: `/${locale}/pricing`, label: "Tarification" },
     { href: `/${locale}/contact`, label: "Contact" },
   ]
+
+  const handleLogout = () => {
+    logout()
+    router.push(`/${locale}/login`)
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#DDE5E8] bg-white/95 backdrop-blur">
@@ -30,18 +41,33 @@ export function MarketingNav({ locale }: MarketingNavProps) {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Button asChild className="hidden bg-black text-white hover:bg-black/90 sm:inline-flex">
-            <Link href={`/${locale}/contact`}>
-              S&apos;enregistrer
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
-          <Button asChild variant="outline" className="border-[#CBD5E1] text-[#0F172A]">
-            <Link href={`/${locale}/login`}>
-              <LogIn className="h-4 w-4" />
-              Se connecter
-            </Link>
-          </Button>
+          {isAuthenticated && !isLoading ? (
+            <>
+              <Button asChild className="hidden bg-black text-white hover:bg-black/90 sm:inline-flex">
+                <Link href={`/${locale}/dashboard`}>
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Link>
+              </Button>
+              <Button type="button" variant="outline" className="border-[#CBD5E1] text-[#0F172A]" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" />
+                Déconnexion
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button asChild className="hidden bg-black text-white hover:bg-black/90 sm:inline-flex">
+                <Link href={`/${locale}/contact`}>
+                  S&apos;enregistrer
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="border-[#CBD5E1] text-[#0F172A]">
+                <Link href={`/${locale}/login`}>
+                  Se connecter
+                </Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>

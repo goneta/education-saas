@@ -22,9 +22,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             <FormIntelligence />
             {/* Left Panel: AI Agent - Light grey/off-white background */}
             <ResizablePanel
-                defaultSize={25}
-                minSize={20}
-                maxSize={30}
+                defaultSize={20}
+                minSize={16}
+                maxSize={28}
                 collapsible={true}
                 collapsedSize={4}
                 className={cn(
@@ -38,7 +38,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             <ResizableHandle withHandle className="bg-[#E5E7EB]" />
 
             {/* Middle Panel: Navigation/Sidebar - Pure white background */}
-            <ResizablePanel defaultSize={20} minSize={15} maxSize={25} className="overflow-visible">
+            <ResizablePanel defaultSize={18} minSize={14} maxSize={24} className="overflow-visible">
                 <div className="relative z-40 flex h-full min-h-0 flex-col overflow-visible border-r border-[#E5E7EB] bg-white">
                     {/* Toggle Buttons Area */}
                     <div className="p-2 flex gap-1 border-b border-[#E5E7EB] bg-white">
@@ -70,7 +70,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             <ResizableHandle withHandle className="bg-[#E5E7EB]" />
 
             {/* Right Panel: Main Content - Very light grey background */}
-            <ResizablePanel defaultSize={55} className="min-h-0 overflow-hidden">
+            <ResizablePanel defaultSize={62} minSize={45} className="min-h-0 overflow-hidden">
                 <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#F6F7F9]">
                     {viewMode === 'dashboard' ? (
                         <>
