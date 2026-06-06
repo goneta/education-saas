@@ -39,7 +39,7 @@ export function Header({ isResizablePanel = false }: HeaderProps) {
 
     return (
         <header className={cn(
-            "flex h-14 items-center gap-4 border-b border-[#E5E7EB] bg-white px-4 lg:h-[60px] lg:px-6",
+            "sticky top-0 z-30 flex h-14 shrink-0 items-center gap-4 border-b border-[#E5E7EB] bg-white px-4 lg:h-[60px] lg:px-6",
             !isResizablePanel && "fixed top-0 right-0 left-0 md:left-64 z-20",
             isResizablePanel && "w-full"
         )}>

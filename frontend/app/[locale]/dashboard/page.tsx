@@ -51,7 +51,7 @@ export default function DashboardPage() {
     }, [token])
 
     return (
-        <div className="grid w-full auto-rows-max items-start gap-4 md:gap-8">
+        <div className="grid min-h-full w-full auto-rows-max items-start gap-4 md:gap-8">
             <div className="grid w-full gap-4 md:grid-cols-3 md:gap-8">
                 <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
