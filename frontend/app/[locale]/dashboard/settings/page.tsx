@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, type PointerEvent } from "react"
+import Image from "next/image"
 import { useTranslations } from "next-intl"
 import { useParams } from "next/navigation"
 
@@ -106,6 +107,8 @@ interface SchoolSettings {
     phone_e164: string | null
     email: string | null
     website?: string | null
+    logo_url?: string | null
+    registration_number?: string | null
     formatted_address: string | null
     address_structured?: {
         street?: string
@@ -122,6 +125,18 @@ interface SchoolSettings {
     subscription_plan?: string | null
     subscription_status?: string | null
     current_billing_period_end?: string | null
+}
+interface ActiveContext {
+    user: {
+        id: number
+        email: string
+        full_name: string | null
+        role: string
+        school_id: number | null
+    }
+    roles: string[]
+    active_role: string
+    permissions: string[]
 }
 
 const MATRIX_ACTIONS = ["view", "create", "edit", "delete", "approve", "export", "full_access"]
@@ -185,7 +200,12 @@ export default function SettingsPage() {
     const [userStatus, setUserStatus] = useState("")
     const [countries, setCountries] = useState<Record<string, CountryProfile>>({})
     const [schoolSettings, setSchoolSettings] = useState<SchoolSettings | null>(null)
+    const [savedSchoolSettings, setSavedSchoolSettings] = useState<SchoolSettings | null>(null)
+    const [activeContext, setActiveContext] = useState<ActiveContext | null>(null)
+    const [activeRole, setActiveRole] = useState("")
+    const [isEditingSchool, setIsEditingSchool] = useState(false)
     const [settingsStatus, setSettingsStatus] = useState("")
+    const [settingsError, setSettingsError] = useState("")
     const [selectedPermissionCategory, setSelectedPermissionCategory] = useState("all")
 
     const loadSchools = useCallback(async () => {
@@ -197,7 +217,7 @@ export default function SettingsPage() {
     const loadSystemContext = useCallback(async () => {
         if (!token) return
         const headers = { Authorization: `Bearer ${token}` }
-        const [permissionsRes, templatesRes, auditRes, catalogRes, usersRes, countriesRes, settingsRes] = await Promise.all([
+        const [permissionsRes, templatesRes, auditRes, catalogRes, usersRes, countriesRes, settingsRes, activeContextRes] = await Promise.all([
             fetch(`${API_BASE_URL}/system/permissions`, { headers }),
             fetch(`${API_BASE_URL}/system/school-templates`, { headers }),
             fetch(`${API_BASE_URL}/system/audit-logs?limit=20`, { headers }),
@@ -205,6 +225,7 @@ export default function SettingsPage() {
             fetch(`${API_BASE_URL}/system/users`, { headers }),
             fetch(`${API_BASE_URL}/system/localization/countries`, { headers }),
             fetch(`${API_BASE_URL}/system/school-settings`, { headers }),
+            fetch(`${API_BASE_URL}/system/active-context`, { headers }),
         ])
         if (permissionsRes.ok) setPermissions(((await permissionsRes.json()) as { permissions: string[] }).permissions)
         if (templatesRes.ok) setTemplates(await templatesRes.json() as Record<string, TemplateSummary>)
@@ -217,7 +238,16 @@ export default function SettingsPage() {
         }
         if (usersRes.ok) setUsers(await usersRes.json() as ManagedUser[])
         if (countriesRes.ok) setCountries(((await countriesRes.json()) as { countries: Record<string, CountryProfile> }).countries)
-        if (settingsRes.ok) setSchoolSettings(await settingsRes.json() as SchoolSettings)
+        if (settingsRes.ok) {
+            const settings = await settingsRes.json() as SchoolSettings
+            setSchoolSettings(settings)
+            setSavedSchoolSettings(settings)
+        }
+        if (activeContextRes.ok) {
+            const context = await activeContextRes.json() as ActiveContext
+            setActiveContext(context)
+            setActiveRole(context.active_role)
+        }
     }, [selectedRole, token])
 
     const loadRolePermissions = useCallback(async () => {
@@ -380,11 +410,47 @@ export default function SettingsPage() {
         setSchoolSettings(prev => prev ? { ...prev, [key]: value } : prev)
     }
 
+    const estimatedCoordinates = (settings: SchoolSettings) => {
+        const structured = settings.address_structured || {}
+        const source = [structured.street, structured.district, structured.city, structured.region, structured.country, settings.name].filter(Boolean).join(" ")
+        let hash = 0
+        for (let index = 0; index < source.length; index += 1) hash = ((hash << 5) - hash + source.charCodeAt(index)) | 0
+        const country = settings.country_code || "CI"
+        const base = country === "GB" ? { lat: 51.5074, lng: -0.1278 } : country === "FR" ? { lat: 48.8566, lng: 2.3522 } : { lat: 5.36, lng: -4.0083 }
+        return {
+            latitude: Number((base.lat + ((Math.abs(hash) % 1000) / 10000 - 0.05)).toFixed(6)),
+            longitude: Number((base.lng + ((Math.abs(hash >> 8) % 1000) / 10000 - 0.05)).toFixed(6)),
+        }
+    }
+
     const updateAddress = (key: string, value: string) => {
+        setSchoolSettings(prev => {
+            if (!prev) return prev
+            const next = {
+                ...prev,
+                address_structured: { ...(prev.address_structured || {}), [key]: value }
+            }
+            if (["street", "district", "city", "region", "postal_code", "country"].includes(key)) {
+                const coordinates = estimatedCoordinates(next)
+                next.address_structured = { ...next.address_structured, ...coordinates }
+            }
+            return next
+        })
+    }
+
+    const updateCoordinates = (latitude: number, longitude: number) => {
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return
         setSchoolSettings(prev => prev ? {
             ...prev,
-            address_structured: { ...(prev.address_structured || {}), [key]: value }
+            address_structured: { ...(prev.address_structured || {}), latitude, longitude }
         } : prev)
+    }
+
+    const updateMapFromPointer = (clientX: number, clientY: number, target: HTMLDivElement) => {
+        const rect = target.getBoundingClientRect()
+        const x = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+        const y = Math.min(1, Math.max(0, (clientY - rect.top) / rect.height))
+        updateCoordinates(Number((90 - y * 180).toFixed(6)), Number((-180 + x * 360).toFixed(6)))
     }
 
     const applyCountryDefaults = (countryCode: string) => {
@@ -405,6 +471,7 @@ export default function SettingsPage() {
 
     const persistSchoolSettings = async (nextSettings: SchoolSettings, successMessage = "Parametres enregistres.") => {
         if (!token) return
+        setSettingsError("")
         setSettingsStatus("Enregistrement...")
         const res = await fetch(`${API_BASE_URL}/system/school-settings`, {
             method: "PUT",
@@ -412,8 +479,11 @@ export default function SettingsPage() {
             body: JSON.stringify(nextSettings)
         })
         if (res.ok) {
-            setSchoolSettings(await res.json() as SchoolSettings)
+            const saved = await res.json() as SchoolSettings
+            setSchoolSettings(saved)
+            setSavedSchoolSettings(saved)
             setSettingsStatus(successMessage)
+            setIsEditingSchool(false)
         } else {
             const error = await res.text()
             setSettingsStatus(`Erreur: ${error.slice(0, 120)}`)
@@ -422,7 +492,42 @@ export default function SettingsPage() {
 
     const saveSchoolSettings = async () => {
         if (!schoolSettings) return
+        if (!schoolSettings.name.trim()) {
+            setSettingsError("Le nom de l'établissement est obligatoire.")
+            return
+        }
+        if (!schoolSettings.school_type) {
+            setSettingsError("Le type d'établissement est obligatoire.")
+            return
+        }
+        if (!schoolSettings.phone?.trim()) {
+            setSettingsError("Le numéro de téléphone principal est obligatoire.")
+            return
+        }
+        if (!schoolSettings.email?.trim()) {
+            setSettingsError("L'adresse e-mail de l'établissement est obligatoire.")
+            return
+        }
+        const structured = schoolSettings.address_structured || {}
+        if (!structured.street || !structured.city || !structured.country) {
+            setSettingsError("L'adresse complète doit contenir au minimum la rue, la ville et le pays.")
+            return
+        }
         await persistSchoolSettings(schoolSettings)
+    }
+
+    const startSchoolEdit = () => {
+        if (schoolSettings) setSavedSchoolSettings(schoolSettings)
+        setSettingsError("")
+        setSettingsStatus("")
+        setIsEditingSchool(true)
+    }
+
+    const cancelSchoolEdit = () => {
+        if (savedSchoolSettings) setSchoolSettings(savedSchoolSettings)
+        setSettingsError("")
+        setSettingsStatus("Modifications annulées.")
+        setIsEditingSchool(false)
     }
 
     const updateSubscription = async (plan: keyof typeof SUBSCRIPTION_PLANS) => {
@@ -466,6 +571,8 @@ export default function SettingsPage() {
 
     const permissionCategories = catalog ? ["all", ...Array.from(new Set(catalog.modules.map(module => module.category || "Autres"))).sort()] : []
     const visibleModules = catalog?.modules.filter(module => selectedPermissionCategory === "all" || (module.category || "Autres") === selectedPermissionCategory) || []
+    const assignedRoles = activeContext?.roles?.length ? activeContext.roles : [user?.role || "staff"]
+    const activeRolePermissions = activeRole === activeContext?.active_role ? activeContext?.permissions || permissions : catalog?.defaults?.[activeRole] || []
 
     return (
         <div className="space-y-6">
@@ -475,11 +582,30 @@ export default function SettingsPage() {
             </div>
 
             <Card>
-                <CardHeader><CardTitle>{t("activeContext")}</CardTitle></CardHeader>
-                <CardContent className="grid gap-3 md:grid-cols-3 text-sm">
-                    <Info label={tx(locale, "users")} value={user?.full_name || "-"} />
-                    <Info label="Rôle" value={user?.role || "-"} />
-                    <Info label="ID établissement" value={user?.school_id?.toString() || "Plateforme"} />
+                <CardHeader><CardTitle>Contexte actif</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="grid gap-3 text-sm md:grid-cols-4">
+                        <Info label="Utilisateur actif" value={activeContext?.user.full_name || user?.full_name || user?.email || "-"} />
+                        <Info label="Rôle principal" value={activeContext?.user.role || user?.role || "-"} />
+                        <Info label="ID établissement" value={user?.school_id?.toString() || "Plateforme"} />
+                        <ExplainedField label="Rôle actif" help="Choisissez le rôle à inspecter. L'interface et les actions sensibles restent contrôlées par les permissions côté API.">
+                            <select value={activeRole} onChange={(event) => setActiveRole(event.target.value)} className="apple-select">
+                                {assignedRoles.map(role => <option key={role} value={role}>{role}</option>)}
+                            </select>
+                        </ExplainedField>
+                    </div>
+                    <div className="rounded-[22px] border border-[#E5E7EB] bg-[#F8FAFC] p-4">
+                        <p className="text-sm font-semibold text-[#111827]">Rôles attribués</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                            {assignedRoles.map(role => <span key={role} className="rounded-full border border-[#D1D5DB] bg-white px-3 py-1 text-sm text-[#111827]">{role}</span>)}
+                        </div>
+                    </div>
+                    <div className="rounded-[22px] border border-[#E5E7EB] bg-white p-4">
+                        <p className="text-sm font-semibold text-[#111827]">Permissions associées au rôle actif</p>
+                        <div className="mt-2 flex max-h-40 flex-wrap gap-2 overflow-y-auto">
+                            {activeRolePermissions.length ? activeRolePermissions.map(permission => <span key={permission} className="rounded-md border px-2 py-1 text-xs">{permission}</span>) : <span className="text-sm text-[#6B7280]">Aucune permission spécifique chargée.</span>}
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -493,27 +619,115 @@ export default function SettingsPage() {
             {schoolSettings && (
                 <>
                     <Card>
-                        <CardHeader><CardTitle>Configuration internationale</CardTitle></CardHeader>
+                        <CardHeader>
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <CardTitle>Informations de l&apos;établissement</CardTitle>
+                                <div className="flex flex-wrap gap-2">
+                                    {!isEditingSchool ? (
+                                        <Button onClick={startSchoolEdit}>Modifier</Button>
+                                    ) : (
+                                        <>
+                                            <Button onClick={saveSchoolSettings}>Enregistrer</Button>
+                                            <Button variant="outline" onClick={cancelSchoolEdit}>Annuler</Button>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </CardHeader>
                         <CardContent className="space-y-5">
-                        <div className="grid gap-3 md:grid-cols-4">
-                            <ExplainedField label="Pays" help="Détermine automatiquement la devise, la langue, le fuseau horaire et les formats locaux. Exemple: Côte d'Ivoire applique FCFA et français."><select value={schoolSettings.country_code} onChange={(event) => applyCountryDefaults(event.target.value)} className="apple-select">{Object.entries(countries).map(([code, profile]) => <option key={code} value={code}>{profile.name}</option>)}</select></ExplainedField>
-                            <ExplainedField label="Devise" help="Devise utilisée dans les frais, paiements, reçus et rapports financiers. Elle est préremplie depuis le pays mais reste modifiable."><select value={schoolSettings.default_currency} onChange={(event) => updateSchoolSetting("default_currency", event.target.value)} className="apple-select">{["FCFA", "GBP", "EUR", "USD"].map(currency => <option key={currency} value={currency}>{currency}</option>)}</select></ExplainedField>
-                            <ExplainedField label="Langue principale" help="Langue par défaut des interfaces, rapports et documents générés. Le français reste la langue par défaut de TeducAI."><select value={schoolSettings.primary_language} onChange={(event) => updateSchoolSetting("primary_language", event.target.value)} className="apple-select"><option value="fr">Français</option><option value="en">English</option><option value="es">Español</option><option value="sw">Kiswahili</option></select></ExplainedField>
-                            <ExplainedField label="Type établissement" help="Détermine les modèles académiques: classes, niveaux, filières, diplômes, semestres, certifications et évaluations."><select value={schoolSettings.school_type} onChange={(event) => updateSchoolSetting("school_type", event.target.value)} className="apple-select">{["primary", "secondary", "general", "technical", "vocational", "professional", "university"].map(type => <option key={type} value={type}>{type}</option>)}</select></ExplainedField>
-                            <ExplainedField label="Fuseau horaire" help="Utilisé pour les horaires, journaux d'audit, clôtures de caisse et notifications. Format attendu: Area/City."><input value={schoolSettings.timezone} onChange={(event) => updateSchoolSetting("timezone", event.target.value)} className="apple-input" /></ExplainedField>
-                            <ExplainedField label="Format date" help="Format d'affichage dans l'interface et les documents. Exemple: dd/MM/yyyy pour la Côte d'Ivoire et l'Europe."><input value={schoolSettings.date_format} onChange={(event) => updateSchoolSetting("date_format", event.target.value)} className="apple-input" /></ExplainedField>
-                            <ExplainedField label="Format heure" help="Format d'heure des emplois du temps, absences, caisse et notifications. Exemple: HH:mm."><input value={schoolSettings.time_format} onChange={(event) => updateSchoolSetting("time_format", event.target.value)} className="apple-input" /></ExplainedField>
-                            <ExplainedField label="Téléphone" help="Numéro de l'établissement. Il est normalisé au format international selon le pays sélectionné."><input value={schoolSettings.phone || ""} onChange={(event) => updateSchoolSetting("phone", event.target.value)} className="apple-input" /></ExplainedField>
-                        </div>
-                        <div className="grid gap-3 md:grid-cols-3">
-                            {["street", "district", "city", "region", "postal_code", "country"].map(key => <ExplainedField key={key} label={humanizeKey(key)} help={fieldHelp(humanizeKey(key), "Adresse internationalisée utilisée sur les factures, attestations, exports officiels et documents administratifs.")}><input value={(schoolSettings.address_structured as Record<string, string> | undefined)?.[key] || ""} onChange={(event) => updateAddress(key, event.target.value)} className="apple-input" /></ExplainedField>)}
-                        </div>
-                        <div className="grid gap-3 md:grid-cols-3 text-sm">
-                            <Info label="Adresse formatee" value={schoolSettings.formatted_address || "-"} />
-                            <Info label="Telephone international" value={schoolSettings.phone_e164 || "-"} />
-                            <Info label="Focus administratif" value={schoolSettings.school_type_profile?.administrative_focus?.join(", ") || "-"} />
-                        </div>
-                        <div className="flex items-center gap-3"><Button onClick={saveSchoolSettings}>Enregistrer les paramètres</Button>{settingsStatus && <span className="text-sm text-[#6B7280]">{settingsStatus}</span>}</div>
+                            <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+                                <div className="space-y-4">
+                                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                        <ExplainedField label="Nom de l'établissement" required help="Nom officiel utilisé dans toute l'application, les reçus, attestations, bulletins et rapports.">
+                                            <input disabled={!isEditingSchool} value={schoolSettings.name} onChange={(event) => updateSchoolSetting("name", event.target.value)} className="apple-input" />
+                                        </ExplainedField>
+                                        <ExplainedField label="Type d'établissement" required help="Type principal de structure. Il pilote les modèles académiques, niveaux, filières et documents adaptés.">
+                                            <select disabled={!isEditingSchool} value={schoolSettings.school_type} onChange={(event) => updateSchoolSetting("school_type", event.target.value)} className="apple-select">
+                                                <option value="primary">École primaire</option>
+                                                <option value="secondary">Collège</option>
+                                                <option value="general">Lycée</option>
+                                                <option value="university">Université</option>
+                                                <option value="vocational">Centre de formation</option>
+                                                <option value="professional">Institut</option>
+                                                <option value="technical">Autre</option>
+                                            </select>
+                                        </ExplainedField>
+                                        <ExplainedField label="Téléphone principal" required help="Numéro principal de l'établissement. Il est normalisé selon le pays sélectionné et utilisé dans les documents officiels.">
+                                            <input disabled={!isEditingSchool} value={schoolSettings.phone || ""} onChange={(event) => updateSchoolSetting("phone", event.target.value)} className="apple-input" />
+                                        </ExplainedField>
+                                        <ExplainedField label="Adresse e-mail" required help="Adresse officielle utilisée pour les notifications, contacts administratifs et documents générés.">
+                                            <input disabled={!isEditingSchool} type="email" value={schoolSettings.email || ""} onChange={(event) => updateSchoolSetting("email", event.target.value)} className="apple-input" />
+                                        </ExplainedField>
+                                        <ExplainedField label="Site web" help="Site internet public de l'établissement. Champ facultatif.">
+                                            <input disabled={!isEditingSchool} value={schoolSettings.website || ""} onChange={(event) => updateSchoolSetting("website", event.target.value)} className="apple-input" />
+                                        </ExplainedField>
+                                        <ExplainedField label="Numéro d'enregistrement" help="Numéro administratif, agrément ou identifiant officiel. Champ facultatif.">
+                                            <input disabled={!isEditingSchool} value={schoolSettings.registration_number || ""} onChange={(event) => updateSchoolSetting("registration_number", event.target.value)} className="apple-input" />
+                                        </ExplainedField>
+                                        <ExplainedField label="Logo de l'établissement" help="URL du logo utilisé dans l'interface et les documents. Vous pouvez aussi importer une image locale ci-dessous.">
+                                            <input disabled={!isEditingSchool} value={schoolSettings.logo_url || ""} onChange={(event) => updateSchoolSetting("logo_url", event.target.value)} className="apple-input" />
+                                        </ExplainedField>
+                                        <ExplainedField label="Importer un logo" help="Sélectionnez une image. Elle sera prévisualisée et stockée comme donnée locale encodée pour être immédiatement visible.">
+                                            <input disabled={!isEditingSchool} type="file" accept="image/png,image/jpeg,image/webp" className="apple-input pt-2" onChange={(event) => {
+                                                const file = event.target.files?.[0]
+                                                if (!file) return
+                                                const reader = new FileReader()
+                                                reader.onload = () => updateSchoolSetting("logo_url", String(reader.result || ""))
+                                                reader.readAsDataURL(file)
+                                            }} />
+                                        </ExplainedField>
+                                        <ExplainedField label="Pays" help="Détermine automatiquement la devise, la langue, le fuseau horaire et les formats locaux.">
+                                            <select disabled={!isEditingSchool} value={schoolSettings.country_code} onChange={(event) => applyCountryDefaults(event.target.value)} className="apple-select">{Object.entries(countries).map(([code, profile]) => <option key={code} value={code}>{profile.name}</option>)}</select>
+                                        </ExplainedField>
+                                        <ExplainedField label="Devise" help="Devise utilisée dans les frais, paiements, reçus et rapports financiers.">
+                                            <select disabled={!isEditingSchool} value={schoolSettings.default_currency} onChange={(event) => updateSchoolSetting("default_currency", event.target.value)} className="apple-select">{["FCFA", "GBP", "EUR", "USD"].map(currency => <option key={currency} value={currency}>{currency}</option>)}</select>
+                                        </ExplainedField>
+                                        <ExplainedField label="Langue principale" help="Langue par défaut des interfaces, rapports et documents générés.">
+                                            <select disabled={!isEditingSchool} value={schoolSettings.primary_language} onChange={(event) => updateSchoolSetting("primary_language", event.target.value)} className="apple-select"><option value="fr">Français</option><option value="en">English</option><option value="es">Español</option><option value="sw">Kiswahili</option></select>
+                                        </ExplainedField>
+                                        <ExplainedField label="Fuseau horaire" help="Utilisé pour les horaires, journaux d'audit, clôtures de caisse et notifications.">
+                                            <input disabled={!isEditingSchool} value={schoolSettings.timezone} onChange={(event) => updateSchoolSetting("timezone", event.target.value)} className="apple-input" />
+                                        </ExplainedField>
+                                    </div>
+                                    <div className="grid gap-3 md:grid-cols-3">
+                                        {["street", "district", "city", "region", "postal_code", "country"].map(key => <ExplainedField key={key} label={humanizeKey(key)} help={fieldHelp(humanizeKey(key), "Adresse complète internationalisée. Les coordonnées GPS sont estimées automatiquement quand l'adresse change.")}><input disabled={!isEditingSchool} value={(schoolSettings.address_structured as Record<string, string> | undefined)?.[key] || ""} onChange={(event) => updateAddress(key, event.target.value)} className="apple-input" /></ExplainedField>)}
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    <div className="rounded-[24px] border border-[#E5E7EB] bg-[#F8FAFC] p-4">
+                                        <p className="font-semibold text-[#111827]">Logo</p>
+                                        <div className="mt-3 flex h-28 items-center justify-center rounded-[20px] border border-dashed border-[#CBD5E1] bg-white">
+                                            {schoolSettings.logo_url ? <Image src={schoolSettings.logo_url} alt="Logo établissement" width={240} height={96} unoptimized className="max-h-24 max-w-[80%] object-contain" /> : <span className="text-sm text-[#6B7280]">Aucun logo</span>}
+                                        </div>
+                                    </div>
+                                    <div className="rounded-[24px] border border-[#E5E7EB] bg-white p-4">
+                                        <p className="font-semibold text-[#111827]">Localisation</p>
+                                        <div className="mt-3 grid gap-3 md:grid-cols-2">
+                                            <ExplainedField label="Latitude" help="Coordonnée GPS nord/sud. Peut être saisie manuellement ou mise à jour via la carte.">
+                                                <input disabled={!isEditingSchool} type="number" step="0.000001" value={schoolSettings.address_structured?.latitude ?? ""} onChange={(event) => updateCoordinates(Number(event.target.value), Number(schoolSettings.address_structured?.longitude || 0))} className="apple-input" />
+                                            </ExplainedField>
+                                            <ExplainedField label="Longitude" help="Coordonnée GPS est/ouest. Peut être saisie manuellement ou mise à jour via la carte.">
+                                                <input disabled={!isEditingSchool} type="number" step="0.000001" value={schoolSettings.address_structured?.longitude ?? ""} onChange={(event) => updateCoordinates(Number(schoolSettings.address_structured?.latitude || 0), Number(event.target.value))} className="apple-input" />
+                                            </ExplainedField>
+                                        </div>
+                                        <LocationMap
+                                            disabled={!isEditingSchool}
+                                            latitude={schoolSettings.address_structured?.latitude ?? null}
+                                            longitude={schoolSettings.address_structured?.longitude ?? null}
+                                            onMove={updateCoordinates}
+                                            onPointer={updateMapFromPointer}
+                                        />
+                                        <p className="mt-3 text-xs text-[#6B7280]">Cliquez ou glissez le marqueur pour ajuster les coordonnées GPS. Cette carte est une prévisualisation intégrée, sans fournisseur externe.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="grid gap-3 text-sm md:grid-cols-3">
+                                <Info label="Adresse formatée" value={schoolSettings.formatted_address || "-"} />
+                                <Info label="Téléphone international" value={schoolSettings.phone_e164 || "-"} />
+                                <Info label="Focus administratif" value={schoolSettings.school_type_profile?.administrative_focus?.join(", ") || "-"} />
+                            </div>
+                            {settingsError && <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{settingsError}</p>}
+                            {settingsStatus && <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{settingsStatus}</p>}
                         </CardContent>
                     </Card>
 
@@ -622,6 +836,75 @@ export default function SettingsPage() {
 
 function Info({ label, value }: { label: string; value: string }) {
     return <div><p className="text-[#6B7280]">{label}</p><p className="font-medium text-[#111827]">{value}</p></div>
+}
+
+function LocationMap({
+    disabled,
+    latitude,
+    longitude,
+    onMove,
+    onPointer,
+}: {
+    disabled: boolean
+    latitude: number | null
+    longitude: number | null
+    onMove: (latitude: number, longitude: number) => void
+    onPointer: (clientX: number, clientY: number, target: HTMLDivElement) => void
+}) {
+    const safeLatitude = typeof latitude === "number" && Number.isFinite(latitude) ? Math.max(-90, Math.min(90, latitude)) : 5.36
+    const safeLongitude = typeof longitude === "number" && Number.isFinite(longitude) ? Math.max(-180, Math.min(180, longitude)) : -4.0083
+    const left = ((safeLongitude + 180) / 360) * 100
+    const top = ((90 - safeLatitude) / 180) * 100
+
+    const handlePointer = (event: PointerEvent<HTMLDivElement>) => {
+        if (disabled) return
+        onPointer(event.clientX, event.clientY, event.currentTarget)
+    }
+
+    return (
+        <div
+            role="button"
+            tabIndex={disabled ? -1 : 0}
+            aria-label="Carte de localisation de l'établissement"
+            onClick={handlePointer}
+            onKeyDown={(event) => {
+                if (disabled) return
+                const step = event.shiftKey ? 0.1 : 0.01
+                if (event.key === "ArrowUp") onMove(Number((safeLatitude + step).toFixed(6)), safeLongitude)
+                if (event.key === "ArrowDown") onMove(Number((safeLatitude - step).toFixed(6)), safeLongitude)
+                if (event.key === "ArrowLeft") onMove(safeLatitude, Number((safeLongitude - step).toFixed(6)))
+                if (event.key === "ArrowRight") onMove(safeLatitude, Number((safeLongitude + step).toFixed(6)))
+            }}
+            className={`relative mt-4 h-64 overflow-hidden rounded-[24px] border border-[#CBD5E1] bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.16),transparent_28%),radial-gradient(circle_at_75%_35%,rgba(16,185,129,0.18),transparent_30%),linear-gradient(135deg,#EFF6FF,#F8FAFC_45%,#ECFDF5)] ${disabled ? "cursor-not-allowed opacity-80" : "cursor-crosshair"}`}
+        >
+            <div className="absolute inset-0 opacity-60" style={{ backgroundImage: "linear-gradient(#CBD5E1 1px, transparent 1px), linear-gradient(90deg, #CBD5E1 1px, transparent 1px)", backgroundSize: "36px 36px" }} />
+            <div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-[#111827] shadow-sm">
+                {safeLatitude.toFixed(6)}, {safeLongitude.toFixed(6)}
+            </div>
+            <button
+                type="button"
+                disabled={disabled}
+                aria-label="Déplacer le marqueur GPS"
+                onPointerDown={(event) => {
+                    if (disabled) return
+                    const parent = event.currentTarget.parentElement as HTMLDivElement | null
+                    if (!parent) return
+                    event.currentTarget.setPointerCapture(event.pointerId)
+                    onPointer(event.clientX, event.clientY, parent)
+                }}
+                onPointerMove={(event) => {
+                    if (disabled || !event.buttons) return
+                    const parent = event.currentTarget.parentElement as HTMLDivElement | null
+                    if (!parent) return
+                    onPointer(event.clientX, event.clientY, parent)
+                }}
+                className="absolute h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white bg-black shadow-[0_8px_24px_rgba(0,0,0,0.28)] transition hover:scale-105 disabled:cursor-not-allowed"
+                style={{ left: `${left}%`, top: `${top}%` }}
+            >
+                <span className="sr-only">Marqueur GPS</span>
+            </button>
+        </div>
+    )
 }
 
 function SubscriptionManagement({
