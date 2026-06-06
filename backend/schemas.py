@@ -58,6 +58,9 @@ class SchoolBase(BaseModel):
     address: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[EmailStr] = None
+    website: Optional[str] = None
+    logo_url: Optional[str] = None
+    registration_number: Optional[str] = None
     country_code: Optional[str] = "CI"
     default_currency: Optional[str] = None
     currency_code: Optional[str] = None
@@ -77,6 +80,9 @@ class SchoolResponse(SchoolBase):
     created_at: datetime
     formatted_address: Optional[str] = None
     phone_e164: Optional[str] = None
+    website: Optional[str] = None
+    logo_url: Optional[str] = None
+    registration_number: Optional[str] = None
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -114,6 +120,8 @@ class SchoolSettingsUpdate(BaseModel):
     phone_country_code: Optional[str] = None
     email: Optional[EmailStr] = None
     website: Optional[str] = None
+    logo_url: Optional[str] = None
+    registration_number: Optional[str] = None
     address_structured: Optional[InternationalAddress] = None
 
 

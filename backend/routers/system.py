@@ -296,6 +296,9 @@ def _school_settings_payload(school: models.School) -> dict:
         "address": school.address,
         "phone": school.phone,
         "email": school.email,
+        "website": school.website,
+        "logo_url": school.logo_url,
+        "registration_number": school.registration_number,
         "country_code": school.country_code,
         "default_currency": school.default_currency,
         "currency_code": school.currency_code,
@@ -422,7 +425,7 @@ def update_school_settings(
     if not valid_phone:
         raise HTTPException(status_code=400, detail=phone_error)
 
-    for field in ["name", "school_type", "email", "website", "phone"]:
+    for field in ["name", "school_type", "email", "website", "phone", "logo_url", "registration_number"]:
         value = getattr(payload, field)
         if value is not None:
             setattr(school, field, value)
@@ -685,6 +688,23 @@ def assign_user_roles(
 @router.get("/permissions")
 def my_permissions(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     return rbac.permission_snapshot(current_user, db)
+
+
+@router.get("/active-context")
+def active_context(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    snapshot = rbac.permission_snapshot(current_user, db)
+    return {
+        "user": {
+            "id": current_user.id,
+            "email": current_user.email,
+            "full_name": current_user.full_name,
+            "role": current_user.role.value,
+            "school_id": current_user.school_id,
+        },
+        "roles": snapshot.get("roles", [current_user.role.value]),
+        "active_role": current_user.role.value,
+        "permissions": snapshot.get("permissions", []),
+    }
 
 
 @router.get("/permissions/catalog")
