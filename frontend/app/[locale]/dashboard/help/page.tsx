@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import type { ComponentType } from "react"
-import { BookOpen, CheckCircle2, CircleHelp, CreditCard, GraduationCap, MessageSquareText, Search, Settings, Users, Wand2 } from "lucide-react"
+import { BookOpen, CheckCircle2, CircleHelp, CreditCard, FileText, GraduationCap, MessageSquareText, Search, Settings, Users, Wand2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 type HelpField = {
@@ -123,6 +123,38 @@ const HELP_SECTIONS: HelpSection[] = [
             { name: "Micro", type: "Audio", expected: "Dictée ou question vocale si disponible.", validation: "Le texte reconnu suit les mêmes permissions." },
         ],
         result: "L'Agent IA fournit une réponse contextualisée et journalise les actions ou refus sensibles dans l'audit.",
+    },
+    {
+        id: "documents",
+        title: "Partage de documents",
+        icon: FileText,
+        purpose: "Centraliser les documents de l'etablissement et permettre le partage securise entre etablissements, utilisateurs internes, parents, eleves, etudiants et personnels autorises.",
+        steps: [
+            "Ouvrez Scolarite puis Documents depuis la barre laterale du Dashboard.",
+            "Dans Ajouter un document, saisissez un nom clair et obligatoire pour le document.",
+            "Choisissez une categorie afin de faciliter les recherches: scolarite, finance, RH, administratif, pedagogie ou autre.",
+            "Choisissez la visibilite: prive, public interne ou public externe selon le niveau d'acces souhaite.",
+            "Ajoutez le fichier autorise puis cliquez sur Enregistrer.",
+            "Pour partager, cliquez sur l'action Partager du document concerne.",
+            "Choisissez le type de partage: B2B entre etablissements, B2P de l'etablissement vers ses utilisateurs, ou P2P entre utilisateurs autorises.",
+            "Recherchez les destinataires par nom, email, NumRef, role, niveau ou classe selon le cas.",
+            "Selectionnez les destinataires, definissez une expiration ou une limite de telechargement si necessaire, puis envoyez le partage.",
+            "Les destinataires autorises retrouvent ensuite le document dans leur espace, avec les droits de consultation ou de telechargement prevus.",
+        ],
+        fields: [
+            { name: "Nom du document", type: "Texte obligatoire", expected: "Nom lisible du document, par exemple Certificat de scolarite 2026.", validation: "Utilise pour nommer le fichier selon la convention NomDocument_userID.ext." },
+            { name: "Categorie", type: "Texte ou liste", expected: "Scolarite, finance, RH, administratif, pedagogie, inspection, etc.", validation: "Aide a classer, filtrer et retrouver rapidement les documents." },
+            { name: "Visibilite", type: "Liste", expected: "Prive, public interne ou public externe.", validation: "Un document public depose par un eleve ou etudiant peut necessiter une approbation administrative." },
+            { name: "Fichier", type: "Upload", expected: "PDF, Word, Excel, CSV, XML ou image.", validation: "Les extensions dangereuses sont bloquees, la taille est limitee et le scan antivirus est applique." },
+            { name: "Type de partage", type: "Liste", expected: "B2B, B2P ou P2P.", validation: "Le type disponible depend du role et des permissions de l'utilisateur connecte." },
+            { name: "NumRef", type: "Texte unique", expected: "Reference utilisateur, par exemple USR-2026-000123.", validation: "Permet de cibler precisement un destinataire meme si plusieurs utilisateurs portent un nom similaire." },
+            { name: "Role", type: "Texte", expected: "teacher, parent, student, cashier, accountant, etc.", validation: "Filtre les destinataires dans le partage B2P ou P2P." },
+            { name: "Classe ID / Niveau", type: "Nombre ou texte", expected: "Identifiant de classe ou niveau scolaire.", validation: "Permet de cibler les eleves d'une classe ou d'un niveau precis." },
+            { name: "Expiration", type: "Date et heure", expected: "Date limite d'acces au document.", validation: "Apres cette date, le partage n'est plus accessible." },
+            { name: "Limite de telechargement", type: "Nombre", expected: "Nombre maximal de telechargements autorises.", validation: "Lorsque la limite est atteinte, le lien de partage devient inutilisable." },
+            { name: "Autoriser le repartage", type: "Case a cocher", expected: "Active uniquement si le destinataire peut transmettre le document.", validation: "Le repartage reste soumis aux permissions du role du destinataire." },
+        ],
+        result: "Le document est stocke dans l'espace de l'etablissement, les partages sont traces, les destinataires recoivent l'acces autorise et chaque consultation ou telechargement sensible est journalise.",
     },
     {
         id: "settings",
