@@ -1,9 +1,185 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import csv
+import io
+import uuid
+from datetime import datetime, time, timezone
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
-from typing import List
-from .. import models, schemas, security, database
+from typing import Any, Dict, List, Optional
+from .. import audit, models, pdf, schemas, security, database
 
 router = APIRouter(prefix="/education", tags=["Education"])
+
+
+ADMIN_TIMETABLE_ROLES = {
+    models.UserRole.SCHOOL_ADMIN,
+    models.UserRole.SUPER_ADMIN,
+    models.UserRole.ADMIN,
+    models.UserRole.DIRECTION,
+    models.UserRole.DIRECTOR,
+    models.UserRole.PRINCIPAL,
+    models.UserRole.PEDAGOGY_COORDINATOR,
+}
+
+
+def _require_school(current_user: models.User) -> int:
+    if not current_user.school_id:
+        raise HTTPException(status_code=400, detail="User not part of a school")
+    return current_user.school_id
+
+
+def _require_timetable_admin(current_user: models.User) -> None:
+    if current_user.role not in ADMIN_TIMETABLE_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+
+def _minutes(value: time) -> int:
+    return value.hour * 60 + value.minute
+
+
+def _overlap(start_a: time, end_a: time, start_b: time, end_b: time) -> bool:
+    return _minutes(start_a) < _minutes(end_b) and _minutes(start_b) < _minutes(end_a)
+
+
+def _duration(start: time, end: time) -> int:
+    return max(_minutes(end) - _minutes(start), 0)
+
+
+def _scope_query(db: Session, school_id: int):
+    return db.query(models.Timetable).join(models.Class).filter(models.Class.school_id == school_id)
+
+
+def _entry_school_check(db: Session, school_id: int, class_id: int) -> models.Class:
+    cls = db.query(models.Class).filter(models.Class.id == class_id, models.Class.school_id == school_id).first()
+    if not cls:
+        raise HTTPException(status_code=404, detail="Class not found in this school")
+    return cls
+
+
+def _teacher_school_check(db: Session, school_id: int, teacher_id: Optional[int]) -> None:
+    if not teacher_id:
+        return
+    teacher = db.query(models.User).filter(models.User.id == teacher_id, models.User.school_id == school_id).first()
+    if not teacher:
+        raise HTTPException(status_code=404, detail="Teacher not found in this school")
+
+
+def _subject_school_check(db: Session, school_id: int, subject_id: int) -> None:
+    subject = db.query(models.Subject).filter(models.Subject.id == subject_id, models.Subject.school_id == school_id).first()
+    if not subject:
+        raise HTTPException(status_code=404, detail="Subject not found in this school")
+
+
+def _suggestions_for(entry: models.Timetable | schemas.TimetableCreate | schemas.TimetableUpdate) -> List[str]:
+    suggestions = [
+        "Déplacer le cours vers un créneau libre de la même journée.",
+        "Choisir une autre salle compatible avec la matière.",
+        "Affecter un professeur disponible sur le créneau.",
+    ]
+    if getattr(entry, "start_time", None) and getattr(entry, "end_time", None) and _duration(entry.start_time, entry.end_time) > 180:
+        suggestions.append("Fractionner le cours en deux séances plus courtes.")
+    return suggestions
+
+
+def _detect_timetable_conflicts(
+    db: Session,
+    school_id: int,
+    entry: models.Timetable | schemas.TimetableCreate,
+    exclude_id: Optional[int] = None,
+    constraints: Optional[Dict[str, Any]] = None,
+) -> List[Dict[str, Any]]:
+    constraints = constraints or {}
+    conflicts: List[Dict[str, Any]] = []
+    start_time = entry.start_time
+    end_time = entry.end_time
+    day = entry.day_of_week
+    class_id = entry.class_id
+    teacher_id = entry.teacher_id
+    room = (entry.room or "").strip()
+
+    min_start = constraints.get("min_start", "07:00")
+    max_end = constraints.get("max_end", "19:00")
+    max_duration = int(constraints.get("max_course_minutes", 240))
+    allowed_start = time.fromisoformat(min_start)
+    allowed_end = time.fromisoformat(max_end)
+
+    if _minutes(start_time) >= _minutes(end_time):
+        conflicts.append({"type": "invalid_time", "severity": "blocking", "message": "L'heure de fin doit être postérieure à l'heure de début.", "suggestions": ["Corriger les heures du cours."]})
+    if _minutes(start_time) < _minutes(allowed_start) or _minutes(end_time) > _minutes(allowed_end):
+        conflicts.append({"type": "time_window", "severity": "warning", "message": f"Le cours dépasse les horaires autorisés ({min_start}-{max_end}).", "suggestions": ["Choisir un créneau dans la plage autorisée."]})
+    if _duration(start_time, end_time) > max_duration:
+        conflicts.append({"type": "pedagogical_duration", "severity": "warning", "message": "La durée du cours dépasse la durée pédagogique maximale configurée.", "suggestions": ["Réduire la durée ou fractionner la séance."]})
+
+    query = _scope_query(db, school_id).filter(models.Timetable.day_of_week == day)
+    if exclude_id:
+        query = query.filter(models.Timetable.id != exclude_id)
+    for other in query.all():
+        if not _overlap(start_time, end_time, other.start_time, other.end_time):
+            continue
+        if other.class_id == class_id:
+            conflicts.append({"type": "class_conflict", "severity": "blocking", "with_entry_id": other.id, "message": "Cette classe a déjà un cours sur ce créneau.", "suggestions": _suggestions_for(entry)})
+        if teacher_id and other.teacher_id == teacher_id:
+            conflicts.append({"type": "teacher_conflict", "severity": "blocking", "with_entry_id": other.id, "message": "Ce professeur est déjà affecté à un autre cours sur ce créneau.", "suggestions": _suggestions_for(entry)})
+        if room and other.room and other.room.strip().lower() == room.lower():
+            conflicts.append({"type": "room_conflict", "severity": "blocking", "with_entry_id": other.id, "message": "Cette salle est déjà utilisée sur ce créneau.", "suggestions": _suggestions_for(entry)})
+
+    incompatible = constraints.get("incompatible_subjects", [])
+    if incompatible:
+        same_day_subjects = {
+            row.subject_id for row in _scope_query(db, school_id)
+            .filter(models.Timetable.class_id == class_id, models.Timetable.day_of_week == day)
+            .filter(models.Timetable.id != exclude_id if exclude_id else True)
+            .all()
+        }
+        for pair in incompatible:
+            if not isinstance(pair, list) or len(pair) != 2:
+                continue
+            if entry.subject_id in pair and any(subject in pair for subject in same_day_subjects):
+                conflicts.append({"type": "pedagogical_incompatibility", "severity": "warning", "message": "Deux matières déclarées incompatibles sont planifiées le même jour.", "suggestions": ["Déplacer l'une des matières sur un autre jour."]})
+                break
+    return conflicts
+
+
+def _apply_conflicts(entry: models.Timetable, conflicts: List[Dict[str, Any]]) -> None:
+    entry.duration_minutes = _duration(entry.start_time, entry.end_time)
+    entry.conflict_details = conflicts
+    entry.conflict_status = "conflict" if any(item.get("severity") == "blocking" for item in conflicts) else ("warning" if conflicts else "clear")
+
+
+def _record_timetable_notification(
+    db: Session,
+    school_id: int,
+    current_user: models.User,
+    entry: models.Timetable,
+    event_type: str,
+    message: str,
+) -> None:
+    recipients: list[tuple[Optional[int], Optional[int], Optional[str], Optional[str]]] = []
+    if entry.teacher_id:
+        recipients.append((entry.teacher_id, None, entry.teacher.full_name if entry.teacher else None, entry.teacher.email if entry.teacher else None))
+    students = db.query(models.StudentProfile).join(models.User).filter(
+        models.StudentProfile.current_class_id == entry.class_id,
+        models.User.school_id == school_id,
+    ).all()
+    for student in students:
+        recipients.append((student.user_id, student.id, student.user.full_name if student.user else student.parent_name, student.user.email if student.user else student.parent_email))
+        if student.parent_email or student.parent_phone_e164 or student.parent_phone:
+            recipients.append((None, student.id, student.parent_name, student.parent_email or student.parent_phone_e164 or student.parent_phone))
+    for recipient_user_id, student_id, recipient_name, contact in recipients:
+        db.add(models.NotificationHistory(
+            event_type=event_type,
+            recipient_user_id=recipient_user_id,
+            recipient_name=recipient_name,
+            recipient_contact=contact,
+            channel="system",
+            subject="Mise à jour de l'emploi du temps",
+            message=message,
+            status="recorded",
+            student_id=student_id,
+            source_type="timetable",
+            source_id=entry.id,
+            school_id=school_id,
+            created_by_id=current_user.id,
+        ))
 
 # ---------------------------------------------------------
 # Classes endpoints
@@ -303,62 +479,328 @@ def delete_subject(
 # Timetables endpoints
 # ---------------------------------------------------------
 
+def _timetable_query_for_user(db: Session, current_user: models.User):
+    school_id = _require_school(current_user)
+    query = _scope_query(db, school_id)
+    if current_user.role in [models.UserRole.TEACHER, models.UserRole.TRAINER, models.UserRole.INSTRUCTOR]:
+        return query.filter(models.Timetable.teacher_id == current_user.id, models.Timetable.status == "published")
+    if current_user.role in [models.UserRole.STUDENT, models.UserRole.PUPIL]:
+        if not current_user.student_profile or not current_user.student_profile.current_class_id:
+            return query.filter(False)
+        return query.filter(models.Timetable.class_id == current_user.student_profile.current_class_id, models.Timetable.status == "published")
+    if current_user.role == models.UserRole.PARENT:
+        students = db.query(models.StudentProfile).join(models.User).filter(
+            models.User.school_id == school_id,
+            models.StudentProfile.parent_email == current_user.email,
+        ).all()
+        class_ids = [student.current_class_id for student in students if student.current_class_id]
+        return query.filter(models.Timetable.class_id.in_(class_ids), models.Timetable.status == "published") if class_ids else query.filter(False)
+    return query
+
+
 @router.post("/timetables", response_model=schemas.TimetableResponse)
 def create_timetable_entry(
     entry_in: schemas.TimetableCreate,
     current_user: models.User = Depends(security.get_current_user),
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(database.get_db),
 ):
-    if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
-        raise HTTPException(status_code=403, detail="Not authorized")
-        
-    # Verify Class belongs to school
-    cls = db.query(models.Class).filter(models.Class.id == entry_in.class_id, models.Class.school_id == current_user.school_id).first()
-    if not cls:
-        raise HTTPException(status_code=404, detail="Class not found in this school")
-
+    _require_timetable_admin(current_user)
+    school_id = _require_school(current_user)
+    _entry_school_check(db, school_id, entry_in.class_id)
+    _subject_school_check(db, school_id, entry_in.subject_id)
+    _teacher_school_check(db, school_id, entry_in.teacher_id)
     entry = models.Timetable(**entry_in.model_dump())
+    conflicts = _detect_timetable_conflicts(db, school_id, entry, constraints=entry_in.constraints_snapshot)
+    _apply_conflicts(entry, conflicts)
     db.add(entry)
     db.commit()
     db.refresh(entry)
+    audit.record_audit(db, action="timetable.entry.created", current_user=current_user, entity_type="timetable", entity_id=entry.id, details={"conflicts": conflicts})
     return entry
+
 
 @router.get("/timetables", response_model=List[schemas.TimetableResponse])
 def list_timetables(
     class_id: int = None,
     teacher_id: int = None,
+    room: str = None,
+    status_filter: str = None,
     current_user: models.User = Depends(security.get_current_user),
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(database.get_db),
 ):
-    if not current_user.school_id:
-        raise HTTPException(status_code=400, detail="User not part of a school")
-        
-    query = db.query(models.Timetable).join(models.Class).filter(models.Class.school_id == current_user.school_id)
-    
+    query = _timetable_query_for_user(db, current_user)
     if class_id:
         query = query.filter(models.Timetable.class_id == class_id)
     if teacher_id:
         query = query.filter(models.Timetable.teacher_id == teacher_id)
-        
-    return query.all()
+    if room:
+        query = query.filter(models.Timetable.room == room)
+    if status_filter:
+        query = query.filter(models.Timetable.status == status_filter)
+    return query.order_by(models.Timetable.day_of_week, models.Timetable.start_time).all()
+
+
+@router.put("/timetables/{entry_id}", response_model=schemas.TimetableResponse)
+def update_timetable_entry(
+    entry_id: int,
+    entry_in: schemas.TimetableUpdate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _require_timetable_admin(current_user)
+    school_id = _require_school(current_user)
+    entry = _scope_query(db, school_id).filter(models.Timetable.id == entry_id).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Timetable entry not found")
+    changes = entry_in.model_dump(exclude_unset=True)
+    _entry_school_check(db, school_id, changes.get("class_id", entry.class_id))
+    _subject_school_check(db, school_id, changes.get("subject_id", entry.subject_id))
+    _teacher_school_check(db, school_id, changes.get("teacher_id", entry.teacher_id))
+    for key, value in changes.items():
+        setattr(entry, key, value)
+    conflicts = _detect_timetable_conflicts(db, school_id, entry, exclude_id=entry.id, constraints=entry.constraints_snapshot)
+    _apply_conflicts(entry, conflicts)
+    if entry.status == "published":
+        entry.status = "draft"
+    db.commit()
+    db.refresh(entry)
+    _record_timetable_notification(db, school_id, current_user, entry, "timetable.updated", "Un cours de votre emploi du temps a été modifié.")
+    audit.record_audit(db, action="timetable.entry.updated", current_user=current_user, entity_type="timetable", entity_id=entry.id, details={"changes": changes, "conflicts": conflicts})
+    db.commit()
+    return entry
+
+
+@router.post("/timetables/bulk-update")
+def bulk_update_timetables(
+    payload: schemas.TimetableBulkUpdate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _require_timetable_admin(current_user)
+    school_id = _require_school(current_user)
+    updated: List[int] = []
+    conflicts_by_entry: Dict[int, List[Dict[str, Any]]] = {}
+    for entry_id in payload.entry_ids:
+        entry = _scope_query(db, school_id).filter(models.Timetable.id == entry_id).first()
+        if not entry:
+            continue
+        changes = payload.changes.model_dump(exclude_unset=True)
+        for key, value in changes.items():
+            setattr(entry, key, value)
+        conflicts = _detect_timetable_conflicts(db, school_id, entry, exclude_id=entry.id, constraints=entry.constraints_snapshot)
+        _apply_conflicts(entry, conflicts)
+        updated.append(entry.id)
+        conflicts_by_entry[entry.id] = conflicts
+    db.commit()
+    audit.record_audit(db, action="timetable.entries.bulk_updated", current_user=current_user, entity_type="timetable", details={"entry_ids": updated, "conflicts": conflicts_by_entry})
+    return {"updated": updated, "conflicts": conflicts_by_entry}
+
+
+@router.post("/timetables/validate")
+def validate_timetable_entry(
+    entry_in: schemas.TimetableCreate,
+    exclude_id: int = None,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _require_timetable_admin(current_user)
+    school_id = _require_school(current_user)
+    _entry_school_check(db, school_id, entry_in.class_id)
+    _subject_school_check(db, school_id, entry_in.subject_id)
+    _teacher_school_check(db, school_id, entry_in.teacher_id)
+    conflicts = _detect_timetable_conflicts(db, school_id, entry_in, exclude_id=exclude_id, constraints=entry_in.constraints_snapshot)
+    return {"has_conflicts": bool(conflicts), "conflicts": conflicts, "suggestions": _suggestions_for(entry_in)}
+
+
+def _delete_unlocked_for_generation(db: Session, school_id: int, payload: schemas.TimetableGenerationRequest) -> int:
+    query = _scope_query(db, school_id)
+    if payload.preserve_locks:
+        query = query.filter(models.Timetable.is_locked == False)
+    if payload.scope_type == "class" and payload.scope_id:
+        query = query.filter(models.Timetable.class_id == payload.scope_id)
+    elif payload.scope_type == "teacher" and payload.scope_id:
+        query = query.filter(models.Timetable.teacher_id == payload.scope_id)
+    elif payload.scope_type == "level" and payload.level:
+        query = query.filter(models.Class.level == payload.level)
+    elif payload.scope_type == "subject" and payload.subject_ids:
+        query = query.filter(models.Timetable.subject_id.in_(payload.subject_ids))
+    elif payload.mode != "complete":
+        return 0
+    rows = query.all()
+    for row in rows:
+        db.delete(row)
+    db.flush()
+    return len(rows)
+
+
+@router.post("/timetables/generate")
+def generate_timetables(
+    payload: schemas.TimetableGenerationRequest,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _require_timetable_admin(current_user)
+    school_id = _require_school(current_user)
+    deleted = _delete_unlocked_for_generation(db, school_id, payload)
+    classes_query = db.query(models.Class).filter(models.Class.school_id == school_id)
+    if payload.scope_type == "class" and payload.scope_id:
+        classes_query = classes_query.filter(models.Class.id == payload.scope_id)
+    if payload.scope_type == "level" and payload.level:
+        classes_query = classes_query.filter(models.Class.level == payload.level)
+    classes = classes_query.order_by(models.Class.level, models.Class.name).all()
+    subject_query = db.query(models.Subject).filter(models.Subject.school_id == school_id)
+    if payload.subject_ids:
+        subject_query = subject_query.filter(models.Subject.id.in_(payload.subject_ids))
+    subjects = subject_query.order_by(models.Subject.name).all()
+    teachers = db.query(models.User).filter(
+        models.User.school_id == school_id,
+        models.User.role.in_([models.UserRole.TEACHER, models.UserRole.TRAINER, models.UserRole.INSTRUCTOR]),
+    ).order_by(models.User.id).all()
+    days = [models.DayOfWeek.MONDAY, models.DayOfWeek.TUESDAY, models.DayOfWeek.WEDNESDAY, models.DayOfWeek.THURSDAY, models.DayOfWeek.FRIDAY]
+    slots = [(time(8, 0), time(10, 0)), (time(10, 15), time(12, 15)), (time(14, 0), time(16, 0))]
+    rooms = payload.constraints.get("rooms") or ["Salle 1", "Salle 2", "Salle 3", "Laboratoire 1", "Atelier 1"]
+    batch = f"TT-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6]}"
+    created: List[int] = []
+    skipped: List[Dict[str, Any]] = []
+    cursor = 0
+    for cls in classes:
+        for subject_index, subject in enumerate(subjects[: min(len(subjects), 12)]):
+            placed = False
+            attempts = 0
+            while attempts < len(days) * len(slots):
+                day = days[(cursor + attempts) % len(days)]
+                start, end = slots[((cursor + attempts) // len(days)) % len(slots)]
+                teacher = teachers[(subject_index + attempts) % len(teachers)] if teachers else None
+                room = rooms[(cls.id + subject_index + attempts) % len(rooms)]
+                candidate = models.Timetable(
+                    day_of_week=day,
+                    start_time=start,
+                    end_time=end,
+                    room=room,
+                    class_id=cls.id,
+                    subject_id=subject.id,
+                    teacher_id=teacher.id if teacher else cls.main_teacher_id,
+                    status="draft",
+                    generation_batch=batch,
+                    constraints_snapshot=payload.constraints,
+                )
+                conflicts = _detect_timetable_conflicts(db, school_id, candidate, constraints=payload.constraints)
+                if not any(item.get("severity") == "blocking" for item in conflicts):
+                    _apply_conflicts(candidate, conflicts)
+                    db.add(candidate)
+                    db.flush()
+                    created.append(candidate.id)
+                    cursor += 1
+                    placed = True
+                    break
+                attempts += 1
+            if not placed:
+                skipped.append({"class_id": cls.id, "subject_id": subject.id, "reason": "Aucun créneau sans conflit trouvé."})
+    db.commit()
+    audit.record_audit(db, action="timetable.generated", current_user=current_user, entity_type="timetable", details={"batch": batch, "created": len(created), "deleted": deleted, "skipped": skipped})
+    return {"batch": batch, "created": len(created), "deleted": deleted, "skipped": skipped, "mode": payload.mode}
+
+
+@router.post("/timetables/publish")
+def publish_timetables(
+    payload: schemas.TimetablePublishRequest,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _require_timetable_admin(current_user)
+    school_id = _require_school(current_user)
+    query = _scope_query(db, school_id)
+    if payload.class_id:
+        query = query.filter(models.Timetable.class_id == payload.class_id)
+    if payload.teacher_id:
+        query = query.filter(models.Timetable.teacher_id == payload.teacher_id)
+    if payload.level:
+        query = query.filter(models.Class.level == payload.level)
+    rows = query.all()
+    published = 0
+    now = datetime.now(timezone.utc)
+    for entry in rows:
+        conflicts = _detect_timetable_conflicts(db, school_id, entry, exclude_id=entry.id, constraints=entry.constraints_snapshot)
+        _apply_conflicts(entry, conflicts)
+        if entry.conflict_status == "conflict":
+            continue
+        entry.status = "published"
+        entry.published_at = now
+        published += 1
+        _record_timetable_notification(db, school_id, current_user, entry, "timetable.published", "Un emploi du temps validé est disponible dans votre tableau de bord.")
+    db.commit()
+    audit.record_audit(db, action="timetable.published", current_user=current_user, entity_type="timetable", details={"published": published, "total_checked": len(rows)})
+    return {"published": published, "total_checked": len(rows)}
+
+
+@router.get("/timetables/my", response_model=List[schemas.TimetableResponse])
+def my_timetable(
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    return _timetable_query_for_user(db, current_user).order_by(models.Timetable.day_of_week, models.Timetable.start_time).all()
+
+
+@router.get("/timetables/export")
+def export_timetables(
+    export_format: str = "csv",
+    class_id: int = None,
+    teacher_id: int = None,
+    room: str = None,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    school_id = _require_school(current_user)
+    query = _timetable_query_for_user(db, current_user)
+    if class_id:
+        query = query.filter(models.Timetable.class_id == class_id)
+    if teacher_id:
+        query = query.filter(models.Timetable.teacher_id == teacher_id)
+    if room:
+        query = query.filter(models.Timetable.room == room)
+    rows = query.order_by(models.Timetable.day_of_week, models.Timetable.start_time).all()
+    school = db.query(models.School).filter(models.School.id == school_id).first()
+    headers = ["Jour", "Début", "Fin", "Classe", "Matière", "Professeur", "Salle", "Statut", "Conflits"]
+    data = [[
+        row.day_of_week.value,
+        row.start_time.strftime("%H:%M"),
+        row.end_time.strftime("%H:%M"),
+        row.class_.name if row.class_ else "",
+        row.subject.name if row.subject else "",
+        row.teacher.full_name if row.teacher else "",
+        row.room or "",
+        row.status,
+        row.conflict_status,
+    ] for row in rows]
+    if export_format == "pdf":
+        lines = [f"Etablissement: {school.name if school else '-'}", f"Total cours: {len(rows)}"]
+        lines.extend([" | ".join(map(str, row)) for row in data[:80]])
+        return Response(pdf.professional_pdf("Emploi du temps", lines, f"TIMETABLE:{school_id}:{len(rows)}"), media_type="application/pdf")
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([school.name if school else "TeducAI"])
+    writer.writerow(headers)
+    writer.writerows(data)
+    media_type = "text/csv"
+    extension = "csv"
+    if export_format in {"excel", "xlsx"}:
+        media_type = "application/vnd.ms-excel"
+        extension = "xls"
+    return Response(output.getvalue(), media_type=media_type, headers={"Content-Disposition": f"attachment; filename=timetable.{extension}"})
+
 
 @router.delete("/timetables/{entry_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_timetable_entry(
     entry_id: int,
     current_user: models.User = Depends(security.get_current_user),
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(database.get_db),
 ):
-    if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
-        raise HTTPException(status_code=403, detail="Not authorized")
-
-    # Join with Class to verify School context
-    entry = db.query(models.Timetable).join(models.Class).filter(
-        models.Timetable.id == entry_id,
-        models.Class.school_id == current_user.school_id
-    ).first()
-    
+    _require_timetable_admin(current_user)
+    school_id = _require_school(current_user)
+    entry = _scope_query(db, school_id).filter(models.Timetable.id == entry_id).first()
     if not entry:
         raise HTTPException(status_code=404, detail="Timetable entry not found")
-        
+    _record_timetable_notification(db, school_id, current_user, entry, "timetable.deleted", "Un cours a été supprimé de votre emploi du temps.")
+    audit.record_audit(db, action="timetable.entry.deleted", current_user=current_user, entity_type="timetable", entity_id=entry.id)
     db.delete(entry)
     db.commit()

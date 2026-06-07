@@ -13,6 +13,7 @@ interface RequestRow { id: number; request_type: string; status: string; details
 interface PortalDocument { id: number; document_type: string; title: string; reference: string | null; generated_at: string; download_url: string | null }
 interface PortalInvoice { id: number; invoice_number: string; title: string; amount_due: number; amount_paid: number; remaining_balance: number; status: string }
 interface PortalNotification { id: number; event_type: string; subject: string | null; message: string; channel: string; created_at: string }
+interface PortalTimetable { id: number; day_of_week: string; start_time: string; end_time: string; room: string | null; class_id: number; subject_id: number; teacher_id: number | null }
 
 export default function PortalPage() {
     const { token, user } = useAuth()
@@ -24,6 +25,7 @@ export default function PortalPage() {
     const [portalDocs, setPortalDocs] = useState<PortalDocument[]>([])
     const [portalInvoices, setPortalInvoices] = useState<PortalInvoice[]>([])
     const [portalNotifications, setPortalNotifications] = useState<PortalNotification[]>([])
+    const [portalTimetable, setPortalTimetable] = useState<PortalTimetable[]>([])
     const [documentFilter, setDocumentFilter] = useState("")
     const [requestForm, setRequestForm] = useState({ request_type: "report_card", details: "" })
     const [submissionText, setSubmissionText] = useState<Record<number, string>>({})
@@ -31,12 +33,13 @@ export default function PortalPage() {
     const load = useCallback(async () => {
         if (!token) return
         const headers = { Authorization: `Bearer ${token}` }
-        const [childrenRes, assignmentsRes, materialsRes, requestsRes, portalRes] = await Promise.all([
+        const [childrenRes, assignmentsRes, materialsRes, requestsRes, portalRes, timetableRes] = await Promise.all([
             fetch(`${API_BASE_URL}/pedagogy/portal/children`, { headers }),
             fetch(`${API_BASE_URL}/pedagogy/assignments`, { headers }),
             fetch(`${API_BASE_URL}/pedagogy/materials`, { headers }),
             fetch(`${API_BASE_URL}/pedagogy/requests`, { headers }),
             fetch(`${API_BASE_URL}/documents/portal${selectedStudentId ? `?student_id=${selectedStudentId}${documentFilter ? `&document_type=${documentFilter}` : ""}` : ""}`, { headers }),
+            fetch(`${API_BASE_URL}/education/timetables/my`, { headers }),
         ])
         if (childrenRes.ok) {
             const data = await childrenRes.json()
@@ -46,6 +49,7 @@ export default function PortalPage() {
         if (assignmentsRes.ok) setAssignments(await assignmentsRes.json())
         if (materialsRes.ok) setMaterials(await materialsRes.json())
         if (requestsRes.ok) setRequests(await requestsRes.json())
+        if (timetableRes.ok) setPortalTimetable(await timetableRes.json())
         if (portalRes.ok) {
             const data = await portalRes.json()
             setPortalDocs(data.documents || [])
@@ -93,6 +97,11 @@ export default function PortalPage() {
             </CardContent></Card>
 
             <div className="grid gap-4 lg:grid-cols-3">
+                <Card><CardHeader><CardTitle>Emploi du temps publié</CardTitle></CardHeader><CardContent className="space-y-3">
+                    {portalTimetable.map(row => <div key={row.id} className="rounded-md border p-3 text-sm"><p className="font-medium">{row.day_of_week} • {row.start_time.slice(0, 5)} - {row.end_time.slice(0, 5)}</p><p className="text-[#6B7280]">Classe #{row.class_id} • Matière #{row.subject_id} • Professeur #{row.teacher_id || "-"}</p><p>Salle: {row.room || "-"}</p></div>)}
+                    {!portalTimetable.length && <p className="text-sm text-[#6B7280]">Aucun emploi du temps publié.</p>}
+                </CardContent></Card>
+
                 <Card><CardHeader><CardTitle>Documents disponibles</CardTitle></CardHeader><CardContent className="space-y-3">
                     <select value={documentFilter} onChange={(event) => setDocumentFilter(event.target.value)} className="w-full rounded-md border px-3 py-2 text-sm">
                         <option value="">Tous les documents</option>

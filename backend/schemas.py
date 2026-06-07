@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, ConfigDict, Field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime, time, date
 from .models import (
     UserRole,
@@ -363,12 +363,53 @@ class TimetableBase(BaseModel):
     class_id: int
     subject_id: int
     teacher_id: Optional[int] = None
+    duration_minutes: Optional[int] = None
+    is_locked: bool = False
+    lock_scope: Optional[str] = None
+    status: str = "draft"
+    generation_batch: Optional[str] = None
+    constraints_snapshot: Optional[Dict[str, Any]] = None
 
 class TimetableCreate(TimetableBase):
     pass
 
+class TimetableUpdate(BaseModel):
+    day_of_week: Optional[DayOfWeek] = None
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
+    room: Optional[str] = None
+    class_id: Optional[int] = None
+    subject_id: Optional[int] = None
+    teacher_id: Optional[int] = None
+    duration_minutes: Optional[int] = None
+    is_locked: Optional[bool] = None
+    lock_scope: Optional[str] = None
+    status: Optional[str] = None
+    constraints_snapshot: Optional[Dict[str, Any]] = None
+
+class TimetableBulkUpdate(BaseModel):
+    entry_ids: List[int]
+    changes: TimetableUpdate
+
+class TimetableGenerationRequest(BaseModel):
+    mode: str = "partial"
+    scope_type: Optional[str] = None
+    scope_id: Optional[int] = None
+    level: Optional[str] = None
+    subject_ids: List[int] = []
+    preserve_locks: bool = True
+    constraints: Dict[str, Any] = {}
+
+class TimetablePublishRequest(BaseModel):
+    class_id: Optional[int] = None
+    teacher_id: Optional[int] = None
+    level: Optional[str] = None
+
 class TimetableResponse(TimetableBase):
     id: int
+    conflict_status: str = "clear"
+    conflict_details: Optional[List[Dict[str, Any]]] = None
+    published_at: Optional[datetime] = None
     
     model_config = ConfigDict(from_attributes=True)
 
