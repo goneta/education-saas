@@ -290,7 +290,7 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
                                 <Link href={`/${locale}/dashboard/settings`} className={sidebarItemClass}><Settings className="h-5 w-5" />Paramètres du compte</Link>
                                 <Link href={`/${locale}/dashboard/enterprise`} className={sidebarItemClass}><Bell className="h-5 w-5" />Notifications</Link>
                                 <Link href={`/${locale}/pricing`} className={sidebarItemClass}><CreditCard className="h-5 w-5" />Mettre à niveau</Link>
-                                <Link href={`/${locale}/contact`} className={sidebarItemClass}><HelpCircle className="h-5 w-5" />Aide</Link>
+                                <Link href={`/${locale}/dashboard/help`} className={sidebarItemClass}><HelpCircle className="h-5 w-5" />Aide</Link>
                                 <button type="button" onClick={handleLogout} className={sidebarItemClass}><LogOut className="h-5 w-5" />Déconnexion</button>
                                 <button type="button" onClick={() => { setAddAccountOpen(true); setAccountMenuOpen(false) }} className={sidebarItemClass}><Users className="h-5 w-5" />Ajouter un compte</button>
                             </div>
