@@ -1,7 +1,9 @@
-from sqlalchemy import Boolean, Column, Integer, String, ForeignKey, Enum as SqEnum, DateTime, Text, JSON, Time, Float, UniqueConstraint
+from sqlalchemy import Boolean, Column, Integer, String, ForeignKey, Enum as SqEnum, DateTime, Text, JSON, Time, Float, UniqueConstraint, event
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
+import uuid
+from datetime import datetime
 from .database import Base
 
 # Enums
@@ -143,6 +145,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     full_name = Column(String, index=True)
     role = Column(SqEnum(UserRole), nullable=False)
+    numref = Column(String, unique=True, index=True, nullable=True)
     
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -169,6 +172,12 @@ class User(Base):
     # Relationships
     student_profile = relationship("StudentProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
     teacher_profile = relationship("TeacherProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+
+
+@event.listens_for(User, "before_insert")
+def _assign_user_numref(_mapper, _connection, target):
+    if not target.numref:
+        target.numref = f"USR-{datetime.utcnow().year}-{int(uuid.uuid4().int % 1000000):06d}"
 
 
 class RolePermission(Base):
@@ -1672,6 +1681,8 @@ class SecureFile(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     original_filename = Column(String, nullable=False)
+    display_name = Column(String, nullable=True, index=True)
+    category = Column(String, nullable=True, index=True)
     stored_filename = Column(String, nullable=False, unique=True, index=True)
     content_type = Column(String, nullable=False)
     file_extension = Column(String, nullable=True, index=True)
@@ -1682,6 +1693,14 @@ class SecureFile(Base):
     entity_type = Column(String, nullable=True, index=True)
     entity_id = Column(String, nullable=True, index=True)
     status = Column(String, default="active", nullable=False, index=True)
+    visibility = Column(String, default="private", nullable=False, index=True)
+    is_shareable = Column(Boolean, default=False, nullable=False)
+    approval_status = Column(String, default="approved", nullable=False, index=True)
+    approved_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    download_limit = Column(Integer, nullable=True)
+    access_count = Column(Integer, default=0, nullable=False)
     scan_status = Column(String, default="not_configured", nullable=False, index=True)
     scan_details = Column(String, nullable=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
@@ -1691,6 +1710,35 @@ class SecureFile(Base):
 
     school = relationship("School")
     uploaded_by = relationship("User")
+    approved_by = relationship("User", foreign_keys=[approved_by_id])
+
+
+class DocumentShare(Base):
+    __tablename__ = "document_shares"
+
+    id = Column(Integer, primary_key=True, index=True)
+    file_id = Column(Integer, ForeignKey("secure_files.id"), nullable=False, index=True)
+    share_type = Column(String, nullable=False, index=True)
+    mode = Column(String, nullable=False, default="private", index=True)
+    can_reshare = Column(Boolean, default=False, nullable=False)
+    recipient_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    recipient_school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    recipient_numref = Column(String, nullable=True, index=True)
+    status = Column(String, default="active", nullable=False, index=True)
+    encrypted_token = Column(String, nullable=False, unique=True, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    download_limit = Column(Integer, nullable=True)
+    download_count = Column(Integer, default=0, nullable=False)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+
+    file = relationship("SecureFile")
+    recipient_user = relationship("User", foreign_keys=[recipient_user_id])
+    recipient_school = relationship("School", foreign_keys=[recipient_school_id])
+    created_by = relationship("User", foreign_keys=[created_by_id])
+    school = relationship("School", foreign_keys=[school_id])
 
 
 class DataConsent(Base):

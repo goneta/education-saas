@@ -15,12 +15,16 @@ DEFAULT_ALLOWED_TYPES = {
     "image/png": ".png",
     "image/webp": ".webp",
     "text/csv": ".csv",
+    "application/xml": ".xml",
+    "text/xml": ".xml",
+    "application/msword": ".doc",
+    "application/vnd.ms-excel": ".xls",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
 }
 BLOCKED_EXTENSIONS = {".exe", ".bat", ".cmd", ".com", ".dll", ".js", ".mjs", ".php", ".ps1", ".sh", ".vbs"}
 MAX_FILE_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(10 * 1024 * 1024)))
-STORAGE_ROOT = Path(os.getenv("FILE_STORAGE_LOCAL_PATH", "storage/uploads")).resolve()
+STORAGE_ROOT = Path(os.getenv("FILE_STORAGE_LOCAL_PATH", "DOCUMENTS")).resolve()
 STORAGE_BACKEND = os.getenv("FILE_STORAGE_BACKEND", "local")
 S3_BUCKET = os.getenv("FILE_STORAGE_BUCKET", "")
 S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")
@@ -86,14 +90,23 @@ def _scan_file(path: Path) -> tuple[str, str | None]:
     return "infected", ((result.stdout or "") + (result.stderr or "")).strip()[:500] or "scanner rejected file"
 
 
-async def store_upload(upload: UploadFile, school_id: int | None) -> dict:
+def generated_document_filename(document_name: str, user_id: int, extension: str) -> str:
+    base = safe_original_filename(document_name or "Document")
+    base = Path(base).stem.replace(" ", "_")
+    return f"{base}_user{user_id}{extension}"
+
+
+async def store_upload(upload: UploadFile, school_id: int | None, document_name: str | None = None, user_id: int | None = None, folder: str = "uploads") -> dict:
     content_type = upload.content_type or "application/octet-stream"
     extension = _safe_extension(upload.filename or "", content_type)
-    original_filename = safe_original_filename(upload.filename or f"upload{extension}")
+    original_filename = generated_document_filename(document_name, user_id or 0, extension) if document_name and user_id else safe_original_filename(upload.filename or f"upload{extension}")
     stored_filename = f"{uuid4().hex}{extension}"
-    school_part = str(school_id or "platform")
-    storage_key = f"{school_part}/{stored_filename}"
-    target_dir = STORAGE_ROOT / school_part
+    school_part = f"ETABLISSEMENT{school_id}" if school_id else "PLATFORM"
+    storage_key = f"{school_part}/{folder}/{stored_filename}"
+    target_dir = STORAGE_ROOT / school_part / folder
+    if STORAGE_BACKEND == "local":
+        for required_folder in ("uploads", "generated", "shared"):
+            (STORAGE_ROOT / school_part / required_folder).mkdir(parents=True, exist_ok=True)
     target_dir.mkdir(parents=True, exist_ok=True)
     target_path = (target_dir / stored_filename).resolve()
     if not str(target_path).startswith(str(target_dir.resolve())):
@@ -139,6 +152,7 @@ async def store_upload(upload: UploadFile, school_id: int | None) -> dict:
 
     return {
         "original_filename": original_filename,
+        "display_name": document_name,
         "stored_filename": stored_filename,
         "content_type": content_type,
         "file_extension": extension,

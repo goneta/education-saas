@@ -100,6 +100,7 @@ class UserResponse(UserBase):
     id: int
     is_active: bool
     school_id: Optional[int]
+    numref: Optional[str] = None
     school: Optional[SchoolResponse] = None
     mfa_enabled: bool = False
     
@@ -1471,6 +1472,8 @@ class SecurityEventResponse(BaseModel):
 class SecureFileResponse(BaseModel):
     id: int
     original_filename: str
+    display_name: Optional[str] = None
+    category: Optional[str] = None
     content_type: str
     file_extension: Optional[str] = None
     size_bytes: int
@@ -1479,12 +1482,61 @@ class SecureFileResponse(BaseModel):
     entity_type: Optional[str] = None
     entity_id: Optional[str] = None
     status: str
+    visibility: str = "private"
+    is_shareable: bool = False
+    approval_status: str = "approved"
+    expires_at: Optional[datetime] = None
+    download_limit: Optional[int] = None
+    access_count: int = 0
     scan_status: str
     scan_details: Optional[str] = None
     school_id: Optional[int] = None
     uploaded_by_id: Optional[int] = None
     created_at: datetime
     deleted_at: Optional[datetime] = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DocumentRecipientResponse(BaseModel):
+    id: int
+    type: str
+    name: str
+    role: Optional[str] = None
+    school_id: Optional[int] = None
+    school_name: Optional[str] = None
+    numref: Optional[str] = None
+    subtitle: Optional[str] = None
+
+
+class DocumentShareCreate(BaseModel):
+    file_id: int
+    share_type: str
+    mode: str = "private"
+    can_reshare: bool = False
+    recipient_user_ids: List[int] = []
+    recipient_school_ids: List[int] = []
+    recipient_numrefs: List[str] = []
+    expires_at: Optional[datetime] = None
+    download_limit: Optional[int] = None
+
+
+class DocumentShareResponse(BaseModel):
+    id: int
+    file_id: int
+    share_type: str
+    mode: str
+    can_reshare: bool
+    recipient_user_id: Optional[int] = None
+    recipient_school_id: Optional[int] = None
+    recipient_numref: Optional[str] = None
+    status: str
+    expires_at: Optional[datetime] = None
+    download_limit: Optional[int] = None
+    download_count: int
+    created_by_id: int
+    school_id: Optional[int] = None
+    created_at: datetime
+    revoked_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
 
 

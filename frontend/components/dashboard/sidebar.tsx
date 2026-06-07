@@ -26,6 +26,7 @@ import {
     Users,
     GraduationCap,
     BarChart3,
+    FileText,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -92,6 +93,7 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
                 { href: `/${locale}/dashboard/grades/assessments`, label: t("grades"), icon: ClipboardCheck },
                 { href: `/${locale}/dashboard/library`, label: t("library"), icon: BookOpen },
                 { href: `/${locale}/dashboard/portal`, label: t("portal"), icon: Users },
+                { href: `/${locale}/dashboard/documents`, label: t("documents"), icon: FileText },
             ]
         },
         {
