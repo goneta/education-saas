@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { LayoutDashboard, Eye } from "lucide-react"
 import { FormIntelligence } from "@/components/ui/form-intelligence"
+import { DashboardUxEnhancer } from "@/components/dashboard/dashboard-ux-enhancer"
 
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
     const { isAgentPanelOpen, viewMode, setViewMode, previewContent } = useLayout()
@@ -19,6 +20,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="fixed inset-0 h-dvh w-dvw overflow-hidden bg-[#F6F7F9] font-sans">
+            <DashboardUxEnhancer />
             <ResizablePanelGroup direction="horizontal" className="h-full w-full overflow-hidden">
                 <FormIntelligence />
                 {/* Left Panel: AI Agent - Light grey/off-white background */}

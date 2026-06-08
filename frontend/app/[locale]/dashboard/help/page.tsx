@@ -1,6 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import type { ComponentType } from "react"
 import { BookOpen, CheckCircle2, CircleHelp, CreditCard, FileText, GraduationCap, MessageSquareText, Search, Settings, Users, Wand2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -58,6 +59,27 @@ const HELP_SECTIONS: HelpSection[] = [
             { name: "Statut", type: "Liste", expected: "Affecté ou non affecté.", validation: "Le statut pilote les listes de classe et les rapports." },
         ],
         result: "La fiche élève est créée, consultable, imprimable et utilisable par la scolarité, la finance, les parents et l'Agent IA selon permissions.",
+    },
+    {
+        id: "teachers",
+        title: "Gestion des enseignants",
+        icon: GraduationCap,
+        purpose: "Créer et maintenir les dossiers enseignants, formateurs et intervenants avec leurs informations de contact, affectations, matières, documents et rôles.",
+        steps: [
+            "Ouvrez Gestion puis Professeurs dans la barre latérale.",
+            "Cliquez sur Ajouter un enseignant ou sélectionnez une ligne existante.",
+            "Renseignez l'identité, l'adresse email, le téléphone, les matières enseignées et les affectations de classe.",
+            "Ajoutez les documents utiles si le module le demande: contrat, diplôme, pièce d'identité ou autorisation.",
+            "Cliquez sur Enregistrer pour rendre l'enseignant disponible dans les emplois du temps, notes, devoirs et communications.",
+        ],
+        fields: [
+            { name: "Nom complet", type: "Texte obligatoire", expected: "Nom et prénoms officiels de l'enseignant.", validation: "Utilisé dans les emplois du temps, bulletins et rapports." },
+            { name: "Email", type: "Adresse email", expected: "Adresse professionnelle ou personnelle valide.", validation: "Sert à la connexion et aux notifications." },
+            { name: "Téléphone", type: "Numéro international", expected: "Numéro avec indicatif pays.", validation: "Doit respecter le format téléphonique configuré." },
+            { name: "Matières / spécialités", type: "Liste", expected: "Matières, UE ou domaines d'enseignement.", validation: "Utilisé pour les affectations et la génération d'emplois du temps." },
+            { name: "Statut", type: "Liste", expected: "Actif, suspendu, vacataire, permanent ou autre statut configuré.", validation: "Contrôle l'accès au portail enseignant." },
+        ],
+        result: "Le dossier enseignant est disponible pour la scolarité, les emplois du temps, les notes, les devoirs, les documents et les notifications selon permissions.",
     },
     {
         id: "timetable",
@@ -221,8 +243,21 @@ const HELP_SECTIONS: HelpSection[] = [
 ]
 
 export default function HelpPage() {
+    const searchParams = useSearchParams()
     const [query, setQuery] = useState("")
     const [activeId, setActiveId] = useState(HELP_SECTIONS[0].id)
+    const [helpMode, setHelpMode] = useState("page")
+
+    useEffect(() => {
+        const section = searchParams.get("section")
+        if (section && HELP_SECTIONS.some(item => item.id === section)) setActiveId(section)
+        setHelpMode(localStorage.getItem("teducai_help_mode") || "page")
+    }, [searchParams])
+
+    const updateHelpMode = (mode: string) => {
+        setHelpMode(mode)
+        localStorage.setItem("teducai_help_mode", mode)
+    }
 
     const filteredSections = useMemo(() => {
         const search = query.trim().toLowerCase()
@@ -255,6 +290,16 @@ export default function HelpPage() {
                         placeholder="Rechercher une aide, un champ ou un module..."
                         className="apple-input pl-11"
                     />
+                    <select
+                        value={helpMode}
+                        onChange={event => updateHelpMode(event.target.value)}
+                        className="mt-3 apple-select"
+                        title="Choisissez comment le bouton Aide ouvre les explications depuis les pages du Dashboard."
+                    >
+                        <option value="page">Ouvrir l&apos;aide dans une page</option>
+                        <option value="modal">Ouvrir l&apos;aide dans une modale</option>
+                        <option value="drawer">Ouvrir l&apos;aide dans un panneau latéral</option>
+                    </select>
                 </div>
             </div>
 
