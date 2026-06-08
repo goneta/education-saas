@@ -7,6 +7,7 @@ import { useParams } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { AppleAccordion } from "@/components/ui/apple-accordion"
 import { ExplainedField, fieldHelp } from "@/components/ui/explained-field"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
@@ -207,6 +208,16 @@ export default function SettingsPage() {
     const [settingsStatus, setSettingsStatus] = useState("")
     const [settingsError, setSettingsError] = useState("")
     const [selectedPermissionCategory, setSelectedPermissionCategory] = useState("all")
+    const [openPanels, setOpenPanels] = useState<Set<string>>(new Set())
+
+    const togglePanel = (panel: string) => {
+        setOpenPanels(previous => {
+            const next = new Set(previous)
+            if (next.has(panel)) next.delete(panel)
+            else next.add(panel)
+            return next
+        })
+    }
 
     const loadSchools = useCallback(async () => {
         if (!token || user?.role !== "super_admin") return
@@ -581,9 +592,8 @@ export default function SettingsPage() {
                 <p className="apple-page-description">Contexte établissement, rôles, permissions, localisation et administration de la plateforme.</p>
             </div>
 
-            <Card>
-                <CardHeader><CardTitle>Contexte actif</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
+            <AppleAccordion title="Contexte actif" open={openPanels.has("activeContext")} onToggle={() => togglePanel("activeContext")}>
+                <div className="space-y-4">
                     <div className="grid gap-3 text-sm md:grid-cols-4">
                         <Info label="Utilisateur actif" value={activeContext?.user.full_name || user?.full_name || user?.email || "-"} />
                         <Info label="Rôle principal" value={activeContext?.user.role || user?.role || "-"} />
@@ -606,15 +616,14 @@ export default function SettingsPage() {
                             {activeRolePermissions.length ? activeRolePermissions.map(permission => <span key={permission} className="rounded-md border px-2 py-1 text-xs">{permission}</span>) : <span className="text-sm text-[#6B7280]">Aucune permission spécifique chargée.</span>}
                         </div>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </AppleAccordion>
 
-            <Card>
-                <CardHeader><CardTitle>{t("permissions")}</CardTitle></CardHeader>
-                <CardContent className="flex flex-wrap gap-2 text-sm">
+            <AppleAccordion title={t("permissions")} open={openPanels.has("permissions")} onToggle={() => togglePanel("permissions")}>
+                <div className="flex flex-wrap gap-2 text-sm">
                     {permissions.map(permission => <span key={permission} className="rounded-md border px-2 py-1">{permission}</span>)}
-                </CardContent>
-            </Card>
+                </div>
+            </AppleAccordion>
 
             {schoolSettings && (
                 <>
@@ -741,9 +750,8 @@ export default function SettingsPage() {
             )}
 
             {catalog && (
-                <Card>
-                    <CardHeader><CardTitle>Gestion des roles et permissions</CardTitle></CardHeader>
-                    <CardContent className="space-y-4">
+                <AppleAccordion title="Gestion des roles et permissions" open={openPanels.has("roleManagement")} onToggle={() => togglePanel("roleManagement")}>
+                    <div className="space-y-4">
                         <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto_auto]">
                             <input value={newRole.name} onChange={(event) => setNewRole({ ...newRole, name: event.target.value })} placeholder="Nom du rôle personnalisé" className="apple-input" />
                             <input value={newRole.description} onChange={(event) => setNewRole({ ...newRole, description: event.target.value })} placeholder={tx(locale, "description")} className="apple-input" />
@@ -785,14 +793,13 @@ export default function SettingsPage() {
                         </div>
                         {rolePermissions && rolePermissions.disabled_permissions.length > 0 && <p className="text-xs text-[#6B7280]">Droits explicitement retires: {rolePermissions.disabled_permissions.join(", ")}</p>}
                         <div className="rounded-lg border bg-[#F8FAFC] p-3 text-sm"><p className="font-medium text-[#111827]">Utilisateurs associes</p><p className="mt-1 text-[#6B7280]">{roleUsers.length ? roleUsers.map(item => item.full_name || item.email).join(", ") : "Aucun utilisateur associe a ce role."}</p></div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </AppleAccordion>
             )}
 
             {catalog && (
-                <Card>
-                    <CardHeader><CardTitle>Gestion des utilisateurs</CardTitle></CardHeader>
-                    <CardContent className="space-y-4">
+                <AppleAccordion title="Gestion des utilisateurs" open={openPanels.has("userManagement")} onToggle={() => togglePanel("userManagement")}>
+                    <div className="space-y-4">
                         <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_0.8fr_1fr_auto]">
                             <input value={newUser.full_name} onChange={(event) => setNewUser({ ...newUser, full_name: event.target.value })} placeholder="Nom complet" className="apple-input" />
                             <input value={newUser.email} onChange={(event) => setNewUser({ ...newUser, email: event.target.value })} placeholder="Email" className="apple-input" />
@@ -803,24 +810,22 @@ export default function SettingsPage() {
                         </div>
                         {userStatus && <p className="text-sm text-[#6B7280]">{userStatus}</p>}
                         <div className="overflow-x-auto rounded-lg border"><table className="w-full min-w-[760px] text-sm"><thead className="bg-[#F8FAFC]"><tr className="border-b"><th className="px-3 py-2 text-left">Utilisateur</th><th className="px-3 py-2 text-left">Email</th><th className="px-3 py-2 text-left">Role principal</th><th className="px-3 py-2 text-left">Statut</th><th className="px-3 py-2 text-right">Actions</th></tr></thead><tbody>{users.map(managedUser => <tr key={managedUser.id} className="border-b last:border-0"><td className="px-3 py-2 font-medium">{managedUser.full_name || "-"}</td><td className="px-3 py-2">{managedUser.email}</td><td className="px-3 py-2">{managedUser.role}</td><td className="px-3 py-2">{managedUser.is_active ? "Actif" : "Inactif"}</td><td className="px-3 py-2 text-right"><Button variant="outline" size="sm" onClick={() => toggleUserStatus(managedUser)}>{managedUser.is_active ? "Desactiver" : "Reactiver"}</Button><Button variant="outline" size="sm" className="ml-2" onClick={() => resetUserPassword(managedUser)}>Reset MDP</Button></td></tr>)}</tbody></table></div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </AppleAccordion>
             )}
 
-            <Card>
-                <CardHeader><CardTitle>{t("schoolTemplates")}</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
+            <AppleAccordion title={t("schoolTemplates")} open={openPanels.has("schoolTemplates")} onToggle={() => togglePanel("schoolTemplates")}>
+                <div className="space-y-4">
                     <div className="flex flex-wrap gap-3"><select value={templateChoice} onChange={(e) => setTemplateChoice(e.target.value)} className="apple-select max-w-xs">{Object.keys(templates).map(template => <option key={template} value={template}>{template}</option>)}</select><Button onClick={applyTemplate}>{t("applyTemplate")}</Button></div>
                     {templates[templateChoice] && <div className="grid gap-3 md:grid-cols-3 text-sm"><Info label="Classes" value={templates[templateChoice].classes.join(", ")} /><Info label="Niveaux" value={(templates[templateChoice].levels || []).join(", ")} /><Info label="Matières" value={templates[templateChoice].subjects.join(", ")} /><Info label="Filières / programmes" value={templates[templateChoice].programs.join(", ") || "-"} /><Info label="Diplômes" value={(templates[templateChoice].diplomas || []).join(", ")} /><Info label="Semestres" value={(templates[templateChoice].semesters || []).join(", ")} /><Info label="Certifications" value={(templates[templateChoice].certifications || []).join(", ")} /><Info label="Types d'évaluation" value={(templates[templateChoice].assessment_types || []).join(", ")} /><Info label="Rubriques frais" value={templates[templateChoice].fees.map(fee => fee.name).join(", ")} /></div>}
-                </CardContent>
-            </Card>
+                </div>
+            </AppleAccordion>
 
-            <Card>
-                <CardHeader><CardTitle>{t("auditTrail")}</CardTitle></CardHeader>
-                <CardContent>
+            <AppleAccordion title={t("auditTrail")} open={openPanels.has("auditTrail")} onToggle={() => togglePanel("auditTrail")}>
+                <div>
                     <table className="w-full text-sm"><thead><tr className="border-b"><th className="py-2 text-left">Date</th><th className="py-2 text-left">Action</th><th className="py-2 text-left">Actor</th><th className="py-2 text-left">Status</th></tr></thead><tbody>{auditLogs.map(log => <tr key={log.id} className="border-b last:border-0"><td className="py-2">{new Date(log.created_at).toLocaleString()}</td><td className="py-2">{log.action}</td><td className="py-2">{log.actor_id || "-"}</td><td className="py-2">{log.status_code || "-"}</td></tr>)}</tbody></table>
-                </CardContent>
-            </Card>
+                </div>
+            </AppleAccordion>
 
             {user?.role === "super_admin" && (
                 <Card>

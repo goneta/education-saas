@@ -5,7 +5,7 @@ import type { ReactNode } from "react"
 import { Download, Edit3, FileText, Lock, Plus, RefreshCw, Trash2, Unlock, Upload, Wand2 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { AppleAccordion } from "@/components/ui/apple-accordion"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
@@ -86,10 +86,19 @@ export default function TimetablePage() {
         rooms: "Salle 1, Salle 2, Salle 3, Laboratoire 1, Atelier 1",
     })
     const [statusText, setStatusText] = useState("")
+    const [openPanels, setOpenPanels] = useState<Set<string>>(new Set())
 
     const isAdmin = ["super_admin", "school_admin", "admin", "direction", "director", "principal", "pedagogy_coordinator"].includes(user?.role || "")
 
     const authHeaders = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token])
+    const togglePanel = (panel: string) => {
+        setOpenPanels(previous => {
+            const next = new Set(previous)
+            if (next.has(panel)) next.delete(panel)
+            else next.add(panel)
+            return next
+        })
+    }
 
     const fetchEntries = useCallback(async () => {
         if (!token) return
@@ -293,10 +302,21 @@ export default function TimetablePage() {
 
             {statusText && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{statusText}</div>}
 
+            <AppleAccordion title="Configuration" open={openPanels.has("configuration")} onToggle={() => togglePanel("configuration")}>
+                <div className="grid gap-3 text-sm md:grid-cols-4">
+                    <InfoTile label="Classes chargées" value={classes.length.toString()} />
+                    <InfoTile label="Matières chargées" value={subjects.length.toString()} />
+                    <InfoTile label="Professeurs chargés" value={teachers.length.toString()} />
+                    <InfoTile label="Droits d'administration" value={isAdmin ? "Modification autorisée" : "Consultation uniquement"} />
+                </div>
+                <p className="mt-3 text-sm text-[#6B7280]">
+                    Cliquez sur les sections ci-dessous pour configurer la génération, filtrer les cours ou consulter les journées de la semaine.
+                </p>
+            </AppleAccordion>
+
             {isAdmin && (
-                <Card>
-                    <CardHeader><CardTitle>Génération automatique et régénération</CardTitle></CardHeader>
-                    <CardContent className="space-y-4">
+                <AppleAccordion title="Génération automatique et régénération" open={openPanels.has("generation")} onToggle={() => togglePanel("generation")}>
+                    <div className="space-y-4">
                         <div className="grid gap-3 md:grid-cols-4">
                             <Field label="Mode">
                                 <select value={generation.mode} onChange={event => setGeneration({ ...generation, mode: event.target.value })} className="apple-select">
@@ -342,13 +362,12 @@ export default function TimetablePage() {
                             <a className="inline-flex items-center rounded-lg border px-4 py-2 text-sm" href={exportUrl("csv")} target="_blank"><Download className="mr-2 h-4 w-4" /> CSV</a>
                             <a className="inline-flex items-center rounded-lg border px-4 py-2 text-sm" href={exportUrl("excel")} target="_blank"><Download className="mr-2 h-4 w-4" /> Excel</a>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </AppleAccordion>
             )}
 
-            <Card>
-                <CardHeader><CardTitle>Filtres et modification multiple</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
+            <AppleAccordion title="Filtres et modification multiple" open={openPanels.has("filters")} onToggle={() => togglePanel("filters")}>
+                <div className="space-y-4">
                     <div className="grid gap-3 md:grid-cols-4">
                         <Field label="Classe">
                             <select value={filterClassId} onChange={event => setFilterClassId(event.target.value)} className="apple-select"><option value="">Toutes les classes</option>{classes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
@@ -369,15 +388,14 @@ export default function TimetablePage() {
                             <Button onClick={bulkUpdate}>Appliquer</Button>
                         </div>
                     )}
-                </CardContent>
-            </Card>
+                </div>
+            </AppleAccordion>
 
             {isLoading ? <div className="py-12 text-center text-[#6B7280]">Chargement...</div> : (
-                <div className="space-y-4">
-                    {entriesByDay.map(({ day, entries: dayEntries }) => (
-                        <Card key={day}>
-                            <CardHeader><CardTitle>{DAY_LABELS[day] || day}</CardTitle></CardHeader>
-                            <CardContent>
+                <AppleAccordion title="Emploi du temps hebdomadaire" open={openPanels.has("weekly")} onToggle={() => togglePanel("weekly")}>
+                    <div className="space-y-4">
+                        {entriesByDay.map(({ day, entries: dayEntries }) => (
+                            <AppleAccordion key={day} title={DAY_LABELS[day] || day} open={openPanels.has(`day:${day}`)} onToggle={() => togglePanel(`day:${day}`)} lazy>
                                 {!dayEntries.length ? <p className="text-sm text-[#6B7280]">Aucun cours.</p> : (
                                     <div className="overflow-x-auto">
                                         <table className="w-full min-w-[960px] text-sm">
@@ -398,10 +416,10 @@ export default function TimetablePage() {
                                         </table>
                                     </div>
                                 )}
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
+                            </AppleAccordion>
+                        ))}
+                    </div>
+                </AppleAccordion>
             )}
 
             <Dialog open={showModal} onOpenChange={setShowModal}>
@@ -440,4 +458,13 @@ export default function TimetablePage() {
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
     return <div className="space-y-2"><Label className="text-sm text-[#6B7280]">{label}</Label>{children}</div>
+}
+
+function InfoTile({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="rounded-[18px] border border-[#E5E7EB] bg-white px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-[0.08em] text-[#6B7280]">{label}</p>
+            <p className="mt-1 font-semibold text-[#111827]">{value}</p>
+        </div>
+    )
 }
