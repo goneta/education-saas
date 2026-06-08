@@ -835,23 +835,249 @@ class AdministrativeRequestResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PartnerCompanyBase(BaseModel):
+    name: str
+    rccm_number: Optional[str] = None
+    tax_number: Optional[str] = None
+    industry: Optional[str] = None
+    description: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    region: Optional[str] = None
+    country: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    hr_manager_name: Optional[str] = None
+    hr_manager_role: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[EmailStr] = None
+    max_simultaneous_interns: Optional[int] = None
+    website: Optional[str] = None
+    logo_url: Optional[str] = None
+    partnership_file_id: Optional[int] = None
+    status: str = "active"
+
+
+class PartnerCompanyCreate(PartnerCompanyBase):
+    pass
+
+
+class PartnerCompanyUpdate(BaseModel):
+    name: Optional[str] = None
+    rccm_number: Optional[str] = None
+    tax_number: Optional[str] = None
+    industry: Optional[str] = None
+    description: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    region: Optional[str] = None
+    country: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    hr_manager_name: Optional[str] = None
+    hr_manager_role: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[EmailStr] = None
+    max_simultaneous_interns: Optional[int] = None
+    website: Optional[str] = None
+    logo_url: Optional[str] = None
+    partnership_file_id: Optional[int] = None
+    status: Optional[str] = None
+
+
+class PartnerCompanyResponse(PartnerCompanyBase):
+    id: int
+    interns_count: int = 0
+    school_id: int
+    created_by_id: Optional[int] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class InternshipCreate(BaseModel):
-    student_id: int
+    student_id: Optional[int] = None
+    student_ids: List[int] = Field(default_factory=list)
+    company_id: Optional[int] = None
     company_name: str
+    academic_level: Optional[str] = None
+    class_id: Optional[int] = None
+    program: Optional[str] = None
+    training_program: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    objectives: Optional[str] = None
+    service_department: Optional[str] = None
     supervisor_name: Optional[str] = None
+    supervisor_role: Optional[str] = None
+    supervisor_phone: Optional[str] = None
+    supervisor_email: Optional[EmailStr] = None
+    teacher_ref_id: Optional[int] = None
+    pedagogy_coordinator_id: Optional[int] = None
+    internship_manager_id: Optional[int] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
+    weeks_count: Optional[int] = None
+    expected_schedule: Optional[str] = None
     status: str = "planned"
     notes: Optional[str] = None
 
 
+class InternshipUpdate(BaseModel):
+    company_id: Optional[int] = None
+    company_name: Optional[str] = None
+    academic_level: Optional[str] = None
+    class_id: Optional[int] = None
+    program: Optional[str] = None
+    training_program: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    objectives: Optional[str] = None
+    service_department: Optional[str] = None
+    supervisor_name: Optional[str] = None
+    supervisor_role: Optional[str] = None
+    supervisor_phone: Optional[str] = None
+    supervisor_email: Optional[EmailStr] = None
+    teacher_ref_id: Optional[int] = None
+    pedagogy_coordinator_id: Optional[int] = None
+    internship_manager_id: Optional[int] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    weeks_count: Optional[int] = None
+    expected_schedule: Optional[str] = None
+    status: Optional[str] = None
+    notes: Optional[str] = None
+    ai_summary: Optional[str] = None
+    final_score: Optional[float] = None
+
+
 class InternshipResponse(InternshipCreate):
     id: int
+    company_id: Optional[int] = None
+    assignments_count: int = 0
     school_id: int
     created_by_id: Optional[int] = None
     created_at: datetime
+    updated_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class InternshipAssignmentResponse(BaseModel):
+    id: int
+    internship_id: int
+    student_id: int
+    student_name: Optional[str] = None
+    class_name: Optional[str] = None
+    status: str
+    school_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class InternshipFollowUpCreate(BaseModel):
+    internship_id: int
+    student_id: Optional[int] = None
+    date: datetime
+    presence_status: str = "present"
+    activities: Optional[str] = None
+    tasks_description: Optional[str] = None
+    developed_skills: Optional[str] = None
+    tools_used: Optional[str] = None
+    difficulties: Optional[str] = None
+    supervisor_observation: Optional[str] = None
+
+
+class InternshipFollowUpResponse(InternshipFollowUpCreate):
+    id: int
+    supervisor_user_id: Optional[int] = None
+    school_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class InternshipLogbookCreate(BaseModel):
+    internship_id: int
+    student_id: int
+    date: datetime
+    tasks_done: Optional[str] = None
+    acquired_skills: Optional[str] = None
+    difficulties: Optional[str] = None
+    proposed_solutions: Optional[str] = None
+    hours_count: Optional[float] = None
+
+
+class InternshipLogbookUpdate(BaseModel):
+    validation_status: str
+    supervisor_comment: Optional[str] = None
+
+
+class InternshipLogbookResponse(InternshipLogbookCreate):
+    id: int
+    validation_status: str
+    supervisor_comment: Optional[str] = None
+    validated_by_id: Optional[int] = None
+    school_id: int
+    created_at: datetime
+    validated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class InternshipEvaluationCreate(BaseModel):
+    internship_id: int
+    student_id: Optional[int] = None
+    evaluation_type: str = "company"
+    scores: Dict[str, Any] = Field(default_factory=dict)
+    company_score: Optional[float] = None
+    report_score: Optional[float] = None
+    defense_score: Optional[float] = None
+    practical_score: Optional[float] = None
+    final_score: Optional[float] = None
+    comments: Optional[str] = None
+
+
+class InternshipEvaluationResponse(InternshipEvaluationCreate):
+    id: int
+    evaluator_id: Optional[int] = None
+    school_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class InternshipDocumentCreate(BaseModel):
+    internship_id: int
+    student_id: Optional[int] = None
+    document_type: str
+    title: str
+    secure_file_id: Optional[int] = None
+    status: str = "available"
+
+
+class InternshipDocumentResponse(InternshipDocumentCreate):
+    id: int
+    school_id: int
+    uploaded_by_id: Optional[int] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class InternshipDashboardResponse(BaseModel):
+    total_internships: int
+    active_internships: int
+    completed_internships: int
+    partner_companies: int
+    students_in_internship: int
+    validation_rate: float
+    insertion_rate: float
+    by_company: Dict[str, int]
+    by_level: Dict[str, int]
+    by_country: Dict[str, int]
 
 
 class SchoolExitCreate(BaseModel):

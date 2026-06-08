@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/auth-context"
 import {
     Bell,
     BookOpen,
+    BriefcaseBusiness,
     BrainCircuit,
     Calendar,
     ChevronDown,
@@ -90,6 +91,7 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
                 { href: `/${locale}/dashboard/education/subjects`, label: t("subjects"), icon: BookOpen },
                 { href: `/${locale}/dashboard/education/timetable`, label: t("timetable"), icon: Calendar },
                 { href: `/${locale}/dashboard/education/pedagogy`, label: t("pedagogy"), icon: GraduationCap },
+                { href: `/${locale}/dashboard/education/internships`, label: t("internships"), icon: BriefcaseBusiness },
                 { href: `/${locale}/dashboard/grades/assessments`, label: t("grades"), icon: ClipboardCheck },
                 { href: `/${locale}/dashboard/library`, label: t("library"), icon: BookOpen },
                 { href: `/${locale}/dashboard/portal`, label: t("portal"), icon: Users },

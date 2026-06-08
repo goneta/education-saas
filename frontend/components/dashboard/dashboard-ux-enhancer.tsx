@@ -29,6 +29,7 @@ const MODULE_BY_PATH: Array<[RegExp, string, string]> = [
     [/students/, "students", "students"],
     [/teachers/, "teachers", "teachers"],
     [/education\/timetable/, "timetable", "timetable"],
+    [/education\/internships/, "internships", "internships"],
     [/education\/classes/, "classes", "classes"],
     [/education\/subjects/, "subjects", "academics"],
     [/grades/, "grades", "academics"],

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import type { ComponentType } from "react"
-import { BookOpen, CheckCircle2, CircleHelp, CreditCard, FileText, GraduationCap, MessageSquareText, Search, Settings, Users, Wand2 } from "lucide-react"
+import { BookOpen, BriefcaseBusiness, CheckCircle2, CircleHelp, CreditCard, FileText, GraduationCap, MessageSquareText, Search, Settings, Users, Wand2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 type HelpField = {
@@ -177,6 +177,37 @@ const HELP_SECTIONS: HelpSection[] = [
             { name: "Autoriser le repartage", type: "Case a cocher", expected: "Active uniquement si le destinataire peut transmettre le document.", validation: "Le repartage reste soumis aux permissions du role du destinataire." },
         ],
         result: "Le document est stocke dans l'espace de l'etablissement, les partages sont traces, les destinataires recoivent l'acces autorise et chaque consultation ou telechargement sensible est journalise.",
+    },
+    {
+        id: "internships",
+        title: "Gestion des stages en entreprise",
+        icon: BriefcaseBusiness,
+        purpose: "Gerer les entreprises partenaires, affecter les eleves ou etudiants en stage, suivre les presences, valider le carnet, evaluer les competences et produire les documents officiels.",
+        steps: [
+            "Ouvrez Scolarite puis Stages dans la barre laterale.",
+            "Ajoutez d'abord les entreprises partenaires avec leurs coordonnees, responsable RH, capacite d'accueil et informations administratives.",
+            "Creez un stage en selectionnant l'entreprise, les stagiaires, le niveau, la filiere, le service, les dates, le superviseur entreprise et le referent ecole.",
+            "Pendant le stage, renseignez le suivi quotidien: presence, activites, competences, outils, difficultes et observations.",
+            "Demandez aux eleves ou etudiants de tenir leur carnet de stage avec les taches, heures, competences et solutions proposees.",
+            "Validez ou corrigez les entrees de carnet, puis saisissez les evaluations entreprise, rapport, soutenance, pratique et note finale.",
+            "Ajoutez les documents: convention, assurance, feuille de presence, rapport, presentation, evaluation ou annexes.",
+            "En fin de stage, utilisez Generer les documents pour creer les attestations, certificats, fiches d'evaluation et releves lies au stage.",
+            "Utilisez l'analyse IA pour obtenir une synthese des carnets et evaluations, puis verifier les recommandations avant validation finale.",
+        ],
+        fields: [
+            { name: "Nom de l'entreprise", type: "Texte obligatoire", expected: "Nom legal de l'entreprise partenaire.", validation: "Utilise dans les conventions, attestations, statistiques et exports." },
+            { name: "RCCM / numero fiscal", type: "Texte facultatif", expected: "References administratives de l'entreprise.", validation: "Permet d'identifier officiellement le partenaire." },
+            { name: "Adresse / ville / pays / GPS", type: "Texte et nombres", expected: "Localisation complete et coordonnees si disponibles.", validation: "Utilise pour visites, cartes, rapports et exports ministeriels." },
+            { name: "Responsable RH", type: "Texte + contact", expected: "Nom, fonction, telephone et email du contact RH.", validation: "Sert aux notifications, conventions et validations." },
+            { name: "IDs eleves", type: "Liste numerique", expected: "Un ou plusieurs IDs de profils eleves separes par virgule.", validation: "Chaque ID doit appartenir a l'etablissement actif." },
+            { name: "Titre et objectifs", type: "Texte long", expected: "Mission de stage, objectifs pedagogiques et competences attendues.", validation: "Visible dans les documents et le suivi du stage." },
+            { name: "Dates et semaines", type: "Date / nombre", expected: "Date debut, date fin et duree en semaines.", validation: "Alimente les attestations, statistiques et controles de planning." },
+            { name: "Presence quotidienne", type: "Liste", expected: "Present, absent, retard ou excuse.", validation: "Permet le controle d'assiduite en entreprise." },
+            { name: "Carnet de stage", type: "Texte long", expected: "Taches realisees, competences acquises, difficultes, solutions et heures.", validation: "Doit etre valide par le superviseur ou referent autorise." },
+            { name: "Note finale", type: "Nombre", expected: "Score final du stage.", validation: "Lorsque la note finale est saisie, le stage peut passer au statut evalue." },
+            { name: "Document de stage", type: "Fichier reference", expected: "Convention, assurance, rapport, presentation ou annexe.", validation: "Les fichiers restent soumis a la securite, aux permissions et a l'audit." },
+        ],
+        result: "Le stage est suivi de bout en bout, les portails des utilisateurs autorises sont mis a jour, les documents sont disponibles, et chaque action sensible est journalisee.",
     },
     {
         id: "settings",

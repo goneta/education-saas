@@ -14,6 +14,7 @@ interface PortalDocument { id: number; document_type: string; title: string; ref
 interface PortalInvoice { id: number; invoice_number: string; title: string; amount_due: number; amount_paid: number; remaining_balance: number; status: string }
 interface PortalNotification { id: number; event_type: string; subject: string | null; message: string; channel: string; created_at: string }
 interface PortalTimetable { id: number; day_of_week: string; start_time: string; end_time: string; room: string | null; class_id: number; subject_id: number; teacher_id: number | null }
+interface PortalInternship { id: number; title: string | null; company_name: string; service_department: string | null; supervisor_name: string | null; start_date: string | null; end_date: string | null; status: string; final_score?: number | null }
 
 export default function PortalPage() {
     const { token, user } = useAuth()
@@ -26,6 +27,7 @@ export default function PortalPage() {
     const [portalInvoices, setPortalInvoices] = useState<PortalInvoice[]>([])
     const [portalNotifications, setPortalNotifications] = useState<PortalNotification[]>([])
     const [portalTimetable, setPortalTimetable] = useState<PortalTimetable[]>([])
+    const [portalInternships, setPortalInternships] = useState<PortalInternship[]>([])
     const [documentFilter, setDocumentFilter] = useState("")
     const [requestForm, setRequestForm] = useState({ request_type: "report_card", details: "" })
     const [submissionText, setSubmissionText] = useState<Record<number, string>>({})
@@ -33,13 +35,14 @@ export default function PortalPage() {
     const load = useCallback(async () => {
         if (!token) return
         const headers = { Authorization: `Bearer ${token}` }
-        const [childrenRes, assignmentsRes, materialsRes, requestsRes, portalRes, timetableRes] = await Promise.all([
+        const [childrenRes, assignmentsRes, materialsRes, requestsRes, portalRes, timetableRes, internshipsRes] = await Promise.all([
             fetch(`${API_BASE_URL}/pedagogy/portal/children`, { headers }),
             fetch(`${API_BASE_URL}/pedagogy/assignments`, { headers }),
             fetch(`${API_BASE_URL}/pedagogy/materials`, { headers }),
             fetch(`${API_BASE_URL}/pedagogy/requests`, { headers }),
             fetch(`${API_BASE_URL}/documents/portal${selectedStudentId ? `?student_id=${selectedStudentId}${documentFilter ? `&document_type=${documentFilter}` : ""}` : ""}`, { headers }),
             fetch(`${API_BASE_URL}/education/timetables/my`, { headers }),
+            fetch(`${API_BASE_URL}/internships/`, { headers }),
         ])
         if (childrenRes.ok) {
             const data = await childrenRes.json()
@@ -50,6 +53,7 @@ export default function PortalPage() {
         if (materialsRes.ok) setMaterials(await materialsRes.json())
         if (requestsRes.ok) setRequests(await requestsRes.json())
         if (timetableRes.ok) setPortalTimetable(await timetableRes.json())
+        if (internshipsRes.ok) setPortalInternships(await internshipsRes.json())
         if (portalRes.ok) {
             const data = await portalRes.json()
             setPortalDocs(data.documents || [])
@@ -122,6 +126,11 @@ export default function PortalPage() {
                 <Card><CardHeader><CardTitle>Notifications</CardTitle></CardHeader><CardContent className="space-y-3">
                     {portalNotifications.map(notification => <div key={notification.id} className="rounded-md border p-3 text-sm"><p className="font-medium">{notification.subject || notification.event_type}</p><p className="text-[#6B7280]">{notification.channel} • {new Date(notification.created_at).toLocaleString()}</p><p className="mt-1">{notification.message}</p></div>)}
                     {!portalNotifications.length && <p className="text-sm text-[#6B7280]">Aucune notification enregistrée.</p>}
+                </CardContent></Card>
+
+                <Card><CardHeader><CardTitle>Stages en entreprise</CardTitle></CardHeader><CardContent className="space-y-3">
+                    {portalInternships.map(internship => <div key={internship.id} className="rounded-md border p-3 text-sm"><p className="font-medium">{internship.title || internship.company_name}</p><p className="text-[#6B7280]">{internship.company_name} - {internship.service_department || "-"}</p><p>Superviseur: {internship.supervisor_name || "-"}</p><p>{internship.start_date ? new Date(internship.start_date).toLocaleDateString() : "-"} - {internship.end_date ? new Date(internship.end_date).toLocaleDateString() : "-"}</p><p className="mt-1 font-semibold text-[#0F766E]">{internship.status}{internship.final_score != null ? ` - Note: ${internship.final_score}` : ""}</p></div>)}
+                    {!portalInternships.length && <p className="text-sm text-[#6B7280]">Aucun stage publie pour ce compte.</p>}
                 </CardContent></Card>
             </div>
 

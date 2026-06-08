@@ -602,24 +602,196 @@ class AdministrativeRequest(Base):
     school = relationship("School")
 
 
+class PartnerCompany(Base):
+    __tablename__ = "partner_companies"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, index=True)
+    rccm_number = Column(String, nullable=True)
+    tax_number = Column(String, nullable=True)
+    industry = Column(String, nullable=True, index=True)
+    description = Column(Text, nullable=True)
+    address = Column(String, nullable=True)
+    city = Column(String, nullable=True, index=True)
+    region = Column(String, nullable=True)
+    country = Column(String, nullable=True, index=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    hr_manager_name = Column(String, nullable=True)
+    hr_manager_role = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    max_simultaneous_interns = Column(Integer, nullable=True)
+    website = Column(String, nullable=True)
+    logo_url = Column(String, nullable=True)
+    partnership_file_id = Column(Integer, ForeignKey("secure_files.id"), nullable=True)
+    status = Column(String, default="active", nullable=False, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=True)
+
+    school = relationship("School")
+    created_by = relationship("User")
+    partnership_file = relationship("SecureFile")
+
+
 class Internship(Base):
     __tablename__ = "internships"
 
     id = Column(Integer, primary_key=True, index=True)
-    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True)
+    company_id = Column(Integer, ForeignKey("partner_companies.id"), nullable=True, index=True)
     company_name = Column(String, nullable=False)
+    academic_level = Column(String, nullable=True, index=True)
+    class_id = Column(Integer, ForeignKey("classes.id"), nullable=True, index=True)
+    program = Column(String, nullable=True)
+    training_program = Column(String, nullable=True)
+    title = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
+    objectives = Column(Text, nullable=True)
+    service_department = Column(String, nullable=True)
     supervisor_name = Column(String, nullable=True)
+    supervisor_role = Column(String, nullable=True)
+    supervisor_phone = Column(String, nullable=True)
+    supervisor_email = Column(String, nullable=True)
+    teacher_ref_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    pedagogy_coordinator_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    internship_manager_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     start_date = Column(DateTime, nullable=True)
     end_date = Column(DateTime, nullable=True)
+    weeks_count = Column(Integer, nullable=True)
+    expected_schedule = Column(String, nullable=True)
     status = Column(String, default="planned", nullable=False)
     notes = Column(Text, nullable=True)
+    ai_summary = Column(Text, nullable=True)
+    final_score = Column(Float, nullable=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
     created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=True)
 
     student = relationship("StudentProfile")
+    company = relationship("PartnerCompany")
+    class_ref = relationship("Class")
+    teacher_ref = relationship("User", foreign_keys=[teacher_ref_id])
+    pedagogy_coordinator = relationship("User", foreign_keys=[pedagogy_coordinator_id])
+    internship_manager = relationship("User", foreign_keys=[internship_manager_id])
     school = relationship("School")
-    created_by = relationship("User")
+    created_by = relationship("User", foreign_keys=[created_by_id])
+
+
+class InternshipAssignment(Base):
+    __tablename__ = "internship_assignments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    internship_id = Column(Integer, ForeignKey("internships.id"), nullable=False, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False, index=True)
+    status = Column(String, default="assigned", nullable=False, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    internship = relationship("Internship")
+    student = relationship("StudentProfile")
+    school = relationship("School")
+
+    __table_args__ = (
+        UniqueConstraint("internship_id", "student_id", name="_internship_student_uc"),
+    )
+
+
+class InternshipDailyFollowUp(Base):
+    __tablename__ = "internship_daily_followups"
+
+    id = Column(Integer, primary_key=True, index=True)
+    internship_id = Column(Integer, ForeignKey("internships.id"), nullable=False, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True, index=True)
+    date = Column(DateTime, nullable=False, index=True)
+    presence_status = Column(String, default="present", nullable=False)
+    activities = Column(Text, nullable=True)
+    tasks_description = Column(Text, nullable=True)
+    developed_skills = Column(Text, nullable=True)
+    tools_used = Column(Text, nullable=True)
+    difficulties = Column(Text, nullable=True)
+    supervisor_observation = Column(Text, nullable=True)
+    supervisor_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    internship = relationship("Internship")
+    student = relationship("StudentProfile")
+    supervisor_user = relationship("User")
+    school = relationship("School")
+
+
+class InternshipLogbookEntry(Base):
+    __tablename__ = "internship_logbook_entries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    internship_id = Column(Integer, ForeignKey("internships.id"), nullable=False, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False, index=True)
+    date = Column(DateTime, nullable=False, index=True)
+    tasks_done = Column(Text, nullable=True)
+    acquired_skills = Column(Text, nullable=True)
+    difficulties = Column(Text, nullable=True)
+    proposed_solutions = Column(Text, nullable=True)
+    hours_count = Column(Float, nullable=True)
+    validation_status = Column(String, default="pending", nullable=False, index=True)
+    supervisor_comment = Column(Text, nullable=True)
+    validated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    validated_at = Column(DateTime(timezone=True), nullable=True)
+
+    internship = relationship("Internship")
+    student = relationship("StudentProfile")
+    validated_by = relationship("User")
+    school = relationship("School")
+
+
+class InternshipEvaluation(Base):
+    __tablename__ = "internship_evaluations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    internship_id = Column(Integer, ForeignKey("internships.id"), nullable=False, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True, index=True)
+    evaluation_type = Column(String, nullable=False, index=True)
+    scores = Column(JSON, nullable=True)
+    company_score = Column(Float, nullable=True)
+    report_score = Column(Float, nullable=True)
+    defense_score = Column(Float, nullable=True)
+    practical_score = Column(Float, nullable=True)
+    final_score = Column(Float, nullable=True)
+    comments = Column(Text, nullable=True)
+    evaluator_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    internship = relationship("Internship")
+    student = relationship("StudentProfile")
+    evaluator = relationship("User")
+    school = relationship("School")
+
+
+class InternshipDocument(Base):
+    __tablename__ = "internship_documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    internship_id = Column(Integer, ForeignKey("internships.id"), nullable=False, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True, index=True)
+    document_type = Column(String, nullable=False, index=True)
+    title = Column(String, nullable=False)
+    secure_file_id = Column(Integer, ForeignKey("secure_files.id"), nullable=True)
+    status = Column(String, default="available", nullable=False, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    uploaded_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    internship = relationship("Internship")
+    student = relationship("StudentProfile")
+    secure_file = relationship("SecureFile")
+    uploaded_by = relationship("User")
+    school = relationship("School")
 
 
 class SchoolExit(Base):
