@@ -49,14 +49,17 @@ function escapeHtml(value: string) {
 }
 
 function rowCells(row: HTMLTableRowElement) {
-    return Array.from(row.querySelectorAll("td"))
-        .filter(cell => !cell.dataset.teducaiActionCell && !cell.dataset.teducaiSelectCell)
+    return Array.from(row.children)
+        .filter((cell): cell is HTMLTableCellElement => cell instanceof HTMLTableCellElement)
+        .filter(cell => !cell.dataset.teducaiActionCell && !cell.dataset.teducaiSelectCell && !cell.dataset.teducaiLegacyActionCell && !cell.dataset.teducaiDuplicateSelectCell)
         .map(cell => cell.textContent?.trim() || "")
 }
 
 function tableHeaders(row: HTMLTableRowElement) {
     const table = row.closest("table")
-    const headers = table ? Array.from(table.querySelectorAll("thead th")).map(th => th.textContent?.trim() || "") : []
+    const headers = table ? Array.from(table.querySelectorAll<HTMLTableCellElement>("thead th"))
+        .filter(th => !th.dataset.teducaiActionsHead && !th.dataset.teducaiSelectHead && !th.dataset.teducaiLegacyActionHead && !th.dataset.teducaiDuplicateSelectHead)
+        .map(th => th.textContent?.trim() || "") : []
     return headers.filter(header => !["", "Actions", "Action"].includes(header))
 }
 
@@ -113,6 +116,90 @@ function clickExistingAction(row: HTMLTableRowElement, patterns: RegExp[]) {
     return Boolean(target)
 }
 
+function directCells(row: HTMLTableRowElement) {
+    return Array.from(row.children).filter((cell): cell is HTMLTableCellElement => cell instanceof HTMLTableCellElement)
+}
+
+function normalizeHeader(value: string) {
+    return value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+}
+
+function isActionHeader(cell: HTMLTableCellElement) {
+    return /^(actions?|operations?)$/.test(normalizeHeader(cell.textContent || ""))
+}
+
+function isCheckboxOnlyCell(cell: HTMLTableCellElement) {
+    const inputs = Array.from(cell.querySelectorAll("input[type='checkbox']"))
+    if (inputs.length !== 1) return false
+    return (cell.textContent || "").trim() === ""
+}
+
+function isLegacyActionCell(cell: HTMLTableCellElement) {
+    if (cell.dataset.teducaiActionCell) return false
+    const buttons = Array.from(cell.querySelectorAll("button,a"))
+        .filter(element => !(element as HTMLElement).dataset.teducaiAction)
+    if (!buttons.length) return false
+    const actionText = buttons.map(element => `${element.textContent || ""} ${element.getAttribute("title") || ""} ${element.getAttribute("aria-label") || ""}`).join(" ")
+    return /view|afficher|edit|modifier|delete|supprimer|trash|print|imprimer|download|telecharger|télécharger/i.test(actionText)
+}
+
+function hideCell(cell: HTMLTableCellElement, marker: "teducaiLegacyAction" | "teducaiDuplicateSelect") {
+    if (marker === "teducaiLegacyAction") cell.dataset.teducaiLegacyActionCell = "true"
+    if (marker === "teducaiDuplicateSelect") cell.dataset.teducaiDuplicateSelectCell = "true"
+    cell.classList.add("hidden")
+    cell.setAttribute("aria-hidden", "true")
+}
+
+function hideHead(cell: HTMLTableCellElement, marker: "teducaiLegacyAction" | "teducaiDuplicateSelect") {
+    if (marker === "teducaiLegacyAction") cell.dataset.teducaiLegacyActionHead = "true"
+    if (marker === "teducaiDuplicateSelect") cell.dataset.teducaiDuplicateSelectHead = "true"
+    cell.classList.add("hidden")
+    cell.setAttribute("aria-hidden", "true")
+}
+
+function normalizeExistingTable(table: HTMLTableElement) {
+    const headerRow = table.querySelector<HTMLTableRowElement>("thead tr")
+    const headerCells = headerRow ? directCells(headerRow) : []
+    const actionIndexes = new Set<number>()
+    const checkboxIndexes = new Set<number>()
+    let hasSelectionColumn = false
+
+    headerCells.forEach((cell, index) => {
+        if (cell.dataset.teducaiActionsHead || cell.dataset.teducaiSelectHead) return
+        if (isActionHeader(cell)) {
+            actionIndexes.add(index)
+            hideHead(cell, "teducaiLegacyAction")
+        } else if (isCheckboxOnlyCell(cell)) {
+            if (!hasSelectionColumn && index === 0) {
+                hasSelectionColumn = true
+                cell.dataset.teducaiSelectHead = "true"
+                cell.querySelector<HTMLInputElement>("input[type='checkbox']")?.setAttribute("data-teducai-select-all", "true")
+            } else {
+                checkboxIndexes.add(index)
+                hideHead(cell, "teducaiDuplicateSelect")
+            }
+        }
+    })
+
+    Array.from(table.querySelectorAll<HTMLTableRowElement>("tbody tr")).forEach(row => {
+        const cells = directCells(row)
+        cells.forEach((cell, index) => {
+            if (cell.dataset.teducaiActionCell || cell.dataset.teducaiSelectCell) return
+            if (actionIndexes.has(index) || isLegacyActionCell(cell)) {
+                hideCell(cell, "teducaiLegacyAction")
+            } else if (checkboxIndexes.has(index)) {
+                hideCell(cell, "teducaiDuplicateSelect")
+            }
+        })
+
+        const firstCell = directCells(row)[0]
+        if (firstCell && isCheckboxOnlyCell(firstCell) && !firstCell.dataset.teducaiDuplicateSelectCell) {
+            firstCell.dataset.teducaiSelectCell = "true"
+            firstCell.querySelector<HTMLInputElement>("input[type='checkbox']")?.setAttribute("data-teducai-row-select", "true")
+        }
+    })
+}
+
 function roleAllowsFallback(role: string | undefined, action: string) {
     if (["super_admin", "school_admin", "admin"].includes(role || "")) return true
     if (["parent", "student", "pupil"].includes(role || "")) return ["view", "download", "print"].includes(action)
@@ -156,6 +243,7 @@ export function DashboardUxEnhancer() {
     const enhanceTables = useCallback(() => {
         const tables = Array.from(document.querySelectorAll<HTMLTableElement>("main table"))
         tables.forEach((table, tableIndex) => {
+            normalizeExistingTable(table)
             table.dataset.teducaiEnhanced = "true"
             const headerRow = table.querySelector("thead tr")
             if (headerRow && !headerRow.querySelector("[data-teducai-select-head]")) {
@@ -176,11 +264,13 @@ export function DashboardUxEnhancer() {
                 if (row.dataset.teducaiEnhanced === "true") return
                 row.dataset.teducaiEnhanced = "true"
                 row.dataset.teducaiRowKey = row.dataset.teducaiRowKey || `${tableIndex}-${rowIndex}-${row.textContent?.slice(0, 24) || rowIndex}`
-                const selectCell = document.createElement("td")
-                selectCell.dataset.teducaiSelectCell = "true"
-                selectCell.className = "px-3 py-2"
-                selectCell.innerHTML = '<input type="checkbox" title="Sélectionner cette ligne" data-teducai-row-select class="h-4 w-4 accent-black" />'
-                row.insertBefore(selectCell, row.firstChild)
+                if (!row.querySelector("[data-teducai-select-cell]")) {
+                    const selectCell = document.createElement("td")
+                    selectCell.dataset.teducaiSelectCell = "true"
+                    selectCell.className = "px-3 py-2"
+                    selectCell.innerHTML = '<input type="checkbox" title="Sélectionner cette ligne" data-teducai-row-select class="h-4 w-4 accent-black" />'
+                    row.insertBefore(selectCell, row.firstChild)
+                }
                 const cell = document.createElement("td")
                 cell.dataset.teducaiActionCell = "true"
                 cell.className = "px-3 py-2 text-right"
