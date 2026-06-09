@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import type { ComponentType } from "react"
-import { BookOpen, BriefcaseBusiness, CheckCircle2, CircleHelp, CreditCard, FileText, GraduationCap, MessageSquareText, Search, Settings, Users, Wand2 } from "lucide-react"
+import { BookOpen, BrainCircuit, BriefcaseBusiness, CheckCircle2, CircleHelp, CreditCard, FileText, GraduationCap, MessageSquareText, Search, Settings, Users, Wand2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 type HelpField = {
@@ -145,6 +145,47 @@ const HELP_SECTIONS: HelpSection[] = [
             { name: "Micro", type: "Audio", expected: "Dictée ou question vocale si disponible.", validation: "Le texte reconnu suit les mêmes permissions." },
         ],
         result: "L'Agent IA fournit une réponse contextualisée et journalise les actions ou refus sensibles dans l'audit.",
+    },
+    {
+        id: "ai_first_erp",
+        title: "AI-first ERP et 20 agents d'automatisation IA",
+        icon: BrainCircuit,
+        purpose: "Comprendre comment TeducAI devient un ERP éducatif pilotable par IA: chaque agent lit, analyse, prépare ou exécute des actions uniquement dans le périmètre autorisé par le rôle connecté.",
+        steps: [
+            "Ouvrez Système puis Centre de commande IA pour voir les agents disponibles selon vos permissions.",
+            "Choisissez l'agent spécialisé correspondant au besoin: admissions, finance, présence, emploi du temps, examens, bulletins, RH, documents, inspection, ministère, CRM, stages ou direction.",
+            "Saisissez une commande précise, par exemple: Montre les impayés, Génère un plan de cours, Audit the school, Give me today's executive summary.",
+            "L'IA identifie l'utilisateur connecté, son rôle actif, ses rôles secondaires et ses permissions effectives avant toute réponse.",
+            "L'IA applique l'isolation tenant: un utilisateur d'une école ne peut pas consulter les données d'une autre école, sauf Super Administrateur autorisé.",
+            "Les élèves et parents ne voient que leurs propres informations ou celles de leurs enfants. Les enseignants ne voient que les classes et dossiers autorisés.",
+            "Les actions destructives comme supprimer ou effacer ne sont jamais exécutées directement: l'IA crée une demande de validation administrateur.",
+            "Chaque action acceptée, refusée ou mise en attente est inscrite dans le journal d'audit avec utilisateur, agent, action et résultat.",
+            "Relisez toujours les brouillons générés avant publication: contrats, attestations, cours, devoirs, rapports, messages parents et exports officiels.",
+            "Utilisez les recommandations IA comme aide à la décision; la validation finale reste effectuée par le rôle métier responsable.",
+        ],
+        fields: [
+            { name: "1. AI Registrar", type: "Admissions et inscriptions", expected: "Analyser les dossiers d'admission, extraire les informations, suggérer la classe, détecter les pièces manquantes, générer les numéros d'admission et d'élève.", validation: "Nécessite les permissions opérations/admissions et ne crée pas de dossier définitif sans validation administrative." },
+            { name: "2. AI Finance Officer", type: "Finance et caisse", expected: "Afficher impayés, prévoir revenus, détecter paiements dupliqués, préparer relances, analyser factures, paiements, reçus et soldes.", validation: "Nécessite les permissions paiements, frais, factures ou comptabilité." },
+            { name: "3. AI Attendance Manager", type: "Présence", expected: "Détecter absences fréquentes, retards répétés et élèves à risque d'assiduité.", validation: "Nécessite accès élèves/classes/présences et respecte le périmètre de classe ou d'établissement." },
+            { name: "4. AI Timetable Optimizer", type: "Emplois du temps", expected: "Analyser conflits de salles, professeurs, classes, charges horaires et proposer une optimisation.", validation: "Nécessite permission emploi du temps; les cours verrouillés restent protégés." },
+            { name: "5. AI Examination Manager", type: "Examens", expected: "Préparer horaires d'examens, salles, surveillants, plans de salle et contrôles de conflits.", validation: "Nécessite permissions examens et ne publie qu'après validation." },
+            { name: "6. AI Report Card Generator", type: "Bulletins", expected: "Préparer bulletins, classements, moyennes, décisions de passage et commentaires pédagogiques.", validation: "Nécessite permissions notes/bulletins; les résultats doivent être validés avant diffusion." },
+            { name: "7. AI Teacher Assistant", type: "Pédagogie", expected: "Générer plans de cours, objectifs, activités, exercices, devoirs et évaluations.", validation: "Disponible aux enseignants/formateurs selon permissions matières/classes." },
+            { name: "8. AI Homework & Assignment Creator", type: "Devoirs et quiz", expected: "Créer devoirs, quiz, fiches d'exercices, examens blancs et corrigés selon matière, niveau et curriculum.", validation: "Le contenu doit être relu avant publication aux élèves." },
+            { name: "9. AI Academic Risk Detection", type: "Risque scolaire", expected: "Analyser notes, présence, devoirs et discipline pour classer les élèves en risque faible, moyen ou élevé.", validation: "Nécessite accès notes/présence et produit des recommandations, pas une décision automatique." },
+            { name: "10. AI Parent Communication Officer", type: "Relation parents", expected: "Expliquer notes, absences, retards, frais, paiements, devoirs et emploi du temps d'un enfant.", validation: "Un parent ne peut consulter que ses enfants." },
+            { name: "11. AI HR Manager", type: "Ressources humaines", expected: "Préparer contrats, suivi congés, onboarding, évaluations et synthèses paie.", validation: "Nécessite permissions RH/personnel; données salariales réservées aux rôles autorisés." },
+            { name: "12. AI Document Generator", type: "Documents officiels", expected: "Générer attestations, diplômes, conventions de stage, lettres, contrats, certificats et documents avec QR code ou vérification.", validation: "Respecte règles de blocage financier et workflows de validation." },
+            { name: "13. AI School Inspector", type: "Contrôle qualité", expected: "Identifier notes, présences, factures, affectations, documents ou informations manquantes.", validation: "Nécessite permissions audit/monitoring/settings selon le rapport demandé." },
+            { name: "14. AI Ministry Reporting", type: "Rapports officiels", expected: "Préparer statistiques ministérielles, exports réglementaires, accréditation et rapports pays.", validation: "Nécessite permission conformité/export et vérification humaine avant envoi officiel." },
+            { name: "15. AI School Chat Assistant", type: "Chat par rôle", expected: "Répondre en langage naturel: emploi du temps, frais, classes, statistiques, procédures et aide contextuelle.", validation: "Applique la phrase de refus si la demande dépasse les droits." },
+            { name: "16. AI Voice Assistant", type: "Commande vocale", expected: "Transformer la dictée en commande IA et guider l'utilisateur dans sa langue.", validation: "Le texte reconnu suit exactement les mêmes permissions que le chat." },
+            { name: "17. AI School CRM", type: "Admissions commerciales", expected: "Suivre prospects, leads, journées portes ouvertes, campagnes et pipeline d'inscription.", validation: "Nécessite permissions opérations/admissions." },
+            { name: "18. AI Career & Internship Assistant", type: "Stages et carrière", expected: "Associer élèves/étudiants à des entreprises, suivre employabilité, générer rapports et recommandations de stage.", validation: "Nécessite permissions stages; respecte le niveau, la filière et l'établissement." },
+            { name: "19. AI Knowledge Base & Help Center", type: "Aide intégrée", expected: "Expliquer chaque page, champ, processus, rapport et bouton Enregistrer étape par étape.", validation: "Fournit une assistance, pas un contournement des permissions." },
+            { name: "20. AI Executive Command Center", type: "Pilotage direction", expected: "Afficher synthèse académique, finance, RH, opérations, alertes, prédictions et priorités direction.", validation: "Réservé aux rôles disposant des permissions rapports IA, direction ou administration." },
+        ],
+        result: "L'utilisateur obtient une automatisation guidée et sécurisée: rapports, brouillons, analyses, alertes et plans d'action sont produits selon ses droits, puis auditables par l'administration.",
     },
     {
         id: "documents",
