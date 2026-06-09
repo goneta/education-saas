@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Any
 from sqlalchemy.orm import Session
 from backend import audit, database, models, rbac, security
+from backend.routers.ai_automation import maybe_run_chat_automation
 from backend.services.ai_service import ai_service
 
 router = APIRouter(
@@ -127,6 +128,33 @@ async def chat_with_ai(
                 "result": "accepted",
             },
         )
+        automation_result = maybe_run_chat_automation(request_body.message, db, current_user)
+        if automation_result is not None:
+            audit.record_audit(
+                db,
+                action="ai.automation.chat_executed" if automation_result.executed else "ai.automation.chat_pending_approval",
+                current_user=current_user,
+                entity_type="ai_agent",
+                entity_id=str(current_user.id),
+                details={
+                    "agent": automation_result.agent_key,
+                    "action": automation_result.action,
+                    "requires_approval": automation_result.requires_approval,
+                    "result": "executed" if automation_result.executed else "approval_required",
+                },
+            )
+            db.commit()
+            return {
+                "type": "content",
+                "message": automation_result.message,
+                "data": {
+                    "agent": automation_result.agent_key,
+                    "action": automation_result.action,
+                    "requires_approval": automation_result.requires_approval,
+                    "data": automation_result.data,
+                    "recommendations": automation_result.recommendations,
+                },
+            }
         response = ai_service.generate_response(request_body.message, context)
         audit.record_audit(
             db,

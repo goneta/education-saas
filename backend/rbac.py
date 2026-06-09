@@ -181,15 +181,15 @@ PERMISSIONS = {
     models.UserRole.ACCOUNTANT: {"finance_fees:view", "invoices:view", "payments:view", "receipts:view", "expenses:view", "accounting:view", "accounting:export", "files:view", "files:create", "files:download", "files:share"},
     models.UserRole.TEACHER: {
         "students:view", "classes:view", "subjects:view", "timetable:view", "grades:view",
-        "grades:create", "grades:edit", "report_cards:view", "files:view", "files:create", "files:download", "files:share",
+        "grades:create", "grades:edit", "report_cards:view", "files:view", "files:create", "files:download", "files:share", "ai_assistant:view",
         "internships:view", "internships:edit", "internships:approve", "internships:download", "internships:print",
     },
     models.UserRole.EDUCATOR: {"students:view", "students:edit", "classes:view", "messages:create", "notifications:create"},
-    models.UserRole.TRAINER: {"students:view", "classes:view", "subjects:view", "grades:view", "grades:create", "files:view", "files:create", "files:download", "files:share", "internships:view", "internships:edit", "internships:approve", "internships:download", "internships:print"},
-    models.UserRole.INSTRUCTOR: {"students:view", "classes:view", "subjects:view", "grades:view", "grades:create", "files:view", "files:create", "files:download", "files:share", "internships:view", "internships:edit", "internships:approve", "internships:download", "internships:print"},
-    models.UserRole.PARENT: {"portal:view", "portal:create", "files:view", "files:create", "files:download", "payments:view", "internships:view", "internships:download", "internships:print"},
-    models.UserRole.STUDENT: {"portal:view", "portal:create", "files:view", "files:create", "files:download", "grades:view", "timetable:view", "internships:view", "internships:create", "internships:download", "internships:print"},
-    models.UserRole.PUPIL: {"portal:view", "files:view", "files:download", "grades:view", "timetable:view", "internships:view", "internships:create", "internships:download", "internships:print"},
+    models.UserRole.TRAINER: {"students:view", "classes:view", "subjects:view", "grades:view", "grades:create", "files:view", "files:create", "files:download", "files:share", "ai_assistant:view", "internships:view", "internships:edit", "internships:approve", "internships:download", "internships:print"},
+    models.UserRole.INSTRUCTOR: {"students:view", "classes:view", "subjects:view", "grades:view", "grades:create", "files:view", "files:create", "files:download", "files:share", "ai_assistant:view", "internships:view", "internships:edit", "internships:approve", "internships:download", "internships:print"},
+    models.UserRole.PARENT: {"portal:view", "portal:create", "files:view", "files:create", "files:download", "payments:view", "ai_assistant:view", "internships:view", "internships:download", "internships:print"},
+    models.UserRole.STUDENT: {"portal:view", "portal:create", "files:view", "files:create", "files:download", "grades:view", "timetable:view", "ai_assistant:view", "internships:view", "internships:create", "internships:download", "internships:print"},
+    models.UserRole.PUPIL: {"portal:view", "files:view", "files:download", "grades:view", "timetable:view", "ai_assistant:view", "internships:view", "internships:create", "internships:download", "internships:print"},
     models.UserRole.STAFF: {"portal:view"},
 }
 

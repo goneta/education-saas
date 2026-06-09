@@ -26,6 +26,7 @@ const ICONS: Record<string, string> = {
 }
 
 const MODULE_BY_PATH: Array<[RegExp, string, string]> = [
+    [/ai-command-center/, "ai_automation", "ai"],
     [/students/, "students", "students"],
     [/teachers/, "teachers", "teachers"],
     [/education\/timetable/, "timetable", "timetable"],
