@@ -32,9 +32,11 @@ import {
 
 interface SidebarProps {
     isResizablePanel?: boolean;
+    forceVisible?: boolean;
+    onNavigate?: () => void;
 }
 
-export function Sidebar({ isResizablePanel = false }: SidebarProps) {
+export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavigate }: SidebarProps) {
     const pathname = usePathname()
     const params = useParams()
     const router = useRouter()
@@ -217,7 +219,8 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
 
     return (
         <div className={cn(
-            "hidden h-full min-h-0 w-64 flex-col bg-white font-sans md:flex",
+            "h-full min-h-0 w-64 flex-col bg-white font-sans",
+            forceVisible ? "flex" : "hidden md:flex",
             !isResizablePanel && "fixed bottom-0 left-0 top-0 z-[80]",
             isResizablePanel && "relative z-[80] w-full overflow-visible border-r-0"
         )}>
@@ -267,6 +270,7 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
                                                     <Link
                                                         key={item.href}
                                                         href={item.href}
+                                                        onClick={onNavigate}
                                                         className={cn(
                                                             sidebarItemClass,
                                                             isActive
@@ -292,11 +296,11 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
                     {accountMenuOpen && (
                         <div className="absolute bottom-[76px] left-3 z-[1000] w-[280px] rounded-[24px] border border-[#E5E7EB] bg-white p-3 shadow-[0_22px_60px_rgba(15,23,42,0.18)]">
                             <div className="space-y-1">
-                                <Link href={`/${locale}/dashboard/settings`} className={sidebarItemClass}><UserCircle className="h-5 w-5" />Mon Profil</Link>
-                                <Link href={`/${locale}/dashboard/settings`} className={sidebarItemClass}><Settings className="h-5 w-5" />Paramètres du compte</Link>
-                                <Link href={`/${locale}/dashboard/enterprise`} className={sidebarItemClass}><Bell className="h-5 w-5" />Notifications</Link>
-                                <Link href={`/${locale}/pricing`} className={sidebarItemClass}><CreditCard className="h-5 w-5" />Mettre à niveau</Link>
-                                <Link href={`/${locale}/dashboard/help`} className={sidebarItemClass}><HelpCircle className="h-5 w-5" />Aide</Link>
+                                <Link href={`/${locale}/dashboard/settings`} onClick={onNavigate} className={sidebarItemClass}><UserCircle className="h-5 w-5" />Mon Profil</Link>
+                                <Link href={`/${locale}/dashboard/settings`} onClick={onNavigate} className={sidebarItemClass}><Settings className="h-5 w-5" />Paramètres du compte</Link>
+                                <Link href={`/${locale}/dashboard/enterprise`} onClick={onNavigate} className={sidebarItemClass}><Bell className="h-5 w-5" />Notifications</Link>
+                                <Link href={`/${locale}/pricing`} onClick={onNavigate} className={sidebarItemClass}><CreditCard className="h-5 w-5" />Mettre à niveau</Link>
+                                <Link href={`/${locale}/dashboard/help`} onClick={onNavigate} className={sidebarItemClass}><HelpCircle className="h-5 w-5" />Aide</Link>
                                 <button type="button" onClick={handleLogout} className={sidebarItemClass}><LogOut className="h-5 w-5" />Déconnexion</button>
                                 <button type="button" onClick={() => { setAddAccountOpen(true); setAccountMenuOpen(false) }} className={sidebarItemClass}><Users className="h-5 w-5" />Ajouter un compte</button>
                             </div>

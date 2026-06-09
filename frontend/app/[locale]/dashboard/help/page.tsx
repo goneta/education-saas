@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import type { ComponentType } from "react"
-import { BookOpen, BrainCircuit, BriefcaseBusiness, CheckCircle2, CircleHelp, CreditCard, FileText, GraduationCap, MessageSquareText, Search, Settings, Users, Wand2 } from "lucide-react"
+import { BookOpen, BrainCircuit, BriefcaseBusiness, CheckCircle2, CircleHelp, CreditCard, FileText, GraduationCap, MessageSquareText, Search, Settings, Smartphone, Users, Wand2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 type HelpField = {
@@ -24,6 +24,38 @@ type HelpSection = {
 }
 
 const HELP_SECTIONS: HelpSection[] = [
+    {
+        id: "mobile_app",
+        title: "Version mobile dédiée",
+        icon: Smartphone,
+        purpose: "Utiliser TeducAI comme une vraie web app mobile: contenu principal plein écran, menu coulissant, Agent IA dédié, Preview View séparée et navigation basse tactile.",
+        steps: [
+            "Sur mobile ou tablette, TeducAI n'affiche plus simultanément la sidebar, l'Agent IA et le contenu principal.",
+            "Utilisez le bouton hamburger en haut ou le bouton Menu en bas pour ouvrir la sidebar mobile en drawer.",
+            "Cliquez sur l'overlay sombre ou sélectionnez un lien pour fermer automatiquement le drawer.",
+            "Utilisez la barre de navigation en bas pour accéder rapidement à Accueil, Agent IA, Alertes, Recherche et Menu.",
+            "Ouvrez Agent IA pour accéder au chat mobile en plein écran avec historique, saisie, fichiers, images, voix et réinitialisation.",
+            "Quand l'Agent IA produit un résultat, la Preview View s'ouvre séparément avec une transition slide depuis la droite.",
+            "Dans la Preview View, utilisez Retour à l'Agent IA pour revenir au chat sans perdre l'historique, le prompt ni le contexte.",
+            "Utilisez les actions de Preview: imprimer, télécharger, partager, exporter CSV/Excel et continuer la conversation.",
+            "Les tableaux sont affichés comme des cartes mobiles: titre, informations, statut, montant/date et actions.",
+            "Les formulaires sont empilés en une colonne avec des champs tactiles et des boutons larges.",
+            "Les modales deviennent des panneaux plein écran lorsque l'écran est petit.",
+        ],
+        fields: [
+            { name: "Bouton hamburger", type: "Bouton tactile", expected: "Ouvre le menu latéral mobile.", validation: "Le drawer occupe environ 85% de l'écran et possède son propre scroll." },
+            { name: "Barre de navigation basse", type: "Navigation fixe", expected: "Accueil, Agent IA, Alertes, Recherche et Menu.", validation: "Toujours visible en bas avec indication de l'élément actif." },
+            { name: "Agent IA mobile", type: "Page dédiée", expected: "Conversation en plein écran avec champ fixé en bas.", validation: "Le chat scrolle indépendamment du reste de l'application." },
+            { name: "Preview View", type: "Espace de résultat IA", expected: "Affiche rapports, documents, analyses, emplois du temps ou recommandations générées.", validation: "Séparée du chat et conservée dans la même session IA." },
+            { name: "Retour à l'Agent IA", type: "Bouton de navigation", expected: "Retourne au chat après consultation du résultat.", validation: "Ne supprime pas l'historique de conversation ni le contexte." },
+            { name: "Actions Preview", type: "Barre d'actions", expected: "Voir, imprimer, télécharger, partager, exporter, régénérer ou continuer.", validation: "Les actions disponibles restent soumises aux permissions du rôle." },
+            { name: "Tableaux mobiles", type: "Cartes responsives", expected: "Chaque ligne devient une carte avec labels et actions.", validation: "Aucun scroll horizontal global ne doit apparaître." },
+            { name: "Formulaires mobiles", type: "Une colonne", expected: "Champs empilés, labels lisibles, boutons tactiles.", validation: "Les erreurs et validations restent visibles." },
+            { name: "Modales mobiles", type: "Plein écran", expected: "Header fixe, contenu scrollable, fermeture visible.", validation: "Adapté aux petits écrans sans zoom." },
+            { name: "Breakpoints", type: "Responsive", expected: "Mobile jusqu'à 767px, tablette 768-1023px, desktop à partir de 1024px.", validation: "Le desktop conserve son layout existant." },
+        ],
+        result: "Sur mobile, TeducAI fonctionne comme une application professionnelle dédiée: navigation claire, Agent IA full-screen, résultats IA en Preview View, cartes lisibles, formulaires tactiles et scrolls indépendants.",
+    },
     {
         id: "dashboard",
         title: "Tableau de bord",

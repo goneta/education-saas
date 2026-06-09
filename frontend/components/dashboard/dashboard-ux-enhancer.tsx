@@ -284,6 +284,12 @@ export function DashboardUxEnhancer() {
                     return `<button type="button" data-teducai-action="${key}" title="${action.title}" class="teducai-row-action">${ICONS[action.icon]}</button>`
                 }).join("")}</div>`
                 row.appendChild(cell)
+                const labels = tableHeaders(row)
+                Array.from(row.children).forEach((child, childIndex) => {
+                    if (child instanceof HTMLTableCellElement && !child.dataset.label) {
+                        child.dataset.label = child.dataset.teducaiActionCell ? "Actions" : child.dataset.teducaiSelectCell ? "" : labels[Math.max(0, childIndex - 1)] || `Champ ${childIndex}`
+                    }
+                })
             })
         })
         setSelectedCount(document.querySelectorAll("main [data-teducai-row-select]:checked").length)
@@ -354,6 +360,23 @@ export function DashboardUxEnhancer() {
                 .teducai-row-action{display:inline-flex;height:32px;width:32px;align-items:center;justify-content:center;border-radius:9999px;color:#111827;transition:background .2s ease,color .2s ease}
                 .teducai-row-action:hover{background:#F0F1F3;color:#000}
                 .teducai-row-action svg{height:16px;width:16px}
+                @media (max-width: 767px){
+                    html,body{overflow-x:hidden}
+                    main table{display:block;width:100%;min-width:0!important;border:0!important}
+                    main table thead{display:none}
+                    main table tbody{display:grid;gap:12px;width:100%}
+                    main table tr{display:block;width:100%;border:1px solid #E5E7EB!important;border-radius:24px;background:#fff;padding:12px;box-shadow:0 8px 24px rgba(15,23,42,.05)}
+                    main table td{display:flex!important;align-items:flex-start;justify-content:space-between;gap:16px;width:100%;border:0!important;padding:8px 4px!important;text-align:right!important;white-space:normal!important}
+                    main table td::before{content:attr(data-label);max-width:42%;text-align:left;font-size:12px;font-weight:600;color:#6B7280}
+                    main table td[data-teducai-select-cell]::before{content:"Sélection"}
+                    main table td[data-teducai-action-cell]{justify-content:flex-end;border-top:1px solid #F0F1F3!important;margin-top:6px;padding-top:12px!important}
+                    main table td[data-teducai-action-cell]::before{content:""}
+                    main form{max-width:100%}
+                    main form .grid{grid-template-columns:1fr!important}
+                    main input,main select,main textarea,.apple-input,.apple-select{min-height:48px;font-size:16px!important}
+                    main button{min-height:44px}
+                    [role="dialog"],.fixed.inset-0 .max-w-xl,.fixed.inset-0 .max-w-2xl,.fixed.inset-0 .max-w-5xl{max-width:100%!important;width:100%!important;max-height:100dvh!important;border-radius:0!important}
+                }
             `}</style>
             <button
                 type="button"
