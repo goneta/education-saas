@@ -2063,8 +2063,14 @@ class SecureFile(Base):
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
     school = relationship("School")
-    uploaded_by = relationship("User")
-    approved_by = relationship("User", foreign_keys=[approved_by_id])
+    uploaded_by = relationship(
+    "User",
+    foreign_keys=[uploaded_by_id],
+)
+    approved_by = relationship(
+    "User",
+    foreign_keys=[approved_by_id],
+)
 
 
 class DocumentShare(Base):
