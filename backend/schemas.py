@@ -1,6 +1,7 @@
-from pydantic import BaseModel, EmailStr, ConfigDict, Field
+from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime, time, date
+from urllib.parse import urlparse
 from .models import (
     UserRole,
     SchoolType,
@@ -36,9 +37,27 @@ class InternationalAddress(BaseModel):
     region: Optional[str] = None
     postal_code: Optional[str] = None
     country: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    latitude: Optional[float] = Field(default=None, ge=-90, le=90)
+    longitude: Optional[float] = Field(default=None, ge=-180, le=180)
     formatted: Optional[str] = None
+
+
+def _validate_http_url(value: Optional[str], field_name: str) -> Optional[str]:
+    if value is None:
+        return value
+    stripped = value.strip()
+    if not stripped:
+        return None
+    if field_name == "logo_url" and stripped.startswith("data:image/"):
+        if not any(stripped.startswith(prefix) for prefix in ("data:image/png;base64,", "data:image/jpeg;base64,", "data:image/webp;base64,")):
+            raise ValueError("Logo data URL must be PNG, JPEG, or WebP.")
+        if len(stripped) > 3_000_000:
+            raise ValueError("Logo data URL is too large.")
+        return stripped
+    parsed = urlparse(stripped)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError(f"{field_name} must be a valid http(s) URL.")
+    return stripped
 
 
 class LocalizedSettings(BaseModel):
@@ -72,7 +91,10 @@ class SchoolBase(BaseModel):
     phone_country_code: Optional[str] = None
 
 class SchoolCreate(SchoolBase):
-    pass
+    @field_validator("website", "logo_url")
+    @classmethod
+    def validate_school_urls(cls, value: Optional[str], info):
+        return _validate_http_url(value, info.field_name)
 
 class SchoolResponse(SchoolBase):
     id: int
@@ -124,6 +146,11 @@ class SchoolSettingsUpdate(BaseModel):
     logo_url: Optional[str] = None
     registration_number: Optional[str] = None
     address_structured: Optional[InternationalAddress] = None
+
+    @field_validator("website", "logo_url")
+    @classmethod
+    def validate_settings_urls(cls, value: Optional[str], info):
+        return _validate_http_url(value, info.field_name)
 
 
 class SchoolSettingsResponse(SchoolResponse):

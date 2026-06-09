@@ -171,6 +171,9 @@ const SUBSCRIPTION_PLANS = {
     max: { label: "Max", monthly: 199000, yearly: 1700000 },
 }
 
+const LOGO_MAX_BYTES = 2 * 1024 * 1024
+const LOGO_ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"]
+
 const SUBSCRIPTION_STATUS_LABELS: Record<string, string> = {
     active: "Actif",
     expired: "Expiré",
@@ -451,6 +454,11 @@ export default function SettingsPage() {
 
     const updateCoordinates = (latitude: number, longitude: number) => {
         if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return
+        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+            setSettingsError("Les coordonnees GPS doivent respecter les bornes: latitude -90 a 90, longitude -180 a 180.")
+            return
+        }
+        setSettingsError("")
         setSchoolSettings(prev => prev ? {
             ...prev,
             address_structured: { ...(prev.address_structured || {}), latitude, longitude }
@@ -680,8 +688,22 @@ export default function SettingsPage() {
                                             <input disabled={!isEditingSchool} type="file" accept="image/png,image/jpeg,image/webp" className="apple-input pt-2" onChange={(event) => {
                                                 const file = event.target.files?.[0]
                                                 if (!file) return
+                                                if (!LOGO_ALLOWED_TYPES.includes(file.type)) {
+                                                    setSettingsError("Le logo doit etre une image PNG, JPEG ou WebP.")
+                                                    event.currentTarget.value = ""
+                                                    return
+                                                }
+                                                if (file.size > LOGO_MAX_BYTES) {
+                                                    setSettingsError("Le fichier logo ne doit pas depasser 2 Mo.")
+                                                    event.currentTarget.value = ""
+                                                    return
+                                                }
                                                 const reader = new FileReader()
-                                                reader.onload = () => updateSchoolSetting("logo_url", String(reader.result || ""))
+                                                reader.onload = () => {
+                                                    updateSchoolSetting("logo_url", String(reader.result || ""))
+                                                    setSettingsError("")
+                                                }
+                                                reader.onerror = () => setSettingsError("Erreur lors de la lecture du fichier logo.")
                                                 reader.readAsDataURL(file)
                                             }} />
                                         </ExplainedField>
@@ -874,6 +896,9 @@ function LocationMap({
             onClick={handlePointer}
             onKeyDown={(event) => {
                 if (disabled) return
+                if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+                    event.preventDefault()
+                }
                 const step = event.shiftKey ? 0.1 : 0.01
                 if (event.key === "ArrowUp") onMove(Number((safeLatitude + step).toFixed(6)), safeLongitude)
                 if (event.key === "ArrowDown") onMove(Number((safeLatitude - step).toFixed(6)), safeLongitude)

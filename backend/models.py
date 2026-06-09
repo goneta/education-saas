@@ -110,7 +110,7 @@ class School(Base):
     email = Column(String)
     website = Column(String)
     logo_url = Column(String)
-    registration_number = Column(String, nullable=True)
+    registration_number = Column(String, nullable=True, unique=True, index=True)
     country_code = Column(String, default="CI", nullable=False)
     default_currency = Column(String, default="FCFA", nullable=False)
     currency_code = Column(String, default="XOF", nullable=False)

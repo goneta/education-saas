@@ -1,12 +1,23 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, ConfigDict
 from .. import audit, localization, models, schemas, security, database, rbac
 
 router = APIRouter(prefix="/system", tags=["System Configuration"])
+
+SCHOOL_SETTINGS_EDITABLE_FIELDS = {
+    "name",
+    "school_type",
+    "email",
+    "website",
+    "phone",
+    "logo_url",
+    "registration_number",
+}
 
 SCHOOL_TEMPLATES = {
     "primary": {
@@ -409,6 +420,16 @@ def update_school_settings(
     school = db.query(models.School).filter(models.School.id == current_user.school_id).first()
     if not school:
         raise HTTPException(status_code=404, detail="School not found")
+    if payload.name is not None and not payload.name.strip():
+        raise HTTPException(status_code=400, detail="School name is required")
+    registration_number = payload.registration_number.strip() if payload.registration_number else None
+    if registration_number:
+        existing = db.query(models.School).filter(
+            models.School.registration_number == registration_number,
+            models.School.id != school.id,
+        ).first()
+        if existing:
+            raise HTTPException(status_code=409, detail="School registration number already exists")
 
     country_changed = bool(payload.country_code and payload.country_code != school.country_code)
     profile = localization.country_profile(payload.country_code or school.country_code)
@@ -425,9 +446,13 @@ def update_school_settings(
     if not valid_phone:
         raise HTTPException(status_code=400, detail=phone_error)
 
-    for field in ["name", "school_type", "email", "website", "phone", "logo_url", "registration_number"]:
+    for field in SCHOOL_SETTINGS_EDITABLE_FIELDS:
         value = getattr(payload, field)
         if value is not None:
+            if isinstance(value, str):
+                value = value.strip()
+            if field == "registration_number" and value == "":
+                value = None
             setattr(school, field, value)
     school.country_code = profile["country_code"]
     school.default_currency = currency
@@ -447,7 +472,11 @@ def update_school_settings(
         school.formatted_address = structured["formatted"]
         school.address = structured["formatted"]
 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="School settings conflict with an existing record") from exc
     db.refresh(school)
     return _school_settings_payload(school)
 
