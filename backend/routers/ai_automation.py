@@ -7,6 +7,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .. import audit, database, models, rbac, security
+from ..services import ai_credits
 from ..services.ai_service import ai_service
 
 
@@ -396,7 +397,16 @@ def run_automation(
     agent = _agent(payload.agent_key, payload.command)
     _check_agent_permission(current_user, db, agent)
     try:
+        ai_credits.ensure_credits(db, current_user, ai_credits.estimate_credits(payload.command))
         result = _execute(agent, payload, db, current_user)
+        ai_credits.record_usage(
+            db,
+            current_user,
+            payload.command,
+            f"{result.message}\n{result.data}\n{result.recommendations}",
+            "ai_command_center",
+            result.action,
+        )
         audit.record_audit(
             db,
             action="ai_automation.executed" if result.executed else "ai_automation.approval_required",
@@ -414,6 +424,7 @@ def run_automation(
         db.commit()
         return result
     except HTTPException:
+        db.commit()
         raise
     except Exception as exc:
         db.rollback()

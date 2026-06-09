@@ -158,6 +158,267 @@ class SchoolSettingsResponse(SchoolResponse):
     school_type_profile: dict = Field(default_factory=dict)
 
 
+class AIProviderBase(BaseModel):
+    name: str
+    provider_type: str
+    api_key: Optional[str] = None
+    base_url: Optional[str] = None
+    default_model: Optional[str] = None
+    is_active: bool = False
+    priority: int = 100
+    cost_per_1k_input_tokens: float = 0
+    cost_per_1k_output_tokens: float = 0
+    currency: str = "USD"
+
+
+class AIProviderCreate(AIProviderBase):
+    pass
+
+
+class AIProviderUpdate(BaseModel):
+    name: Optional[str] = None
+    provider_type: Optional[str] = None
+    api_key: Optional[str] = None
+    base_url: Optional[str] = None
+    default_model: Optional[str] = None
+    is_active: Optional[bool] = None
+    priority: Optional[int] = None
+    cost_per_1k_input_tokens: Optional[float] = None
+    cost_per_1k_output_tokens: Optional[float] = None
+    currency: Optional[str] = None
+
+
+class AIProviderResponse(BaseModel):
+    id: int
+    name: str
+    provider_type: str
+    base_url: Optional[str] = None
+    default_model: Optional[str] = None
+    is_active: bool
+    priority: int
+    cost_per_1k_input_tokens: float
+    cost_per_1k_output_tokens: float
+    currency: str
+    has_api_key: bool = False
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AICreditPackBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    credits_amount: int = Field(gt=0)
+    price: float = Field(ge=0)
+    currency: str = "FCFA"
+    country_code: str = "CI"
+    region: str = "africa"
+    is_active: bool = True
+    validity_days: Optional[int] = None
+
+
+class AICreditPackCreate(AICreditPackBase):
+    pass
+
+
+class AICreditPackUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    credits_amount: Optional[int] = Field(default=None, gt=0)
+    price: Optional[float] = Field(default=None, ge=0)
+    currency: Optional[str] = None
+    country_code: Optional[str] = None
+    region: Optional[str] = None
+    is_active: Optional[bool] = None
+    validity_days: Optional[int] = None
+
+
+class AICreditPackResponse(AICreditPackBase):
+    id: int
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AIWalletResponse(BaseModel):
+    id: int
+    owner_type: str
+    user_id: Optional[int] = None
+    school_id: Optional[int] = None
+    balance_credits: int
+    total_purchased_credits: int
+    total_used_credits: int
+    status: str
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AIUsageLogResponse(BaseModel):
+    id: int
+    user_id: Optional[int] = None
+    school_id: Optional[int] = None
+    provider_id: Optional[int] = None
+    model_name: Optional[str] = None
+    module_name: Optional[str] = None
+    action_type: Optional[str] = None
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+    credits_charged: int
+    estimated_cost: float
+    currency: str
+    request_summary: Optional[str] = None
+    status: str
+    error_message: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AICreditTransactionResponse(BaseModel):
+    id: int
+    wallet_id: int
+    user_id: Optional[int] = None
+    school_id: Optional[int] = None
+    transaction_type: str
+    credits_amount: int
+    balance_before: int
+    balance_after: int
+    payment_id: Optional[int] = None
+    usage_log_id: Optional[int] = None
+    description: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AICreditPurchaseRequest(BaseModel):
+    pack_id: int
+    owner_type: str = "user"
+    target_user_id: Optional[int] = None
+    provider: str = "manual"
+    payment_method: Optional[str] = None
+
+
+class PlatformPaymentCreate(BaseModel):
+    payment_type: str = "ai_credit_purchase"
+    pack_id: Optional[int] = None
+    amount: Optional[float] = None
+    currency: Optional[str] = None
+    country_code: Optional[str] = None
+    region: Optional[str] = None
+    provider: str = "manual"
+    provider_reference: Optional[str] = None
+    beneficiary_entity: Optional[str] = None
+    credits_amount: int = 0
+    owner_type: str = "user"
+    target_user_id: Optional[int] = None
+    metadata_json: Optional[Dict[str, Any]] = None
+
+
+class PlatformPaymentWebhook(BaseModel):
+    reference: str
+    status: str
+    provider_reference: Optional[str] = None
+    metadata_json: Optional[Dict[str, Any]] = None
+
+
+class PlatformPaymentResponse(BaseModel):
+    id: int
+    reference: str
+    payer_user_id: Optional[int] = None
+    school_id: Optional[int] = None
+    payment_type: str
+    amount: float
+    currency: str
+    country_code: Optional[str] = None
+    region: Optional[str] = None
+    provider: str
+    provider_reference: Optional[str] = None
+    status: str
+    beneficiary_entity: str
+    pack_id: Optional[int] = None
+    credits_amount: int
+    wallet_id: Optional[int] = None
+    metadata_json: Optional[Dict[str, Any]] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SchoolPaymentAccountCreate(BaseModel):
+    provider: str
+    account_name: str
+    merchant_id: Optional[str] = None
+    api_key: Optional[str] = None
+    secret_key: Optional[str] = None
+    phone_number: Optional[str] = None
+    country_code: str = "CI"
+    is_active: bool = True
+
+
+class SchoolPaymentAccountResponse(BaseModel):
+    id: int
+    school_id: int
+    provider: str
+    account_name: str
+    merchant_id: Optional[str] = None
+    phone_number: Optional[str] = None
+    country_code: str
+    is_active: bool
+    has_api_key: bool = False
+    has_secret_key: bool = False
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SchoolPaymentCreate(BaseModel):
+    student_id: Optional[int] = None
+    invoice_id: Optional[int] = None
+    payment_type: str = "tuition"
+    amount: float = Field(gt=0)
+    currency: str = "FCFA"
+    provider: str = "manual"
+    provider_reference: Optional[str] = None
+    school_beneficiary_account_id: Optional[int] = None
+    metadata_json: Optional[Dict[str, Any]] = None
+
+
+class SchoolPaymentWebhook(BaseModel):
+    reference: str
+    status: str
+    provider_reference: Optional[str] = None
+    metadata_json: Optional[Dict[str, Any]] = None
+
+
+class SchoolPaymentResponse(BaseModel):
+    id: int
+    reference: str
+    school_id: int
+    payer_user_id: Optional[int] = None
+    student_id: Optional[int] = None
+    invoice_id: Optional[int] = None
+    payment_type: str
+    amount: float
+    currency: str
+    provider: str
+    provider_reference: Optional[str] = None
+    school_beneficiary_account_id: Optional[int] = None
+    status: str
+    metadata_json: Optional[Dict[str, Any]] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class SubscriptionSettingsUpdate(BaseModel):
     subscription_plan: Optional[str] = None
     subscription_status: Optional[str] = None

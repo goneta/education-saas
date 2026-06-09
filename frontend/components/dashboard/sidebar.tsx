@@ -121,6 +121,7 @@ export function Sidebar({ isResizablePanel = false }: SidebarProps) {
             title: t("system"),
             items: [
                 { href: `/${locale}/dashboard/ai-command-center`, label: t("aiCommandCenter"), icon: BrainCircuit },
+                { href: `/${locale}/dashboard/ai-credits`, label: t("aiCredits"), icon: CreditCard },
                 { href: `/${locale}/dashboard/settings`, label: t("settings"), icon: Settings },
             ]
         }

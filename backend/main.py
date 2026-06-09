@@ -9,7 +9,7 @@ from .database import SessionLocal
 from .observability import observability_middleware
 from .security_middleware import rate_limit_middleware, security_headers_middleware
 from . import models
-from .routers import auth, students, teachers, chat, education, attendance, grades, dashboard, library, finance, system, pedagogy, operations, enterprise, documents, files, internships, ai_automation
+from .routers import auth, students, teachers, chat, education, attendance, grades, dashboard, library, finance, system, pedagogy, operations, enterprise, documents, files, internships, ai_automation, ai_billing
 
 app = FastAPI(title="TeducAI API")
 START_TIME = time.time()
@@ -55,6 +55,7 @@ app.include_router(documents.router)
 app.include_router(files.router)
 app.include_router(internships.router)
 app.include_router(ai_automation.router)
+app.include_router(ai_billing.router)
 
 @app.get("/")
 def read_root():

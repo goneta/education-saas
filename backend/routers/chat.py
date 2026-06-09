@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from backend import audit, database, models, rbac, security
 from backend.routers.ai_automation import maybe_run_chat_automation
 from backend.services.ai_service import ai_service
+from backend.services import ai_credits
 
 router = APIRouter(
     prefix="/chat",
@@ -128,8 +129,11 @@ async def chat_with_ai(
                 "result": "accepted",
             },
         )
+        ai_credits.ensure_credits(db, current_user, ai_credits.estimate_credits(request_body.message))
         automation_result = maybe_run_chat_automation(request_body.message, db, current_user)
         if automation_result is not None:
+            response_text = f"{automation_result.message}\n{automation_result.data}\n{automation_result.recommendations}"
+            ai_credits.record_usage(db, current_user, request_body.message, response_text, "ai_agent_chat", automation_result.action)
             audit.record_audit(
                 db,
                 action="ai.automation.chat_executed" if automation_result.executed else "ai.automation.chat_pending_approval",
@@ -156,6 +160,7 @@ async def chat_with_ai(
                 },
             }
         response = ai_service.generate_response(request_body.message, context)
+        ai_credits.record_usage(db, current_user, request_body.message, str(response.get("data") or response.get("message") or ""), "ai_agent_chat", "chat_response")
         audit.record_audit(
             db,
             action="ai.response.generated",
@@ -166,6 +171,12 @@ async def chat_with_ai(
         )
         db.commit()
         return response
+    except HTTPException as exc:
+        if exc.status_code == 402:
+            db.commit()
+        else:
+            db.rollback()
+        raise
     except Exception:
         db.rollback()
         raise HTTPException(status_code=500, detail="AI service failed")

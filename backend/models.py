@@ -1810,6 +1810,188 @@ class NotificationMessage(Base):
     created_by = relationship("User")
 
 
+class AIProvider(Base):
+    __tablename__ = "ai_providers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, index=True)
+    provider_type = Column(String, nullable=False, index=True)
+    api_key_encrypted = Column(String, nullable=True)
+    base_url = Column(String, nullable=True)
+    default_model = Column(String, nullable=True)
+    is_active = Column(Boolean, default=False, nullable=False, index=True)
+    priority = Column(Integer, default=100, nullable=False, index=True)
+    cost_per_1k_input_tokens = Column(Float, default=0, nullable=False)
+    cost_per_1k_output_tokens = Column(Float, default=0, nullable=False)
+    currency = Column(String, default="USD", nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class AICreditPack(Base):
+    __tablename__ = "ai_credit_packs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    credits_amount = Column(Integer, nullable=False)
+    price = Column(Float, nullable=False)
+    currency = Column(String, default="FCFA", nullable=False, index=True)
+    country_code = Column(String, default="CI", nullable=False, index=True)
+    region = Column(String, default="africa", nullable=False, index=True)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    validity_days = Column(Integer, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class AIWallet(Base):
+    __tablename__ = "ai_wallets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    owner_type = Column(String, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    balance_credits = Column(Integer, default=0, nullable=False)
+    total_purchased_credits = Column(Integer, default=0, nullable=False)
+    total_used_credits = Column(Integer, default=0, nullable=False)
+    status = Column(String, default="active", nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User")
+    school = relationship("School")
+
+    __table_args__ = (
+        UniqueConstraint("owner_type", "user_id", "school_id", name="_ai_wallet_owner_uc"),
+    )
+
+
+class PlatformPayment(Base):
+    __tablename__ = "platform_payments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    reference = Column(String, nullable=False, unique=True, index=True)
+    payer_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    payment_type = Column(String, nullable=False, index=True)
+    amount = Column(Float, nullable=False)
+    currency = Column(String, nullable=False, index=True)
+    country_code = Column(String, nullable=True, index=True)
+    region = Column(String, nullable=True, index=True)
+    provider = Column(String, nullable=False, index=True)
+    provider_reference = Column(String, nullable=True, index=True)
+    status = Column(String, default="pending", nullable=False, index=True)
+    beneficiary_entity = Column(String, nullable=False, index=True)
+    pack_id = Column(Integer, ForeignKey("ai_credit_packs.id"), nullable=True)
+    credits_amount = Column(Integer, default=0, nullable=False)
+    wallet_id = Column(Integer, ForeignKey("ai_wallets.id"), nullable=True)
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    payer = relationship("User")
+    school = relationship("School")
+    pack = relationship("AICreditPack")
+    wallet = relationship("AIWallet")
+
+
+class AICreditTransaction(Base):
+    __tablename__ = "ai_credit_transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    wallet_id = Column(Integer, ForeignKey("ai_wallets.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    transaction_type = Column(String, nullable=False, index=True)
+    credits_amount = Column(Integer, nullable=False)
+    balance_before = Column(Integer, nullable=False)
+    balance_after = Column(Integer, nullable=False)
+    payment_id = Column(Integer, ForeignKey("platform_payments.id"), nullable=True, index=True)
+    usage_log_id = Column(Integer, ForeignKey("ai_usage_logs.id"), nullable=True, index=True)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    wallet = relationship("AIWallet")
+    user = relationship("User")
+    school = relationship("School")
+    payment = relationship("PlatformPayment")
+
+
+class AIUsageLog(Base):
+    __tablename__ = "ai_usage_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    wallet_id = Column(Integer, ForeignKey("ai_wallets.id"), nullable=True, index=True)
+    provider_id = Column(Integer, ForeignKey("ai_providers.id"), nullable=True)
+    model_name = Column(String, nullable=True, index=True)
+    module_name = Column(String, nullable=True, index=True)
+    action_type = Column(String, nullable=True, index=True)
+    prompt_tokens = Column(Integer, default=0, nullable=False)
+    completion_tokens = Column(Integer, default=0, nullable=False)
+    total_tokens = Column(Integer, default=0, nullable=False)
+    credits_charged = Column(Integer, default=0, nullable=False)
+    estimated_cost = Column(Float, default=0, nullable=False)
+    currency = Column(String, default="USD", nullable=False)
+    request_summary = Column(Text, nullable=True)
+    status = Column(String, default="successful", nullable=False, index=True)
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+    school = relationship("School")
+    wallet = relationship("AIWallet")
+    provider = relationship("AIProvider")
+
+
+class SchoolPaymentAccount(Base):
+    __tablename__ = "school_payment_accounts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    provider = Column(String, nullable=False, index=True)
+    account_name = Column(String, nullable=False)
+    merchant_id = Column(String, nullable=True)
+    api_key_encrypted = Column(String, nullable=True)
+    secret_key_encrypted = Column(String, nullable=True)
+    phone_number = Column(String, nullable=True)
+    country_code = Column(String, default="CI", nullable=False, index=True)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    school = relationship("School")
+
+
+class SchoolPayment(Base):
+    __tablename__ = "school_payments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    reference = Column(String, nullable=False, unique=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    payer_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True, index=True)
+    invoice_id = Column(Integer, ForeignKey("student_invoices.id"), nullable=True, index=True)
+    payment_type = Column(String, nullable=False, index=True)
+    amount = Column(Float, nullable=False)
+    currency = Column(String, nullable=False, index=True)
+    provider = Column(String, nullable=False, index=True)
+    provider_reference = Column(String, nullable=True, index=True)
+    school_beneficiary_account_id = Column(Integer, ForeignKey("school_payment_accounts.id"), nullable=True)
+    status = Column(String, default="pending", nullable=False, index=True)
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    school = relationship("School")
+    payer = relationship("User")
+    student = relationship("StudentProfile")
+    invoice = relationship("StudentInvoice")
+    beneficiary_account = relationship("SchoolPaymentAccount")
+
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 
