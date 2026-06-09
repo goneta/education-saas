@@ -1,0 +1,27 @@
+# Purpose
+
+- Own versioned Alembic migration files.
+
+# Ownership
+
+- All migration revision files under `alembic/versions/`.
+
+# Local Contracts
+
+- Each migration must have a stable `revision` and correct `down_revision`.
+- Migrations must not depend on current SQLAlchemy metadata to define historical schema.
+- Downgrades should be present and coherent for structural changes unless a task explicitly documents why downgrade is unsupported.
+
+# Work Guidance
+
+- Use explicit operations for tables, columns, constraints, indexes, seed data, and enum handling.
+- For PostgreSQL enums, avoid duplicate `CREATE TYPE` failures by using existing-type-safe patterns where needed.
+
+# Verification
+
+- `python -m alembic heads`
+- `python -m alembic upgrade head` when it is safe to mutate the active local database.
+
+# Child DOX Index
+
+- No child AGENTS.md files yet.
