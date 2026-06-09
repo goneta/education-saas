@@ -7,6 +7,7 @@
 ## Purpose
 
 - React/Next.js TypeScript component or page file. It participates in Next.js App Router routing.
+- Provides the dashboard help center, including detailed guidance for advanced AI capabilities, AI credits, mobile UX, documents, internships, settings, finance, and core workflows.
 
 ## DOX Scope
 
@@ -20,4 +21,5 @@
 
 ## Verification
 
-- cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
+- `cmd.exe /c "cd frontend&& npx eslint app/[locale]/dashboard/help/page.tsx"`
+- `cmd.exe /c "cd frontend&& set NODE_OPTIONS=--max-old-space-size=4096&& npm run build"` when help routing or page structure changes.

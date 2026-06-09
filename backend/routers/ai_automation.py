@@ -60,6 +60,26 @@ AI_AGENTS: List[Dict[str, Any]] = [
     {"key": "career_internship", "name": "AI Career & Internship Manager", "permission": "internships:view", "category": "Internships", "actions": ["match_students_companies", "employability_summary"]},
     {"key": "help_center", "name": "AI Knowledge Base & Help Center", "permission": "ai_assistant:view", "category": "Help", "actions": ["page_help", "field_help", "process_help"]},
     {"key": "executive_command", "name": "AI Executive Command Center", "permission": "ai_reports:view", "category": "Executive", "actions": ["executive_summary", "critical_issues", "predictions"]},
+    {"key": "ai_coo", "name": "AI Chief Operating Officer", "permission": "ai_reports:view", "category": "Operations", "actions": ["daily_briefing", "operational_alerts", "cross_module_supervision"]},
+    {"key": "workflow_automation", "name": "AI Workflow Automation Engine", "permission": "ai_automation:create", "category": "Automation", "actions": ["multi_step_workflows", "payment_to_receipt_flow", "notification_orchestration"]},
+    {"key": "document_processing", "name": "AI Document Processing Center", "permission": "files:create", "category": "Documents", "actions": ["document_extraction", "field_validation", "record_creation_plan"]},
+    {"key": "compliance_legal", "name": "AI Compliance & Legal Officer", "permission": "compliance:view", "category": "Compliance", "actions": ["gdpr_monitoring", "retention_checks", "missing_approvals"]},
+    {"key": "curriculum_designer", "name": "AI Curriculum Designer", "permission": "subjects:create", "category": "Curriculum", "actions": ["program_structure", "course_modules", "learning_outcomes"]},
+    {"key": "accreditation_assistant", "name": "AI Accreditation Assistant", "permission": "compliance:export", "category": "Accreditation", "actions": ["accreditation_report", "quality_review", "ministry_submission"]},
+    {"key": "school_marketing", "name": "AI School Marketing Manager", "permission": "operations:view", "category": "Marketing", "actions": ["lead_followup", "campaign_plan", "recruitment_analytics"]},
+    {"key": "transport_manager", "name": "AI Transport Manager", "permission": "transport:view", "category": "Transport", "actions": ["route_optimization", "driver_assignment", "parent_delay_alerts"]},
+    {"key": "library_manager", "name": "AI Library Manager", "permission": "library:view", "category": "Library", "actions": ["book_recommendations", "late_returns", "inventory_audit"]},
+    {"key": "discipline_behavior", "name": "AI Discipline & Behavior Manager", "permission": "students:view", "category": "Discipline", "actions": ["incident_patterns", "behavior_risk_score", "intervention_plan"]},
+    {"key": "wellbeing_safeguarding", "name": "AI Wellbeing & Safeguarding Officer", "permission": "students:view", "category": "Safeguarding", "actions": ["wellbeing_signals", "safeguarding_alerts", "early_intervention"]},
+    {"key": "substitute_teacher", "name": "AI Substitute Teacher Manager", "permission": "timetable:edit", "category": "Timetable", "actions": ["replacement_teacher", "classroom_assignment", "schedule_updates"]},
+    {"key": "research_assistant", "name": "AI Research Assistant", "permission": "ai_assistant:view", "category": "University", "actions": ["paper_summary", "literature_review", "dataset_analysis"]},
+    {"key": "alumni_management", "name": "AI Alumni Management System", "permission": "students:view", "category": "Alumni", "actions": ["alumni_tracking", "mentorship", "employment_outcomes"]},
+    {"key": "career_prediction", "name": "AI Career Prediction Engine", "permission": "ai_predictive:view", "category": "Career", "actions": ["career_suggestions", "course_recommendations", "employer_matching"]},
+    {"key": "procurement_manager", "name": "AI Procurement Manager", "permission": "inventory:view", "category": "Procurement", "actions": ["supplier_analysis", "purchase_requests", "inventory_forecasts"]},
+    {"key": "meeting_assistant", "name": "AI Meeting Assistant", "permission": "operations:view", "category": "Meetings", "actions": ["agenda_generation", "minutes", "action_items"]},
+    {"key": "voice_receptionist", "name": "AI Voice Receptionist", "permission": "ai_assistant:view", "category": "Reception", "actions": ["voice_answers", "parent_questions", "whatsapp_handoff"]},
+    {"key": "multi_agent_collaboration", "name": "AI Multi-Agent Collaboration", "permission": "ai_reports:view", "category": "Orchestration", "actions": ["agent_team_plan", "cross_domain_findings", "coordinated_recommendations"]},
+    {"key": "autonomous_school_management", "name": "AI Autonomous School Management", "permission": "ai_automation:create", "category": "Autonomous", "actions": ["detect_act_followup", "autonomous_reminders", "scheduled_operations"]},
 ]
 
 CHAT_AUTOMATION_AGENT_KEYS = {
@@ -81,6 +101,26 @@ CHAT_AUTOMATION_AGENT_KEYS = {
     "career_internship",
     "help_center",
     "executive_command",
+    "ai_coo",
+    "workflow_automation",
+    "document_processing",
+    "compliance_legal",
+    "curriculum_designer",
+    "accreditation_assistant",
+    "school_marketing",
+    "transport_manager",
+    "library_manager",
+    "discipline_behavior",
+    "wellbeing_safeguarding",
+    "substitute_teacher",
+    "research_assistant",
+    "alumni_management",
+    "career_prediction",
+    "procurement_manager",
+    "meeting_assistant",
+    "voice_receptionist",
+    "multi_agent_collaboration",
+    "autonomous_school_management",
 }
 
 
@@ -101,6 +141,21 @@ def _agent(agent_key: Optional[str], command: str) -> Dict[str, Any]:
         ("report_card_generator", ["report card", "bulletin", "grades", "notes", "ranking"]),
         ("registrar", ["admission", "registration", "register", "inscription", "student id"]),
         ("career_internship", ["internship", "stage", "career", "employability"]),
+        ("workflow_automation", ["workflow", "automate", "automatic", "automatiquement", "orchestrate"]),
+        ("ai_coo", ["coo", "morning", "daily briefing", "today requires", "operations briefing"]),
+        ("multi_agent_collaboration", ["multi-agent", "multi agent", "collaborate", "agents together"]),
+        ("document_processing", ["passport", "birth certificate", "transcript", "medical certificate", "extract document", "ocr"]),
+        ("autonomous_school_management", ["autonomous", "without human", "schedule follow-up", "auto reminder"]),
+        ("compliance_legal", ["gdpr", "compliance", "legal", "retention", "consent", "safeguarding"]),
+        ("curriculum_designer", ["curriculum", "program", "learning outcomes", "competency", "diploma in"]),
+        ("accreditation_assistant", ["accreditation", "quality report", "program review"]),
+        ("transport_manager", ["transport", "route", "pickup", "driver", "fuel"]),
+        ("library_manager", ["library", "book", "borrowing", "late return"]),
+        ("discipline_behavior", ["discipline", "behavior", "incident", "suspension", "detention"]),
+        ("wellbeing_safeguarding", ["wellbeing", "safeguarding", "isolation", "decline"]),
+        ("substitute_teacher", ["substitute", "replacement teacher", "teacher absent"]),
+        ("procurement_manager", ["procurement", "supplier", "purchase order", "inventory forecast"]),
+        ("meeting_assistant", ["meeting", "agenda", "minutes", "action items"]),
         ("school_inspector", ["audit", "missing", "inspection", "incomplete"]),
         ("executive_command", ["executive", "summary", "dashboard", "statistics", "today"]),
         ("teacher_assistant", ["lesson", "cours", "plan", "exercise", "homework"]),
@@ -135,6 +190,26 @@ def _agent_permissions(agent: Dict[str, Any]) -> List[str]:
         "school_inspector": ["audit:view", "monitoring:view", "settings:view"],
         "ministry_reporting": ["compliance:export", "ai_reports:export", "enterprise:export"],
         "executive_command": ["ai_reports:view", "payments:view", "students:view"],
+        "ai_coo": ["ai_reports:view", "payments:view", "students:view", "teachers:view", "internships:view"],
+        "workflow_automation": ["ai_automation:create", "payments:create", "notifications:create", "files:create"],
+        "document_processing": ["files:create", "students:create", "operations:create"],
+        "compliance_legal": ["compliance:view", "audit:view", "settings:view"],
+        "curriculum_designer": ["subjects:create", "programs:create", "ai_assistant:view"],
+        "accreditation_assistant": ["compliance:export", "ai_reports:export", "enterprise:export"],
+        "school_marketing": ["operations:view", "notifications:create", "admissions:view"],
+        "transport_manager": ["transport:view", "enterprise:view", "notifications:create"],
+        "library_manager": ["library:view", "library:edit"],
+        "discipline_behavior": ["students:view", "attendance:view", "ai_predictive:view"],
+        "wellbeing_safeguarding": ["students:view", "attendance:view", "ai_predictive:view"],
+        "substitute_teacher": ["timetable:edit", "teachers:view", "notifications:create"],
+        "research_assistant": ["ai_assistant:view", "documents:view"],
+        "alumni_management": ["students:view", "operations:view"],
+        "career_prediction": ["ai_predictive:view", "grades:view", "internships:view"],
+        "procurement_manager": ["inventory:view", "accounting:view", "expenses:view"],
+        "meeting_assistant": ["operations:view", "notifications:create"],
+        "voice_receptionist": ["ai_assistant:view", "portal:view"],
+        "multi_agent_collaboration": ["ai_reports:view", "ai_automation:create", "students:view", "payments:view"],
+        "autonomous_school_management": ["ai_automation:create", "payments:create", "notifications:create", "audit:view"],
     }
     return sorted(set(base + fallback_permissions.get(agent["key"], [])))
 
@@ -264,6 +339,114 @@ def _executive_summary(db: Session, user: models.User) -> Dict[str, Any]:
     }
 
 
+def _advanced_operations_snapshot(db: Session, user: models.User) -> Dict[str, Any]:
+    finance = _finance_summary(db, user) if _has_any_permission(user, db, ["payments:view", "finance_fees:view", "finance:read"]) else {}
+    attendance = _attendance_risk(db, user) if rbac.has_permission(user, "students:view", db) else {}
+    timetable_conflicts = 0
+    if hasattr(models, "TimetableConflict"):
+        timetable_conflicts = _count(db, models.TimetableConflict, user)
+    internships_overdue = 0
+    if hasattr(models, "InternshipEvaluation"):
+        internships_overdue = _count(db, models.InternshipEvaluation, user)
+    return {
+        "morning_briefing": [
+            {"priority": "high", "label": "students_absence_risk", "count": len(attendance.get("at_risk", [])) if attendance else 0},
+            {"priority": "high", "label": "unpaid_invoices_or_fees", "count": finance.get("overdue_count", 0) if finance else 0},
+            {"priority": "medium", "label": "internship_evaluations_overdue", "count": internships_overdue},
+            {"priority": "medium", "label": "classroom_conflicts", "count": timetable_conflicts},
+            {"priority": "medium", "label": "revenue_gap", "value": finance.get("remaining", 0) if finance else 0},
+        ],
+        "actions_for_principal": [
+            "Review absent or late students and assign follow-up owners.",
+            "Ask finance to validate reminder campaigns for unpaid balances.",
+            "Check internship evaluations and timetable conflicts before publication.",
+        ],
+        "source_modules": ["attendance", "finance", "internships", "timetable", "forecasting"],
+    }
+
+
+def _workflow_automation_plan(command: str) -> Dict[str, Any]:
+    return {
+        "workflow": "payment_to_accounting_receipt_notification_archive",
+        "trigger": "validated_payment_or_financial_event",
+        "steps": [
+            {"order": 1, "action": "validate_payment", "status": "ready"},
+            {"order": 2, "action": "generate_receipt", "status": "ready"},
+            {"order": 3, "action": "update_student_account", "status": "ready"},
+            {"order": 4, "action": "create_accounting_entry", "status": "ready"},
+            {"order": 5, "action": "notify_parent", "status": "requires_notification_provider"},
+            {"order": 6, "action": "notify_finance_office", "status": "requires_template"},
+            {"order": 7, "action": "archive_receipt", "status": "ready"},
+        ],
+        "guardrails": ["RBAC check before execution", "tenant isolation", "audit every step", "approval required for destructive actions"],
+        "source_command": command,
+    }
+
+
+def _document_processing_plan(command: str) -> Dict[str, Any]:
+    return {
+        "supported_uploads": ["passport", "birth_certificate", "transcript", "medical_certificate", "employment_contract", "student_record"],
+        "pipeline": [
+            "secure_upload",
+            "antivirus_scan",
+            "ocr_or_text_extraction",
+            "field_detection",
+            "data_validation",
+            "record_creation_draft",
+            "document_storage",
+            "alerts_for_missing_or_expired_data",
+        ],
+        "extracted_fields_examples": {
+            "passport": ["full_name", "date_of_birth", "document_number", "expiry_date", "nationality"],
+            "birth_certificate": ["student_name", "parents", "birth_date", "birth_place"],
+            "transcript": ["previous_school", "subjects", "grades", "academic_year"],
+            "employment_contract": ["employee", "start_date", "salary", "contract_type", "expiry_date"],
+        },
+        "human_review": "Required before final record creation.",
+        "source_command": command,
+    }
+
+
+def _multi_agent_plan(db: Session, user: models.User) -> Dict[str, Any]:
+    finance = _finance_summary(db, user) if _has_any_permission(user, db, ["payments:view", "finance_fees:view", "finance:read"]) else {}
+    attendance = _attendance_risk(db, user) if rbac.has_permission(user, "students:view", db) else {}
+    academic = _academic_risk(db, user) if rbac.has_permission(user, "grades:view", db) else {}
+    return {
+        "collaboration_team": ["AI Finance Officer", "AI Attendance Manager", "AI Student Risk Detection", "AI Executive Command Center"],
+        "combined_findings": {
+            "finance": finance,
+            "attendance": attendance,
+            "academic": academic,
+        },
+        "coordinated_recommendations": [
+            "Prioritize students with both unpaid balances and attendance decline.",
+            "Route finance reminders through parent communication after safeguarding checks.",
+            "Escalate high-risk students to direction with a single consolidated action plan.",
+        ],
+    }
+
+
+def _autonomous_management_plan(command: str) -> Dict[str, Any]:
+    return {
+        "autonomous_loop": [
+            "detect_event",
+            "classify_risk",
+            "choose_authorized_action",
+            "execute_or_request_approval",
+            "notify_stakeholders",
+            "schedule_follow_up",
+            "write_audit_trail",
+        ],
+        "example": {
+            "event": "unpaid_invoice_detected",
+            "actions": ["send_parent_reminder", "generate_finance_report", "notify_finance_office", "schedule_follow_up"],
+            "approval_required": False,
+        },
+        "limits": ["destructive actions require approval", "tenant isolation always enforced", "provider availability required for real notifications"],
+        "source_command": command,
+    }
+
+
 def _registrar_draft(command: str) -> Dict[str, Any]:
     now = datetime.utcnow()
     return {
@@ -317,12 +500,42 @@ def _execute(agent: Dict[str, Any], payload: AIAutomationRequest, db: Session, u
     if key == "executive_command":
         data = _executive_summary(db, user)
         return AIAutomationResponse(agent_key=key, action="executive_summary", executed=True, message="Executive summary IA genere.", data=data, recommendations=data["ai_insights"])
+    if key == "ai_coo":
+        data = _advanced_operations_snapshot(db, user)
+        return AIAutomationResponse(agent_key=key, action="daily_operations_briefing", executed=True, message="Briefing operationnel AI COO genere.", data=data, recommendations=data["actions_for_principal"])
+    if key == "workflow_automation":
+        data = _workflow_automation_plan(payload.command)
+        return AIAutomationResponse(agent_key=key, action="workflow_automation_plan", executed=True, message="Workflow multi-etapes IA prepare.", data=data, recommendations=["Activer les connecteurs de notification avant execution automatique complete.", "Conserver le mode approval pour les actions sensibles."])
+    if key == "document_processing":
+        data = _document_processing_plan(payload.command)
+        return AIAutomationResponse(agent_key=key, action="document_processing_pipeline", executed=True, message="Pipeline de traitement documentaire IA prepare.", data=data, recommendations=["Faire valider les champs extraits par la scolarite ou l'administration.", "Archiver le document source avec son audit de traitement."])
+    if key == "multi_agent_collaboration":
+        data = _multi_agent_plan(db, user)
+        return AIAutomationResponse(agent_key=key, action="multi_agent_collaboration", executed=True, message="Collaboration multi-agents IA orchestree.", data=data, recommendations=data["coordinated_recommendations"])
+    if key == "autonomous_school_management":
+        data = _autonomous_management_plan(payload.command)
+        return AIAutomationResponse(agent_key=key, action="autonomous_management_loop", executed=True, message="Boucle de gestion autonome IA preparee.", data=data, recommendations=["Commencer par les rappels et notifications non destructifs.", "Exiger validation humaine pour suppressions, changements contractuels et decisions disciplinaires."])
     if key == "registrar":
         data = _registrar_draft(payload.command)
         return AIAutomationResponse(agent_key=key, action="admission_draft", executed=True, message="Dossier d'admission analyse en mode brouillon securise.", data=data, recommendations=["Importer les documents scannes puis faire valider par la scolarite."])
-    if key in {"teacher_assistant", "homework_creator", "document_generator", "help_center", "education_chat", "voice_assistant"}:
+    if key in {"teacher_assistant", "homework_creator", "document_generator", "help_center", "education_chat", "voice_assistant", "curriculum_designer", "research_assistant", "meeting_assistant", "voice_receptionist"}:
         data = _teaching_draft(payload.command, user)
         return AIAutomationResponse(agent_key=key, action="generated_content", executed=True, message="Contenu IA genere.", data=data, recommendations=["Relire et adapter le contenu avant publication."])
+    if key in {"compliance_legal", "accreditation_assistant"}:
+        data = {
+            "checks": ["missing_consent", "expired_contracts", "data_retention", "approval_gaps", "quality_evidence"],
+            "findings": _advanced_operations_snapshot(db, user),
+            "report_sections": ["executive_summary", "evidence_register", "risk_register", "corrective_actions", "submission_readiness"],
+        }
+        return AIAutomationResponse(agent_key=key, action="compliance_accreditation_review", executed=True, message="Revue conformite/accreditation IA generee.", data=data, recommendations=["Verifier les preuves avant transmission officielle.", "Assigner un responsable aux actions correctives."])
+    if key in {"transport_manager", "library_manager", "discipline_behavior", "wellbeing_safeguarding", "substitute_teacher", "school_marketing", "alumni_management", "career_prediction", "procurement_manager"}:
+        data = {
+            "capability": agent["actions"],
+            "operational_model": "monitor_detect_recommend_execute_when_authorized",
+            "required_data": ["records", "statuses", "responsible_users", "notification_templates", "approval_rules"],
+            "next_actions": ["connect module data", "define thresholds", "enable notifications", "review first recommendations"],
+        }
+        return AIAutomationResponse(agent_key=key, action="advanced_agent_plan", executed=True, message=f"{agent['name']} a prepare son plan operationnel.", data=data, recommendations=["Configurer les donnees de reference du module.", "Demarrer en mode recommandation avant automatisation complete."])
     if key == "career_internship":
         data = {
             "internships": _count(db, models.Internship, user),

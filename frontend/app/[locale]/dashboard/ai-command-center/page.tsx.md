@@ -7,6 +7,7 @@
 ## Purpose
 
 - React/Next.js TypeScript component or page file. It participates in Next.js App Router routing.
+- Renders the AI Command Center where users select one of the 40 AI agents, run role-scoped automation commands, and inspect structured AI results.
 
 ## DOX Scope
 
@@ -20,4 +21,5 @@
 
 ## Verification
 
-- cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
+- `cmd.exe /c "cd frontend&& npx eslint app/[locale]/dashboard/ai-command-center/page.tsx"`
+- `cmd.exe /c "cd frontend&& set NODE_OPTIONS=--max-old-space-size=4096&& npm run build"` when route behavior changes.

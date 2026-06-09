@@ -7,6 +7,7 @@
 ## Purpose
 
 - Python source file used by the backend, migrations, scripts, tests, or utilities. It participates in the FastAPI API boundary.
+- Registers the AI automation agents, including the advanced agents 21-40, routes commands to role-scoped agents, enforces RBAC, consumes AI credits, records audit events, and returns structured automation results.
 
 ## DOX Scope
 
@@ -20,4 +21,5 @@
 
 ## Verification
 
-- python -m py_compile backend\routers\<module>.py; python -c "import backend.main as m; print(m.app.title)"
+- `python -m py_compile backend\routers\ai_automation.py`
+- `python -c "import backend.main as m; print(m.app.title)"`

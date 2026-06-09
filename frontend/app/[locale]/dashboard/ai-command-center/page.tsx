@@ -28,6 +28,11 @@ interface AutomationResult {
 
 const quickCommands = [
     "Give me today's executive summary.",
+    "Generate the AI COO morning briefing for the principal.",
+    "Prepare the automated workflow from payment received to archived receipt.",
+    "Extract and validate fields from an uploaded birth certificate.",
+    "Coordinate finance, attendance and academic risk agents for high-risk students.",
+    "Create an autonomous follow-up loop for unpaid invoices.",
     "Show unpaid fees and duplicate payment risks.",
     "Identify students at academic risk.",
     "Audit the school for missing data.",
@@ -146,7 +151,7 @@ export default function AICommandCenterPage() {
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
                             <h2 className="text-xl font-semibold text-[#111827]">Agents IA specialises</h2>
-                            <p className="text-sm text-[#6B7280]">20 agents couvrent admissions, finance, presence, pedagogie, RH, documents et pilotage.</p>
+                        <p className="text-sm text-[#6B7280]">40 agents couvrent pilotage COO, workflows autonomes, documents, conformite, marketing, transport, bibliotheque, recherche et operations.</p>
                         </div>
                         <select
                             value={selectedAgent}
