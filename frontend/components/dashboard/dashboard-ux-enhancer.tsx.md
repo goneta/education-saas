@@ -6,7 +6,8 @@
 
 ## Purpose
 
-- React/Next.js TypeScript component or page file. It provides reusable UI behavior.
+- React/Next.js client component that adds reusable dashboard UX behavior after page render.
+- It standardizes table/list row actions, mass actions, mobile table cards, contextual help access, French section-title normalization, and collapsible dashboard sections.
 
 ## DOX Scope
 
@@ -17,6 +18,8 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- Collapsible sections are applied globally to section-like dashboard cards with headings and are collapsed by default so newly added sections follow the same interaction pattern.
+- Existing table actions should remain consolidated into one standardized action column: print, view, download, edit, delete.
 
 ## Verification
 

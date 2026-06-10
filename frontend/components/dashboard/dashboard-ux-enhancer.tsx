@@ -46,8 +46,64 @@ const MODULE_BY_PATH: Array<[RegExp, string, string]> = [
     [/portal/, "portal", "students"],
 ]
 
+const SECTION_TITLE_TRANSLATIONS: Record<string, string> = {
+    "debiteurs": "Débiteurs",
+    "liste des frais": "Liste des frais",
+    "paiements": "Paiements",
+    "lignes previsionnelles": "Lignes prévisionnelles",
+    "rubriques configurees": "Rubriques configurées",
+    "programs list": "Liste des programmes",
+    "approbations": "Approbations",
+    "classes management": "Gestion des classes",
+    "subject list": "Liste des matières",
+    "administrative requests": "Demandes administratives",
+    "assignments": "Devoirs",
+    "course materials": "Supports de cours",
+    "create assignment": "Créer un devoir",
+    "share course material": "Partager un support de cours",
+    "ajouter une entreprise partenaire": "Ajouter une entreprise partenaire",
+    "entreprises partenaires": "Entreprises partenaires",
+    "creer un stage": "Créer un stage",
+    "stages": "Stages",
+    "suivi quotidien entreprise": "Suivi quotidien entreprise",
+    "carnet de stage eleve": "Carnet de stage élève",
+    "evaluation du stage": "Évaluation du stage",
+    "documents de stage": "Documents de stage",
+    "eleves disponibles": "Élèves disponibles",
+    "assessment list": "Liste des évaluations",
+    "book inventory": "Inventaire des livres",
+    "emploi du temps publie": "Emploi du temps publié",
+    "documents disponibles": "Documents disponibles",
+    "factures et soldes": "Factures et soldes",
+    "notifications": "Notifications",
+    "stages en entreprise": "Stages en entreprise",
+    "ajouter un document": "Ajouter un document",
+    "documents": "Documents",
+    "student list": "Liste des élèves",
+    "teacher list": "Liste des enseignants",
+    "recent activity": "Activité récente",
+    "agents ia specialises": "Agents IA spécialisés",
+    "executer une commande": "Exécuter une commande",
+    "historique credits utilisateur": "Historique des crédits utilisateur",
+    "transactions credits ecole": "Transactions de crédits école",
+    "usage ia utilisateur": "Usage IA utilisateur",
+    "comptes de paiement ecole": "Comptes de paiement école",
+    "acheter des credits ia": "Acheter des crédits IA",
+    "paiements scolaires separes": "Paiements scolaires séparés",
+}
+
 function escapeHtml(value: string) {
     return value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char] || char))
+}
+
+function normalizeCopyKey(value: string) {
+    return value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s*\(\d+\)\s*$/, "").replace(/\s+/g, " ")
+}
+
+function translateSectionTitle(value: string) {
+    const count = value.match(/\s*(\(\d+\))\s*$/)?.[1] || ""
+    const translated = SECTION_TITLE_TRANSLATIONS[normalizeCopyKey(value)]
+    return translated ? `${translated}${count ? ` ${count}` : ""}` : null
 }
 
 function rowCells(row: HTMLTableRowElement) {
@@ -202,6 +258,82 @@ function normalizeExistingTable(table: HTMLTableElement) {
     })
 }
 
+function isInteractiveElement(element: HTMLElement | null) {
+    return Boolean(element?.closest("button,a,input,select,textarea,label,[data-teducai-action]"))
+}
+
+function sectionContainerForHeading(heading: HTMLElement) {
+    let current = heading.parentElement
+    while (current && current.tagName !== "MAIN") {
+        const hasUsefulContent = Boolean(current.querySelector("table,form,ul,ol,input,select,textarea,[data-teducai-collapsible-content]"))
+        const headingCount = current.querySelectorAll("h2,h3,h4,[data-teducai-section-title]").length
+        const isSectionLike = ["SECTION", "ARTICLE", "DIV"].includes(current.tagName)
+        if (isSectionLike && hasUsefulContent && headingCount <= 1) return current
+        if (isSectionLike && hasUsefulContent && headingCount > 1) return null
+        current = current.parentElement
+    }
+    return null
+}
+
+function directHeaderRoot(container: HTMLElement, heading: HTMLElement) {
+    let current: HTMLElement = heading
+    while (current.parentElement && current.parentElement !== container) current = current.parentElement
+    return current
+}
+
+function translateDashboardCopy() {
+    document.querySelectorAll<HTMLElement>("main h1, main h2, main h3, main h4, main th, main button, main [data-teducai-section-title]").forEach(element => {
+        if (element.querySelector("svg") && element.children.length > 1) return
+        const current = element.textContent?.trim() || ""
+        const translated = translateSectionTitle(current)
+        if (translated && translated !== current) element.textContent = translated
+    })
+}
+
+function enhanceCollapsibleSections() {
+    document.querySelectorAll<HTMLElement>("main h2, main h3, main h4, main [data-teducai-section-title]").forEach(heading => {
+        const translated = translateSectionTitle(heading.textContent?.trim() || "")
+        if (translated && heading.textContent?.trim() !== translated) heading.textContent = translated
+
+        const container = sectionContainerForHeading(heading)
+        if (!container || container.dataset.teducaiCollapsible === "true") return
+        const headerRoot = directHeaderRoot(container, heading)
+        const contentNodes = Array.from(container.children).filter((child): child is HTMLElement => child instanceof HTMLElement && child !== headerRoot)
+        if (!contentNodes.length) return
+
+        container.dataset.teducaiCollapsible = "true"
+        container.dataset.teducaiCollapsed = "true"
+        contentNodes.forEach(child => { child.dataset.teducaiCollapsibleContent = "true" })
+
+        const clickable = headerRoot
+        clickable.dataset.teducaiCollapseHeading = "true"
+        clickable.setAttribute("role", "button")
+        clickable.setAttribute("tabindex", "0")
+        clickable.setAttribute("aria-expanded", "false")
+        clickable.setAttribute("title", "Cliquer pour ouvrir ou refermer cette section")
+        clickable.classList.add("teducai-collapse-heading")
+
+        if (!clickable.querySelector("[data-teducai-section-toggle]")) {
+            const toggle = document.createElement("span")
+            toggle.dataset.teducaiSectionToggle = "true"
+            toggle.className = "teducai-section-chevron"
+            toggle.setAttribute("aria-hidden", "true")
+            toggle.textContent = "▶"
+            clickable.appendChild(toggle)
+        }
+    })
+}
+
+function toggleSection(header: HTMLElement) {
+    const container = header.closest<HTMLElement>("[data-teducai-collapsible='true']")
+    if (!container) return
+    const collapsed = container.dataset.teducaiCollapsed !== "false"
+    container.dataset.teducaiCollapsed = collapsed ? "false" : "true"
+    header.setAttribute("aria-expanded", collapsed ? "true" : "false")
+    const icon = header.querySelector<HTMLElement>("[data-teducai-section-toggle]")
+    if (icon) icon.textContent = collapsed ? "▼" : "▶"
+}
+
 function roleAllowsFallback(role: string | undefined, action: string) {
     if (["super_admin", "school_admin", "admin"].includes(role || "")) return true
     if (["parent", "student", "pupil"].includes(role || "")) return ["view", "download", "print"].includes(action)
@@ -296,8 +428,14 @@ export function DashboardUxEnhancer() {
     }, [can])
 
     useEffect(() => {
+        translateDashboardCopy()
+        enhanceCollapsibleSections()
         enhanceTables()
-        const observer = new MutationObserver(() => enhanceTables())
+        const observer = new MutationObserver(() => {
+            translateDashboardCopy()
+            enhanceCollapsibleSections()
+            enhanceTables()
+        })
         const main = document.querySelector("main")
         if (main) observer.observe(main, { childList: true, subtree: true })
         return () => observer.disconnect()
@@ -306,6 +444,11 @@ export function DashboardUxEnhancer() {
     useEffect(() => {
         const onClick = (event: MouseEvent) => {
             const target = event.target as HTMLElement
+            const collapseHeader = target.closest<HTMLElement>("[data-teducai-collapse-heading]")
+            if (collapseHeader && !isInteractiveElement(target)) {
+                toggleSection(collapseHeader)
+                return
+            }
             const row = target.closest("tr") as HTMLTableRowElement | null
             if (target.closest("[data-teducai-select-all]")) {
                 const table = target.closest("table")
@@ -336,7 +479,19 @@ export function DashboardUxEnhancer() {
             }
         }
         document.addEventListener("click", onClick)
-        return () => document.removeEventListener("click", onClick)
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (!["Enter", " "].includes(event.key)) return
+            const target = event.target as HTMLElement
+            const collapseHeader = target.closest<HTMLElement>("[data-teducai-collapse-heading]")
+            if (!collapseHeader) return
+            event.preventDefault()
+            toggleSection(collapseHeader)
+        }
+        document.addEventListener("keydown", onKeyDown)
+        return () => {
+            document.removeEventListener("click", onClick)
+            document.removeEventListener("keydown", onKeyDown)
+        }
     }, [])
 
     const helpUrl = `/${locale}/dashboard/help?section=${helpSection}`
@@ -360,6 +515,14 @@ export function DashboardUxEnhancer() {
                 .teducai-row-action{display:inline-flex;height:32px;width:32px;align-items:center;justify-content:center;border-radius:9999px;color:#111827;transition:background .2s ease,color .2s ease}
                 .teducai-row-action:hover{background:#F0F1F3;color:#000}
                 .teducai-row-action svg{height:16px;width:16px}
+                [data-teducai-collapsible="true"]{transition:background .22s ease,border-color .22s ease,box-shadow .22s ease}
+                [data-teducai-collapsible="true"][data-teducai-collapsed="false"]{background:rgba(255,255,255,.96)}
+                .teducai-collapse-heading{display:flex!important;align-items:center;justify-content:space-between;gap:16px;width:100%;cursor:pointer;outline:none}
+                .teducai-collapse-heading:focus-visible{box-shadow:0 0 0 3px rgba(0,122,255,.24);border-radius:18px}
+                .teducai-section-chevron{display:inline-flex;height:32px;min-width:32px;align-items:center;justify-content:center;border-radius:999px;background:#F5F5F7;color:#111827;font-size:14px;font-weight:700;transition:transform .22s ease,background .22s ease}
+                .teducai-collapse-heading:hover .teducai-section-chevron{background:#EAEAEC}
+                [data-teducai-collapsible-content="true"]{max-height:6000px;opacity:1;overflow:hidden;transition:max-height .28s ease,opacity .22s ease,margin .22s ease,padding .22s ease}
+                [data-teducai-collapsible="true"][data-teducai-collapsed="true"] [data-teducai-collapsible-content="true"]{max-height:0!important;opacity:0!important;margin-top:0!important;margin-bottom:0!important;padding-top:0!important;padding-bottom:0!important;pointer-events:none}
                 @media (max-width: 767px){
                     html,body{overflow-x:hidden}
                     main table{display:block;width:100%;min-width:0!important;border:0!important}

@@ -23,6 +23,7 @@
 - Use existing Apple-inspired UI conventions: clean spacing, rounded cards, black primary actions, responsive layouts, and accessible touch targets.
 - After frontend UI changes, run targeted ESLint and, when practical, `npm run build`.
 - Keep table/list action behavior consistent with standardized row actions.
+- Dashboard section cards with headings should inherit the global collapsible behavior: collapsed by default, French title normalization when needed, smooth open/close, and preserved standardized row actions.
 
 # Verification
 
