@@ -92,6 +92,47 @@ const SECTION_TITLE_TRANSLATIONS: Record<string, string> = {
     "paiements scolaires separes": "Paiements scolaires séparés",
 }
 
+const UI_COPY_TRANSLATIONS: Record<string, string> = {
+    "add class": "Ajouter une classe",
+    "add teacher": "Ajouter un enseignant",
+    "add student": "Ajouter un élève",
+    "add fee": "Ajouter des frais",
+    "add document": "Ajouter un document",
+    "add payroll": "Ajouter une paie",
+    "add canteen": "Ajouter une cantine",
+    "add admission": "Ajouter une admission",
+    "add admissions": "Ajouter des admissions",
+    "add exam": "Ajouter un examen",
+    "add exams": "Ajouter des examens",
+    "add forecast": "Ajouter un prévisionnel",
+    "add fee rubric": "Ajouter une rubrique de frais",
+    "copy amounts": "Copier les montants",
+    "copy previous year": "Copier l'année précédente",
+    "submit closure": "Valider la clôture",
+    "refresh": "Actualiser",
+    "apply": "Appliquer",
+    "print": "Imprimer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "view": "Afficher",
+    "download": "Télécharger",
+    "no teachers found. add your first teacher!": "Aucun enseignant trouvé. Ajoutez votre premier enseignant !",
+    "no students found. add your first student!": "Aucun élève trouvé. Ajoutez votre premier élève !",
+    "no classes found. add your first class!": "Aucune classe trouvée. Ajoutez votre première classe !",
+    "no data available": "Aucune donnée à afficher",
+    "no data to display": "Aucune donnée à afficher",
+    "no records found": "Aucun enregistrement trouvé",
+    "total students": "Total des élèves",
+    "classes today": "Classes aujourd'hui",
+    "active classes": "Classes actives",
+    "registered students": "Élèves inscrits",
+    "scheduled classes": "Classes planifiées",
+    "currently in session": "Actuellement en cours",
+}
+
 function escapeHtml(value: string) {
     return value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char] || char))
 }
@@ -104,6 +145,10 @@ function translateSectionTitle(value: string) {
     const count = value.match(/\s*(\(\d+\))\s*$/)?.[1] || ""
     const translated = SECTION_TITLE_TRANSLATIONS[normalizeCopyKey(value)]
     return translated ? `${translated}${count ? ` ${count}` : ""}` : null
+}
+
+function translateUiCopy(value: string) {
+    return UI_COPY_TRANSLATIONS[normalizeCopyKey(value)] || null
 }
 
 function rowCells(row: HTMLTableRowElement) {
@@ -281,13 +326,39 @@ function directHeaderRoot(container: HTMLElement, heading: HTMLElement) {
     return current
 }
 
-function translateDashboardCopy() {
-    document.querySelectorAll<HTMLElement>("main h1, main h2, main h3, main h4, main th, main button, main [data-teducai-section-title]").forEach(element => {
-        if (element.querySelector("svg") && element.children.length > 1) return
-        const current = element.textContent?.trim() || ""
-        const translated = translateSectionTitle(current)
-        if (translated && translated !== current) element.textContent = translated
+function translateElementText(element: HTMLElement) {
+    const current = element.textContent?.trim() || ""
+    const translated = translateSectionTitle(current) || translateUiCopy(current)
+    if (translated && translated !== current && !element.querySelector("svg")) {
+        element.textContent = translated
+        return
+    }
+
+    Array.from(element.childNodes).forEach(node => {
+        if (node.nodeType !== Node.TEXT_NODE) return
+        const text = node.textContent || ""
+        const copy = text.trim()
+        const nodeTranslation = translateUiCopy(copy)
+        if (nodeTranslation) node.textContent = text.replace(copy, nodeTranslation)
     })
+}
+
+function translateDashboardCopy() {
+    document.querySelectorAll<HTMLElement>("main h1, main h2, main h3, main h4, main th, main button, main p, main span, main [data-teducai-section-title]").forEach(translateElementText)
+}
+
+function ensureSectionToggle(container: HTMLElement, expanded: boolean) {
+    const toggles = Array.from(container.querySelectorAll<HTMLElement>("[data-teducai-section-toggle]"))
+    toggles.slice(1).forEach(toggle => toggle.remove())
+    const toggle = toggles[0] || document.createElement("span")
+    if (!toggle.dataset.teducaiSectionToggle) {
+        toggle.dataset.teducaiSectionToggle = "true"
+        toggle.className = "teducai-section-chevron"
+        toggle.setAttribute("aria-hidden", "true")
+    }
+    const nextText = expanded ? "⌃" : "⌄"
+    if (toggle.textContent !== nextText) toggle.textContent = nextText
+    if (toggle.parentElement !== container) container.appendChild(toggle)
 }
 
 function enhanceCollapsibleSections() {
@@ -296,8 +367,12 @@ function enhanceCollapsibleSections() {
         if (translated && heading.textContent?.trim() !== translated) heading.textContent = translated
 
         const container = sectionContainerForHeading(heading)
-        if (!container || container.dataset.teducaiCollapsible === "true") return
+        if (!container) return
         const headerRoot = directHeaderRoot(container, heading)
+        if (container.dataset.teducaiCollapsible === "true") {
+            ensureSectionToggle(container, container.dataset.teducaiCollapsed === "false")
+            return
+        }
         const contentNodes = Array.from(container.children).filter((child): child is HTMLElement => child instanceof HTMLElement && child !== headerRoot)
         if (!contentNodes.length) return
 
@@ -312,15 +387,7 @@ function enhanceCollapsibleSections() {
         clickable.setAttribute("aria-expanded", "false")
         clickable.setAttribute("title", "Cliquer pour ouvrir ou refermer cette section")
         clickable.classList.add("teducai-collapse-heading")
-
-        if (!clickable.querySelector("[data-teducai-section-toggle]")) {
-            const toggle = document.createElement("span")
-            toggle.dataset.teducaiSectionToggle = "true"
-            toggle.className = "teducai-section-chevron"
-            toggle.setAttribute("aria-hidden", "true")
-            toggle.textContent = "▶"
-            clickable.appendChild(toggle)
-        }
+        ensureSectionToggle(container, false)
     })
 }
 
@@ -330,8 +397,7 @@ function toggleSection(header: HTMLElement) {
     const collapsed = container.dataset.teducaiCollapsed !== "false"
     container.dataset.teducaiCollapsed = collapsed ? "false" : "true"
     header.setAttribute("aria-expanded", collapsed ? "true" : "false")
-    const icon = header.querySelector<HTMLElement>("[data-teducai-section-toggle]")
-    if (icon) icon.textContent = collapsed ? "▼" : "▶"
+    ensureSectionToggle(container, collapsed)
 }
 
 function roleAllowsFallback(role: string | undefined, action: string) {
@@ -444,6 +510,12 @@ export function DashboardUxEnhancer() {
     useEffect(() => {
         const onClick = (event: MouseEvent) => {
             const target = event.target as HTMLElement
+            const sectionToggle = target.closest<HTMLElement>("[data-teducai-section-toggle]")
+            if (sectionToggle) {
+                const header = sectionToggle.closest<HTMLElement>("[data-teducai-collapsible='true']")?.querySelector<HTMLElement>("[data-teducai-collapse-heading]")
+                if (header) toggleSection(header)
+                return
+            }
             const collapseHeader = target.closest<HTMLElement>("[data-teducai-collapse-heading]")
             if (collapseHeader && !isInteractiveElement(target)) {
                 toggleSection(collapseHeader)
@@ -515,12 +587,13 @@ export function DashboardUxEnhancer() {
                 .teducai-row-action{display:inline-flex;height:32px;width:32px;align-items:center;justify-content:center;border-radius:9999px;color:#111827;transition:background .2s ease,color .2s ease}
                 .teducai-row-action:hover{background:#F0F1F3;color:#000}
                 .teducai-row-action svg{height:16px;width:16px}
-                [data-teducai-collapsible="true"]{transition:background .22s ease,border-color .22s ease,box-shadow .22s ease}
+                [data-teducai-collapsible="true"]{position:relative;transition:background .22s ease,border-color .22s ease,box-shadow .22s ease}
                 [data-teducai-collapsible="true"][data-teducai-collapsed="false"]{background:rgba(255,255,255,.96)}
-                .teducai-collapse-heading{display:flex!important;align-items:center;justify-content:space-between;gap:16px;width:100%;cursor:pointer;outline:none}
+                .teducai-collapse-heading{width:100%;padding-right:44px;cursor:pointer;outline:none}
                 .teducai-collapse-heading:focus-visible{box-shadow:0 0 0 3px rgba(0,122,255,.24);border-radius:18px}
-                .teducai-section-chevron{display:inline-flex;height:32px;min-width:32px;align-items:center;justify-content:center;border-radius:999px;background:#F5F5F7;color:#111827;font-size:14px;font-weight:700;transition:transform .22s ease,background .22s ease}
-                .teducai-collapse-heading:hover .teducai-section-chevron{background:#EAEAEC}
+                .teducai-section-chevron{position:absolute;right:26px;top:26px;z-index:2;display:inline-flex;height:20px;width:20px;align-items:center;justify-content:center;border-radius:0;background:transparent;color:#667085;font-size:24px;font-weight:500;line-height:1;transition:color .22s ease,transform .22s ease}
+                [data-teducai-collapsible="true"][data-teducai-collapsed="false"] .teducai-section-chevron{transform:rotate(0deg)}
+                [data-teducai-collapsible="true"]:hover .teducai-section-chevron{color:#111827}
                 [data-teducai-collapsible-content="true"]{max-height:6000px;opacity:1;overflow:hidden;transition:max-height .28s ease,opacity .22s ease,margin .22s ease,padding .22s ease}
                 [data-teducai-collapsible="true"][data-teducai-collapsed="true"] [data-teducai-collapsible-content="true"]{max-height:0!important;opacity:0!important;margin-top:0!important;margin-bottom:0!important;padding-top:0!important;padding-bottom:0!important;pointer-events:none}
                 @media (max-width: 767px){

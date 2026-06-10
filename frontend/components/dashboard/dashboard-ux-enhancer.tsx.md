@@ -19,6 +19,8 @@
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
 - Collapsible sections are applied globally to section-like dashboard cards with headings and are collapsed by default so newly added sections follow the same interaction pattern.
+- Section chevrons are rendered as small, borderless controls at the right edge of the section container and must not be injected into the title flow.
+- The enhancer also normalizes common remaining English dashboard labels, add buttons, and empty-state messages into French when rendered.
 - Existing table actions should remain consolidated into one standardized action column: print, view, download, edit, delete.
 
 ## Verification
