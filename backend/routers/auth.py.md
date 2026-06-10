@@ -7,6 +7,7 @@
 ## Purpose
 
 - Python source file used by the backend, migrations, scripts, tests, or utilities. It participates in the FastAPI API boundary.
+- Owns registration, login, MFA, and `/auth/me`; login accepts either email or username while keeping password verification and account lockout protections.
 
 ## DOX Scope
 

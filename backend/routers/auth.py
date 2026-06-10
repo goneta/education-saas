@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from .. import crypto_utils, localization, models, schemas, security, database, totp
@@ -57,6 +58,7 @@ def register_school(school: schemas.SchoolCreate, owner: schemas.UserCreate, db:
         # 3. Create Admin User
         hashed_password = security.get_password_hash(owner.password)
         new_user = models.User(
+            username=owner.username,
             email=owner.email,
             hashed_password=hashed_password,
             full_name=owner.full_name,
@@ -82,7 +84,9 @@ def login_for_access_token(
     otp_code: str | None = Form(default=None),
     db: Session = Depends(database.get_db),
 ):
-    user = db.query(models.User).filter(models.User.email == form_data.username).first()
+    user = db.query(models.User).filter(
+        or_(models.User.email == form_data.username, models.User.username == form_data.username)
+    ).first()
     now = datetime.utcnow()
     if user and user.locked_until and user.locked_until > now:
         db.add(models.SecurityEvent(

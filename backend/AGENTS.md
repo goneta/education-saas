@@ -16,10 +16,12 @@
 - Model changes that affect production schema require an Alembic migration under `alembic/versions`.
 - Do not restore `Base.metadata.create_all()` as a substitute for production migrations.
 - Secrets and provider keys must not be logged or returned in API responses.
+- The system super administrator bootstrap must stay idempotent and shared between CLI and HTTP entrypoints.
 
 # Work Guidance
 
 - Prefer service functions for reusable business rules and keep routers focused on request/response orchestration.
+- Use `backend.services.super_admin.ensure_super_admin` for super-admin account creation or repair instead of duplicating bootstrap logic.
 - Use structured SQLAlchemy queries and Pydantic schemas instead of ad hoc serialization.
 - For financial, AI, file, auth, or tenant-sensitive changes, add or update targeted tests when feasible.
 

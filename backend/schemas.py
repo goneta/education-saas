@@ -111,6 +111,7 @@ class SchoolResponse(SchoolBase):
 # User Schemas
 class UserBase(BaseModel):
     email: EmailStr
+    username: Optional[str] = None
     full_name: Optional[str] = None
     role: UserRole
 
@@ -121,6 +122,8 @@ class UserCreate(UserBase):
 class UserResponse(UserBase):
     id: int
     is_active: bool
+    is_verified: bool = False
+    is_system_account: bool = False
     school_id: Optional[int]
     numref: Optional[str] = None
     school: Optional[SchoolResponse] = None

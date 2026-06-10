@@ -7,6 +7,7 @@
 ## Purpose
 
 - Python source file used by the backend, migrations, scripts, tests, or utilities.
+- Exposes API schemas for schools, users, AI billing, and other modules, including username and system-account flags in user responses.
 - Defines Pydantic API contracts for school settings, AI providers, AI wallets, credit packs, usage logs, credit adjustments, platform payments, and school payments.
 
 ## DOX Scope

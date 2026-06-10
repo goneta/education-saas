@@ -76,6 +76,15 @@ def wallet_for_purchase(db: Session, owner_type: str, user: models.User, target_
 
 def ensure_credits(db: Session, user: models.User, required_credits: int) -> models.AIWallet:
     wallet = wallet_for_user(db, user)
+    if user.role == models.UserRole.SUPER_ADMIN:
+        wallet.status = "active"
+        wallet.daily_credit_limit = None
+        wallet.monthly_credit_limit = None
+        if wallet.balance_credits < required_credits:
+            wallet.balance_credits = required_credits
+        db.add(wallet)
+        db.flush()
+        return wallet
     if wallet.status != "active" or wallet.balance_credits < required_credits:
         usage = models.AIUsageLog(
             user_id=user.id,
