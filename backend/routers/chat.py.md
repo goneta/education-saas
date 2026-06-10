@@ -7,6 +7,7 @@
 ## Purpose
 
 - Python source file used by the backend, migrations, scripts, tests, or utilities. It participates in the FastAPI API boundary.
+- Exposes the role-aware Agent IA chat endpoint, enforcing RBAC, tenant scope, AI credit checks, configured provider calls, usage logging, and audit trails.
 
 ## DOX Scope
 

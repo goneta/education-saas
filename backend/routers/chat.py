@@ -159,8 +159,20 @@ async def chat_with_ai(
                     "recommendations": automation_result.recommendations,
                 },
             }
-        response = ai_service.generate_response(request_body.message, context)
-        ai_credits.record_usage(db, current_user, request_body.message, str(response.get("data") or response.get("message") or ""), "ai_agent_chat", "chat_response")
+        response = ai_service.generate_response_from_config(request_body.message, context, db)
+        provider = db.query(models.AIProvider).filter(models.AIProvider.id == response.get("provider_id")).first() if response.get("provider_id") else None
+        ai_credits.record_usage(
+            db,
+            current_user,
+            request_body.message,
+            str(response.get("data") or response.get("message") or ""),
+            "ai_agent_chat",
+            "chat_response",
+            provider=provider,
+            model_name=response.get("model_name"),
+            prompt_tokens=response.get("prompt_tokens"),
+            completion_tokens=response.get("completion_tokens"),
+        )
         audit.record_audit(
             db,
             action="ai.response.generated",
@@ -172,7 +184,7 @@ async def chat_with_ai(
         db.commit()
         return response
     except HTTPException as exc:
-        if exc.status_code == 402:
+        if exc.status_code in {402, 429}:
             db.commit()
         else:
             db.rollback()

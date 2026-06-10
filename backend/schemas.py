@@ -250,11 +250,27 @@ class AIWalletResponse(BaseModel):
     balance_credits: int
     total_purchased_credits: int
     total_used_credits: int
+    daily_credit_limit: Optional[int] = None
+    monthly_credit_limit: Optional[int] = None
     status: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class AIWalletLimitUpdate(BaseModel):
+    daily_credit_limit: Optional[int] = Field(default=None, ge=0)
+    monthly_credit_limit: Optional[int] = Field(default=None, ge=0)
+
+
+class AICreditAdjustmentRequest(BaseModel):
+    owner_type: str = Field(pattern="^(user|school)$")
+    credits_amount: int
+    user_id: Optional[int] = None
+    school_id: Optional[int] = None
+    transaction_type: str = "admin_adjustment"
+    description: Optional[str] = None
 
 
 class AIUsageLogResponse(BaseModel):

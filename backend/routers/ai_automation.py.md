@@ -7,6 +7,7 @@
 ## Purpose
 
 - Python source file used by the backend, migrations, scripts, tests, or utilities. It participates in the FastAPI API boundary.
+- Exposes the 40-agent AI automation command center with RBAC checks, credit checks, configured provider use for generated content, token-aware logging, and audit records.
 - Registers the AI automation agents, including the advanced agents 21-40, routes commands to role-scoped agents, enforces RBAC, consumes AI credits, records audit events, and returns structured automation results.
 
 ## DOX Scope

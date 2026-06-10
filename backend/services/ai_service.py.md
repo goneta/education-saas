@@ -7,6 +7,7 @@
 ## Purpose
 
 - Python source file used by the backend, migrations, scripts, tests, or utilities. It contains reusable backend business or integration logic.
+- Provides the AI assistant integration layer, including DB-configured encrypted provider selection, OpenAI-compatible provider calls, provider fallback by priority, token usage extraction, and deterministic local fallback responses.
 
 ## DOX Scope
 

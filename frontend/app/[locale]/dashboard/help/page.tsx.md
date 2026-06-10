@@ -7,7 +7,7 @@
 ## Purpose
 
 - React/Next.js TypeScript component or page file. It participates in Next.js App Router routing.
-- Provides the dashboard help center, including detailed guidance for advanced AI capabilities, AI credits, mobile UX, documents, internships, settings, finance, and core workflows.
+- Provides the dashboard help center, including detailed guidance for advanced AI capabilities, AI credits with provider fallback and wallet limits, separated payments, mobile UX, documents, internships, settings, finance, and core workflows.
 
 ## DOX Scope
 

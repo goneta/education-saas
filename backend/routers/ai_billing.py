@@ -183,6 +183,64 @@ def platform_ai_payments(current_user: models.User = Depends(security.get_curren
     return db.query(models.PlatformPayment).order_by(models.PlatformPayment.created_at.desc()).limit(500).all()
 
 
+@router.post("/platform/ai/wallets/adjust", response_model=schemas.AICreditTransactionResponse)
+def adjust_ai_wallet(payload: schemas.AICreditAdjustmentRequest, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    _super_admin(current_user)
+    if payload.owner_type == "user":
+        if not payload.user_id:
+            raise HTTPException(status_code=400, detail="user_id is required for user wallet adjustments")
+        target_user = db.query(models.User).filter(models.User.id == payload.user_id).first()
+        if not target_user:
+            raise HTTPException(status_code=404, detail="Target user not found")
+        wallet = ai_credits.get_or_create_wallet(db, "user", target_user.id, target_user.school_id)
+        school_id = target_user.school_id
+        user_id = target_user.id
+    else:
+        if not payload.school_id:
+            raise HTTPException(status_code=400, detail="school_id is required for school wallet adjustments")
+        school = db.query(models.School).filter(models.School.id == payload.school_id).first()
+        if not school:
+            raise HTTPException(status_code=404, detail="School not found")
+        wallet = ai_credits.wallet_for_school(db, school.id)
+        school_id = school.id
+        user_id = None
+    before = wallet.balance_credits
+    wallet.balance_credits += payload.credits_amount
+    if payload.credits_amount > 0:
+        wallet.total_purchased_credits += payload.credits_amount
+    transaction = models.AICreditTransaction(
+        wallet_id=wallet.id,
+        user_id=user_id,
+        school_id=school_id,
+        transaction_type=payload.transaction_type,
+        credits_amount=payload.credits_amount,
+        balance_before=before,
+        balance_after=wallet.balance_credits,
+        description=payload.description or "Super Admin AI credit adjustment",
+    )
+    db.add(transaction)
+    db.flush()
+    audit.record_audit(db, action="platform.ai_wallet.adjusted", current_user=current_user, entity_type="ai_wallet", entity_id=wallet.id, details={"credits": payload.credits_amount, "owner_type": payload.owner_type})
+    db.commit()
+    db.refresh(transaction)
+    return transaction
+
+
+@router.put("/platform/ai/wallets/{wallet_id}/limits", response_model=schemas.AIWalletResponse)
+def update_ai_wallet_limits(wallet_id: int, payload: schemas.AIWalletLimitUpdate, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    _super_admin(current_user)
+    wallet = db.query(models.AIWallet).filter(models.AIWallet.id == wallet_id).first()
+    if not wallet:
+        raise HTTPException(status_code=404, detail="AI wallet not found")
+    updates = payload.model_dump(exclude_unset=True)
+    for key, value in updates.items():
+        setattr(wallet, key, value)
+    audit.record_audit(db, action="platform.ai_wallet.limits_updated", current_user=current_user, entity_type="ai_wallet", entity_id=wallet.id, details=updates)
+    db.commit()
+    db.refresh(wallet)
+    return wallet
+
+
 @router.get("/platform/ai/analytics")
 def platform_ai_analytics(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     _super_admin(current_user)

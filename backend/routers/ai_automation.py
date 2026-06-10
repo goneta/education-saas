@@ -466,12 +466,19 @@ def _registrar_draft(command: str) -> Dict[str, Any]:
     }
 
 
-def _teaching_draft(command: str, user: models.User) -> Dict[str, Any]:
-    response = ai_service.generate_response(command, {
+def _teaching_draft(command: str, db: Session, user: models.User) -> Dict[str, Any]:
+    response = ai_service.generate_response_from_config(command, {
         "role": user.role.value,
         "scope_summary": "generation pedagogique autorisee selon le role connecte",
-    })
-    return {"draft": response.get("data") or response.get("message"), "response_type": response.get("type")}
+    }, db)
+    return {
+        "draft": response.get("data") or response.get("message"),
+        "response_type": response.get("type"),
+        "provider_id": response.get("provider_id"),
+        "model_name": response.get("model_name"),
+        "prompt_tokens": response.get("prompt_tokens"),
+        "completion_tokens": response.get("completion_tokens"),
+    }
 
 
 def _execute(agent: Dict[str, Any], payload: AIAutomationRequest, db: Session, user: models.User) -> AIAutomationResponse:
@@ -519,7 +526,7 @@ def _execute(agent: Dict[str, Any], payload: AIAutomationRequest, db: Session, u
         data = _registrar_draft(payload.command)
         return AIAutomationResponse(agent_key=key, action="admission_draft", executed=True, message="Dossier d'admission analyse en mode brouillon securise.", data=data, recommendations=["Importer les documents scannes puis faire valider par la scolarite."])
     if key in {"teacher_assistant", "homework_creator", "document_generator", "help_center", "education_chat", "voice_assistant", "curriculum_designer", "research_assistant", "meeting_assistant", "voice_receptionist"}:
-        data = _teaching_draft(payload.command, user)
+        data = _teaching_draft(payload.command, db, user)
         return AIAutomationResponse(agent_key=key, action="generated_content", executed=True, message="Contenu IA genere.", data=data, recommendations=["Relire et adapter le contenu avant publication."])
     if key in {"compliance_legal", "accreditation_assistant"}:
         data = {
@@ -612,6 +619,8 @@ def run_automation(
     try:
         ai_credits.ensure_credits(db, current_user, ai_credits.estimate_credits(payload.command))
         result = _execute(agent, payload, db, current_user)
+        provider_id = result.data.get("provider_id") if isinstance(result.data, dict) else None
+        provider = db.query(models.AIProvider).filter(models.AIProvider.id == provider_id).first() if provider_id else None
         ai_credits.record_usage(
             db,
             current_user,
@@ -619,6 +628,10 @@ def run_automation(
             f"{result.message}\n{result.data}\n{result.recommendations}",
             "ai_command_center",
             result.action,
+            provider=provider,
+            model_name=result.data.get("model_name") if isinstance(result.data, dict) else None,
+            prompt_tokens=result.data.get("prompt_tokens") if isinstance(result.data, dict) else None,
+            completion_tokens=result.data.get("completion_tokens") if isinstance(result.data, dict) else None,
         )
         audit.record_audit(
             db,

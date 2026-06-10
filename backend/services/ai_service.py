@@ -3,6 +3,10 @@ import logging
 import os
 from typing import Any, Dict, Literal, Optional, TypedDict
 
+from sqlalchemy.orm import Session
+
+from .. import crypto_utils, models
+
 try:
     from openai import OpenAI
 except ImportError:  # pragma: no cover - depends on deployment dependencies
@@ -15,6 +19,10 @@ class AIResponse(TypedDict):
     type: Literal["chat", "content"]
     message: str
     data: Optional[Any]
+    provider_id: Optional[int]
+    model_name: Optional[str]
+    prompt_tokens: Optional[int]
+    completion_tokens: Optional[int]
 
 
 class AIService:
@@ -48,6 +56,10 @@ class AIService:
                 "type": "chat",
                 "message": "Please enter a question or request for the school assistant.",
                 "data": None,
+                "provider_id": None,
+                "model_name": None,
+                "prompt_tokens": None,
+                "completion_tokens": None,
             }
 
         if self.client:
@@ -55,7 +67,54 @@ class AIService:
 
         return self._call_fallback(message, user_context or {})
 
+    def generate_response_from_config(self, message: str, user_context: Optional[Dict[str, Any]], db: Session) -> AIResponse:
+        """Call the first active DB-configured AI provider, with fallback by priority.
+
+        API keys are decrypted only in memory, never returned by API routes. Providers
+        that expose an OpenAI-compatible endpoint can be used through `base_url`.
+        Providers without a supported SDK/base URL are skipped until their adapter is
+        configured, then the next active provider is tried.
+        """
+        providers = db.query(models.AIProvider).filter(models.AIProvider.is_active == True).order_by(models.AIProvider.priority.asc()).all()  # noqa: E712
+        failures: list[str] = []
+        for provider in providers:
+            try:
+                response = self._call_configured_provider(message, user_context or {}, provider)
+                response["provider_id"] = provider.id
+                response["model_name"] = response.get("model_name") or provider.default_model
+                return response
+            except Exception as exc:  # pragma: no cover - external provider failure path
+                logger.exception("Configured AI provider %s failed: %s", provider.provider_type, exc)
+                failures.append(f"{provider.name}: {exc}")
+                continue
+        fallback = self.generate_response(message, user_context or {})
+        fallback["provider_id"] = None
+        fallback["model_name"] = self.model if self.client else "local-fallback"
+        if failures:
+            fallback["message"] = f"{fallback['message']} Fallback active apres echec fournisseur: {'; '.join(failures[:2])}."
+        return fallback
+
+    def _call_configured_provider(self, message: str, user_context: Dict[str, Any], provider: models.AIProvider) -> AIResponse:
+        provider_type = (provider.provider_type or "").lower()
+        api_key = crypto_utils.decrypt_secret(provider.api_key_encrypted) if provider.api_key_encrypted else None
+        if not api_key:
+            raise RuntimeError("missing encrypted API key")
+        if not OpenAI:
+            raise RuntimeError("openai package unavailable")
+        if provider_type not in {"openai", "openrouter", "grok", "custom", "manus", "claude", "anthropic", "gemini"}:
+            raise RuntimeError(f"unsupported provider type {provider.provider_type}")
+        if provider_type in {"claude", "anthropic", "gemini", "manus"} and not provider.base_url:
+            raise RuntimeError("provider requires an OpenAI-compatible base_url or a dedicated adapter")
+        client_kwargs: Dict[str, Any] = {"api_key": api_key}
+        if provider.base_url:
+            client_kwargs["base_url"] = provider.base_url
+        client = OpenAI(**client_kwargs)
+        return self._call_openai_client(client, provider.default_model or self.model, message, user_context)
+
     def _call_openai(self, message: str, user_context: Dict[str, Any]) -> AIResponse:
+        return self._call_openai_client(self.client, self.model, message, user_context)
+
+    def _call_openai_client(self, client: Any, model: str, message: str, user_context: Dict[str, Any]) -> AIResponse:
         try:
             system_prompt = """
 You are TeducAI, an expert assistant for a school-management SaaS platform.
@@ -74,8 +133,8 @@ policy, lesson plan, parent-support text, or administrative document. Use `chat`
 for short guidance and operational answers. Keep school data privacy in mind.
 """
 
-            response = self.client.chat.completions.create(
-                model=self.model,
+            response = client.chat.completions.create(
+                model=model,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "system", "content": json.dumps({"rbac_context": user_context}, ensure_ascii=False)},
@@ -86,13 +145,22 @@ for short guidance and operational answers. Keep school data privacy in mind.
 
             content = response.choices[0].message.content or "{}"
             parsed = json.loads(content)
-            return self._normalize_response(parsed)
+            normalized = self._normalize_response(parsed)
+            usage = getattr(response, "usage", None)
+            normalized["model_name"] = model
+            normalized["prompt_tokens"] = getattr(usage, "prompt_tokens", None) if usage else None
+            normalized["completion_tokens"] = getattr(usage, "completion_tokens", None) if usage else None
+            return normalized
         except Exception as exc:  # pragma: no cover - external service failure path
             logger.exception("AI provider call failed: %s", exc)
             return {
                 "type": "chat",
                 "message": "The AI provider is temporarily unavailable. Please try again shortly.",
                 "data": None,
+                "provider_id": None,
+                "model_name": model,
+                "prompt_tokens": None,
+                "completion_tokens": None,
             }
 
     def _normalize_response(self, value: Dict[str, Any]) -> AIResponse:
@@ -108,7 +176,7 @@ for short guidance and operational answers. Keep school data privacy in mind.
         elif data is not None and not isinstance(data, str):
             data = json.dumps(data, ensure_ascii=False, indent=2)
 
-        return {"type": response_type, "message": message, "data": data}
+        return {"type": response_type, "message": message, "data": data, "provider_id": None, "model_name": None, "prompt_tokens": None, "completion_tokens": None}
 
     def _call_fallback(self, message: str, user_context: Dict[str, Any]) -> AIResponse:
         msg_lower = message.lower()
@@ -136,6 +204,10 @@ Students will understand basic digital safety, responsible device usage, and how
 
 Teachers can assess participation, completion of the guided activity, and the quality of the final reflection.
 """,
+                "provider_id": None,
+                "model_name": "local-fallback",
+                "prompt_tokens": None,
+                "completion_tokens": None,
             }
 
         if any(keyword in msg_lower for keyword in ["report", "list", "rapport", "liste"]):
@@ -150,6 +222,10 @@ Teachers can assess participation, completion of the guided activity, and the qu
 4. Check pending fee payments and recorded expenses.
 5. Generate academic reports for the selected term.
 """,
+                "provider_id": None,
+                "model_name": "local-fallback",
+                "prompt_tokens": None,
+                "completion_tokens": None,
             }
 
         return {
@@ -159,6 +235,10 @@ Teachers can assess participation, completion of the guided activity, and the qu
                 "Le fournisseur IA complet n'est pas configure dans cet environnement; j'utilise donc une reponse locale securisee."
             ),
             "data": None,
+            "provider_id": None,
+            "model_name": "local-fallback",
+            "prompt_tokens": None,
+            "completion_tokens": None,
         }
 
 

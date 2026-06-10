@@ -7,6 +7,7 @@
 ## Purpose
 
 - Python source file used by the backend, migrations, scripts, tests, or utilities. It contains reusable backend business or integration logic.
+- Owns AI credit accounting rules: wallet creation, balance checks, daily/monthly credit limit enforcement, token-to-credit conversion, usage logs, credit transactions, and successful platform payment application.
 
 ## DOX Scope
 

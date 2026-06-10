@@ -1855,6 +1855,8 @@ class AIWallet(Base):
     balance_credits = Column(Integer, default=0, nullable=False)
     total_purchased_credits = Column(Integer, default=0, nullable=False)
     total_used_credits = Column(Integer, default=0, nullable=False)
+    daily_credit_limit = Column(Integer, nullable=True)
+    monthly_credit_limit = Column(Integer, nullable=True)
     status = Column(String, default="active", nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

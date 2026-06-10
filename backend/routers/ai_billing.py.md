@@ -7,6 +7,7 @@
 ## Purpose
 
 - Python source file used by the backend, migrations, scripts, tests, or utilities. It participates in the FastAPI API boundary.
+- Exposes AI provider, AI credit pack, wallet limit/adjustment, platform payment, school payment account, school payment, and AI usage monitoring APIs with Super Admin or school-scoped RBAC gates.
 
 ## DOX Scope
 

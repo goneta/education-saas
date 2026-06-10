@@ -12,10 +12,12 @@ interface AIWallet {
     owner_type: string
     school_id?: number | null
     user_id?: number | null
-    credits_balance: number
-    total_credits_purchased: number
-    total_credits_used: number
-    is_active: boolean
+    balance_credits: number
+    total_purchased_credits: number
+    total_used_credits: number
+    daily_credit_limit?: number | null
+    monthly_credit_limit?: number | null
+    status: string
 }
 
 interface AICreditPack {
@@ -23,7 +25,7 @@ interface AICreditPack {
     name: string
     description?: string | null
     credits_amount: number
-    price_amount: number
+    price: number
     currency: string
     country_code?: string | null
     region?: string | null
@@ -32,20 +34,22 @@ interface AICreditPack {
 
 interface AIUsageLog {
     id: number
-    module: string
-    action: string
-    credits_used: number
+    module_name?: string | null
+    action_type?: string | null
+    credits_charged: number
     status: string
     created_at: string
+    provider_id?: number | null
+    model_name?: string | null
+    total_tokens?: number
 }
 
 interface AITransaction {
     id: number
     transaction_type: string
     credits_amount: number
-    amount_money?: number | null
-    currency?: string | null
-    status: string
+    balance_before: number
+    balance_after: number
     description?: string | null
     created_at: string
 }
@@ -65,8 +69,8 @@ interface SchoolPaymentAccount {
     id: number
     provider: string
     account_name: string
-    account_reference?: string | null
-    currency: string
+    merchant_id?: string | null
+    phone_number?: string | null
     country_code?: string | null
     is_active: boolean
 }
@@ -90,15 +94,15 @@ interface AIProvider {
     currency: string
     is_active: boolean
     priority: number
+    has_api_key?: boolean
 }
 
 interface AnalyticsSummary {
-    period: { from?: string | null; to?: string | null }
-    total_credits_used: number
-    total_requests: number
-    blocked_requests: number
-    successful_requests: number
-    by_module: Record<string, number>
+    credits_used: number
+    tokens_used: number
+    estimated_cost: number
+    credits_sold: number
+    wallet_balance: number
 }
 
 const statusColor: Record<string, string> = {
@@ -151,18 +155,41 @@ export default function AICreditsPage() {
     const [accountForm, setAccountForm] = useState({
         provider: "orange_money",
         account_name: "",
-        account_reference: "",
-        currency: "FCFA",
+        merchant_id: "",
+        phone_number: "",
         country_code: "CI",
     })
     const [providerForm, setProviderForm] = useState({
         name: "",
         provider_type: "openai",
+        api_key: "",
+        base_url: "",
         default_model: "gpt-4.1-mini",
         currency: "USD",
-        input_token_cost_per_1k: "0",
-        output_token_cost_per_1k: "0",
+        cost_per_1k_input_tokens: "0",
+        cost_per_1k_output_tokens: "0",
         priority: "100",
+    })
+    const [packForm, setPackForm] = useState({
+        name: "",
+        credits_amount: "1500",
+        price: "7000",
+        currency: "FCFA",
+        country_code: "CI",
+        region: "africa",
+        description: "",
+    })
+    const [adjustForm, setAdjustForm] = useState({
+        owner_type: "school",
+        user_id: "",
+        school_id: "",
+        credits_amount: "0",
+        description: "",
+    })
+    const [limitForm, setLimitForm] = useState({
+        wallet_id: "",
+        daily_credit_limit: "",
+        monthly_credit_limit: "",
     })
 
     const isSuperAdmin = user?.role === "super_admin"
@@ -253,7 +280,7 @@ export default function AICreditsPage() {
         })
         if (response.ok) {
             setMessage("Compte de paiement etablissement enregistre.")
-            setAccountForm({ provider: "orange_money", account_name: "", account_reference: "", currency: "FCFA", country_code: "CI" })
+            setAccountForm({ provider: "orange_money", account_name: "", merchant_id: "", phone_number: "", country_code: "CI" })
             void load()
         } else {
             setMessage("Enregistrement du compte de paiement impossible.")
@@ -269,20 +296,91 @@ export default function AICreditsPage() {
             body: JSON.stringify({
                 name: providerForm.name,
                 provider_type: providerForm.provider_type,
+                api_key: providerForm.api_key || undefined,
+                base_url: providerForm.base_url || undefined,
                 default_model: providerForm.default_model,
                 currency: providerForm.currency,
-                input_token_cost_per_1k: Number(providerForm.input_token_cost_per_1k),
-                output_token_cost_per_1k: Number(providerForm.output_token_cost_per_1k),
+                cost_per_1k_input_tokens: Number(providerForm.cost_per_1k_input_tokens),
+                cost_per_1k_output_tokens: Number(providerForm.cost_per_1k_output_tokens),
                 priority: Number(providerForm.priority),
                 is_active: false,
             }),
         })
         if (response.ok) {
-            setMessage("Provider IA cree. Ajoutez la cle API cote plateforme avant activation.")
-            setProviderForm({ name: "", provider_type: "openai", default_model: "gpt-4.1-mini", currency: "USD", input_token_cost_per_1k: "0", output_token_cost_per_1k: "0", priority: "100" })
+            setMessage("Provider IA cree. La cle API est chiffree en base et n'est jamais affichee.")
+            setProviderForm({ name: "", provider_type: "openai", api_key: "", base_url: "", default_model: "gpt-4.1-mini", currency: "USD", cost_per_1k_input_tokens: "0", cost_per_1k_output_tokens: "0", priority: "100" })
             void load()
         } else {
             setMessage("Creation du provider IA impossible.")
+        }
+    }
+
+    const createPack = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        if (!token) return
+        const response = await fetch(`${API_BASE_URL}/platform/ai/credit-packs`, {
+            method: "POST",
+            headers: { ...headers, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                name: packForm.name,
+                description: packForm.description || undefined,
+                credits_amount: Number(packForm.credits_amount),
+                price: Number(packForm.price),
+                currency: packForm.currency,
+                country_code: packForm.country_code,
+                region: packForm.region,
+                is_active: true,
+            }),
+        })
+        if (response.ok) {
+            setMessage("Pack de credits IA cree.")
+            setPackForm({ name: "", credits_amount: "1500", price: "7000", currency: "FCFA", country_code: "CI", region: "africa", description: "" })
+            void load()
+        } else {
+            setMessage("Creation du pack IA impossible.")
+        }
+    }
+
+    const adjustCredits = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        if (!token) return
+        const response = await fetch(`${API_BASE_URL}/platform/ai/wallets/adjust`, {
+            method: "POST",
+            headers: { ...headers, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                owner_type: adjustForm.owner_type,
+                user_id: adjustForm.owner_type === "user" && adjustForm.user_id ? Number(adjustForm.user_id) : undefined,
+                school_id: adjustForm.owner_type === "school" && adjustForm.school_id ? Number(adjustForm.school_id) : undefined,
+                credits_amount: Number(adjustForm.credits_amount),
+                description: adjustForm.description || "Ajustement Super Admin",
+            }),
+        })
+        if (response.ok) {
+            setMessage("Credits IA ajustes.")
+            setAdjustForm({ owner_type: "school", user_id: "", school_id: "", credits_amount: "0", description: "" })
+            void load()
+        } else {
+            setMessage("Ajustement des credits impossible.")
+        }
+    }
+
+    const updateWalletLimits = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        if (!token || !limitForm.wallet_id) return
+        const response = await fetch(`${API_BASE_URL}/platform/ai/wallets/${limitForm.wallet_id}/limits`, {
+            method: "PUT",
+            headers: { ...headers, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                daily_credit_limit: limitForm.daily_credit_limit ? Number(limitForm.daily_credit_limit) : null,
+                monthly_credit_limit: limitForm.monthly_credit_limit ? Number(limitForm.monthly_credit_limit) : null,
+            }),
+        })
+        if (response.ok) {
+            setMessage("Limites du wallet IA mises a jour.")
+            setLimitForm({ wallet_id: "", daily_credit_limit: "", monthly_credit_limit: "" })
+            void load()
+        } else {
+            setMessage("Mise a jour des limites impossible.")
         }
     }
 
@@ -311,18 +409,18 @@ export default function AICreditsPage() {
             <div className="grid gap-4 lg:grid-cols-4">
                 <div className="rounded-[28px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
                     <div className="flex items-center justify-between"><p className="text-sm text-[#6B7280]">Mes credits</p><Wallet className="h-5 w-5 text-[#6B7280]" /></div>
-                    <p className="mt-3 text-3xl font-semibold text-[#111827]">{myWallet?.credits_balance ?? 0}</p>
-                    <p className="text-xs text-[#6B7280]">Utilises: {myWallet?.total_credits_used ?? 0}</p>
+                    <p className="mt-3 text-3xl font-semibold text-[#111827]">{myWallet?.balance_credits ?? 0}</p>
+                    <p className="text-xs text-[#6B7280]">Utilises: {myWallet?.total_used_credits ?? 0}</p>
                 </div>
                 <div className="rounded-[28px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
                     <div className="flex items-center justify-between"><p className="text-sm text-[#6B7280]">Credits etablissement</p><Landmark className="h-5 w-5 text-[#6B7280]" /></div>
-                    <p className="mt-3 text-3xl font-semibold text-[#111827]">{schoolWallet?.credits_balance ?? "-"}</p>
+                    <p className="mt-3 text-3xl font-semibold text-[#111827]">{schoolWallet?.balance_credits ?? "-"}</p>
                     <p className="text-xs text-[#6B7280]">Requetes ecole: {schoolUsage.length}</p>
                 </div>
                 <div className="rounded-[28px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
                     <div className="flex items-center justify-between"><p className="text-sm text-[#6B7280]">Requetes IA</p><BrainCircuit className="h-5 w-5 text-[#6B7280]" /></div>
-                    <p className="mt-3 text-3xl font-semibold text-[#111827]">{analytics?.total_requests ?? myUsage.length}</p>
-                    <p className="text-xs text-[#6B7280]">Bloquees: {analytics?.blocked_requests ?? myUsage.filter(item => item.status === "blocked").length}</p>
+                    <p className="mt-3 text-3xl font-semibold text-[#111827]">{analytics?.tokens_used ?? myUsage.reduce((sum, item) => sum + (item.total_tokens || 0), 0)}</p>
+                    <p className="text-xs text-[#6B7280]">Crédits utilisés: {analytics?.credits_used ?? myUsage.reduce((sum, item) => sum + item.credits_charged, 0)}</p>
                 </div>
                 <div className="rounded-[28px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
                     <div className="flex items-center justify-between"><p className="text-sm text-[#6B7280]">Separation paiements</p><ShieldCheck className="h-5 w-5 text-[#6B7280]" /></div>
@@ -341,7 +439,7 @@ export default function AICreditsPage() {
                                         <h3 className="font-semibold text-[#111827]">{pack.name}</h3>
                                         <p className="text-sm text-[#6B7280]">{pack.credits_amount.toLocaleString("fr-FR")} credits IA</p>
                                     </div>
-                                    <p className="font-semibold text-[#111827]">{money(pack.price_amount, pack.currency)}</p>
+                                    <p className="font-semibold text-[#111827]">{money(pack.price, pack.currency)}</p>
                                 </div>
                                 {pack.description && <p className="mt-2 text-sm text-[#6B7280]">{pack.description}</p>}
                                 <div className="mt-4 flex flex-wrap gap-2">
@@ -357,10 +455,10 @@ export default function AICreditsPage() {
                     {canManageSchool ? (
                         <form onSubmit={createPaymentAccount} className="grid gap-3">
                             <input className="apple-input" placeholder="Nom du compte" value={accountForm.account_name} onChange={event => setAccountForm({ ...accountForm, account_name: event.target.value })} required title="Nom du compte: nom visible par la comptabilite pour identifier le compte d'encaissement de l'etablissement." />
-                            <input className="apple-input" placeholder="Reference marchand, telephone ou identifiant" value={accountForm.account_reference} onChange={event => setAccountForm({ ...accountForm, account_reference: event.target.value })} title="Reference: identifiant fournisseur, numero mobile money ou reference bancaire utilisee pour encaisser les paiements scolaires." />
+                            <input className="apple-input" placeholder="Identifiant marchand" value={accountForm.merchant_id} onChange={event => setAccountForm({ ...accountForm, merchant_id: event.target.value })} title="Identifiant marchand: reference fournisseur ou banque utilisee pour encaisser les paiements scolaires." />
+                            <input className="apple-input" placeholder="Telephone de paiement" value={accountForm.phone_number} onChange={event => setAccountForm({ ...accountForm, phone_number: event.target.value })} title="Telephone: numero Mobile Money ou contact du compte de paiement ecole." />
                             <div className="grid gap-3 sm:grid-cols-3">
                                 <input className="apple-input" value={accountForm.provider} onChange={event => setAccountForm({ ...accountForm, provider: event.target.value })} title="Provider: Orange Money, MTN, Wave, banque ou autre prestataire de paiement." />
-                                <input className="apple-input" value={accountForm.currency} onChange={event => setAccountForm({ ...accountForm, currency: event.target.value })} title="Devise: devise d'encaissement du compte de l'etablissement." />
                                 <input className="apple-input" value={accountForm.country_code} onChange={event => setAccountForm({ ...accountForm, country_code: event.target.value })} title="Pays: code pays ISO utilise pour appliquer les regles locales." />
                             </div>
                             <button className="inline-flex w-fit items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-black/90"><Plus className="h-4 w-4" /> Enregistrer</button>
@@ -381,15 +479,15 @@ export default function AICreditsPage() {
 
             <div className="grid gap-6 xl:grid-cols-2">
                 <CardShell title="Historique credits utilisateur">
-                    <Table headers={["Date", "Type", "Credits", "Statut"]} rows={myTransactions.map(item => [item.created_at, item.transaction_type, item.credits_amount, item.status])} />
+                    <Table headers={["Date", "Type", "Credits", "Avant", "Après"]} rows={myTransactions.map(item => [item.created_at, item.transaction_type, item.credits_amount, item.balance_before, item.balance_after])} />
                 </CardShell>
                 <CardShell title="Usage IA utilisateur">
-                    <Table headers={["Date", "Module", "Action", "Credits", "Statut"]} rows={myUsage.map(item => [item.created_at, item.module, item.action, item.credits_used, item.status])} />
+                    <Table headers={["Date", "Module", "Action", "Modele", "Credits", "Statut"]} rows={myUsage.map(item => [item.created_at, item.module_name || "-", item.action_type || "-", item.model_name || "-", item.credits_charged, item.status])} />
                 </CardShell>
                 {canManageSchool && (
                     <>
                         <CardShell title="Transactions credits ecole">
-                            <Table headers={["Date", "Type", "Credits", "Statut"]} rows={schoolTransactions.map(item => [item.created_at, item.transaction_type, item.credits_amount, item.status])} />
+                            <Table headers={["Date", "Type", "Credits", "Avant", "Après"]} rows={schoolTransactions.map(item => [item.created_at, item.transaction_type, item.credits_amount, item.balance_before, item.balance_after])} />
                         </CardShell>
                         <CardShell title="Paiements scolaires separes">
                             <Table headers={["Date", "Type", "Reference", "Montant", "Statut"]} rows={schoolPayments.map(item => [item.created_at, item.payment_type, item.reference, money(item.amount, item.currency), item.status])} />
@@ -407,22 +505,67 @@ export default function AICreditsPage() {
                                 <input className="apple-input" value={providerForm.provider_type} onChange={event => setProviderForm({ ...providerForm, provider_type: event.target.value })} title="Type provider: openai, anthropic, gemini, openrouter, grok ou autre." />
                                 <input className="apple-input" value={providerForm.default_model} onChange={event => setProviderForm({ ...providerForm, default_model: event.target.value })} title="Modele par defaut: modele utilise quand aucun autre modele n'est force par le service IA." />
                             </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <input className="apple-input" type="password" placeholder="Cle API chiffree" value={providerForm.api_key} onChange={event => setProviderForm({ ...providerForm, api_key: event.target.value })} title="Cle API: elle est chiffree en base et n'est jamais renvoyee par l'API." />
+                                <input className="apple-input" placeholder="Base URL optionnelle" value={providerForm.base_url} onChange={event => setProviderForm({ ...providerForm, base_url: event.target.value })} title="Base URL: endpoint compatible OpenAI pour OpenRouter, Grok, Custom API ou adaptateur fournisseur." />
+                            </div>
                             <div className="grid gap-3 sm:grid-cols-4">
                                 <input className="apple-input" value={providerForm.currency} onChange={event => setProviderForm({ ...providerForm, currency: event.target.value })} title="Devise provider: devise de facturation technique du fournisseur IA." />
-                                <input className="apple-input" type="number" value={providerForm.input_token_cost_per_1k} onChange={event => setProviderForm({ ...providerForm, input_token_cost_per_1k: event.target.value })} title="Cout input: cout estime par 1000 tokens entrants." />
-                                <input className="apple-input" type="number" value={providerForm.output_token_cost_per_1k} onChange={event => setProviderForm({ ...providerForm, output_token_cost_per_1k: event.target.value })} title="Cout output: cout estime par 1000 tokens sortants." />
+                                <input className="apple-input" type="number" value={providerForm.cost_per_1k_input_tokens} onChange={event => setProviderForm({ ...providerForm, cost_per_1k_input_tokens: event.target.value })} title="Cout input: cout estime par 1000 tokens entrants." />
+                                <input className="apple-input" type="number" value={providerForm.cost_per_1k_output_tokens} onChange={event => setProviderForm({ ...providerForm, cost_per_1k_output_tokens: event.target.value })} title="Cout output: cout estime par 1000 tokens sortants." />
                                 <input className="apple-input" type="number" value={providerForm.priority} onChange={event => setProviderForm({ ...providerForm, priority: event.target.value })} title="Priorite: plus le nombre est faible, plus le provider est prioritaire." />
                             </div>
                             <button className="inline-flex w-fit items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-black/90"><BadgeCheck className="h-4 w-4" /> Creer provider</button>
                         </form>
                         <Table headers={["Nom", "Type", "Modele", "Statut"]} rows={providers.map(item => [item.name, item.provider_type, item.default_model || "-", item.is_active ? "active" : "inactive"])} />
                     </CardShell>
+                    <CardShell title="Créer un pack de crédits IA" subtitle="Définissez les packs vendus par pays, devise et région.">
+                        <form onSubmit={createPack} className="grid gap-3">
+                            <input className="apple-input" placeholder="Nom du pack" value={packForm.name} onChange={event => setPackForm({ ...packForm, name: event.target.value })} required title="Nom du pack: libellé visible aux écoles et utilisateurs." />
+                            <textarea className="apple-input min-h-24" placeholder="Description" value={packForm.description} onChange={event => setPackForm({ ...packForm, description: event.target.value })} title="Description: détail facultatif du pack de crédits IA." />
+                            <div className="grid gap-3 sm:grid-cols-3">
+                                <input className="apple-input" type="number" value={packForm.credits_amount} onChange={event => setPackForm({ ...packForm, credits_amount: event.target.value })} title="Crédits: nombre de crédits IA inclus dans le pack." />
+                                <input className="apple-input" type="number" value={packForm.price} onChange={event => setPackForm({ ...packForm, price: event.target.value })} title="Prix: montant facturé pour ce pack." />
+                                <input className="apple-input" value={packForm.currency} onChange={event => setPackForm({ ...packForm, currency: event.target.value })} title="Devise: FCFA, GBP, EUR ou USD." />
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <input className="apple-input" value={packForm.country_code} onChange={event => setPackForm({ ...packForm, country_code: event.target.value })} title="Pays: code pays cible du pack." />
+                                <input className="apple-input" value={packForm.region} onChange={event => setPackForm({ ...packForm, region: event.target.value })} title="Région: africa, uk_europe ou autre segment commercial." />
+                            </div>
+                            <button className="inline-flex w-fit items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-black/90"><Plus className="h-4 w-4" /> Créer le pack</button>
+                        </form>
+                    </CardShell>
+                    <CardShell title="Distribuer ou ajuster des crédits" subtitle="Ajoutez des crédits gratuits, bonus, remboursements ou ajustements administratifs.">
+                        <form onSubmit={adjustCredits} className="grid gap-3">
+                            <select className="apple-select" value={adjustForm.owner_type} onChange={event => setAdjustForm({ ...adjustForm, owner_type: event.target.value })} title="Propriétaire: utilisateur ou école à créditer.">
+                                <option value="school">École</option>
+                                <option value="user">Utilisateur</option>
+                            </select>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <input className="apple-input" placeholder="ID école" value={adjustForm.school_id} onChange={event => setAdjustForm({ ...adjustForm, school_id: event.target.value })} title="ID école: requis si le propriétaire est une école." />
+                                <input className="apple-input" placeholder="ID utilisateur" value={adjustForm.user_id} onChange={event => setAdjustForm({ ...adjustForm, user_id: event.target.value })} title="ID utilisateur: requis si le propriétaire est un utilisateur." />
+                            </div>
+                            <input className="apple-input" type="number" value={adjustForm.credits_amount} onChange={event => setAdjustForm({ ...adjustForm, credits_amount: event.target.value })} title="Crédits: montant positif pour ajouter, négatif pour retirer." />
+                            <input className="apple-input" placeholder="Motif" value={adjustForm.description} onChange={event => setAdjustForm({ ...adjustForm, description: event.target.value })} title="Motif: justification visible dans l'historique des transactions." />
+                            <button className="inline-flex w-fit items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-black/90">Appliquer l&apos;ajustement</button>
+                        </form>
+                    </CardShell>
+                    <CardShell title="Limites de crédits IA" subtitle="Définissez des plafonds quotidiens utilisateur et mensuels école sur un wallet.">
+                        <form onSubmit={updateWalletLimits} className="grid gap-3">
+                            <input className="apple-input" placeholder="ID wallet" value={limitForm.wallet_id} onChange={event => setLimitForm({ ...limitForm, wallet_id: event.target.value })} required title="ID wallet: identifiant du portefeuille IA à limiter." />
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <input className="apple-input" type="number" placeholder="Limite quotidienne utilisateur" value={limitForm.daily_credit_limit} onChange={event => setLimitForm({ ...limitForm, daily_credit_limit: event.target.value })} title="Limite quotidienne: maximum de crédits par utilisateur et par jour." />
+                                <input className="apple-input" type="number" placeholder="Limite mensuelle école" value={limitForm.monthly_credit_limit} onChange={event => setLimitForm({ ...limitForm, monthly_credit_limit: event.target.value })} title="Limite mensuelle: maximum de crédits par école et par mois." />
+                            </div>
+                            <button className="inline-flex w-fit items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-black/90">Enregistrer les limites</button>
+                        </form>
+                    </CardShell>
                     <CardShell title="Paiements plateforme TeducAI">
                         <Table headers={["Date", "Type", "Reference", "Montant", "Beneficiaire", "Statut"]} rows={platformPayments.map(item => [item.created_at, item.payment_type, item.reference, money(item.amount, item.currency), item.beneficiary_entity, item.status])} />
                         {analytics && (
                             <div className="mt-5 rounded-[22px] bg-[#F5F5F7] p-4 text-sm">
                                 <p className="font-semibold text-[#111827]">Analytics IA plateforme</p>
-                                <p className="mt-1 text-[#6B7280]">Credits utilises: {analytics.total_credits_used} | Requetes reussies: {analytics.successful_requests} | Bloquees: {analytics.blocked_requests}</p>
+                                <p className="mt-1 text-[#6B7280]">Credits utilises: {analytics.credits_used} | Tokens: {analytics.tokens_used} | Credits vendus: {analytics.credits_sold}</p>
                             </div>
                         )}
                     </CardShell>

@@ -13,6 +13,7 @@ from .. import audit, models
 
 
 INSUFFICIENT_AI_CREDITS = "Votre solde de crédits IA est insuffisant. Veuillez acheter des crédits pour continuer à utiliser l’Agent IA."
+AI_CREDIT_LIMIT_REACHED = "La limite de credits IA configuree pour votre compte ou votre etablissement est atteinte. Veuillez contacter votre administrateur."
 
 
 def platform_payment_reference(prefix: str = "TPL") -> str:
@@ -89,7 +90,44 @@ def ensure_credits(db: Session, user: models.User, required_credits: int) -> mod
         db.add(usage)
         db.flush()
         raise HTTPException(status_code=402, detail=INSUFFICIENT_AI_CREDITS)
+    now = datetime.utcnow()
+    if wallet.daily_credit_limit is not None:
+        day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        used_today = int(db.query(func.coalesce(func.sum(models.AIUsageLog.credits_charged), 0)).filter(
+            models.AIUsageLog.user_id == user.id,
+            models.AIUsageLog.created_at >= day_start,
+            models.AIUsageLog.status == "successful",
+        ).scalar() or 0)
+        if used_today + required_credits > wallet.daily_credit_limit:
+            _record_credit_block(db, user, wallet, required_credits, "blocked_daily_limit")
+            raise HTTPException(status_code=429, detail=AI_CREDIT_LIMIT_REACHED)
+    if user.school_id:
+        school_wallet = wallet_for_school(db, user.school_id)
+        if school_wallet.monthly_credit_limit is not None:
+            month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            used_month = int(db.query(func.coalesce(func.sum(models.AIUsageLog.credits_charged), 0)).filter(
+                models.AIUsageLog.school_id == user.school_id,
+                models.AIUsageLog.created_at >= month_start,
+                models.AIUsageLog.status == "successful",
+            ).scalar() or 0)
+            if used_month + required_credits > school_wallet.monthly_credit_limit:
+                _record_credit_block(db, user, school_wallet, required_credits, "blocked_monthly_school_limit")
+                raise HTTPException(status_code=429, detail=AI_CREDIT_LIMIT_REACHED)
     return wallet
+
+
+def _record_credit_block(db: Session, user: models.User, wallet: models.AIWallet, required_credits: int, action_type: str) -> None:
+    db.add(models.AIUsageLog(
+        user_id=user.id,
+        school_id=user.school_id,
+        wallet_id=wallet.id,
+        module_name="ai_agent",
+        action_type=action_type,
+        credits_charged=0,
+        status="blocked",
+        error_message=f"{AI_CREDIT_LIMIT_REACHED} Required credits: {required_credits}",
+    ))
+    db.flush()
 
 
 def record_usage(
@@ -101,11 +139,15 @@ def record_usage(
     action_type: str,
     status: str = "successful",
     error_message: Optional[str] = None,
+    provider: Optional[models.AIProvider] = None,
+    model_name: Optional[str] = None,
+    prompt_tokens: Optional[int] = None,
+    completion_tokens: Optional[int] = None,
 ) -> models.AIUsageLog:
-    provider = active_provider(db)
-    prompt_tokens = estimate_tokens(prompt)
-    completion_tokens = estimate_tokens(response_text)
-    credits = estimate_credits(prompt, response_text)
+    provider = provider or active_provider(db)
+    prompt_tokens = prompt_tokens if prompt_tokens is not None else estimate_tokens(prompt)
+    completion_tokens = completion_tokens if completion_tokens is not None else estimate_tokens(response_text)
+    credits = max(1, math.ceil((prompt_tokens + completion_tokens) / 250))
     wallet = ensure_credits(db, user, credits) if status == "successful" else wallet_for_user(db, user)
     before = wallet.balance_credits
     if status == "successful":
@@ -118,7 +160,7 @@ def record_usage(
         school_id=user.school_id,
         wallet_id=wallet.id,
         provider_id=provider.id if provider else None,
-        model_name=(provider.default_model if provider else None),
+        model_name=model_name or (provider.default_model if provider else None),
         module_name=module_name,
         action_type=action_type,
         prompt_tokens=prompt_tokens,
