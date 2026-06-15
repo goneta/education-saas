@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from .. import localization, models, schemas, security, database
+from .. import localization, models, schemas, security, database, tenancy
 
 router = APIRouter(prefix="/teachers", tags=["Teachers"])
 
@@ -15,9 +15,31 @@ def register_teacher(
     if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
         raise HTTPException(status_code=403, detail="Not authorized to register teachers")
     
-    # 2. Check if user email exists
-    if db.query(models.User).filter(models.User.email == teacher_in.email).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
+    school_id = tenancy.resolve_school_id_for_create(current_user, teacher_in.school_id, db)
+    existing_person = tenancy.find_existing_person(db, email=teacher_in.email, full_name=teacher_in.full_name)
+    if existing_person:
+        if teacher_in.transfer_reason:
+            existing_person.school_id = school_id
+            existing_person.role = models.UserRole.TEACHER
+            if not existing_person.teacher_profile:
+                existing_person.teacher_profile = models.TeacherProfile(
+                    user_id=existing_person.id,
+                    specialization=teacher_in.profile.specialization,
+                    join_date=teacher_in.profile.join_date,
+                    bio=teacher_in.profile.bio,
+                )
+                db.add(existing_person.teacher_profile)
+            tenancy.create_or_transfer_school_membership(
+                db,
+                user=existing_person,
+                school_id=school_id,
+                role=models.UserRole.TEACHER.value,
+                transfer_reason=teacher_in.transfer_reason,
+            )
+            db.commit()
+            db.refresh(existing_person)
+            return existing_person
+        raise HTTPException(status_code=409, detail="Cette personne existe déjà dans le système. Voulez-vous l'associer ou la transférer vers cette école tout en conservant son historique ?")
         
     try:
         security.validate_password_strength(teacher_in.password)
@@ -28,7 +50,7 @@ def register_teacher(
             hashed_password=hashed_password,
             full_name=teacher_in.full_name,
             role=models.UserRole.TEACHER,
-            school_id=current_user.school_id, # Link to Admin's school
+            school_id=school_id,
             is_active=True
         )
         db.add(new_user)
@@ -42,6 +64,13 @@ def register_teacher(
             bio=teacher_in.profile.bio
         )
         db.add(new_profile)
+        tenancy.create_or_transfer_school_membership(
+            db,
+            user=new_user,
+            school_id=school_id,
+            role=models.UserRole.TEACHER.value,
+            transfer_reason=teacher_in.transfer_reason,
+        )
         db.commit()
         db.refresh(new_user)
         return new_user
@@ -54,16 +83,13 @@ def register_teacher(
 def list_teachers(
     skip: int = 0, 
     limit: int = 100, 
+    school_id: int = None,
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    # Ensure user belongs to a school
-    if not current_user.school_id:
-         raise HTTPException(status_code=400, detail="User not associated with a school")
-
     query = db.query(models.User).join(models.TeacherProfile).\
-        filter(models.User.school_id == current_user.school_id).\
         filter(models.User.role == models.UserRole.TEACHER)
+    query = tenancy.apply_user_school_filter(query, current_user, school_id)
         
     teachers = query.offset(skip).limit(limit).all()
     return teachers
@@ -76,9 +102,9 @@ def get_teacher(
 ):
     teacher = db.query(models.User).filter(
         models.User.id == teacher_id, 
-        models.User.school_id == current_user.school_id, # Scoped to school
         models.User.role == models.UserRole.TEACHER
-    ).first()
+    )
+    teacher = tenancy.apply_user_school_filter(teacher, current_user).first()
     
     if not teacher:
         raise HTTPException(status_code=404, detail="Teacher not found")
@@ -98,8 +124,8 @@ def update_teacher(
 
     teacher = db.query(models.User).filter(
         models.User.id == teacher_id,
-        models.User.school_id == current_user.school_id
-    ).first()
+    )
+    teacher = tenancy.apply_user_school_filter(teacher, current_user).first()
     
     if not teacher:
         raise HTTPException(status_code=404, detail="Teacher not found")
@@ -113,7 +139,7 @@ def update_teacher(
                  raise HTTPException(status_code=400, detail="Email already registered")
              teacher.email = teacher_in.email
     if teacher_in.phone_number:
-        school = db.query(models.School).filter(models.School.id == current_user.school_id).first()
+        school = db.query(models.School).filter(models.School.id == teacher.school_id).first()
         country_code = school.country_code if school else "CI"
         phone_country = teacher_in.phone_country_code or teacher.phone_country_code or country_code
         valid_phone, phone_e164, phone_error = localization.validate_phone(teacher_in.phone_number, phone_country)
@@ -125,7 +151,7 @@ def update_teacher(
     if teacher_in.address:
         teacher.address = teacher_in.address
     if teacher_in.address_structured:
-        school = db.query(models.School).filter(models.School.id == current_user.school_id).first()
+        school = db.query(models.School).filter(models.School.id == teacher.school_id).first()
         country_code = school.country_code if school else "CI"
         structured = teacher_in.address_structured.model_dump()
         if not structured.get("country"):
@@ -167,8 +193,8 @@ def delete_teacher(
 
     teacher = db.query(models.User).filter(
         models.User.id == teacher_id,
-        models.User.school_id == current_user.school_id
-    ).first()
+    )
+    teacher = tenancy.apply_user_school_filter(teacher, current_user).first()
 
     if not teacher:
         raise HTTPException(status_code=404, detail="Teacher not found")

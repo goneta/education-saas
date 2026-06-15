@@ -438,6 +438,96 @@ class SchoolPaymentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class UserPreferenceResponse(BaseModel):
+    theme: str = "light"
+    help_open_mode: str = "page"
+    email_notifications_enabled: bool = True
+    language: Optional[str] = None
+    metadata_json: Optional[Dict[str, Any]] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserPreferenceUpdate(BaseModel):
+    theme: Optional[str] = Field(default=None, pattern="^(light|dark|system)$")
+    help_open_mode: Optional[str] = Field(default=None, pattern="^(page|modal|drawer)$")
+    email_notifications_enabled: Optional[bool] = None
+    language: Optional[str] = None
+    metadata_json: Optional[Dict[str, Any]] = None
+
+
+class CartItemCreate(BaseModel):
+    item_type: str
+    title: str
+    description: Optional[str] = None
+    quantity: int = Field(default=1, gt=0)
+    unit_amount: float = Field(gt=0)
+    currency: str = "FCFA"
+    provider_scope: str = Field(default="school", pattern="^(school|platform)$")
+    source_type: Optional[str] = None
+    source_id: Optional[int] = None
+    metadata_json: Optional[Dict[str, Any]] = None
+
+
+class CartItemUpdate(BaseModel):
+    quantity: int = Field(gt=0)
+
+
+class CartItemResponse(BaseModel):
+    id: int
+    item_type: str
+    title: str
+    description: Optional[str] = None
+    quantity: int
+    unit_amount: float
+    currency: str
+    provider_scope: str
+    source_type: Optional[str] = None
+    source_id: Optional[int] = None
+    metadata_json: Optional[Dict[str, Any]] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    line_total: float = 0
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CartResponse(BaseModel):
+    items: List[CartItemResponse]
+    subtotal: float
+    total: float
+    currency: str
+
+
+class CheckoutRequest(BaseModel):
+    provider: str = Field(pattern="^(stripe|djamo|cinetpay|manual)$")
+    mobile_money_network: Optional[str] = Field(default=None, pattern="^(orange_money|wave|mtn_money|moov_money)$")
+    success_url: Optional[str] = None
+    cancel_url: Optional[str] = None
+
+
+class CheckoutResponse(BaseModel):
+    platform_payments: List[PlatformPaymentResponse] = []
+    school_payments: List[SchoolPaymentResponse] = []
+    checkout_url: Optional[str] = None
+    status: str
+
+
+class NotificationHistoryResponse(BaseModel):
+    id: int
+    event_type: str
+    channel: str
+    subject: Optional[str] = None
+    message: str
+    status: str
+    source_type: Optional[str] = None
+    source_id: Optional[int] = None
+    created_at: Optional[datetime] = None
+    read_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class SubscriptionSettingsUpdate(BaseModel):
     subscription_plan: Optional[str] = None
     subscription_status: Optional[str] = None
@@ -522,6 +612,8 @@ class EducationHistoryResponse(EducationHistoryBase):
     model_config = ConfigDict(from_attributes=True)
 
 class StudentCreateSchema(UserCreate):
+    school_id: Optional[int] = None
+    transfer_reason: Optional[str] = None
     profile: StudentProfileBase
 
 class StudentUpdateProfile(BaseModel):
@@ -565,6 +657,8 @@ class TeacherProfileBase(BaseModel):
     bio: Optional[str] = None
 
 class TeacherCreate(UserCreate):
+    school_id: Optional[int] = None
+    transfer_reason: Optional[str] = None
     profile: TeacherProfileBase
 
 class TeacherUpdateProfile(BaseModel):
@@ -616,7 +710,7 @@ class AcademicYearBase(BaseModel):
     is_current: bool = False
 
 class AcademicYearCreate(AcademicYearBase):
-    pass
+    school_id: Optional[int] = None
 
 class AcademicYearResponse(AcademicYearBase):
     id: int
@@ -630,6 +724,7 @@ class ClassBase(BaseModel):
     name: str
     level: Optional[str] = None
     main_teacher_id: Optional[int] = None
+    school_id: Optional[int] = None
 
 class ClassCreate(ClassBase):
     pass
@@ -646,6 +741,7 @@ class SubjectBase(BaseModel):
     code: Optional[str] = None
     description: Optional[str] = None
     coefficient: int = 1
+    school_id: Optional[int] = None
 
 class SubjectCreate(SubjectBase):
     pass
@@ -700,6 +796,7 @@ class TimetableBulkUpdate(BaseModel):
     changes: TimetableUpdate
 
 class TimetableGenerationRequest(BaseModel):
+    school_id: Optional[int] = None
     mode: str = "partial"
     scope_type: Optional[str] = None
     scope_id: Optional[int] = None
@@ -709,9 +806,26 @@ class TimetableGenerationRequest(BaseModel):
     constraints: Dict[str, Any] = {}
 
 class TimetablePublishRequest(BaseModel):
+    school_id: Optional[int] = None
     class_id: Optional[int] = None
     teacher_id: Optional[int] = None
     level: Optional[str] = None
+
+
+class SchoolMembershipResponse(BaseModel):
+    id: int
+    user_id: int
+    school_id: int
+    role: str
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    is_active: bool
+    membership_status: str
+    transfer_reason: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 class TimetableResponse(TimetableBase):
     id: int

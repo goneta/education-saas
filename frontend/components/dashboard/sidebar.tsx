@@ -9,7 +9,6 @@ import { normalizeLocale } from "@/lib/i18n"
 import { API_BASE_URL } from "@/lib/config"
 import { useAuth } from "@/contexts/auth-context"
 import {
-    Bell,
     BookOpen,
     BriefcaseBusiness,
     BrainCircuit,
@@ -28,6 +27,13 @@ import {
     GraduationCap,
     BarChart3,
     FileText,
+    Lock,
+    Mail,
+    Receipt,
+    RefreshCw,
+    Share2,
+    ShieldCheck,
+    WalletCards,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -62,7 +68,21 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
     })
     const accountMenuRef = useRef<HTMLDivElement | null>(null)
 
-    const sidebarItemClass = "flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left text-[16px] font-normal text-[#111827] transition hover:bg-[#F5F5F7]"
+    const sidebarItemClass = "flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left text-[16px] font-normal text-[#111827] transition hover:bg-[#F5F5F7] dark:text-[#f4f7fb] dark:hover:bg-[#30373d]"
+    const accountLinks = [
+        { href: `/${locale}/dashboard/account/overview`, label: "Account Overview", icon: UserCircle },
+        { href: `/${locale}/dashboard/account/renewals`, label: "Manage Renewals", icon: RefreshCw },
+        { href: `/${locale}/dashboard/account/security`, label: "Security Details", icon: Lock },
+        { href: `/${locale}/dashboard/account/sessions`, label: "Active Sessions", icon: ShieldCheck },
+        { href: `/${locale}/dashboard/account/contact`, label: "Contact Details", icon: UserCircle },
+        { href: `/${locale}/dashboard/account/payment-methods`, label: "Payment Methods", icon: CreditCard },
+        { href: `/${locale}/dashboard/account/credit`, label: "Account Credit", icon: WalletCards },
+        { href: `/${locale}/dashboard/account/invoices`, label: "Invoices", icon: Receipt },
+        { href: `/${locale}/dashboard/account/preferences`, label: "Account Preferences", icon: Settings },
+        { href: `/${locale}/dashboard/account/email-notifications`, label: "Email Notifications", icon: Mail },
+        { href: `/${locale}/dashboard/account/team-members`, label: "Team Members", icon: Users },
+        { href: `/${locale}/dashboard/account/refer`, label: "Refer a Friend", icon: Share2 },
+    ]
 
     const toggleSection = (title: string) => {
         setOpenSections(prev =>
@@ -219,13 +239,13 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
 
     return (
         <div className={cn(
-            "h-full min-h-0 w-64 flex-col bg-white font-sans",
+            "h-full min-h-0 w-64 flex-col bg-white font-sans dark:bg-[#1f2427]",
             forceVisible ? "flex" : "hidden md:flex",
             !isResizablePanel && "fixed bottom-0 left-0 top-0 z-[80]",
             isResizablePanel && "relative z-[80] w-full overflow-visible border-r-0"
         )}>
-            <div className="flex h-14 items-center border-b border-[#E5E7EB] px-4 lg:h-[60px] lg:px-6">
-                <Link href={`/${locale}`} className="flex items-center gap-2 font-semibold text-[#111827]">
+            <div className="flex h-14 items-center border-b border-[#E5E7EB] px-4 lg:h-[60px] lg:px-6 dark:border-[#3a4248]">
+                <Link href={`/${locale}`} className="flex items-center gap-2 font-semibold text-[#111827] dark:text-white">
                     <BrainCircuit className="h-6 w-6 text-primary" />
                     <span className="">TeducAI</span>
                 </Link>
@@ -240,7 +260,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                                 {section.title ? (
                                     <button
                                         onClick={() => toggleSection(section.title)}
-                                        className="group flex w-full items-center justify-between rounded-[16px] px-3 py-2.5 text-left text-[16px] font-normal text-[#111827] transition hover:bg-[#F5F5F7]"
+                                        className="group flex w-full items-center justify-between rounded-[16px] px-3 py-2.5 text-left text-[16px] font-normal text-[#111827] transition hover:bg-[#F5F5F7] dark:text-[#f4f7fb] dark:hover:bg-[#30373d]"
                                     >
                                         <h4 className="font-normal">
                                             {section.title}
@@ -274,7 +294,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                                                         className={cn(
                                                             sidebarItemClass,
                                                             isActive
-                                                                ? "bg-[#F0F1F3] font-medium"
+                                                ? "bg-[#F0F1F3] font-medium dark:bg-[#30373d]"
                                                                 : ""
                                                         )}
                                                     >
@@ -292,14 +312,13 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 </nav>
             </div>
             {user && (
-                <div ref={accountMenuRef} className="relative z-[120] border-t border-[#E5E7EB] bg-white p-3">
+                <div ref={accountMenuRef} className="relative z-[120] border-t border-[#E5E7EB] bg-white p-3 dark:border-[#3a4248] dark:bg-[#1f2427]">
                     {accountMenuOpen && (
-                        <div className="absolute bottom-[76px] left-3 z-[1000] w-[280px] rounded-[24px] border border-[#E5E7EB] bg-white p-3 shadow-[0_22px_60px_rgba(15,23,42,0.18)]">
+                        <div className="absolute bottom-[76px] left-3 z-[1000] max-h-[72vh] w-[300px] overflow-y-auto rounded-[24px] border border-[#E5E7EB] bg-white p-3 shadow-[0_22px_60px_rgba(15,23,42,0.18)] dark:border-[#3a4248] dark:bg-[#252525] dark:shadow-[0_24px_80px_rgba(0,0,0,0.48)]">
                             <div className="space-y-1">
-                                <Link href={`/${locale}/dashboard/settings`} onClick={onNavigate} className={sidebarItemClass}><UserCircle className="h-5 w-5" />Mon Profil</Link>
-                                <Link href={`/${locale}/dashboard/settings`} onClick={onNavigate} className={sidebarItemClass}><Settings className="h-5 w-5" />Paramètres du compte</Link>
-                                <Link href={`/${locale}/dashboard/enterprise`} onClick={onNavigate} className={sidebarItemClass}><Bell className="h-5 w-5" />Notifications</Link>
-                                <Link href={`/${locale}/pricing`} onClick={onNavigate} className={sidebarItemClass}><CreditCard className="h-5 w-5" />Mettre à niveau</Link>
+                                {accountLinks.map(({ href, label, icon: Icon }) => (
+                                    <Link key={href} href={href} onClick={onNavigate} className={sidebarItemClass}><Icon className="h-5 w-5" />{label}</Link>
+                                ))}
                                 <Link href={`/${locale}/dashboard/help`} onClick={onNavigate} className={sidebarItemClass}><HelpCircle className="h-5 w-5" />Aide</Link>
                                 <button type="button" onClick={handleLogout} className={sidebarItemClass}><LogOut className="h-5 w-5" />Déconnexion</button>
                                 <button type="button" onClick={() => { setAddAccountOpen(true); setAccountMenuOpen(false) }} className={sidebarItemClass}><Users className="h-5 w-5" />Ajouter un compte</button>
@@ -309,11 +328,11 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                     <button
                         type="button"
                         onClick={() => setAccountMenuOpen(prev => !prev)}
-                        className="flex w-full items-center gap-3 rounded-[18px] px-2 py-2 text-left transition hover:bg-[#F5F5F7]"
+                        className="flex w-full items-center gap-3 rounded-[18px] px-2 py-2 text-left transition hover:bg-[#F5F5F7] dark:hover:bg-[#30373d]"
                     >
                         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EF4444] text-sm font-semibold text-white">{initials}</span>
                         <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[15px] font-semibold text-[#111827]">{displayName}</span>
+                            <span className="block truncate text-[15px] font-semibold text-[#111827] dark:text-white">{displayName}</span>
                             <span className="block truncate text-sm text-[#6B7280]">{user.role}</span>
                         </span>
                         <ChevronRight className="h-5 w-5 text-[#6B7280]" />

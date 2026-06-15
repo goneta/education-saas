@@ -30,24 +30,24 @@
 }
 
 .dark {
-  --background: 240 3% 12%;
-  --foreground: 0 0% 100%;
-  --card: 240 3% 16%;
+  --background: 210 12% 12%;
+  --foreground: 210 20% 96%;
+  --card: 210 10% 15%;
   --card-foreground: 0 0% 100%;
-  --popover: 240 3% 16%;
+  --popover: 210 10% 15%;
   --popover-foreground: 0 0% 100%;
   --primary: 207 100% 58%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 240 3% 18%;
+  --secondary: 210 9% 18%;
   --secondary-foreground: 0 0% 100%;
-  --muted: 240 3% 18%;
-  --muted-foreground: 240 4% 78%;
+  --muted: 210 8% 18%;
+  --muted-foreground: 210 9% 76%;
   --accent: 207 100% 58%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 100%;
-  --border: 240 3% 24%;
-  --input: 240 3% 24%;
+  --border: 210 8% 27%;
+  --input: 210 8% 27%;
   --ring: 207 100% 58%;
   --chart-1: 220 70% 50%;
   --chart-2: 160 60% 45%;
@@ -101,6 +101,19 @@
     font-size: 17px;
     line-height: 1.47;
     letter-spacing: 0;
+    min-height: 100vh;
+  }
+
+  .dark body {
+    background:
+      radial-gradient(circle at 12% 8%, rgba(36, 101, 194, 0.16), transparent 28%),
+      radial-gradient(circle at 86% 12%, rgba(18, 145, 113, 0.1), transparent 26%),
+      #1f2427;
+    color: #f4f7fb;
+  }
+
+  .dark a {
+    color: #58a6ff;
   }
 
   h1,
@@ -148,6 +161,102 @@
 
   .apple-input {
     @apply h-11 w-full rounded-full border border-[#e0e0e0] bg-white px-5 text-[15px] text-[#1d1d1f] placeholder:text-[#7a7a7a] outline-none transition focus:border-[#0066cc] focus:ring-4 focus:ring-[#0066cc]/15;
+  }
+
+  .dark .apple-page-title,
+  .dark h1,
+  .dark h2,
+  .dark h3,
+  .dark .text-\[\#111827\],
+  .dark .text-\[\#1d1d1f\],
+  .dark .text-black {
+    color: #f5f7fb !important;
+  }
+
+  .dark .text-\[\#6B7280\],
+  .dark .text-\[\#6e6e73\],
+  .dark .text-\[\#7a7a7a\] {
+    color: #b9c2cd !important;
+  }
+
+  .dark .bg-\[\#F6F7F9\],
+  .dark .bg-\[\#F7F8FA\],
+  .dark .bg-\[\#F5F5F7\],
+  .dark .bg-\[\#F0F1F3\],
+  .dark .bg-white,
+  .dark .bg-background {
+    background-color: #202528 !important;
+  }
+
+  .dark .hover\:bg-\[\#F5F5F7\]:hover,
+  .dark .hover\:bg-white\/70:hover {
+    background-color: #30373d !important;
+  }
+
+  .dark .border-\[\#E5E7EB\],
+  .dark .border-\[\#D1D5DB\],
+  .dark .border-\[\#f0f0f0\],
+  .dark .border-\[\#e0e0e0\],
+  .dark .border-input {
+    border-color: #3b4248 !important;
+  }
+
+  .dark .apple-input,
+  .dark .apple-select,
+  .dark input,
+  .dark select,
+  .dark textarea {
+    background-color: #1f2427 !important;
+    border-color: #444c54 !important;
+    color: #f4f7fb !important;
+  }
+
+  .dark .apple-input::placeholder,
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: #9aa5b1 !important;
+  }
+
+  .dark table,
+  .dark .apple-table {
+    color: #f4f7fb;
+  }
+
+  .dark .apple-table th,
+  .dark table th {
+    border-color: #3b4248 !important;
+    color: #e5edf7 !important;
+  }
+
+  .dark .apple-table td,
+  .dark table td {
+    border-color: #343b41 !important;
+  }
+
+  .dark tbody tr:hover {
+    background: #2a3035 !important;
+  }
+
+  .dark .shadow-sm,
+  .dark .shadow-md,
+  .dark .shadow-lg,
+  .dark .shadow-xl,
+  .dark [class*="shadow-"] {
+    box-shadow: 0 26px 80px rgba(0, 0, 0, 0.42) !important;
+  }
+
+  .dark .rounded-\[28px\],
+  .dark .rounded-\[24px\],
+  .dark .rounded-\[22px\],
+  .dark .rounded-2xl {
+    border-color: #3b4248;
+  }
+
+  .dark .apple-page-description,
+  .dark p,
+  .dark span,
+  .dark label {
+    color: inherit;
   }
 
   .apple-select {

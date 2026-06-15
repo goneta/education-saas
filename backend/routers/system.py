@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, ConfigDict
-from .. import audit, localization, models, schemas, security, database, rbac
+from .. import audit, localization, models, schemas, security, database, rbac, tenancy
 
 router = APIRouter(prefix="/system", tags=["System Configuration"])
 
@@ -483,24 +483,113 @@ def update_school_settings(
 
 @router.get("/schools", response_model=List[schemas.SchoolResponse])
 def list_schools(
+    include_inactive: bool = True,
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
+    query = db.query(models.School)
+    if current_user.role == models.UserRole.SUPER_ADMIN:
+        if not include_inactive:
+            query = query.filter(models.School.is_active == True)  # noqa: E712
+    elif current_user.school_id:
+        query = query.filter(models.School.id == current_user.school_id)
+    else:
+        raise HTTPException(status_code=400, detail="Vous devez d'abord créer ou être associé à un établissement scolaire.")
+    return query.order_by(models.School.created_at.desc()).all()
+
+
+@router.post("/schools", response_model=schemas.SchoolSettingsResponse)
+def create_school(
+    payload: schemas.SchoolCreate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
     if current_user.role != models.UserRole.SUPER_ADMIN:
         raise HTTPException(status_code=403, detail="Super admin only")
-    schools = db.query(models.School).order_by(models.School.created_at.desc()).all()
-    return [
-        {
-            "id": school.id,
-            "name": school.name,
-            "domain_prefix": school.domain_prefix,
-            "school_type": school.school_type,
-            "address": school.address,
-            "is_active": school.is_active,
-            "created_at": school.created_at,
-        }
-        for school in schools
-    ]
+    if db.query(models.School).filter(models.School.domain_prefix == payload.domain_prefix).first():
+        raise HTTPException(status_code=400, detail="School domain already taken")
+    country_profile = localization.country_profile(payload.country_code)
+    address_structured = payload.address_structured.model_dump() if payload.address_structured else None
+    school = models.School(
+        name=payload.name,
+        domain_prefix=payload.domain_prefix,
+        school_type=payload.school_type,
+        address=payload.address,
+        phone=payload.phone,
+        email=payload.email,
+        website=payload.website,
+        logo_url=payload.logo_url,
+        registration_number=payload.registration_number,
+        country_code=country_profile["country_code"],
+        default_currency=payload.default_currency or country_profile["currency"],
+        currency_code=payload.currency_code or country_profile["currency_code"],
+        primary_language=payload.primary_language or country_profile["locale"],
+        timezone=payload.timezone or country_profile["timezone"],
+        date_format=payload.date_format or country_profile["date_format"],
+        time_format=payload.time_format or country_profile["time_format"],
+        address_structured=address_structured,
+        formatted_address=localization.format_address(address_structured) or payload.address,
+        phone_country_code=payload.phone_country_code or country_profile["country_code"],
+    )
+    db.add(school)
+    db.flush()
+    audit.record_audit(db, action="school.created", current_user=current_user, entity_type="school", entity_id=school.id)
+    db.commit()
+    db.refresh(school)
+    return _school_settings_payload(school)
+
+
+@router.get("/schools/{school_id}", response_model=schemas.SchoolSettingsResponse)
+def get_school(
+    school_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    if current_user.role != models.UserRole.SUPER_ADMIN and current_user.school_id != school_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    school = db.query(models.School).filter(models.School.id == school_id).first()
+    if not school:
+        raise HTTPException(status_code=404, detail="School not found")
+    return _school_settings_payload(school)
+
+
+@router.put("/schools/{school_id}", response_model=schemas.SchoolSettingsResponse)
+def update_school(
+    school_id: int,
+    payload: schemas.SchoolSettingsUpdate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    if current_user.role != models.UserRole.SUPER_ADMIN and current_user.school_id != school_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    school = db.query(models.School).filter(models.School.id == school_id).first()
+    if not school:
+        raise HTTPException(status_code=404, detail="School not found")
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        if field == "address_structured" and value is not None:
+            value = value.model_dump() if hasattr(value, "model_dump") else value
+            school.formatted_address = localization.format_address(value)
+        setattr(school, field, value)
+    audit.record_audit(db, action="school.updated", current_user=current_user, entity_type="school", entity_id=school.id)
+    db.commit()
+    db.refresh(school)
+    return _school_settings_payload(school)
+
+
+@router.delete("/schools/{school_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_school(
+    school_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail="Super admin only")
+    school = db.query(models.School).filter(models.School.id == school_id).first()
+    if not school:
+        raise HTTPException(status_code=404, detail="School not found")
+    school.is_active = False
+    audit.record_audit(db, action="school.deleted_soft", current_user=current_user, entity_type="school", entity_id=school.id)
+    db.commit()
 
 
 @router.patch("/schools/{school_id}/status")
@@ -557,6 +646,26 @@ def list_users(
     return query.order_by(models.User.created_at.desc()).all()
 
 
+@router.get("/users/{user_id}/school-memberships", response_model=List[schemas.SchoolMembershipResponse])
+def list_user_school_memberships(
+    user_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    query = db.query(models.SchoolMembership).filter(models.SchoolMembership.user_id == user_id)
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        if not current_user.school_id:
+            raise HTTPException(status_code=400, detail=tenancy.SCHOOL_REQUIRED_MESSAGE)
+        query = query.filter(models.SchoolMembership.school_id == current_user.school_id)
+    rows = query.order_by(
+        models.SchoolMembership.start_date.desc().nullslast(),
+        models.SchoolMembership.created_at.desc(),
+    ).all()
+    if current_user.role != models.UserRole.SUPER_ADMIN and not rows:
+        raise HTTPException(status_code=404, detail="Historique introuvable pour cette école")
+    return rows
+
+
 @router.post("/users", response_model=schemas.UserResponse)
 def create_user_admin(
     payload: UserAdminCreate,
@@ -565,7 +674,7 @@ def create_user_admin(
 ):
     _assert_user_admin(current_user, db)
     security.validate_password_strength(payload.password)
-    school_id = payload.school_id if current_user.role == models.UserRole.SUPER_ADMIN else current_user.school_id
+    school_id = None if payload.role == models.UserRole.SUPER_ADMIN else (payload.school_id if current_user.role == models.UserRole.SUPER_ADMIN else current_user.school_id)
     if not school_id and payload.role != models.UserRole.SUPER_ADMIN:
         raise HTTPException(status_code=400, detail="School context is required")
     if db.query(models.User).filter(models.User.email == payload.email).first():
@@ -618,6 +727,8 @@ def update_user_admin(
         if payload.role in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN] and current_user.role != models.UserRole.SUPER_ADMIN:
             raise HTTPException(status_code=403, detail="Only super admin can assign admin roles")
         user.role = payload.role
+        if payload.role == models.UserRole.SUPER_ADMIN:
+            user.school_id = None
     if payload.is_active is not None:
         user.is_active = payload.is_active
         user.token_version += 1

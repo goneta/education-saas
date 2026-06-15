@@ -17,10 +17,12 @@
 - Dashboard desktop and mobile experiences are distinct: desktop layout starts at `1024px`, mobile/tablet uses drawer/sidebar and bottom navigation patterns.
 - Preserve RBAC-aware visibility and API enforcement expectations; frontend hiding is not a substitute for backend authorization.
 - Avoid committing generated build logs or local `.next` artifacts.
+- Global light/dark theme behavior is owned by `frontend/contexts/theme-context.tsx` and must stay available outside dashboard-only components.
 
 # Work Guidance
 
 - Use existing Apple-inspired UI conventions: clean spacing, rounded cards, black primary actions, responsive layouts, and accessible touch targets.
+- Dark mode should use the shared global theme classes and keep tables, cards, modals, forms, and dashboard shell surfaces readable without one-off page hacks where possible.
 - After frontend UI changes, run targeted ESLint and, when practical, `npm run build`.
 - Keep table/list action behavior consistent with standardized row actions.
 - Dashboard section cards with headings should inherit the global collapsible behavior: collapsed by default, French title normalization when needed, smooth open/close, and preserved standardized row actions.

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
-from .. import localization, models, schemas, security, database
+from .. import localization, models, schemas, security, database, tenancy
 from ..services import automation
 
 router = APIRouter(prefix="/students", tags=["Students"])
@@ -17,9 +17,51 @@ def register_student(
     if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
         raise HTTPException(status_code=403, detail="Not authorized to register students")
     
-    # 2. Check if user email exists
-    if db.query(models.User).filter(models.User.email == student_in.email).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
+    school_id = tenancy.resolve_school_id_for_create(current_user, student_in.school_id, db)
+    existing_person = tenancy.find_existing_person(
+        db,
+        email=student_in.email,
+        registration_number=student_in.profile.registration_number,
+        full_name=student_in.full_name,
+        date_of_birth=student_in.profile.date_of_birth,
+    )
+    if existing_person:
+        if student_in.transfer_reason:
+            existing_person.school_id = school_id
+            existing_person.role = models.UserRole.STUDENT
+            if not existing_person.student_profile:
+                existing_person.student_profile = models.StudentProfile(
+                    user_id=existing_person.id,
+                    registration_number=student_in.profile.registration_number,
+                    date_of_birth=student_in.profile.date_of_birth,
+                    gender=student_in.profile.gender,
+                    parent_name=student_in.profile.parent_name,
+                    parent_phone=student_in.profile.parent_phone,
+                    status=student_in.profile.status,
+                    current_class_id=student_in.profile.current_class_id,
+                )
+                db.add(existing_person.student_profile)
+            elif student_in.profile.current_class_id is not None:
+                existing_person.student_profile.current_class_id = student_in.profile.current_class_id
+            tenancy.create_or_transfer_school_membership(
+                db,
+                user=existing_person,
+                school_id=school_id,
+                role=models.UserRole.STUDENT.value,
+                transfer_reason=student_in.transfer_reason,
+            )
+            db.commit()
+            db.refresh(existing_person)
+            return existing_person
+        tenancy.create_or_transfer_school_membership(
+            db,
+            user=existing_person,
+            school_id=school_id,
+            role=models.UserRole.STUDENT.value,
+            transfer_reason=student_in.transfer_reason,
+        )
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Cette personne existe déjà dans le système. Voulez-vous l'associer ou la transférer vers cette école tout en conservant son historique ?")
         
     # 3. Check if registration number exists (in this school)
     existing_profile = db.query(models.StudentProfile).filter(
@@ -30,7 +72,7 @@ def register_student(
 
     try:
         security.validate_password_strength(student_in.password)
-        school = db.query(models.School).filter(models.School.id == current_user.school_id).first()
+        school = db.query(models.School).filter(models.School.id == school_id).first()
         country_code = school.country_code if school else "CI"
         valid_phone, parent_phone_e164, phone_error = localization.validate_phone(
             student_in.profile.parent_phone,
@@ -54,7 +96,7 @@ def register_student(
             hashed_password=hashed_password,
             full_name=student_in.full_name,
             role=models.UserRole.STUDENT,
-            school_id=current_user.school_id, # Link to Admin's school
+            school_id=school_id,
             is_active=True
         )
         db.add(new_user)
@@ -85,6 +127,13 @@ def register_student(
         )
         db.add(new_profile)
         db.flush()
+        tenancy.create_or_transfer_school_membership(
+            db,
+            user=new_user,
+            school_id=school_id,
+            role=models.UserRole.STUDENT.value,
+            transfer_reason=student_in.transfer_reason,
+        )
         for document_name in [
             "Extrait de naissance",
             "Bulletin scolaire de l'annee derniere",
@@ -108,17 +157,14 @@ def list_students(
     skip: int = 0, 
     limit: int = 100, 
     class_id: int = None,
+    school_id: int = None,
     search: str = None,
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    # Ensure user belongs to a school
-    if not current_user.school_id:
-         raise HTTPException(status_code=400, detail="User not associated with a school")
-
     query = db.query(models.User).join(models.StudentProfile).\
-        filter(models.User.school_id == current_user.school_id).\
         filter(models.User.role == models.UserRole.STUDENT)
+    query = tenancy.apply_user_school_filter(query, current_user, school_id)
     
     if class_id:
         query = query.filter(models.StudentProfile.current_class_id == class_id)
@@ -140,9 +186,9 @@ def get_student(
 ):
     student = db.query(models.User).filter(
         models.User.id == student_id, 
-        models.User.school_id == current_user.school_id, # Scoped to school
         models.User.role == models.UserRole.STUDENT
-    ).first()
+    )
+    student = tenancy.apply_user_school_filter(student, current_user).first()
     
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
@@ -169,8 +215,8 @@ def update_student(
 
     student = db.query(models.User).filter(
         models.User.id == student_id,
-        models.User.school_id == current_user.school_id
-    ).first()
+    )
+    student = tenancy.apply_user_school_filter(student, current_user).first()
     
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
@@ -192,7 +238,7 @@ def update_student(
              # Should not happen ideally if data integrity is kept
              pass 
         else:
-            school = db.query(models.School).filter(models.School.id == current_user.school_id).first()
+            school = db.query(models.School).filter(models.School.id == student.school_id).first()
             country_code = school.country_code if school else "CI"
             profile_data = student_in.profile.model_dump(exclude_unset=True)
             if "parent_phone" in profile_data or "parent_phone_country_code" in profile_data:
@@ -236,8 +282,8 @@ def delete_student(
 
     student = db.query(models.User).filter(
         models.User.id == student_id,
-        models.User.school_id == current_user.school_id
-    ).first()
+    )
+    student = tenancy.apply_user_school_filter(student, current_user).first()
 
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
@@ -318,11 +364,11 @@ def generate_certificate(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    student = db.query(models.User).filter(
+    student_query = db.query(models.User).filter(
         models.User.id == student_id,
-        models.User.school_id == current_user.school_id,
-        models.User.role == models.UserRole.STUDENT
-    ).first()
+        models.User.role == models.UserRole.STUDENT,
+    )
+    student = tenancy.apply_user_school_filter(student_query, current_user).first()
     if not student or not student.student_profile:
         raise HTTPException(status_code=404, detail="Student not found")
 
@@ -340,7 +386,7 @@ def generate_certificate(
         blocked_reason="Attestation bloquée: solde financier impayé." if blocked else None,
         content=content,
         student_id=student.student_profile.id,
-        school_id=current_user.school_id,
+        school_id=student.school_id,
         generated_by_id=current_user.id,
     )
     db.add(row)
@@ -357,16 +403,16 @@ def list_certificates(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    student = db.query(models.User).filter(
+    student_query = db.query(models.User).filter(
         models.User.id == student_id,
-        models.User.school_id == current_user.school_id,
-        models.User.role == models.UserRole.STUDENT
-    ).first()
+        models.User.role == models.UserRole.STUDENT,
+    )
+    student = tenancy.apply_user_school_filter(student_query, current_user).first()
     if not student or not student.student_profile:
         raise HTTPException(status_code=404, detail="Student not found")
     return db.query(models.CertificateRequest).filter(
         models.CertificateRequest.student_id == student.student_profile.id,
-        models.CertificateRequest.school_id == current_user.school_id,
+        models.CertificateRequest.school_id == student.school_id,
     ).order_by(models.CertificateRequest.generated_at.desc()).all()
 
 
@@ -376,11 +422,11 @@ def list_registration_documents(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    student = db.query(models.User).filter(
+    student_query = db.query(models.User).filter(
         models.User.id == student_id,
-        models.User.school_id == current_user.school_id,
-        models.User.role == models.UserRole.STUDENT
-    ).first()
+        models.User.role == models.UserRole.STUDENT,
+    )
+    student = tenancy.apply_user_school_filter(student_query, current_user).first()
     if not student or not student.student_profile:
         raise HTTPException(status_code=404, detail="Student not found")
     return student.student_profile.registration_documents
@@ -402,11 +448,11 @@ def update_registration_document(
     ]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    document = db.query(models.StudentRegistrationDocument).join(models.StudentProfile).join(models.User).filter(
+    document_query = db.query(models.StudentRegistrationDocument).join(models.StudentProfile).join(models.User).filter(
         models.User.id == student_id,
-        models.User.school_id == current_user.school_id,
         models.StudentRegistrationDocument.id == document_id
-    ).first()
+    )
+    document = tenancy.apply_user_school_filter(document_query, current_user).first()
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 

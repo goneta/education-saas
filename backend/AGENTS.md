@@ -4,7 +4,7 @@
 
 # Ownership
 
-- `main.py`, `models.py`, `schemas.py`, `database.py`, `security*.py`, `auth.py`, `rbac.py`, `audit.py`, `localization.py`, `pdf.py`, `observability.py`.
+- `main.py`, `models.py`, `schemas.py`, `database.py`, `security*.py`, `auth.py`, `rbac.py`, `audit.py`, `tenancy.py`, `localization.py`, `pdf.py`, `observability.py`.
 - `routers/`: FastAPI route modules.
 - `services/`: backend service logic and provider integrations.
 - `scripts/`: backend backup/restore utilities.
@@ -17,11 +17,13 @@
 - Do not restore `Base.metadata.create_all()` as a substitute for production migrations.
 - Secrets and provider keys must not be logged or returned in API responses.
 - The system super administrator bootstrap must stay idempotent and shared between CLI and HTTP entrypoints.
+- Use `backend.tenancy` helpers for school-scoped routes that support both global `SUPER_ADMIN` access and school-local users.
 
 # Work Guidance
 
 - Prefer service functions for reusable business rules and keep routers focused on request/response orchestration.
 - Use `backend.services.super_admin.ensure_super_admin` for super-admin account creation or repair instead of duplicating bootstrap logic.
+- `SUPER_ADMIN` must remain global with `school_id = None`; school-dependent creation must require an explicit school selection.
 - Use structured SQLAlchemy queries and Pydantic schemas instead of ad hoc serialization.
 - For financial, AI, file, auth, or tenant-sensitive changes, add or update targeted tests when feasible.
 

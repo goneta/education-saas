@@ -266,6 +266,25 @@ class UserRoleAssignment(Base):
         UniqueConstraint("user_id", "role_key", "school_id", name="_user_role_assignment_uc"),
     )
 
+
+class SchoolMembership(Base):
+    __tablename__ = "school_memberships"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    role = Column(String, nullable=False, index=True)
+    start_date = Column(DateTime(timezone=True), nullable=True)
+    end_date = Column(DateTime(timezone=True), nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    membership_status = Column(String, default="active", nullable=False, index=True)
+    transfer_reason = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User")
+    school = relationship("School")
+
 class StudentProfile(Base):
     __tablename__ = "student_profiles"
     
@@ -1226,11 +1245,50 @@ class NotificationHistory(Base):
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
     created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    read_at = Column(DateTime(timezone=True), nullable=True)
 
     recipient = relationship("User", foreign_keys=[recipient_user_id])
     student = relationship("StudentProfile")
     school = relationship("School")
     created_by = relationship("User", foreign_keys=[created_by_id])
+
+
+class UserPreference(Base):
+    __tablename__ = "user_preferences"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True, index=True)
+    theme = Column(String, default="light", nullable=False)
+    help_open_mode = Column(String, default="page", nullable=False)
+    email_notifications_enabled = Column(Boolean, default=True, nullable=False)
+    language = Column(String, nullable=True)
+    metadata_json = Column(JSON, nullable=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User")
+
+
+class CartItem(Base):
+    __tablename__ = "cart_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    item_type = Column(String, nullable=False, index=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    quantity = Column(Integer, default=1, nullable=False)
+    unit_amount = Column(Float, nullable=False)
+    currency = Column(String, default="FCFA", nullable=False)
+    provider_scope = Column(String, default="school", nullable=False, index=True)
+    source_type = Column(String, nullable=True, index=True)
+    source_id = Column(Integer, nullable=True, index=True)
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User")
+    school = relationship("School")
 
 
 class FinancialReportSnapshot(Base):

@@ -5,7 +5,7 @@ from datetime import datetime, time, timezone
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 from typing import Any, Dict, List, Optional
-from .. import audit, models, pdf, schemas, security, database
+from .. import audit, models, pdf, schemas, security, database, tenancy
 
 router = APIRouter(prefix="/education", tags=["Education"])
 
@@ -22,9 +22,11 @@ ADMIN_TIMETABLE_ROLES = {
 
 
 def _require_school(current_user: models.User) -> int:
-    if not current_user.school_id:
-        raise HTTPException(status_code=400, detail="User not part of a school")
-    return current_user.school_id
+    return tenancy.require_school_scope(current_user)
+
+
+def _resolve_school(current_user: models.User, payload_school_id: Optional[int], db: Session) -> int:
+    return tenancy.resolve_school_id_for_create(current_user, payload_school_id, db)
 
 
 def _require_timetable_admin(current_user: models.User) -> None:
@@ -194,10 +196,11 @@ def create_class(
     if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
+    school_id = _resolve_school(current_user, class_in.school_id, db)
     new_class = models.Class(
         name=class_in.name,
         level=class_in.level,
-        school_id=current_user.school_id,
+        school_id=school_id,
         main_teacher_id=class_in.main_teacher_id
     )
     db.add(new_class)
@@ -209,15 +212,12 @@ def create_class(
 def list_classes(
     skip: int = 0,
     limit: int = 100,
+    school_id: Optional[int] = None,
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    if not current_user.school_id:
-        raise HTTPException(status_code=400, detail="User not part of a school")
-        
-    classes = db.query(models.Class).filter(
-        models.Class.school_id == current_user.school_id
-    ).offset(skip).limit(limit).all()
+    query = tenancy.apply_school_filter(db.query(models.Class), models.Class, current_user, school_id)
+    classes = query.offset(skip).limit(limit).all()
     return classes
 
 
@@ -227,16 +227,14 @@ def class_roster(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    cls = db.query(models.Class).filter(
-        models.Class.id == class_id,
-        models.Class.school_id == current_user.school_id
-    ).first()
+    cls_query = db.query(models.Class).filter(models.Class.id == class_id)
+    cls = tenancy.apply_school_filter(cls_query, models.Class, current_user).first()
     if not cls:
         raise HTTPException(status_code=404, detail="Class not found")
 
     students = db.query(models.StudentProfile).join(models.User).filter(
         models.StudentProfile.current_class_id == class_id,
-        models.User.school_id == current_user.school_id,
+        models.User.school_id == cls.school_id,
     ).all()
     rows = []
     anomalies = []
@@ -275,10 +273,8 @@ def update_class(
     if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
         raise HTTPException(status_code=403, detail="Not authorized")
         
-    cls = db.query(models.Class).filter(
-        models.Class.id == class_id,
-        models.Class.school_id == current_user.school_id
-    ).first()
+    cls_query = db.query(models.Class).filter(models.Class.id == class_id)
+    cls = tenancy.apply_school_filter(cls_query, models.Class, current_user).first()
     
     if not cls:
         raise HTTPException(status_code=404, detail="Class not found")
@@ -300,10 +296,8 @@ def delete_class(
     if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    cls = db.query(models.Class).filter(
-        models.Class.id == class_id,
-        models.Class.school_id == current_user.school_id
-    ).first()
+    cls_query = db.query(models.Class).filter(models.Class.id == class_id)
+    cls = tenancy.apply_school_filter(cls_query, models.Class, current_user).first()
     
     if not cls:
         raise HTTPException(status_code=404, detail="Class not found")
@@ -320,15 +314,11 @@ def list_academic_years(
     skip: int = 0,
     limit: int = 100,
     current_only: bool = False,
+    school_id: Optional[int] = None,
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    if not current_user.school_id:
-        raise HTTPException(status_code=400, detail="User not part of a school")
-
-    query = db.query(models.AcademicYear).filter(
-        models.AcademicYear.school_id == current_user.school_id
-    )
+    query = tenancy.apply_school_filter(db.query(models.AcademicYear), models.AcademicYear, current_user, school_id)
     if current_only:
         query = query.filter(models.AcademicYear.is_current == True)
 
@@ -337,17 +327,14 @@ def list_academic_years(
 @router.get("/terms", response_model=List[schemas.TermResponse])
 def list_terms(
     academic_year_id: int = None,
+    school_id: Optional[int] = None,
     skip: int = 0,
     limit: int = 100,
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    if not current_user.school_id:
-        raise HTTPException(status_code=400, detail="User not part of a school")
-
-    query = db.query(models.Term).join(models.AcademicYear).filter(
-        models.AcademicYear.school_id == current_user.school_id
-    )
+    query = db.query(models.Term).join(models.AcademicYear)
+    query = tenancy.apply_school_filter(query, models.AcademicYear, current_user, school_id)
     if academic_year_id:
         query = query.filter(models.Term.academic_year_id == academic_year_id)
 
@@ -362,9 +349,10 @@ def create_academic_year(
     if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
         raise HTTPException(status_code=403, detail="Not authorized")
         
+    school_id = _resolve_school(current_user, year_in.school_id, db)
     new_year = models.AcademicYear(
-        **year_in.model_dump(),
-        school_id=current_user.school_id
+        **year_in.model_dump(exclude={"school_id"}),
+        school_id=school_id,
     )
     db.add(new_year)
     db.commit()
@@ -380,10 +368,8 @@ def create_term(
     if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
         raise HTTPException(status_code=403, detail="Not authorized")
         
-    academic_year = db.query(models.AcademicYear).filter(
-        models.AcademicYear.id == term_in.academic_year_id,
-        models.AcademicYear.school_id == current_user.school_id
-    ).first()
+    academic_year_query = db.query(models.AcademicYear).filter(models.AcademicYear.id == term_in.academic_year_id)
+    academic_year = tenancy.apply_school_filter(academic_year_query, models.AcademicYear, current_user).first()
     if not academic_year:
         raise HTTPException(status_code=404, detail="Academic year not found in this school")
 
@@ -404,9 +390,10 @@ def create_subject(
     if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
         raise HTTPException(status_code=403, detail="Not authorized")
         
+    school_id = _resolve_school(current_user, subject_in.school_id, db)
     new_sub = models.Subject(
-        **subject_in.model_dump(),
-        school_id=current_user.school_id
+        **subject_in.model_dump(exclude={"school_id"}),
+        school_id=school_id
     )
     db.add(new_sub)
     db.commit()
@@ -417,15 +404,12 @@ def create_subject(
 def list_subjects(
     skip: int = 0,
     limit: int = 100,
+    school_id: Optional[int] = None,
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    if not current_user.school_id:
-         raise HTTPException(status_code=400, detail="User not part of a school")
-         
-    subjects = db.query(models.Subject).filter(
-        models.Subject.school_id == current_user.school_id
-    ).offset(skip).limit(limit).all()
+    query = tenancy.apply_school_filter(db.query(models.Subject), models.Subject, current_user, school_id)
+    subjects = query.offset(skip).limit(limit).all()
     return subjects
 
 @router.put("/subjects/{subject_id}", response_model=schemas.SubjectResponse)
@@ -438,10 +422,8 @@ def update_subject(
     if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    sub = db.query(models.Subject).filter(
-        models.Subject.id == subject_id,
-        models.Subject.school_id == current_user.school_id
-    ).first()
+    sub_query = db.query(models.Subject).filter(models.Subject.id == subject_id)
+    sub = tenancy.apply_school_filter(sub_query, models.Subject, current_user).first()
     
     if not sub:
         raise HTTPException(status_code=404, detail="Subject not found")
@@ -463,10 +445,8 @@ def delete_subject(
     if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    sub = db.query(models.Subject).filter(
-        models.Subject.id == subject_id,
-        models.Subject.school_id == current_user.school_id
-    ).first()
+    sub_query = db.query(models.Subject).filter(models.Subject.id == subject_id)
+    sub = tenancy.apply_school_filter(sub_query, models.Subject, current_user).first()
     
     if not sub:
         raise HTTPException(status_code=404, detail="Subject not found")
@@ -479,9 +459,21 @@ def delete_subject(
 # Timetables endpoints
 # ---------------------------------------------------------
 
-def _timetable_query_for_user(db: Session, current_user: models.User):
-    school_id = _require_school(current_user)
-    query = _scope_query(db, school_id)
+def _school_id_from_class(db: Session, class_id: int) -> int:
+    cls = db.query(models.Class).filter(models.Class.id == class_id).first()
+    if not cls:
+        raise HTTPException(status_code=404, detail="Class not found")
+    return cls.school_id
+
+
+def _timetable_query_for_user(db: Session, current_user: models.User, school_id: Optional[int] = None):
+    if current_user.role == models.UserRole.SUPER_ADMIN:
+        query = db.query(models.Timetable).join(models.Class)
+        if school_id:
+            query = query.filter(models.Class.school_id == school_id)
+    else:
+        school_id = _require_school(current_user)
+        query = _scope_query(db, school_id)
     if current_user.role in [models.UserRole.TEACHER, models.UserRole.TRAINER, models.UserRole.INSTRUCTOR]:
         return query.filter(models.Timetable.teacher_id == current_user.id, models.Timetable.status == "published")
     if current_user.role in [models.UserRole.STUDENT, models.UserRole.PUPIL]:
@@ -505,7 +497,7 @@ def create_timetable_entry(
     db: Session = Depends(database.get_db),
 ):
     _require_timetable_admin(current_user)
-    school_id = _require_school(current_user)
+    school_id = _school_id_from_class(db, entry_in.class_id) if current_user.role == models.UserRole.SUPER_ADMIN else _require_school(current_user)
     _entry_school_check(db, school_id, entry_in.class_id)
     _subject_school_check(db, school_id, entry_in.subject_id)
     _teacher_school_check(db, school_id, entry_in.teacher_id)
@@ -525,10 +517,11 @@ def list_timetables(
     teacher_id: int = None,
     room: str = None,
     status_filter: str = None,
+    school_id: Optional[int] = None,
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db),
 ):
-    query = _timetable_query_for_user(db, current_user)
+    query = _timetable_query_for_user(db, current_user, school_id)
     if class_id:
         query = query.filter(models.Timetable.class_id == class_id)
     if teacher_id:
@@ -548,8 +541,12 @@ def update_timetable_entry(
     db: Session = Depends(database.get_db),
 ):
     _require_timetable_admin(current_user)
-    school_id = _require_school(current_user)
-    entry = _scope_query(db, school_id).filter(models.Timetable.id == entry_id).first()
+    if current_user.role == models.UserRole.SUPER_ADMIN:
+        entry = db.query(models.Timetable).join(models.Class).filter(models.Timetable.id == entry_id).first()
+        school_id = entry.class_.school_id if entry and entry.class_ else None
+    else:
+        school_id = _require_school(current_user)
+        entry = _scope_query(db, school_id).filter(models.Timetable.id == entry_id).first()
     if not entry:
         raise HTTPException(status_code=404, detail="Timetable entry not found")
     changes = entry_in.model_dump(exclude_unset=True)
@@ -577,7 +574,13 @@ def bulk_update_timetables(
     db: Session = Depends(database.get_db),
 ):
     _require_timetable_admin(current_user)
-    school_id = _require_school(current_user)
+    first_entry = db.query(models.Timetable).join(models.Class).filter(models.Timetable.id.in_(payload.entry_ids)).first()
+    if current_user.role == models.UserRole.SUPER_ADMIN:
+        if not first_entry or not first_entry.class_:
+            raise HTTPException(status_code=404, detail="Timetable entry not found")
+        school_id = first_entry.class_.school_id
+    else:
+        school_id = _require_school(current_user)
     updated: List[int] = []
     conflicts_by_entry: Dict[int, List[Dict[str, Any]]] = {}
     for entry_id in payload.entry_ids:
@@ -604,7 +607,7 @@ def validate_timetable_entry(
     db: Session = Depends(database.get_db),
 ):
     _require_timetable_admin(current_user)
-    school_id = _require_school(current_user)
+    school_id = _school_id_from_class(db, entry_in.class_id) if current_user.role == models.UserRole.SUPER_ADMIN else _require_school(current_user)
     _entry_school_check(db, school_id, entry_in.class_id)
     _subject_school_check(db, school_id, entry_in.subject_id)
     _teacher_school_check(db, school_id, entry_in.teacher_id)
@@ -640,7 +643,7 @@ def generate_timetables(
     db: Session = Depends(database.get_db),
 ):
     _require_timetable_admin(current_user)
-    school_id = _require_school(current_user)
+    school_id = tenancy.resolve_school_id_for_create(current_user, payload.school_id, db) if current_user.role == models.UserRole.SUPER_ADMIN else _require_school(current_user)
     deleted = _delete_unlocked_for_generation(db, school_id, payload)
     classes_query = db.query(models.Class).filter(models.Class.school_id == school_id)
     if payload.scope_type == "class" and payload.scope_id:
@@ -708,7 +711,20 @@ def publish_timetables(
     db: Session = Depends(database.get_db),
 ):
     _require_timetable_admin(current_user)
-    school_id = _require_school(current_user)
+    if current_user.role == models.UserRole.SUPER_ADMIN:
+        if payload.school_id:
+            school_id = tenancy.resolve_school_id_for_create(current_user, payload.school_id, db)
+        elif payload.class_id:
+            school_id = _school_id_from_class(db, payload.class_id)
+        elif payload.teacher_id:
+            teacher = db.query(models.User).filter(models.User.id == payload.teacher_id).first()
+            if not teacher or not teacher.school_id:
+                raise HTTPException(status_code=404, detail="Teacher not found in a school")
+            school_id = teacher.school_id
+        else:
+            raise HTTPException(status_code=400, detail=tenancy.SUPER_ADMIN_SELECT_SCHOOL_MESSAGE)
+    else:
+        school_id = _require_school(current_user)
     query = _scope_query(db, school_id)
     if payload.class_id:
         query = query.filter(models.Timetable.class_id == payload.class_id)
@@ -747,11 +763,13 @@ def export_timetables(
     class_id: int = None,
     teacher_id: int = None,
     room: str = None,
+    school_id: Optional[int] = None,
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db),
 ):
-    school_id = _require_school(current_user)
-    query = _timetable_query_for_user(db, current_user)
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        school_id = _require_school(current_user)
+    query = _timetable_query_for_user(db, current_user, school_id)
     if class_id:
         query = query.filter(models.Timetable.class_id == class_id)
     if teacher_id:
@@ -759,7 +777,7 @@ def export_timetables(
     if room:
         query = query.filter(models.Timetable.room == room)
     rows = query.order_by(models.Timetable.day_of_week, models.Timetable.start_time).all()
-    school = db.query(models.School).filter(models.School.id == school_id).first()
+    school = db.query(models.School).filter(models.School.id == school_id).first() if school_id else None
     headers = ["Jour", "Début", "Fin", "Classe", "Matière", "Professeur", "Salle", "Statut", "Conflits"]
     data = [[
         row.day_of_week.value,
@@ -796,8 +814,12 @@ def delete_timetable_entry(
     db: Session = Depends(database.get_db),
 ):
     _require_timetable_admin(current_user)
-    school_id = _require_school(current_user)
-    entry = _scope_query(db, school_id).filter(models.Timetable.id == entry_id).first()
+    if current_user.role == models.UserRole.SUPER_ADMIN:
+        entry = db.query(models.Timetable).join(models.Class).filter(models.Timetable.id == entry_id).first()
+        school_id = entry.class_.school_id if entry and entry.class_ else None
+    else:
+        school_id = _require_school(current_user)
+        entry = _scope_query(db, school_id).filter(models.Timetable.id == entry_id).first()
     if not entry:
         raise HTTPException(status_code=404, detail="Timetable entry not found")
     _record_timetable_notification(db, school_id, current_user, entry, "timetable.deleted", "Un cours a été supprimé de votre emploi du temps.")
