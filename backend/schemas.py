@@ -217,6 +217,7 @@ class AICreditPackBase(BaseModel):
     currency: str = "FCFA"
     country_code: str = "CI"
     region: str = "africa"
+    target_type: str = Field(default="both", pattern="^(user|school|both)$")
     is_active: bool = True
     validity_days: Optional[int] = None
 
@@ -233,6 +234,7 @@ class AICreditPackUpdate(BaseModel):
     currency: Optional[str] = None
     country_code: Optional[str] = None
     region: Optional[str] = None
+    target_type: Optional[str] = Field(default=None, pattern="^(user|school|both)$")
     is_active: Optional[bool] = None
     validity_days: Optional[int] = None
 
@@ -265,6 +267,10 @@ class AIWalletResponse(BaseModel):
 class AIWalletLimitUpdate(BaseModel):
     daily_credit_limit: Optional[int] = Field(default=None, ge=0)
     monthly_credit_limit: Optional[int] = Field(default=None, ge=0)
+
+
+class AIWalletAccessUpdate(BaseModel):
+    is_active: bool
 
 
 class AICreditAdjustmentRequest(BaseModel):
@@ -363,7 +369,44 @@ class PlatformPaymentResponse(BaseModel):
     pack_id: Optional[int] = None
     credits_amount: int
     wallet_id: Optional[int] = None
+    validated_by_id: Optional[int] = None
+    validated_at: Optional[datetime] = None
     metadata_json: Optional[Dict[str, Any]] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ManualAICreditPaymentRequest(BaseModel):
+    owner_type: str = Field(pattern="^(user|school)$")
+    pack_id: int
+    user_id: Optional[int] = None
+    school_id: Optional[int] = None
+    payment_method: str = Field(pattern="^(cash|free)$")
+    internal_reference: Optional[str] = None
+    note: Optional[str] = None
+
+
+class SchoolAICreditAllocationCreate(BaseModel):
+    user_id: int
+    credits_amount: int = Field(gt=0)
+    note: Optional[str] = None
+
+
+class SchoolAICreditAllocationResponse(BaseModel):
+    id: int
+    school_id: int
+    user_id: int
+    school_wallet_id: int
+    user_wallet_id: int
+    allocated_credits: int
+    remaining_credits: int
+    consumed_credits: int
+    is_active: bool
+    granted_by_id: int
+    updated_by_id: Optional[int] = None
+    note: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -985,6 +1028,8 @@ class PaymentCreate(BaseModel):
     payment_date: Optional[datetime] = None
     note: Optional[str] = None
     operator_station: Optional[str] = None
+    payment_method: str = Field(default="cash", pattern="^(cash|stripe|djamo|cinetpay|mobile_money|bank_transfer|free)$")
+    internal_reference: Optional[str] = None
 
 
 class PaymentResponse(BaseModel):
@@ -992,6 +1037,9 @@ class PaymentResponse(BaseModel):
     amount: float
     payment_date: datetime
     note: Optional[str] = None
+    payment_method: str = "cash"
+    status: str = "successful"
+    internal_reference: Optional[str] = None
     receipt_number: Optional[str] = None
     operator_station: Optional[str] = None
     recorded_by_id: Optional[int] = None

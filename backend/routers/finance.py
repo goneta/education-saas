@@ -5,7 +5,7 @@ from typing import List, Optional
 from datetime import datetime, time
 from uuid import uuid4
 
-from .. import models, schemas, database, rbac, security
+from .. import audit, models, schemas, database, rbac, security
 from ..services import automation
 
 router = APIRouter(
@@ -63,6 +63,9 @@ def _serialize_payment(payment: models.Payment):
         "payment_date": payment.payment_date,
         "receipt_number": payment.receipt_number,
         "note": payment.note,
+        "payment_method": payment.payment_method,
+        "status": payment.status,
+        "internal_reference": payment.internal_reference,
         "operator_station": payment.operator_station,
         "recorded_by_id": payment.recorded_by_id,
         "recorded_by": payment.recorded_by.full_name if payment.recorded_by else None,
@@ -271,6 +274,9 @@ def record_fee_payment(
         amount=payment.amount,
         payment_date=payment.payment_date or datetime.utcnow(),
         note=payment.note,
+        payment_method=payment.payment_method,
+        status="successful",
+        internal_reference=payment.internal_reference,
         operator_station=payment.operator_station,
         recorded_by_id=current_user.id,
         receipt_number=f"RCPT-{datetime.utcnow().strftime('%Y%m%d')}-{uuid4().hex[:8].upper()}",
@@ -280,6 +286,20 @@ def record_fee_payment(
     _create_payment_journal_entry(db, db_payment, db_fee, current_user)
     _recalculate_fee_status(db_fee)
     automation.automate_payment(db, db_payment, db_fee, current_user)
+    audit.record_audit(
+        db,
+        action="finance.cash_payment.recorded" if payment.payment_method == "cash" else "finance.payment.recorded",
+        current_user=current_user,
+        entity_type="payment",
+        entity_id=db_payment.id,
+        details={
+            "fee_id": db_fee.id,
+            "student_id": db_fee.student_id,
+            "amount": db_payment.amount,
+            "payment_method": db_payment.payment_method,
+            "internal_reference": db_payment.internal_reference,
+        },
+    )
     db.commit()
     return _serialize_fee(_get_fee_or_404(fee_id, db, current_user))
 

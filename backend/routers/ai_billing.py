@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -61,6 +62,25 @@ def _verify_webhook(secret_env: str, provided: Optional[str]) -> None:
     secret = os.getenv(secret_env)
     if secret and provided != secret:
         raise HTTPException(status_code=403, detail="Invalid webhook signature")
+
+
+def _allocation_response(row: models.SchoolAICreditAllocation) -> dict:
+    return {
+        "id": row.id,
+        "school_id": row.school_id,
+        "user_id": row.user_id,
+        "school_wallet_id": row.school_wallet_id,
+        "user_wallet_id": row.user_wallet_id,
+        "allocated_credits": row.allocated_credits,
+        "remaining_credits": row.remaining_credits,
+        "consumed_credits": row.consumed_credits,
+        "is_active": row.is_active,
+        "granted_by_id": row.granted_by_id,
+        "updated_by_id": row.updated_by_id,
+        "note": row.note,
+        "created_at": row.created_at,
+        "updated_at": row.updated_at,
+    }
 
 
 @router.get("/platform/ai/providers", response_model=list[schemas.AIProviderResponse])
@@ -183,6 +203,100 @@ def platform_ai_payments(current_user: models.User = Depends(security.get_curren
     return db.query(models.PlatformPayment).order_by(models.PlatformPayment.created_at.desc()).limit(500).all()
 
 
+@router.get("/platform/ai/credit-targets")
+def platform_ai_credit_targets(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    _super_admin(current_user)
+    users = db.query(models.User).filter(models.User.is_active == True).order_by(models.User.role, models.User.full_name).all()  # noqa: E712
+    schools = db.query(models.School).filter(models.School.is_active == True).order_by(models.School.name).all()  # noqa: E712
+    return {
+        "users": [
+            {"id": row.id, "full_name": row.full_name, "email": row.email, "role": row.role.value, "school_id": row.school_id}
+            for row in users
+        ],
+        "schools": [{"id": row.id, "name": row.name, "country_code": row.country_code} for row in schools],
+    }
+
+
+@router.post("/platform/ai/manual-payments", response_model=schemas.PlatformPaymentResponse)
+def create_manual_ai_credit_payment(
+    payload: schemas.ManualAICreditPaymentRequest,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _super_admin(current_user)
+    pack = db.query(models.AICreditPack).filter(models.AICreditPack.id == payload.pack_id, models.AICreditPack.is_active == True).first()  # noqa: E712
+    if not pack:
+        raise HTTPException(status_code=404, detail="Pack de crédits IA introuvable")
+    if pack.target_type not in {"both", payload.owner_type}:
+        raise HTTPException(status_code=400, detail="Ce pack ne peut pas être attribué à ce type de bénéficiaire")
+    if payload.payment_method == "free" and not (payload.note or "").strip():
+        raise HTTPException(status_code=400, detail="Un motif est obligatoire pour une attribution gratuite")
+    target_user = None
+    target_school = None
+    if payload.owner_type == "user":
+        if not payload.user_id:
+            raise HTTPException(status_code=400, detail="L'utilisateur bénéficiaire est obligatoire")
+        target_user = db.query(models.User).filter(models.User.id == payload.user_id, models.User.is_active == True).first()  # noqa: E712
+        if not target_user:
+            raise HTTPException(status_code=404, detail="Utilisateur bénéficiaire introuvable")
+        wallet = ai_credits.get_or_create_wallet(db, "user", target_user.id, target_user.school_id)
+        target_school_id = target_user.school_id
+    else:
+        if not payload.school_id:
+            raise HTTPException(status_code=400, detail="L'établissement bénéficiaire est obligatoire")
+        target_school = db.query(models.School).filter(models.School.id == payload.school_id, models.School.is_active == True).first()  # noqa: E712
+        if not target_school:
+            raise HTTPException(status_code=404, detail="Établissement bénéficiaire introuvable")
+        wallet = ai_credits.wallet_for_school(db, target_school.id)
+        target_school_id = target_school.id
+    payment = models.PlatformPayment(
+        reference=ai_credits.platform_payment_reference("CASH" if payload.payment_method == "cash" else "FREE"),
+        payer_user_id=current_user.id,
+        school_id=target_school_id,
+        payment_type="ai_credit_purchase" if payload.payment_method == "cash" else "ai_credit_grant",
+        amount=pack.price if payload.payment_method == "cash" else 0,
+        currency=pack.currency,
+        country_code=pack.country_code,
+        region=pack.region,
+        provider=payload.payment_method,
+        provider_reference=payload.internal_reference,
+        status="successful",
+        beneficiary_entity=ai_credits.beneficiary_for_region(pack.country_code, pack.region),
+        pack_id=pack.id,
+        credits_amount=pack.credits_amount,
+        wallet_id=wallet.id,
+        validated_by_id=current_user.id,
+        validated_at=datetime.utcnow(),
+        metadata_json={
+            "manual_validation": True,
+            "note": payload.note,
+            "owner_type": payload.owner_type,
+            "target_user_id": target_user.id if target_user else None,
+            "target_school_id": target_school.id if target_school else target_school_id,
+        },
+    )
+    db.add(payment)
+    db.flush()
+    ai_credits.apply_platform_payment_success(db, payment, current_user)
+    audit.record_audit(
+        db,
+        action=f"platform.ai_credit_payment.{payload.payment_method}_validated",
+        current_user=current_user,
+        entity_type="platform_payment",
+        entity_id=payment.reference,
+        details={
+            "owner_type": payload.owner_type,
+            "target_user_id": target_user.id if target_user else None,
+            "target_school_id": target_school_id,
+            "pack_id": pack.id,
+            "credits": pack.credits_amount,
+        },
+    )
+    db.commit()
+    db.refresh(payment)
+    return payment
+
+
 @router.post("/platform/ai/wallets/adjust", response_model=schemas.AICreditTransactionResponse)
 def adjust_ai_wallet(payload: schemas.AICreditAdjustmentRequest, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     _super_admin(current_user)
@@ -263,6 +377,117 @@ def school_ai_usage(current_user: models.User = Depends(security.get_current_use
     return db.query(models.AIUsageLog).filter(models.AIUsageLog.school_id == school_id).order_by(models.AIUsageLog.created_at.desc()).limit(300).all()
 
 
+@router.get("/school/ai/users")
+def school_ai_users(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    school_id = _school_context(current_user)
+    rbac.require_permission(current_user, "ai_credits:view", db)
+    users = db.query(models.User).filter(
+        models.User.school_id == school_id,
+        models.User.is_active == True,  # noqa: E712
+    ).order_by(models.User.role, models.User.full_name).all()
+    result = []
+    for row in users:
+        wallet = ai_credits.wallet_for_user(db, row)
+        result.append({
+            "id": row.id,
+            "full_name": row.full_name,
+            "email": row.email,
+            "role": row.role.value,
+            "ai_wallet_status": wallet.status,
+            "ai_credit_balance": wallet.balance_credits,
+        })
+    db.commit()
+    return result
+
+
+@router.put("/school/ai/users/{user_id}/access", response_model=schemas.AIWalletResponse)
+def update_school_user_ai_access(
+    user_id: int,
+    payload: schemas.AIWalletAccessUpdate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    school_id = _school_context(current_user)
+    rbac.require_permission(current_user, "ai_credits:edit", db)
+    target = db.query(models.User).filter(models.User.id == user_id, models.User.school_id == school_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable dans cet établissement")
+    wallet = ai_credits.wallet_for_user(db, target)
+    wallet.status = "active" if payload.is_active else "suspended"
+    audit.record_audit(
+        db,
+        action="school.ai_credits.access_updated",
+        current_user=current_user,
+        entity_type="ai_wallet",
+        entity_id=wallet.id,
+        details={"user_id": user_id, "status": wallet.status},
+    )
+    db.commit()
+    db.refresh(wallet)
+    return wallet
+
+
+@router.get("/school/ai/allocations", response_model=list[schemas.SchoolAICreditAllocationResponse])
+def school_ai_allocations(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    school_id = _school_context(current_user)
+    rbac.require_permission(current_user, "ai_credits:view", db)
+    rows = db.query(models.SchoolAICreditAllocation).filter(
+        models.SchoolAICreditAllocation.school_id == school_id,
+    ).order_by(models.SchoolAICreditAllocation.created_at.desc()).limit(500).all()
+    return [_allocation_response(row) for row in rows]
+
+
+@router.post("/school/ai/allocations", response_model=schemas.SchoolAICreditAllocationResponse)
+def create_school_ai_allocation(
+    payload: schemas.SchoolAICreditAllocationCreate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    school_id = _school_context(current_user)
+    rbac.require_permission(current_user, "ai_credits:create", db)
+    allocation = ai_credits.grant_school_credits(db, school_id, payload.user_id, payload.credits_amount, current_user, payload.note)
+    audit.record_audit(
+        db,
+        action="school.ai_credits.allocated",
+        current_user=current_user,
+        entity_type="school_ai_credit_allocation",
+        entity_id=allocation.id,
+        details={"user_id": payload.user_id, "credits": payload.credits_amount},
+    )
+    db.commit()
+    db.refresh(allocation)
+    return _allocation_response(allocation)
+
+
+@router.delete("/school/ai/allocations/{allocation_id}", response_model=schemas.SchoolAICreditAllocationResponse)
+def revoke_school_ai_allocation(
+    allocation_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    school_id = _school_context(current_user)
+    rbac.require_permission(current_user, "ai_credits:edit", db)
+    allocation = db.query(models.SchoolAICreditAllocation).filter(
+        models.SchoolAICreditAllocation.id == allocation_id,
+        models.SchoolAICreditAllocation.school_id == school_id,
+    ).first()
+    if not allocation:
+        raise HTTPException(status_code=404, detail="Allocation introuvable")
+    refunded = allocation.remaining_credits
+    ai_credits.revoke_school_allocation(db, allocation, current_user)
+    audit.record_audit(
+        db,
+        action="school.ai_credits.revoked",
+        current_user=current_user,
+        entity_type="school_ai_credit_allocation",
+        entity_id=allocation.id,
+        details={"user_id": allocation.user_id, "refunded_credits": refunded},
+    )
+    db.commit()
+    db.refresh(allocation)
+    return _allocation_response(allocation)
+
+
 @router.post("/school/ai/purchase", response_model=schemas.PlatformPaymentResponse)
 def school_ai_purchase(payload: schemas.AICreditPurchaseRequest, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     _school_context(current_user)
@@ -307,6 +532,8 @@ def initiate_platform_payment(payload: schemas.PlatformPaymentCreate, current_us
     pack = db.query(models.AICreditPack).filter(models.AICreditPack.id == payload.pack_id).first() if payload.pack_id else None
     if payload.payment_type == "ai_credit_purchase" and not pack:
         raise HTTPException(status_code=404, detail="AI credit pack not found")
+    if pack and pack.target_type not in {"both", payload.owner_type}:
+        raise HTTPException(status_code=400, detail="This AI credit pack is not available for the selected beneficiary")
     amount = payload.amount if payload.amount is not None else (pack.price if pack else 0)
     currency = payload.currency or (pack.currency if pack else "FCFA")
     country_code = payload.country_code or (pack.country_code if pack else (current_user.school.country_code if current_user.school else "CI"))

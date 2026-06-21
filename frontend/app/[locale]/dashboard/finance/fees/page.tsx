@@ -59,6 +59,9 @@ export default function FeesPage() {
         student_id: ""
     })
     const [paymentAmount, setPaymentAmount] = useState("")
+    const [paymentMethod, setPaymentMethod] = useState("cash")
+    const [paymentReference, setPaymentReference] = useState("")
+    const [paymentNote, setPaymentNote] = useState("")
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -126,6 +129,9 @@ export default function FeesPage() {
     const openPayment = (fee: Fee) => {
         setSelectedFee(fee)
         setPaymentAmount("")
+        setPaymentMethod("cash")
+        setPaymentReference("")
+        setPaymentNote("")
         setError(null)
         setShowPaymentModal(true)
     }
@@ -180,7 +186,12 @@ export default function FeesPage() {
             const res = await fetch(`${API_BASE_URL}/finance/fees/${selectedFee.id}/payments`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ amount: parseFloat(paymentAmount) })
+                body: JSON.stringify({
+                    amount: parseFloat(paymentAmount),
+                    payment_method: paymentMethod,
+                    internal_reference: paymentReference || null,
+                    note: paymentNote || null,
+                })
             })
             if (res.ok) {
                 setShowPaymentModal(false)
@@ -444,6 +455,22 @@ export default function FeesPage() {
                             />
                             </ExplainedField>
                         </div>
+                        <ExplainedField label="Mode de paiement" required help="Sélectionnez Espèces pour un encaissement reçu physiquement à la caisse. Le mode est conservé dans le journal et l'audit.">
+                            <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm">
+                                <option value="cash">Espèces</option>
+                                <option value="mobile_money">Mobile Money</option>
+                                <option value="bank_transfer">Virement bancaire</option>
+                                <option value="stripe">Stripe</option>
+                                <option value="djamo">Djamo</option>
+                                <option value="cinetpay">CinetPay</option>
+                            </select>
+                        </ExplainedField>
+                        <ExplainedField label="Référence interne" help="Numéro de bordereau, référence Mobile Money ou identifiant interne permettant de rapprocher l'encaissement.">
+                            <Input placeholder="Ex. CAISSE-2026-0042" value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} />
+                        </ExplainedField>
+                        <ExplainedField label="Note" help="Précision facultative enregistrée dans l'historique financier de l'élève et le journal d'audit.">
+                            <Input placeholder="Observation facultative" value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} />
+                        </ExplainedField>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setShowPaymentModal(false)}>{tx(locale, "cancel")}</Button>

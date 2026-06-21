@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- Python source file used by the backend, migrations, scripts, tests, or utilities. It participates in the FastAPI API boundary.
+- Exposes tenant-scoped fee, cash journal, receipt, report, closure, forecast, and payment APIs with method/reference capture and audit logging.
 
 ## DOX Scope
 

@@ -29,6 +29,7 @@ interface AICreditPack {
     currency: string
     country_code?: string | null
     region?: string | null
+    target_type: "user" | "school" | "both"
     is_active: boolean
 }
 
@@ -105,6 +106,31 @@ interface AnalyticsSummary {
     wallet_balance: number
 }
 
+interface CreditTargetUser {
+    id: number
+    full_name: string
+    email: string
+    role: string
+    school_id?: number | null
+    ai_wallet_status?: string
+    ai_credit_balance?: number
+}
+
+interface CreditTargetSchool {
+    id: number
+    name: string
+}
+
+interface SchoolCreditAllocation {
+    id: number
+    user_id: number
+    allocated_credits: number
+    remaining_credits: number
+    consumed_credits: number
+    is_active: boolean
+    created_at: string
+}
+
 const statusColor: Record<string, string> = {
     successful: "text-emerald-700 bg-emerald-50",
     completed: "text-emerald-700 bg-emerald-50",
@@ -150,6 +176,10 @@ export default function AICreditsPage() {
     const [schoolPayments, setSchoolPayments] = useState<SchoolPayment[]>([])
     const [providers, setProviders] = useState<AIProvider[]>([])
     const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null)
+    const [targetUsers, setTargetUsers] = useState<CreditTargetUser[]>([])
+    const [targetSchools, setTargetSchools] = useState<CreditTargetSchool[]>([])
+    const [schoolUsers, setSchoolUsers] = useState<CreditTargetUser[]>([])
+    const [allocations, setAllocations] = useState<SchoolCreditAllocation[]>([])
     const [message, setMessage] = useState("")
     const [loading, setLoading] = useState(false)
     const [accountForm, setAccountForm] = useState({
@@ -178,6 +208,22 @@ export default function AICreditsPage() {
         country_code: "CI",
         region: "africa",
         description: "",
+        target_type: "both",
+    })
+    const [purchaseProvider, setPurchaseProvider] = useState("stripe")
+    const [manualPaymentForm, setManualPaymentForm] = useState({
+        owner_type: "user",
+        user_id: "",
+        school_id: "",
+        pack_id: "",
+        payment_method: "cash",
+        internal_reference: "",
+        note: "",
+    })
+    const [allocationForm, setAllocationForm] = useState({
+        user_id: "",
+        credits_amount: "",
+        note: "",
     })
     const [adjustForm, setAdjustForm] = useState({
         owner_type: "school",
@@ -217,29 +263,39 @@ export default function AICreditsPage() {
             if (txRes.ok) setMyTransactions(await txRes.json())
 
             if (canManageSchool) {
-                const [schoolWalletRes, schoolUsageRes, schoolTxRes, accountsRes, paymentsRes] = await Promise.all([
+                const [schoolWalletRes, schoolUsageRes, schoolTxRes, accountsRes, paymentsRes, schoolUsersRes, allocationsRes] = await Promise.all([
                     fetch(`${API_BASE_URL}/school/ai/wallet`, { headers }),
                     fetch(`${API_BASE_URL}/school/ai/usage`, { headers }),
                     fetch(`${API_BASE_URL}/school/ai/transactions`, { headers }),
                     fetch(`${API_BASE_URL}/school/payment-accounts`, { headers }),
                     fetch(`${API_BASE_URL}/school/payments`, { headers }),
+                    fetch(`${API_BASE_URL}/school/ai/users`, { headers }),
+                    fetch(`${API_BASE_URL}/school/ai/allocations`, { headers }),
                 ])
                 if (schoolWalletRes.ok) setSchoolWallet(await schoolWalletRes.json())
                 if (schoolUsageRes.ok) setSchoolUsage(await schoolUsageRes.json())
                 if (schoolTxRes.ok) setSchoolTransactions(await schoolTxRes.json())
                 if (accountsRes.ok) setSchoolPaymentAccounts(await accountsRes.json())
                 if (paymentsRes.ok) setSchoolPayments(await paymentsRes.json())
+                if (schoolUsersRes.ok) setSchoolUsers(await schoolUsersRes.json())
+                if (allocationsRes.ok) setAllocations(await allocationsRes.json())
             }
 
             if (isSuperAdmin) {
-                const [providersRes, platformPaymentsRes, analyticsRes] = await Promise.all([
+                const [providersRes, platformPaymentsRes, analyticsRes, targetsRes] = await Promise.all([
                     fetch(`${API_BASE_URL}/platform/ai/providers`, { headers }),
                     fetch(`${API_BASE_URL}/platform/ai/payments`, { headers }),
                     fetch(`${API_BASE_URL}/platform/ai/analytics`, { headers }),
+                    fetch(`${API_BASE_URL}/platform/ai/credit-targets`, { headers }),
                 ])
                 if (providersRes.ok) setProviders(await providersRes.json())
                 if (platformPaymentsRes.ok) setPlatformPayments(await platformPaymentsRes.json())
                 if (analyticsRes.ok) setAnalytics(await analyticsRes.json())
+                if (targetsRes.ok) {
+                    const targets = await targetsRes.json()
+                    setTargetUsers(targets.users || [])
+                    setTargetSchools(targets.schools || [])
+                }
             }
         } catch {
             setMessage("Chargement impossible. Verifiez votre connexion ou vos permissions.")
@@ -259,7 +315,7 @@ export default function AICreditsPage() {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             method: "POST",
             headers: { ...headers, "Content-Type": "application/json" },
-            body: JSON.stringify({ pack_id: packId, provider: "manual" }),
+            body: JSON.stringify({ pack_id: packId, provider: purchaseProvider }),
         })
         const data = await response.json().catch(() => null)
         if (response.ok) {
@@ -329,12 +385,13 @@ export default function AICreditsPage() {
                 currency: packForm.currency,
                 country_code: packForm.country_code,
                 region: packForm.region,
+                target_type: packForm.target_type,
                 is_active: true,
             }),
         })
         if (response.ok) {
             setMessage("Pack de credits IA cree.")
-            setPackForm({ name: "", credits_amount: "1500", price: "7000", currency: "FCFA", country_code: "CI", region: "africa", description: "" })
+            setPackForm({ name: "", credits_amount: "1500", price: "7000", currency: "FCFA", country_code: "CI", region: "africa", description: "", target_type: "both" })
             void load()
         } else {
             setMessage("Creation du pack IA impossible.")
@@ -384,6 +441,73 @@ export default function AICreditsPage() {
         }
     }
 
+    const validateManualPayment = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        if (!token) return
+        const response = await fetch(`${API_BASE_URL}/platform/ai/manual-payments`, {
+            method: "POST",
+            headers: { ...headers, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                owner_type: manualPaymentForm.owner_type,
+                user_id: manualPaymentForm.owner_type === "user" ? Number(manualPaymentForm.user_id) : undefined,
+                school_id: manualPaymentForm.owner_type === "school" ? Number(manualPaymentForm.school_id) : undefined,
+                pack_id: Number(manualPaymentForm.pack_id),
+                payment_method: manualPaymentForm.payment_method,
+                internal_reference: manualPaymentForm.internal_reference || undefined,
+                note: manualPaymentForm.note || undefined,
+            }),
+        })
+        const data = await response.json().catch(() => null)
+        if (response.ok) {
+            setMessage(`Crédits attribués et paiement ${data.reference} validé.`)
+            setManualPaymentForm({ owner_type: "user", user_id: "", school_id: "", pack_id: "", payment_method: "cash", internal_reference: "", note: "" })
+            void load()
+        } else {
+            setMessage(data?.detail || "Validation du paiement impossible.")
+        }
+    }
+
+    const allocateSchoolCredits = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        if (!token) return
+        const response = await fetch(`${API_BASE_URL}/school/ai/allocations`, {
+            method: "POST",
+            headers: { ...headers, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                user_id: Number(allocationForm.user_id),
+                credits_amount: Number(allocationForm.credits_amount),
+                note: allocationForm.note || undefined,
+            }),
+        })
+        const data = await response.json().catch(() => null)
+        if (response.ok) {
+            setMessage("Crédits de l'établissement attribués à l'utilisateur.")
+            setAllocationForm({ user_id: "", credits_amount: "", note: "" })
+            void load()
+        } else {
+            setMessage(data?.detail || "Attribution des crédits impossible.")
+        }
+    }
+
+    const revokeAllocation = async (allocationId: number) => {
+        if (!token || !confirm("Révoquer cette allocation et restituer les crédits non consommés à l'établissement ?")) return
+        const response = await fetch(`${API_BASE_URL}/school/ai/allocations/${allocationId}`, { method: "DELETE", headers })
+        const data = await response.json().catch(() => null)
+        setMessage(response.ok ? "Allocation révoquée et solde non consommé restitué." : data?.detail || "Révocation impossible.")
+        if (response.ok) void load()
+    }
+
+    const updateUserAIAccess = async (userId: number, isActive: boolean) => {
+        if (!token) return
+        const response = await fetch(`${API_BASE_URL}/school/ai/users/${userId}/access`, {
+            method: "PUT",
+            headers: { ...headers, "Content-Type": "application/json" },
+            body: JSON.stringify({ is_active: isActive }),
+        })
+        setMessage(response.ok ? (isActive ? "Accès aux crédits IA réactivé." : "Accès aux crédits IA suspendu.") : "Modification de l'accès impossible.")
+        if (response.ok) void load()
+    }
+
     return (
         <div className="space-y-6 pb-10">
             <div className="flex flex-col gap-4 rounded-[32px] border border-[#E5E7EB] bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
@@ -431,6 +555,11 @@ export default function AICreditsPage() {
 
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
                 <CardShell title="Acheter des credits IA" subtitle="Ces paiements sont des paiements plateforme TeducAI, encaisses par Thunderfam selon la region.">
+                    <select className="apple-select mb-4 max-w-xs" value={purchaseProvider} onChange={event => setPurchaseProvider(event.target.value)} title="Moyen de paiement utilisé pour initier l'achat.">
+                        <option value="stripe">Carte bancaire - Stripe</option>
+                        <option value="djamo">Carte bancaire - Djamo</option>
+                        <option value="cinetpay">Mobile Money - CinetPay</option>
+                    </select>
                     <div className="grid gap-3 md:grid-cols-2">
                         {packs.map(pack => (
                             <div key={pack.id} className="rounded-[24px] border border-[#E5E7EB] p-4">
@@ -443,8 +572,8 @@ export default function AICreditsPage() {
                                 </div>
                                 {pack.description && <p className="mt-2 text-sm text-[#6B7280]">{pack.description}</p>}
                                 <div className="mt-4 flex flex-wrap gap-2">
-                                    <button type="button" onClick={() => void purchase(pack.id, "me")} className="rounded-full bg-black px-4 py-2 text-sm font-medium text-white hover:bg-black/90">Acheter pour moi</button>
-                                    {canManageSchool && <button type="button" onClick={() => void purchase(pack.id, "school")} className="rounded-full border border-[#D1D5DB] px-4 py-2 text-sm hover:bg-[#F5F5F7]">Acheter pour l&apos;ecole</button>}
+                                    {pack.target_type !== "school" && <button type="button" onClick={() => void purchase(pack.id, "me")} className="rounded-full bg-black px-4 py-2 text-sm font-medium text-white hover:bg-black/90">Acheter pour moi</button>}
+                                    {canManageSchool && pack.target_type !== "user" && <button type="button" onClick={() => void purchase(pack.id, "school")} className="rounded-full border border-[#D1D5DB] px-4 py-2 text-sm hover:bg-[#F5F5F7]">Acheter pour l&apos;ecole</button>}
                                 </div>
                             </div>
                         ))}
@@ -486,6 +615,33 @@ export default function AICreditsPage() {
                 </CardShell>
                 {canManageSchool && (
                     <>
+                        <CardShell title="Distribuer les crédits de l'établissement" subtitle="Le montant est débité du portefeuille école et crédité à l'utilisateur sélectionné.">
+                            <form onSubmit={allocateSchoolCredits} className="grid gap-3">
+                                <select className="apple-select" value={allocationForm.user_id} onChange={event => setAllocationForm({ ...allocationForm, user_id: event.target.value })} required>
+                                    <option value="">Sélectionner un utilisateur</option>
+                                    {schoolUsers.map(item => <option key={item.id} value={item.id}>{item.role} - {item.full_name} ({item.email})</option>)}
+                                </select>
+                                <input className="apple-input" type="number" min="1" placeholder="Nombre exact de crédits" value={allocationForm.credits_amount} onChange={event => setAllocationForm({ ...allocationForm, credits_amount: event.target.value })} required />
+                                <input className="apple-input" placeholder="Motif ou période d'utilisation" value={allocationForm.note} onChange={event => setAllocationForm({ ...allocationForm, note: event.target.value })} />
+                                <button className="w-fit rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white">Attribuer</button>
+                            </form>
+                            <div className="mt-5 space-y-2">
+                                {schoolUsers.map(item => (
+                                    <div key={`user-${item.id}`} className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-[#E5E7EB] px-3 py-2 text-sm">
+                                        <span>{item.role} - {item.full_name} · {item.ai_credit_balance ?? 0} crédits</span>
+                                        <button type="button" onClick={() => void updateUserAIAccess(item.id, item.ai_wallet_status !== "active")} className="rounded-full border border-[#D1D5DB] px-3 py-1">
+                                            {item.ai_wallet_status === "active" ? "Suspendre l'accès" : "Réactiver l'accès"}
+                                        </button>
+                                    </div>
+                                ))}
+                                {allocations.slice(0, 20).map(item => (
+                                    <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] bg-[#F5F5F7] px-3 py-2 text-sm">
+                                        <span>{schoolUsers.find(userItem => userItem.id === item.user_id)?.full_name || `Utilisateur #${item.user_id}`} : {item.remaining_credits}/{item.allocated_credits} restants</span>
+                                        {item.is_active && <button type="button" onClick={() => void revokeAllocation(item.id)} className="rounded-full border border-red-200 px-3 py-1 text-red-700">Révoquer</button>}
+                                    </div>
+                                ))}
+                            </div>
+                        </CardShell>
                         <CardShell title="Transactions credits ecole">
                             <Table headers={["Date", "Type", "Credits", "Avant", "Après"]} rows={schoolTransactions.map(item => [item.created_at, item.transaction_type, item.credits_amount, item.balance_before, item.balance_after])} />
                         </CardShell>
@@ -521,6 +677,11 @@ export default function AICreditsPage() {
                     </CardShell>
                     <CardShell title="Créer un pack de crédits IA" subtitle="Définissez les packs vendus par pays, devise et région.">
                         <form onSubmit={createPack} className="grid gap-3">
+                            <select className="apple-select" value={packForm.target_type} onChange={event => setPackForm({ ...packForm, target_type: event.target.value })}>
+                                <option value="both">Utilisateurs et établissements</option>
+                                <option value="user">Utilisateurs uniquement</option>
+                                <option value="school">Établissements uniquement</option>
+                            </select>
                             <input className="apple-input" placeholder="Nom du pack" value={packForm.name} onChange={event => setPackForm({ ...packForm, name: event.target.value })} required title="Nom du pack: libellé visible aux écoles et utilisateurs." />
                             <textarea className="apple-input min-h-24" placeholder="Description" value={packForm.description} onChange={event => setPackForm({ ...packForm, description: event.target.value })} title="Description: détail facultatif du pack de crédits IA." />
                             <div className="grid gap-3 sm:grid-cols-3">
@@ -536,6 +697,37 @@ export default function AICreditsPage() {
                         </form>
                     </CardShell>
                     <CardShell title="Distribuer ou ajuster des crédits" subtitle="Ajoutez des crédits gratuits, bonus, remboursements ou ajustements administratifs.">
+                        <form onSubmit={validateManualPayment} className="mb-6 grid gap-3 rounded-[22px] border border-[#E5E7EB] p-4">
+                            <h3 className="font-semibold text-[#111827]">Valider un paiement espèces ou une attribution gratuite</h3>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <select className="apple-select" value={manualPaymentForm.owner_type} onChange={event => setManualPaymentForm({ ...manualPaymentForm, owner_type: event.target.value })}>
+                                    <option value="user">Utilisateur</option>
+                                    <option value="school">Établissement</option>
+                                </select>
+                                <select className="apple-select" value={manualPaymentForm.payment_method} onChange={event => setManualPaymentForm({ ...manualPaymentForm, payment_method: event.target.value })}>
+                                    <option value="cash">Paiement en espèces</option>
+                                    <option value="free">Attribution gratuite</option>
+                                </select>
+                            </div>
+                            {manualPaymentForm.owner_type === "user" ? (
+                                <select className="apple-select" value={manualPaymentForm.user_id} onChange={event => setManualPaymentForm({ ...manualPaymentForm, user_id: event.target.value })} required>
+                                    <option value="">Sélectionner un utilisateur</option>
+                                    {targetUsers.map(item => <option key={item.id} value={item.id}>{item.role} - {item.full_name} ({item.email})</option>)}
+                                </select>
+                            ) : (
+                                <select className="apple-select" value={manualPaymentForm.school_id} onChange={event => setManualPaymentForm({ ...manualPaymentForm, school_id: event.target.value })} required>
+                                    <option value="">Sélectionner un établissement</option>
+                                    {targetSchools.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+                                </select>
+                            )}
+                            <select className="apple-select" value={manualPaymentForm.pack_id} onChange={event => setManualPaymentForm({ ...manualPaymentForm, pack_id: event.target.value })} required>
+                                <option value="">Sélectionner un pack</option>
+                                {packs.filter(pack => pack.target_type === "both" || pack.target_type === manualPaymentForm.owner_type).map(pack => <option key={pack.id} value={pack.id}>{pack.name} - {pack.credits_amount} crédits - {money(pack.price, pack.currency)}</option>)}
+                            </select>
+                            <input className="apple-input" placeholder="Référence de caisse ou bordereau" value={manualPaymentForm.internal_reference} onChange={event => setManualPaymentForm({ ...manualPaymentForm, internal_reference: event.target.value })} />
+                            <textarea className="apple-input min-h-20" placeholder={manualPaymentForm.payment_method === "free" ? "Motif obligatoire de l'attribution gratuite" : "Note facultative"} value={manualPaymentForm.note} onChange={event => setManualPaymentForm({ ...manualPaymentForm, note: event.target.value })} required={manualPaymentForm.payment_method === "free"} />
+                            <button className="w-fit rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white">Valider et créditer</button>
+                        </form>
                         <form onSubmit={adjustCredits} className="grid gap-3">
                             <select className="apple-select" value={adjustForm.owner_type} onChange={event => setAdjustForm({ ...adjustForm, owner_type: event.target.value })} title="Propriétaire: utilisateur ou école à créditer.">
                                 <option value="school">École</option>

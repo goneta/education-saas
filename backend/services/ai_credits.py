@@ -162,6 +162,7 @@ def record_usage(
     if status == "successful":
         wallet.balance_credits -= credits
         wallet.total_used_credits += credits
+        _consume_school_allocations(db, user, credits)
     input_cost = (provider.cost_per_1k_input_tokens if provider else 0) * prompt_tokens / 1000
     output_cost = (provider.cost_per_1k_output_tokens if provider else 0) * completion_tokens / 1000
     usage = models.AIUsageLog(
@@ -217,8 +218,8 @@ def apply_platform_payment_success(db: Session, payment: models.PlatformPayment,
     wallet.total_purchased_credits += payment.credits_amount
     transaction = models.AICreditTransaction(
         wallet_id=wallet.id,
-        user_id=payment.payer_user_id,
-        school_id=payment.school_id,
+        user_id=wallet.user_id,
+        school_id=wallet.school_id,
         transaction_type="purchase",
         credits_amount=payment.credits_amount,
         balance_before=before,
@@ -236,6 +237,139 @@ def apply_platform_payment_success(db: Session, payment: models.PlatformPayment,
             entity_id=payment.reference,
             details={"credits": payment.credits_amount, "wallet_id": wallet.id},
         )
+
+
+def grant_school_credits(
+    db: Session,
+    school_id: int,
+    user_id: int,
+    credits_amount: int,
+    actor: models.User,
+    note: Optional[str] = None,
+) -> models.SchoolAICreditAllocation:
+    if credits_amount <= 0:
+        raise HTTPException(status_code=400, detail="Le nombre de crédits doit être positif")
+    target = db.query(models.User).filter(
+        models.User.id == user_id,
+        models.User.school_id == school_id,
+        models.User.is_active == True,  # noqa: E712
+    ).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable dans cet établissement")
+    school_wallet = db.query(models.AIWallet).filter(
+        models.AIWallet.owner_type == "school",
+        models.AIWallet.school_id == school_id,
+    ).with_for_update().first() or wallet_for_school(db, school_id)
+    if school_wallet.balance_credits < credits_amount:
+        raise HTTPException(status_code=400, detail="Le solde de crédits IA de l'établissement est insuffisant")
+    user_wallet = wallet_for_user(db, target)
+    school_before = school_wallet.balance_credits
+    user_before = user_wallet.balance_credits
+    school_wallet.balance_credits -= credits_amount
+    user_wallet.balance_credits += credits_amount
+    user_wallet.total_purchased_credits += credits_amount
+    allocation = models.SchoolAICreditAllocation(
+        school_id=school_id,
+        user_id=user_id,
+        school_wallet_id=school_wallet.id,
+        user_wallet_id=user_wallet.id,
+        allocated_credits=credits_amount,
+        remaining_credits=credits_amount,
+        consumed_credits=0,
+        is_active=True,
+        granted_by_id=actor.id,
+        updated_by_id=actor.id,
+        note=note,
+    )
+    db.add(allocation)
+    db.flush()
+    db.add_all([
+        models.AICreditTransaction(
+            wallet_id=school_wallet.id,
+            school_id=school_id,
+            transaction_type="school_distribution",
+            credits_amount=-credits_amount,
+            balance_before=school_before,
+            balance_after=school_wallet.balance_credits,
+            description=f"Crédits distribués à l'utilisateur #{user_id}",
+        ),
+        models.AICreditTransaction(
+            wallet_id=user_wallet.id,
+            user_id=user_id,
+            school_id=school_id,
+            transaction_type="school_allocation",
+            credits_amount=credits_amount,
+            balance_before=user_before,
+            balance_after=user_wallet.balance_credits,
+            description=note or f"Allocation de l'établissement #{school_id}",
+        ),
+    ])
+    return allocation
+
+
+def revoke_school_allocation(
+    db: Session,
+    allocation: models.SchoolAICreditAllocation,
+    actor: models.User,
+) -> models.SchoolAICreditAllocation:
+    if not allocation.is_active:
+        return allocation
+    refundable = allocation.remaining_credits
+    school_wallet = db.query(models.AIWallet).filter(models.AIWallet.id == allocation.school_wallet_id).with_for_update().first()
+    user_wallet = db.query(models.AIWallet).filter(models.AIWallet.id == allocation.user_wallet_id).with_for_update().first()
+    if not school_wallet or not user_wallet:
+        raise HTTPException(status_code=404, detail="Portefeuille IA introuvable")
+    if refundable > user_wallet.balance_credits:
+        raise HTTPException(status_code=409, detail="Le portefeuille utilisateur ne permet pas de restituer les crédits non consommés")
+    school_before = school_wallet.balance_credits
+    user_before = user_wallet.balance_credits
+    user_wallet.balance_credits -= refundable
+    school_wallet.balance_credits += refundable
+    allocation.remaining_credits = 0
+    allocation.is_active = False
+    allocation.updated_by_id = actor.id
+    if refundable:
+        db.add_all([
+            models.AICreditTransaction(
+                wallet_id=user_wallet.id,
+                user_id=allocation.user_id,
+                school_id=allocation.school_id,
+                transaction_type="school_allocation_revoked",
+                credits_amount=-refundable,
+                balance_before=user_before,
+                balance_after=user_wallet.balance_credits,
+                description=f"Restitution de l'allocation #{allocation.id}",
+            ),
+            models.AICreditTransaction(
+                wallet_id=school_wallet.id,
+                school_id=allocation.school_id,
+                transaction_type="school_allocation_refund",
+                credits_amount=refundable,
+                balance_before=school_before,
+                balance_after=school_wallet.balance_credits,
+                description=f"Crédits non consommés restitués depuis l'allocation #{allocation.id}",
+            ),
+        ])
+    return allocation
+
+
+def _consume_school_allocations(db: Session, user: models.User, credits: int) -> None:
+    remaining = credits
+    allocations = db.query(models.SchoolAICreditAllocation).filter(
+        models.SchoolAICreditAllocation.user_id == user.id,
+        models.SchoolAICreditAllocation.school_id == user.school_id,
+        models.SchoolAICreditAllocation.is_active == True,  # noqa: E712
+        models.SchoolAICreditAllocation.remaining_credits > 0,
+    ).order_by(models.SchoolAICreditAllocation.created_at.asc()).all()
+    for allocation in allocations:
+        consumed = min(remaining, allocation.remaining_credits)
+        allocation.remaining_credits -= consumed
+        allocation.consumed_credits += consumed
+        if allocation.remaining_credits == 0:
+            allocation.is_active = False
+        remaining -= consumed
+        if remaining == 0:
+            break
 
 
 def usage_summary(db: Session, school_id: Optional[int] = None) -> dict:

@@ -7,6 +7,7 @@
 ## Purpose
 
 - React/Next.js TypeScript component or page file. It participates in Next.js App Router routing.
+- Manages school fees and traceable payments, including cash, Mobile Money, bank, Stripe, Djamo, and CinetPay references and notes.
 
 ## DOX Scope
 

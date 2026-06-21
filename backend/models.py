@@ -1120,6 +1120,9 @@ class Payment(Base):
     amount = Column(Float, nullable=False)
     payment_date = Column(DateTime(timezone=True), server_default=func.now())
     note = Column(String, nullable=True)
+    payment_method = Column(String, default="cash", nullable=False, index=True)
+    status = Column(String, default="successful", nullable=False, index=True)
+    internal_reference = Column(String, nullable=True, index=True)
     receipt_number = Column(String, unique=True, index=True, nullable=True)
     operator_station = Column(String, nullable=True)
     recorded_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
@@ -1900,6 +1903,7 @@ class AICreditPack(Base):
     currency = Column(String, default="FCFA", nullable=False, index=True)
     country_code = Column(String, default="CI", nullable=False, index=True)
     region = Column(String, default="africa", nullable=False, index=True)
+    target_type = Column(String, default="both", nullable=False, index=True)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
     validity_days = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -1949,14 +1953,17 @@ class PlatformPayment(Base):
     pack_id = Column(Integer, ForeignKey("ai_credit_packs.id"), nullable=True)
     credits_amount = Column(Integer, default=0, nullable=False)
     wallet_id = Column(Integer, ForeignKey("ai_wallets.id"), nullable=True)
+    validated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    validated_at = Column(DateTime(timezone=True), nullable=True)
     metadata_json = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    payer = relationship("User")
+    payer = relationship("User", foreign_keys=[payer_user_id])
     school = relationship("School")
     pack = relationship("AICreditPack")
     wallet = relationship("AIWallet")
+    validated_by = relationship("User", foreign_keys=[validated_by_id])
 
 
 class AICreditTransaction(Base):
@@ -1979,6 +1986,32 @@ class AICreditTransaction(Base):
     user = relationship("User")
     school = relationship("School")
     payment = relationship("PlatformPayment")
+
+
+class SchoolAICreditAllocation(Base):
+    __tablename__ = "school_ai_credit_allocations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    school_wallet_id = Column(Integer, ForeignKey("ai_wallets.id"), nullable=False, index=True)
+    user_wallet_id = Column(Integer, ForeignKey("ai_wallets.id"), nullable=False, index=True)
+    allocated_credits = Column(Integer, default=0, nullable=False)
+    remaining_credits = Column(Integer, default=0, nullable=False)
+    consumed_credits = Column(Integer, default=0, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    granted_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    updated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    note = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    school = relationship("School")
+    user = relationship("User", foreign_keys=[user_id])
+    school_wallet = relationship("AIWallet", foreign_keys=[school_wallet_id])
+    user_wallet = relationship("AIWallet", foreign_keys=[user_wallet_id])
+    granted_by = relationship("User", foreign_keys=[granted_by_id])
+    updated_by = relationship("User", foreign_keys=[updated_by_id])
 
 
 class AIUsageLog(Base):

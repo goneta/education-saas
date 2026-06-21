@@ -7,7 +7,7 @@
 ## Purpose
 
 - React/Next.js TypeScript component or page file. It participates in Next.js App Router routing.
-- Provides the AI credits and separated payments dashboard: user/school wallets, credit packs, encrypted provider setup, platform payments, school payment accounts, usage history, and credit transactions.
+- Provides the AI credits and separated payments dashboard: online purchases, Super Admin cash/free validation, user/school-targeted packs, school-to-user allocations and revocation, providers, wallets, usage, and transactions.
 
 ## DOX Scope
 

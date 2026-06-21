@@ -18,6 +18,7 @@
 - Secrets and provider keys must not be logged or returned in API responses.
 - The system super administrator bootstrap must stay idempotent and shared between CLI and HTTP entrypoints.
 - Use `backend.tenancy` helpers for school-scoped routes that support both global `SUPER_ADMIN` access and school-local users.
+- Cash payments and AI credit movements must preserve payment method, validator, internal reference, wallet balances, paired transactions, and audit history.
 
 # Work Guidance
 

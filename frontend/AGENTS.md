@@ -19,6 +19,7 @@
 - Avoid committing generated build logs or local `.next` artifacts.
 - Global light/dark theme behavior is owned by `frontend/contexts/theme-context.tsx` and must stay available outside dashboard-only components.
 - Dashboard top-bar notifications, theme toggle, cart, checkout, and bottom user account destinations must remain localized and backed by authenticated APIs.
+- AI credit screens must distinguish platform purchases from school payments and expose cash validation or school allocation controls only to authorized roles.
 - Normalize the configured API base URL and use canonical collection paths so production rewrites do not produce double slashes, 404 responses, or authorization-losing redirects.
 
 # Work Guidance

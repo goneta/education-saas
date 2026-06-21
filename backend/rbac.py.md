@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- Python source file used by the backend, migrations, scripts, tests, or utilities.
+- Defines the permission catalog and default role grants, including granular AI credit viewing, allocation, editing, and administrative controls.
 
 ## DOX Scope
 
