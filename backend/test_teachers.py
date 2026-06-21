@@ -1,5 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
+from backend import database, models
 from backend.main import app
 import uuid
 import datetime
@@ -103,8 +104,20 @@ def test_teachers_flow():
 
     # 6. Verify List
     print("\n--- Verify List Teachers ---")
-    res = client.get("/teachers/", headers=headers)
+    for path in ("/teachers", "/teachers/"):
+        res = client.get(path, headers=headers, follow_redirects=False)
+        assert res.status_code == 200
+        assert any(row["id"] == teacher_id for row in res.json())
+
+    db = database.SessionLocal()
+    try:
+        db.query(models.User).filter(models.User.id == teacher_id).update({"role": models.UserRole.TRAINER})
+        db.commit()
+    finally:
+        db.close()
+    res = client.get("/teachers", headers=headers)
     assert res.status_code == 200
+    assert any(row["id"] == teacher_id for row in res.json())
     print(f"✅ Listed {len(res.json())} teachers")
     
     # 7. Delete Teacher

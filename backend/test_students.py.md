@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- Automated test source file.
+- Covers student create, list, update, delete, both collection URL variants, and visibility of learner profiles with a `PUPIL` primary role.
 
 ## DOX Scope
 

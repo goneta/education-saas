@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- React/Next.js TypeScript component or page file. It provides reusable UI behavior.
+- Displays teacher loading, error, empty, filtered-list, and row-action states.
 
 ## DOX Scope
 
@@ -15,8 +15,7 @@
 
 ## Maintenance Notes
 
-- Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
-- Keep the source file and this document in the same directory.
+- An API error takes precedence over the empty-list state so production communication failures remain visible.
 
 ## Verification
 

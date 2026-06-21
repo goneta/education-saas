@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- Python source file used by the backend, migrations, scripts, tests, or utilities. It participates in the FastAPI API boundary.
+- Defines tenant-scoped student creation, listing, detail, update, deletion, history, document, and certificate endpoints.
 
 ## DOX Scope
 
@@ -15,8 +15,8 @@
 
 ## Maintenance Notes
 
-- Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
-- Keep the source file and this document in the same directory.
+- Collection routes accept both `/students` and `/students/` without redirects.
+- Student profiles are the list/detail source of truth so pupil or custom primary roles do not hide valid student records.
 
 ## Verification
 

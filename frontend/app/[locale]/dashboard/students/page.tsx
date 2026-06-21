@@ -60,20 +60,21 @@ export default function StudentsPage() {
             setIsLoading(true)
             setError(null)
 
-            const response = await fetch(`${API_BASE_URL}/students/`, {
+            const response = await fetch(`${API_BASE_URL}/students`, {
                 headers: {
                     "Authorization": `Bearer ${token}`,
                 },
+                cache: "no-store",
             })
 
             if (!response.ok) {
-                if (response.status === 401) {
-                    throw new Error("Session expired. Please log in again.")
-                }
-                throw new Error("Failed to fetch students")
+                const payload = await response.json().catch(() => null)
+                if (response.status === 401) throw new Error("Votre session a expiré. Veuillez vous reconnecter.")
+                throw new Error(payload?.detail || `Impossible de charger les élèves (${response.status}).`)
             }
 
             const data = await response.json()
+            if (!Array.isArray(data)) throw new Error("La réponse de la liste des élèves est invalide.")
             setStudents(data)
         } catch (err) {
             setError(err instanceof Error ? err.message : "An error occurred")
@@ -93,7 +94,7 @@ export default function StudentsPage() {
     const filteredStudents = students.filter(student =>
         student.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.student_profile.registration_number.toLowerCase().includes(searchQuery.toLowerCase())
+        (student.student_profile?.registration_number || "").toLowerCase().includes(searchQuery.toLowerCase())
     )
 
     const handleStudentAdded = () => {

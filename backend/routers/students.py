@@ -7,7 +7,8 @@ from ..services import automation
 
 router = APIRouter(prefix="/students", tags=["Students"])
 
-@router.post("/", response_model=schemas.StudentResponse)
+@router.post("", response_model=schemas.StudentResponse)
+@router.post("/", response_model=schemas.StudentResponse, include_in_schema=False)
 def register_student(
     student_in: schemas.StudentCreateSchema, 
     current_user: models.User = Depends(security.get_current_user),
@@ -152,7 +153,8 @@ def register_student(
         db.rollback()
         raise HTTPException(status_code=500, detail="Internal server error")
 
-@router.get("/", response_model=List[schemas.StudentResponse])
+@router.get("", response_model=List[schemas.StudentResponse])
+@router.get("/", response_model=List[schemas.StudentResponse], include_in_schema=False)
 def list_students(
     skip: int = 0, 
     limit: int = 100, 
@@ -162,8 +164,9 @@ def list_students(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    query = db.query(models.User).join(models.StudentProfile).\
-        filter(models.User.role == models.UserRole.STUDENT)
+    # The profile is the durable source of truth. A learner may have a primary
+    # role such as PUPIL or a custom role while still owning a StudentProfile.
+    query = db.query(models.User).join(models.StudentProfile)
     query = tenancy.apply_user_school_filter(query, current_user, school_id)
     
     if class_id:
@@ -184,9 +187,8 @@ def get_student(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    student = db.query(models.User).filter(
-        models.User.id == student_id, 
-        models.User.role == models.UserRole.STUDENT
+    student = db.query(models.User).join(models.StudentProfile).filter(
+        models.User.id == student_id,
     )
     student = tenancy.apply_user_school_filter(student, current_user).first()
     
@@ -364,9 +366,8 @@ def generate_certificate(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    student_query = db.query(models.User).filter(
+    student_query = db.query(models.User).join(models.StudentProfile).filter(
         models.User.id == student_id,
-        models.User.role == models.UserRole.STUDENT,
     )
     student = tenancy.apply_user_school_filter(student_query, current_user).first()
     if not student or not student.student_profile:
@@ -403,9 +404,8 @@ def list_certificates(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    student_query = db.query(models.User).filter(
+    student_query = db.query(models.User).join(models.StudentProfile).filter(
         models.User.id == student_id,
-        models.User.role == models.UserRole.STUDENT,
     )
     student = tenancy.apply_user_school_filter(student_query, current_user).first()
     if not student or not student.student_profile:
@@ -422,9 +422,8 @@ def list_registration_documents(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    student_query = db.query(models.User).filter(
+    student_query = db.query(models.User).join(models.StudentProfile).filter(
         models.User.id == student_id,
-        models.User.role == models.UserRole.STUDENT,
     )
     student = tenancy.apply_user_school_filter(student_query, current_user).first()
     if not student or not student.student_profile:

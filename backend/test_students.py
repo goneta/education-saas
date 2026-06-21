@@ -3,6 +3,7 @@ import uuid
 
 from fastapi.testclient import TestClient
 
+from backend import database, models
 from backend.main import app
 
 
@@ -54,9 +55,20 @@ def test_student_flow():
     assert data["student_profile"]["parent_phone_e164"] == "+2250102030405"
     assert "Abidjan" in data["student_profile"]["student_formatted_address"]
 
-    listed = client.get("/students/", headers=headers)
-    assert listed.status_code == 200
-    assert any(student["id"] == data["id"] for student in listed.json())
+    for path in ("/students", "/students/"):
+        listed = client.get(path, headers=headers, follow_redirects=False)
+        assert listed.status_code == 200
+        assert any(student["id"] == data["id"] for student in listed.json())
+
+    db = database.SessionLocal()
+    try:
+        db.query(models.User).filter(models.User.id == data["id"]).update({"role": models.UserRole.PUPIL})
+        db.commit()
+    finally:
+        db.close()
+    listed_as_pupil = client.get("/students", headers=headers)
+    assert listed_as_pupil.status_code == 200
+    assert any(student["id"] == data["id"] for student in listed_as_pupil.json())
 
     updated = client.put(f"/students/{data['id']}", json={"full_name": "Jean Eleve Updated", "profile": {"student_address": "Updated Address 123"}}, headers=headers)
     assert updated.status_code == 200

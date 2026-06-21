@@ -6,7 +6,8 @@
 
 ## Purpose
 
-- TypeScript source file for frontend configuration, helpers, or tests.
+- Exposes the public API base URL used by frontend requests.
+- Removes trailing slashes from environment configuration to prevent accidental double-slash API paths.
 
 ## DOX Scope
 

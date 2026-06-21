@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- React/Next.js TypeScript component or page file. It provides reusable UI behavior.
+- Creates students through the canonical `/students` collection endpoint and refreshes the owning list after success.
 
 ## DOX Scope
 

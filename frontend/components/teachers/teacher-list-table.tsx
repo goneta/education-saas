@@ -20,6 +20,7 @@ export interface Teacher {
 interface TeacherListTableProps {
     teachers: Teacher[]
     isLoading: boolean
+    error?: string | null
     searchQuery: string
     onEdit: (teacher: Teacher) => void
     onDelete: (id: number) => void
@@ -28,6 +29,7 @@ interface TeacherListTableProps {
 export function TeacherListTable({
     teachers,
     isLoading,
+    error,
     searchQuery,
     onEdit,
     onDelete
@@ -44,7 +46,11 @@ export function TeacherListTable({
                 <CardTitle className="text-[#111827]">Teacher List</CardTitle>
             </CardHeader>
             <CardContent>
-                {isLoading ? (
+                {error ? (
+                    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                        {error}
+                    </div>
+                ) : isLoading ? (
                     <div className="text-center py-12">
                         <p className="text-[#6B7280]">Loading teachers...</p>
                     </div>

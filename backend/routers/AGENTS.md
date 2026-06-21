@@ -18,6 +18,8 @@
 - Keep routers thin; move reusable business rules into `backend/services`.
 - Prefer explicit error messages that are useful to users but do not leak sensitive internals.
 - Preserve existing route prefixes and response shapes unless the task explicitly changes an API contract.
+- Collection endpoints exposed through the Next.js proxy should accept canonical no-slash URLs without redirect; keep a hidden slash-compatible route when existing clients use it.
+- Student and teacher profile ownership is the durable domain signal; do not hide valid profiles solely because a user's active primary role is an alternate learner or teaching role.
 
 # Verification
 

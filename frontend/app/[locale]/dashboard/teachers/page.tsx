@@ -16,6 +16,7 @@ export default function TeachersPage() {
     const [teachers, setTeachers] = useState<Teacher[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
+    const [error, setError] = useState<string | null>(null)
 
     // Modals state
     const [showAddModal, setShowAddModal] = useState(false)
@@ -32,17 +33,28 @@ export default function TeachersPage() {
     }, [token])
 
     const fetchTeachers = async () => {
+        if (!token) {
+            setError("Vous devez être connecté pour consulter les professeurs.")
+            setIsLoading(false)
+            return
+        }
         setIsLoading(true)
+        setError(null)
         try {
             const res = await fetch(`${API_BASE_URL}/teachers`, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` },
+                cache: "no-store",
             })
-            if (res.ok) {
-                const data = await res.json()
-                setTeachers(data)
+            if (!res.ok) {
+                const payload = await res.json().catch(() => null)
+                if (res.status === 401) throw new Error("Votre session a expiré. Veuillez vous reconnecter.")
+                throw new Error(payload?.detail || `Impossible de charger les professeurs (${res.status}).`)
             }
+            const data = await res.json()
+            if (!Array.isArray(data)) throw new Error("La réponse de la liste des professeurs est invalide.")
+            setTeachers(data)
         } catch (error) {
-            console.error("Failed to fetch teachers", error)
+            setError(error instanceof Error ? error.message : "Impossible de charger les professeurs.")
         } finally {
             setIsLoading(false)
         }
@@ -97,6 +109,7 @@ export default function TeachersPage() {
             <TeacherListTable
                 teachers={teachers}
                 isLoading={isLoading}
+                error={error}
                 searchQuery={searchQuery}
                 onEdit={handleEdit}
                 onDelete={(id) => handleDelete(id)}

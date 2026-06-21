@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- Automated test source file.
+- Covers teacher create, academic assignment, list, delete, both collection URL variants, and visibility of teacher profiles with a `TRAINER` primary role.
 
 ## DOX Scope
 

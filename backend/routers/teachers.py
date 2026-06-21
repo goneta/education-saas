@@ -5,7 +5,8 @@ from .. import localization, models, schemas, security, database, tenancy
 
 router = APIRouter(prefix="/teachers", tags=["Teachers"])
 
-@router.post("/", response_model=schemas.TeacherResponse)
+@router.post("", response_model=schemas.TeacherResponse)
+@router.post("/", response_model=schemas.TeacherResponse, include_in_schema=False)
 def register_teacher(
     teacher_in: schemas.TeacherCreate, 
     current_user: models.User = Depends(security.get_current_user),
@@ -75,11 +76,15 @@ def register_teacher(
         db.refresh(new_user)
         return new_user
         
-    except Exception as e:
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception:
         db.rollback()
         raise HTTPException(status_code=500, detail="Internal server error")
 
-@router.get("/", response_model=List[schemas.TeacherResponse])
+@router.get("", response_model=List[schemas.TeacherResponse])
+@router.get("/", response_model=List[schemas.TeacherResponse], include_in_schema=False)
 def list_teachers(
     skip: int = 0, 
     limit: int = 100, 
@@ -87,8 +92,9 @@ def list_teachers(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    query = db.query(models.User).join(models.TeacherProfile).\
-        filter(models.User.role == models.UserRole.TEACHER)
+    # The profile is the durable source of truth. Teaching staff can have a
+    # primary role such as EDUCATOR, TRAINER or INSTRUCTOR.
+    query = db.query(models.User).join(models.TeacherProfile)
     query = tenancy.apply_user_school_filter(query, current_user, school_id)
         
     teachers = query.offset(skip).limit(limit).all()
@@ -100,9 +106,8 @@ def get_teacher(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    teacher = db.query(models.User).filter(
-        models.User.id == teacher_id, 
-        models.User.role == models.UserRole.TEACHER
+    teacher = db.query(models.User).join(models.TeacherProfile).filter(
+        models.User.id == teacher_id,
     )
     teacher = tenancy.apply_user_school_filter(teacher, current_user).first()
     

@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- React/Next.js TypeScript component or page file. It participates in Next.js App Router routing.
+- Loads and displays the tenant-scoped teacher list and coordinates teacher create, edit, delete, and search actions.
 
 ## DOX Scope
 
@@ -15,8 +15,8 @@
 
 ## Maintenance Notes
 
-- Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
-- Keep the source file and this document in the same directory.
+- Uses the canonical `/teachers` collection endpoint without redirect.
+- API failures must be passed to the list component instead of silently rendering an empty result.
 
 ## Verification
 

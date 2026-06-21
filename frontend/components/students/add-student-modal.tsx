@@ -107,7 +107,7 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
                 throw new Error("Not authenticated. Please log in first.")
             }
 
-            const response = await fetch(`${API_BASE_URL}/students/`, {
+            const response = await fetch(`${API_BASE_URL}/students`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
