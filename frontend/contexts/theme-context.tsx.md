@@ -8,6 +8,7 @@
 
 - Provides TeducAI light/dark/system theme state to the frontend.
 - Applies the effective theme to `document.documentElement`, stores local preference, and synchronizes authenticated preference with `/account/preferences`.
+- Tracks live operating-system theme changes while system mode is selected.
 
 ## DOX Scope
 

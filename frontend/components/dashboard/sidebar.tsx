@@ -48,6 +48,8 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
     const router = useRouter()
     const locale = normalizeLocale(params.locale as string)
     const t = useTranslations("navigation")
+    const accountT = useTranslations("account")
+    const appT = useTranslations("app")
     const { token, user, logout } = useAuth()
 
     // State to track open sections. Initially empty means all closed? 
@@ -70,18 +72,18 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
 
     const sidebarItemClass = "flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left text-[16px] font-normal text-[#111827] transition hover:bg-[#F5F5F7] dark:text-[#f4f7fb] dark:hover:bg-[#30373d]"
     const accountLinks = [
-        { href: `/${locale}/dashboard/account/overview`, label: "Account Overview", icon: UserCircle },
-        { href: `/${locale}/dashboard/account/renewals`, label: "Manage Renewals", icon: RefreshCw },
-        { href: `/${locale}/dashboard/account/security`, label: "Security Details", icon: Lock },
-        { href: `/${locale}/dashboard/account/sessions`, label: "Active Sessions", icon: ShieldCheck },
-        { href: `/${locale}/dashboard/account/contact`, label: "Contact Details", icon: UserCircle },
-        { href: `/${locale}/dashboard/account/payment-methods`, label: "Payment Methods", icon: CreditCard },
-        { href: `/${locale}/dashboard/account/credit`, label: "Account Credit", icon: WalletCards },
-        { href: `/${locale}/dashboard/account/invoices`, label: "Invoices", icon: Receipt },
-        { href: `/${locale}/dashboard/account/preferences`, label: "Account Preferences", icon: Settings },
-        { href: `/${locale}/dashboard/account/email-notifications`, label: "Email Notifications", icon: Mail },
-        { href: `/${locale}/dashboard/account/team-members`, label: "Team Members", icon: Users },
-        { href: `/${locale}/dashboard/account/refer`, label: "Refer a Friend", icon: Share2 },
+        { href: `/${locale}/dashboard/account/overview`, label: accountT("overview"), icon: UserCircle },
+        { href: `/${locale}/dashboard/account/renewals`, label: accountT("renewals"), icon: RefreshCw },
+        { href: `/${locale}/dashboard/account/security`, label: accountT("security"), icon: Lock },
+        { href: `/${locale}/dashboard/account/sessions`, label: accountT("sessions"), icon: ShieldCheck },
+        { href: `/${locale}/dashboard/account/contact`, label: accountT("contact"), icon: UserCircle },
+        { href: `/${locale}/dashboard/account/payment-methods`, label: accountT("paymentMethods"), icon: CreditCard },
+        { href: `/${locale}/dashboard/account/credit`, label: accountT("credit"), icon: WalletCards },
+        { href: `/${locale}/dashboard/account/invoices`, label: accountT("invoices"), icon: Receipt },
+        { href: `/${locale}/dashboard/account/preferences`, label: accountT("preferences"), icon: Settings },
+        { href: `/${locale}/dashboard/account/email-notifications`, label: accountT("emailNotifications"), icon: Mail },
+        { href: `/${locale}/dashboard/account/team-members`, label: accountT("teamMembers"), icon: Users },
+        { href: `/${locale}/dashboard/account/refer`, label: accountT("refer"), icon: Share2 },
     ]
 
     const toggleSection = (title: string) => {
@@ -320,7 +322,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                                     <Link key={href} href={href} onClick={onNavigate} className={sidebarItemClass}><Icon className="h-5 w-5" />{label}</Link>
                                 ))}
                                 <Link href={`/${locale}/dashboard/help`} onClick={onNavigate} className={sidebarItemClass}><HelpCircle className="h-5 w-5" />Aide</Link>
-                                <button type="button" onClick={handleLogout} className={sidebarItemClass}><LogOut className="h-5 w-5" />Déconnexion</button>
+                                <button type="button" onClick={handleLogout} className={sidebarItemClass}><LogOut className="h-5 w-5" />{appT("logout")}</button>
                                 <button type="button" onClick={() => { setAddAccountOpen(true); setAccountMenuOpen(false) }} className={sidebarItemClass}><Users className="h-5 w-5" />Ajouter un compte</button>
                             </div>
                         </div>
@@ -341,7 +343,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
             )}
             {addAccountOpen && (
                 <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/30 p-4">
-                    <div className="w-full max-w-xl rounded-[28px] bg-white p-6 shadow-[0_28px_90px_rgba(15,23,42,0.25)]">
+                    <div className="w-full max-w-xl rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-[0_28px_90px_rgba(15,23,42,0.25)] dark:border-[#3b4248] dark:bg-[#202528]">
                         <div className="flex items-start justify-between gap-4">
                             <div>
                                 <h2 className="text-2xl font-semibold text-[#111827]">Ajouter un compte</h2>

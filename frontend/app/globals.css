@@ -30,6 +30,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: 210 12% 12%;
   --foreground: 210 20% 96%;
   --card: 210 10% 15%;
@@ -106,14 +107,37 @@
 
   .dark body {
     background:
-      radial-gradient(circle at 12% 8%, rgba(36, 101, 194, 0.16), transparent 28%),
-      radial-gradient(circle at 86% 12%, rgba(18, 145, 113, 0.1), transparent 26%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 28%),
       #1f2427;
     color: #f4f7fb;
   }
 
   .dark a {
     color: #58a6ff;
+  }
+
+  .dark ::selection {
+    background: rgba(88, 166, 255, 0.32);
+    color: #ffffff;
+  }
+
+  .dark * {
+    scrollbar-color: #4a535b #202528;
+  }
+
+  .dark *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  .dark *::-webkit-scrollbar-track {
+    background: #202528;
+  }
+
+  .dark *::-webkit-scrollbar-thumb {
+    border: 2px solid #202528;
+    border-radius: 999px;
+    background: #4a535b;
   }
 
   h1,
@@ -252,11 +276,52 @@
     border-color: #3b4248;
   }
 
-  .dark .apple-page-description,
-  .dark p,
-  .dark span,
-  .dark label {
-    color: inherit;
+  .dark .apple-page-description {
+    color: #b9c2cd;
+  }
+
+  .dark dialog,
+  .dark [role="dialog"],
+  .dark [role="menu"],
+  .dark [role="listbox"] {
+    border-color: #3b4248 !important;
+    background-color: #202528 !important;
+    color: #f4f7fb !important;
+  }
+
+  .dark thead {
+    background: #22282c;
+  }
+
+  .dark tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.018);
+  }
+
+  .dark button:disabled,
+  .dark input:disabled,
+  .dark select:disabled,
+  .dark textarea:disabled {
+    cursor: not-allowed;
+    opacity: 0.52;
+  }
+
+  .dark option {
+    background: #202528;
+    color: #f4f7fb;
+  }
+
+  .dark [class*="bg-blue-50"],
+  .dark [class*="bg-sky-50"] {
+    background-color: #243545 !important;
+  }
+
+  .dark [class*="bg-green-50"],
+  .dark [class*="bg-emerald-50"] {
+    background-color: #21372f !important;
+  }
+
+  .dark [class*="bg-red-50"] {
+    background-color: #3a2528 !important;
   }
 
   .apple-select {

@@ -8,6 +8,7 @@
 
 - Exposes authenticated account preferences, user notifications, cart management, and checkout initiation endpoints.
 - Supports saved light/dark theme preference, unread notification count, cart item CRUD, and checkout routing to platform or school payment records.
+- Notification read state remains user-scoped and audited.
 
 ## DOX Scope
 

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -59,7 +61,7 @@ def mark_notification_read(notification_id: int, current_user: models.User = Dep
     ).first()
     if not row:
         raise HTTPException(status_code=404, detail="Notification not found")
-    row.read_at = row.read_at or models.datetime.utcnow()
+    row.read_at = row.read_at or datetime.utcnow()
     audit.record_audit(db, action="account.notification.read", current_user=current_user, entity_type="notification_history", entity_id=row.id)
     db.commit()
     return {"status": "read"}

@@ -5,8 +5,8 @@ from typing import Iterable
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from .. import audit, models, schemas
-from . import ai_credits
+from .. import audit, crypto_utils, models, schemas
+from . import ai_credits, payment_gateway
 
 
 PLATFORM_ITEM_TYPES = {"ai_credits", "subscription", "premium_module"}
@@ -74,6 +74,12 @@ def checkout_cart(db: Session, user: models.User, payload: schemas.CheckoutReque
     items = db.query(models.CartItem).filter(models.CartItem.user_id == user.id).order_by(models.CartItem.created_at.asc()).all()
     if not items:
         raise HTTPException(status_code=400, detail="Cart is empty")
+    scopes = {item.provider_scope for item in items}
+    currencies = {item.currency.upper() for item in items}
+    if len(scopes) > 1:
+        raise HTTPException(status_code=400, detail="Platform and school purchases must be checked out separately")
+    if len(currencies) > 1:
+        raise HTTPException(status_code=400, detail="All cart items must use the same currency")
     platform_payments: list[models.PlatformPayment] = []
     school_payments: list[models.SchoolPayment] = []
     provider_metadata = {
@@ -127,11 +133,53 @@ def checkout_cart(db: Session, user: models.User, payload: schemas.CheckoutReque
             db.flush()
             school_payments.append(payment)
             audit.record_audit(db, action="school.payment.initiated_from_cart", current_user=user, entity_type="school_payment", entity_id=payment.reference, details={"amount": amount, "provider": payload.provider})
+
+    all_payments = [*platform_payments, *school_payments]
+    reference = all_payments[0].reference
+    total = sum(item.quantity * item.unit_amount for item in items)
+    title = items[0].title if len(items) == 1 else f"TeducAI checkout ({len(items)} items)"
+    provider_api_key = None
+    provider_merchant_id = None
+    if school_payments:
+        payment_account = db.query(models.SchoolPaymentAccount).filter(
+            models.SchoolPaymentAccount.school_id == user.school_id,
+            models.SchoolPaymentAccount.provider == payload.provider,
+            models.SchoolPaymentAccount.is_active.is_(True),
+        ).first()
+        if payment_account:
+            provider_api_key = crypto_utils.decrypt_secret(payment_account.api_key_encrypted)
+            provider_merchant_id = payment_account.merchant_id
+
+    session = payment_gateway.create_checkout_session(
+        provider=payload.provider,
+        reference=reference,
+        amount=total,
+        currency=items[0].currency,
+        title=title,
+        success_url=payload.success_url,
+        cancel_url=payload.cancel_url,
+        mobile_money_network=payload.mobile_money_network,
+        api_key=provider_api_key,
+        merchant_id=provider_merchant_id,
+    )
+    if session.status == "pending_configuration":
+        raise HTTPException(status_code=503, detail=session.provider_payload.get("message", "Payment provider is not configured"))
+    if session.status == "failed":
+        raise HTTPException(status_code=502, detail="Payment provider rejected the checkout request")
+
+    for payment in all_payments:
+        payment.provider_reference = session.provider_reference
+        payment.metadata_json = {
+            **(payment.metadata_json or {}),
+            "gateway_status": session.status,
+            "checkout_url": session.checkout_url,
+            "provider_response": session.provider_payload,
+        }
     for item in items:
         db.delete(item)
     return {
         "platform_payments": platform_payments,
         "school_payments": school_payments,
-        "checkout_url": None,
-        "status": "pending",
+        "checkout_url": session.checkout_url,
+        "status": session.status,
     }

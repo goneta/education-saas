@@ -6,7 +6,8 @@
 
 ## Purpose
 
-- React/Next.js TypeScript component or page file. It provides reusable UI behavior.
+- Owns dashboard navigation, collapsible module groups, and the bottom user account menu.
+- Exposes localized account destinations for overview, renewals, security, sessions, contact, payments, credit, invoices, preferences, notifications, team members, and referrals.
 
 ## DOX Scope
 
@@ -15,8 +16,8 @@
 
 ## Maintenance Notes
 
-- Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
-- Keep the source file and this document in the same directory.
+- Account labels must use the `account` translation namespace.
+- Preserve independent sidebar scrolling and dark-mode readability.
 
 ## Verification
 

@@ -8,6 +8,7 @@
 
 - Renders the account menu destination pages: overview, renewals, security, sessions, contact, payment methods, account credit, invoices, preferences, email notifications, team members, and referral.
 - Uses authenticated account preferences, notifications, and payment history APIs.
+- Uses the shared `account` translation namespace for section titles, descriptions, labels, and tables.
 
 ## DOX Scope
 

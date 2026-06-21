@@ -3,24 +3,25 @@
 import { useEffect, useMemo, useState } from "react"
 import type { ElementType } from "react"
 import { useParams } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { Bell, CreditCard, Lock, Receipt, RefreshCw, Share2, ShieldCheck, UserCircle, Users, WalletCards } from "lucide-react"
 import { API_BASE_URL } from "@/lib/config"
 import { useAuth } from "@/contexts/auth-context"
 import { useTheme } from "@/contexts/theme-context"
 
-const sectionCopy: Record<string, { title: string; description: string; icon: ElementType }> = {
-    overview: { title: "Account Overview", description: "Vue complète de votre compte, rôle, établissement et accès actifs.", icon: UserCircle },
-    renewals: { title: "Manage Renewals", description: "Suivez les renouvellements, plans et prochaines échéances.", icon: RefreshCw },
-    security: { title: "Security Details", description: "Contrôlez MFA, statut du compte et paramètres de sécurité.", icon: Lock },
-    sessions: { title: "Active Sessions", description: "Consultez les sessions actives et l'activité récente.", icon: ShieldCheck },
-    contact: { title: "Contact Details", description: "Gérez les informations de contact utilisées par TeducAI.", icon: UserCircle },
-    "payment-methods": { title: "Payment Methods", description: "Configurez Stripe, Djamo, CinetPay et Mobile Money.", icon: CreditCard },
-    credit: { title: "Account Credit", description: "Consultez vos crédits IA, soldes et transactions.", icon: WalletCards },
-    invoices: { title: "Invoices", description: "Retrouvez vos factures, reçus et paiements plateforme/établissement.", icon: Receipt },
-    preferences: { title: "Account Preferences", description: "Choisissez le thème, les préférences d'aide et la langue.", icon: UserCircle },
-    "email-notifications": { title: "Email Notifications", description: "Activez ou désactivez les notifications email.", icon: Bell },
-    "team-members": { title: "Team Members", description: "Consultez et gérez les membres de votre équipe selon permissions.", icon: Users },
-    refer: { title: "Refer a Friend", description: "Partagez TeducAI avec un établissement ou un collègue.", icon: Share2 },
+const sectionCopy: Record<string, { titleKey: string; descriptionKey: string; icon: ElementType }> = {
+    overview: { titleKey: "overview", descriptionKey: "overviewDescription", icon: UserCircle },
+    renewals: { titleKey: "renewals", descriptionKey: "renewalsDescription", icon: RefreshCw },
+    security: { titleKey: "security", descriptionKey: "securityDescription", icon: Lock },
+    sessions: { titleKey: "sessions", descriptionKey: "sessionsDescription", icon: ShieldCheck },
+    contact: { titleKey: "contact", descriptionKey: "contactDescription", icon: UserCircle },
+    "payment-methods": { titleKey: "paymentMethods", descriptionKey: "paymentMethodsDescription", icon: CreditCard },
+    credit: { titleKey: "credit", descriptionKey: "creditDescription", icon: WalletCards },
+    invoices: { titleKey: "invoices", descriptionKey: "invoicesDescription", icon: Receipt },
+    preferences: { titleKey: "preferences", descriptionKey: "preferencesDescription", icon: UserCircle },
+    "email-notifications": { titleKey: "emailNotifications", descriptionKey: "emailNotificationsDescription", icon: Bell },
+    "team-members": { titleKey: "teamMembers", descriptionKey: "teamMembersDescription", icon: Users },
+    refer: { titleKey: "refer", descriptionKey: "referDescription", icon: Share2 },
 }
 
 type ThemeMode = "light" | "dark" | "system"
@@ -44,6 +45,8 @@ type NotificationRow = {
 }
 
 export default function AccountSectionPage() {
+    const t = useTranslations("account")
+    const appT = useTranslations("app")
     const params = useParams()
     const section = String(params.section || "overview")
     const copy = sectionCopy[section] || sectionCopy.overview
@@ -72,10 +75,10 @@ export default function AccountSectionPage() {
     }, [token])
 
     const stats = useMemo(() => [
-        { label: "Rôle", value: user?.role || "-" },
-        { label: "Paiements", value: String(platformPayments.length + schoolPayments.length) },
-        { label: "Notifications", value: String(notifications.length) },
-    ], [user?.role, platformPayments.length, schoolPayments.length, notifications.length])
+        { label: t("role"), value: user?.role || "-" },
+        { label: t("payments"), value: String(platformPayments.length + schoolPayments.length) },
+        { label: appT("notifications"), value: String(notifications.length) },
+    ], [appT, t, user?.role, platformPayments.length, schoolPayments.length, notifications.length])
 
     const savePreferences = async (updates: Record<string, unknown>) => {
         if (!token) return
@@ -93,9 +96,9 @@ export default function AccountSectionPage() {
                 <div>
                     <div className="flex items-center gap-3">
                         <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-black text-white dark:bg-white dark:text-black"><Icon className="h-6 w-6" /></span>
-                        <h1 className="apple-page-title">{copy.title}</h1>
+                        <h1 className="apple-page-title">{t(copy.titleKey)}</h1>
                     </div>
-                    <p className="apple-page-description">{copy.description}</p>
+                    <p className="apple-page-description">{t(copy.descriptionKey)}</p>
                 </div>
             </div>
 
@@ -112,25 +115,25 @@ export default function AccountSectionPage() {
                 {section === "preferences" || section === "email-notifications" ? (
                     <div className="grid gap-4 md:grid-cols-2">
                         <label className="grid gap-2 text-sm font-medium">
-                            Thème
+                            {t("theme")}
                             <select className="apple-select" value={theme} onChange={event => { setTheme(event.target.value as ThemeMode); void savePreferences({ theme: event.target.value }) }}>
-                                <option value="light">Light Mode</option>
-                                <option value="dark">Dark Mode</option>
-                                <option value="system">Système</option>
+                                <option value="light">{t("lightMode")}</option>
+                                <option value="dark">{t("darkMode")}</option>
+                                <option value="system">{t("systemTheme")}</option>
                             </select>
                         </label>
                         <label className="grid gap-2 text-sm font-medium">
-                            Notifications email
+                            {t("emailNotifications")}
                             <select className="apple-select" value={preferences?.email_notifications_enabled === false ? "off" : "on"} onChange={event => void savePreferences({ email_notifications_enabled: event.target.value === "on" })}>
-                                <option value="on">Activées</option>
-                                <option value="off">Désactivées</option>
+                                <option value="on">{t("enabled")}</option>
+                                <option value="off">{t("disabled")}</option>
                             </select>
                         </label>
                     </div>
                 ) : section === "invoices" || section === "payment-methods" || section === "renewals" ? (
                     <div className="overflow-x-auto">
                         <table className="apple-table">
-                            <thead><tr><th>Référence</th><th>Type</th><th>Montant</th><th>Statut</th></tr></thead>
+                            <thead><tr><th>{t("reference")}</th><th>{t("type")}</th><th>{t("amount")}</th><th>{t("status")}</th></tr></thead>
                             <tbody>
                                 {[...platformPayments, ...schoolPayments].map(row => (
                                     <tr key={`${row.reference}-${row.id}`}><td>{row.reference}</td><td>{row.payment_type}</td><td>{row.amount?.toLocaleString()} {row.currency}</td><td>{row.status}</td></tr>
@@ -140,10 +143,10 @@ export default function AccountSectionPage() {
                     </div>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2">
-                        <Info label="Nom" value={user?.full_name || "-"} />
-                        <Info label="Email" value={user?.email || "-"} />
-                        <Info label="ID utilisateur" value={String(user?.id || "-")} />
-                        <Info label="Établissement" value={String(user?.school_id || "Plateforme")} />
+                        <Info label={t("name")} value={user?.full_name || "-"} />
+                        <Info label={t("email")} value={user?.email || "-"} />
+                        <Info label={t("userId")} value={String(user?.id || "-")} />
+                        <Info label={t("school")} value={String(user?.school_id || t("platform"))} />
                     </div>
                 )}
             </section>

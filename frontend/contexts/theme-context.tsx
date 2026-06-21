@@ -39,6 +39,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }, [])
 
     useEffect(() => {
+        if (theme !== "system") return
+        const media = window.matchMedia("(prefers-color-scheme: dark)")
+        const syncSystemTheme = () => setEffectiveTheme(applyTheme("system"))
+        media.addEventListener("change", syncSystemTheme)
+        return () => media.removeEventListener("change", syncSystemTheme)
+    }, [theme])
+
+    useEffect(() => {
         if (!token) return
         fetch(`${API_BASE_URL}/account/preferences`, { headers: { Authorization: `Bearer ${token}` } })
             .then(response => response.ok ? response.json() : null)

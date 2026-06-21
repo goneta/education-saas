@@ -18,6 +18,7 @@
 - Preserve RBAC-aware visibility and API enforcement expectations; frontend hiding is not a substitute for backend authorization.
 - Avoid committing generated build logs or local `.next` artifacts.
 - Global light/dark theme behavior is owned by `frontend/contexts/theme-context.tsx` and must stay available outside dashboard-only components.
+- Dashboard top-bar notifications, theme toggle, cart, checkout, and bottom user account destinations must remain localized and backed by authenticated APIs.
 
 # Work Guidance
 

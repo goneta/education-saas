@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- React/Next.js TypeScript component or page file. It provides reusable UI behavior.
+- Owns dashboard search, active school name, notification center, persistent theme toggle, cart popover, checkout navigation, and locale switching.
 
 ## DOX Scope
 
@@ -15,8 +15,8 @@
 
 ## Maintenance Notes
 
-- Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
-- Keep the source file and this document in the same directory.
+- Notification and cart controls use authenticated `/account` APIs.
+- Shared labels must use the translation catalogs.
 
 ## Verification
 

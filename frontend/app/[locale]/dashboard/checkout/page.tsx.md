@@ -8,6 +8,7 @@
 
 - Checkout page for items collected in the TeducAI cart.
 - Lets users choose Stripe, Djamo, or CinetPay Mobile Money networks and creates backend checkout records.
+- Redirects to the provider checkout URL when one is returned.
 
 ## DOX Scope
 
@@ -19,6 +20,7 @@
 - Keep platform and school payment wording clear.
 - Keep payment providers aligned with `CheckoutRequest` backend schema.
 - Preserve locale-aware navigation after successful checkout.
+- Keep visible copy in the `checkout` and `app` translation namespaces.
 
 ## Verification
 

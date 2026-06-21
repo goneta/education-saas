@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { CreditCard, Smartphone } from "lucide-react"
 import { API_BASE_URL } from "@/lib/config"
 import { useAuth } from "@/contexts/auth-context"
@@ -23,6 +24,8 @@ type Cart = {
 }
 
 export default function CheckoutPage() {
+    const t = useTranslations("checkout")
+    const appT = useTranslations("app")
     const { token } = useAuth()
     const router = useRouter()
     const params = useParams()
@@ -46,7 +49,7 @@ export default function CheckoutPage() {
 
     const checkout = async () => {
         if (!token) return
-        setStatus("Création de la transaction...")
+        setStatus(t("creating"))
         const res = await fetch(`${API_BASE_URL}/account/checkout`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -58,39 +61,44 @@ export default function CheckoutPage() {
             }),
         })
         if (res.ok) {
-            setStatus("Paiement créé. Vous pouvez suivre son statut dans Factures.")
-            window.setTimeout(() => router.push(`/${locale}/dashboard/account/invoices`), 900)
+            const result = await res.json()
+            setStatus(t("created"))
+            if (result.checkout_url) {
+                window.location.assign(result.checkout_url)
+            } else {
+                window.setTimeout(() => router.push(`/${locale}/dashboard/account/invoices`), 900)
+            }
         } else {
             const text = await res.text()
-            setStatus(`Erreur checkout: ${text.slice(0, 180)}`)
+            setStatus(t("error", { message: text.slice(0, 180) }))
         }
     }
 
     return (
         <div className="apple-page">
             <div>
-                <h1 className="apple-page-title">Checkout</h1>
-                <p className="apple-page-description">Choisissez le mode de paiement. Les paiements plateforme vont vers Thunderfam Group; les paiements scolaires vont vers le compte de l&apos;établissement.</p>
+                <h1 className="apple-page-title">{t("title")}</h1>
+                <p className="apple-page-description">{t("description")}</p>
             </div>
             <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
                 <section className="rounded-[28px] border border-[#E5E7EB] bg-white p-6 dark:border-[#3b4248] dark:bg-[#202528]">
-                    <h2 className="text-xl font-semibold">Articles</h2>
+                    <h2 className="text-xl font-semibold">{t("items")}</h2>
                     <div className="mt-4 space-y-3">
                         {cart.items.map((item) => (
                             <div key={item.id} className="flex items-center justify-between rounded-2xl bg-[#F6F7F9] p-4 dark:bg-[#2a3035]">
-                                <div><p className="font-semibold">{item.title}</p><p className="text-sm text-[#6B7280]">Quantité {item.quantity}</p></div>
+                                <div><p className="font-semibold">{item.title}</p><p className="text-sm text-[#6B7280]">{t("quantity", { quantity: item.quantity })}</p></div>
                                 <p className="font-semibold">{item.line_total.toLocaleString()} {item.currency}</p>
                             </div>
                         ))}
-                        {!cart.items.length && <p className="rounded-2xl bg-[#F6F7F9] p-6 text-center text-[#6B7280] dark:bg-[#2a3035]">Votre panier est vide.</p>}
+                        {!cart.items.length && <p className="rounded-2xl bg-[#F6F7F9] p-6 text-center text-[#6B7280] dark:bg-[#2a3035]">{appT("emptyCart")}</p>}
                     </div>
                 </section>
                 <aside className="rounded-[28px] border border-[#E5E7EB] bg-white p-6 dark:border-[#3b4248] dark:bg-[#202528]">
-                    <h2 className="text-xl font-semibold">Paiement</h2>
+                    <h2 className="text-xl font-semibold">{t("payment")}</h2>
                     <div className="mt-4 grid gap-3">
-                        <button type="button" onClick={() => setProvider("stripe")} className={`flex items-center gap-3 rounded-2xl border p-4 text-left ${provider === "stripe" ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black" : ""}`}><CreditCard className="h-5 w-5" />Stripe - carte bancaire</button>
-                        <button type="button" onClick={() => setProvider("djamo")} className={`flex items-center gap-3 rounded-2xl border p-4 text-left ${provider === "djamo" ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black" : ""}`}><CreditCard className="h-5 w-5" />Djamo - carte bancaire</button>
-                        <button type="button" onClick={() => setProvider("cinetpay")} className={`flex items-center gap-3 rounded-2xl border p-4 text-left ${provider === "cinetpay" ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black" : ""}`}><Smartphone className="h-5 w-5" />CinetPay Mobile Money</button>
+                        <button type="button" onClick={() => setProvider("stripe")} className={`flex items-center gap-3 rounded-2xl border p-4 text-left ${provider === "stripe" ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black" : ""}`}><CreditCard className="h-5 w-5" />{t("stripe")}</button>
+                        <button type="button" onClick={() => setProvider("djamo")} className={`flex items-center gap-3 rounded-2xl border p-4 text-left ${provider === "djamo" ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black" : ""}`}><CreditCard className="h-5 w-5" />{t("djamo")}</button>
+                        <button type="button" onClick={() => setProvider("cinetpay")} className={`flex items-center gap-3 rounded-2xl border p-4 text-left ${provider === "cinetpay" ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black" : ""}`}><Smartphone className="h-5 w-5" />{t("cinetpay")}</button>
                     </div>
                     {provider === "cinetpay" && (
                         <select className="apple-select mt-4" value={network} onChange={event => setNetwork(event.target.value)}>
@@ -100,8 +108,8 @@ export default function CheckoutPage() {
                             <option value="moov_money">Moov Money</option>
                         </select>
                     )}
-                    <div className="mt-6 flex items-center justify-between border-t border-[#E5E7EB] pt-4 dark:border-[#3b4248]"><span>Total</span><strong>{cart.total.toLocaleString()} {cart.currency}</strong></div>
-                    <button type="button" disabled={!cart.items.length} onClick={checkout} className="mt-4 w-full rounded-full bg-black px-4 py-3 font-semibold text-white disabled:opacity-50 dark:bg-white dark:text-black">Payer maintenant</button>
+                    <div className="mt-6 flex items-center justify-between border-t border-[#E5E7EB] pt-4 dark:border-[#3b4248]"><span>{appT("total")}</span><strong>{cart.total.toLocaleString()} {cart.currency}</strong></div>
+                    <button type="button" disabled={!cart.items.length} onClick={checkout} className="mt-4 w-full rounded-full bg-black px-4 py-3 font-semibold text-white disabled:opacity-50 dark:bg-white dark:text-black">{t("payNow")}</button>
                     {status && <p className="mt-3 text-sm text-[#6B7280]">{status}</p>}
                 </aside>
             </div>

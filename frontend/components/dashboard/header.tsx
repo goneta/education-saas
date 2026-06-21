@@ -34,7 +34,7 @@ export function Header({ isResizablePanel = false }: HeaderProps) {
             setSchoolName("")
             return
         }
-        setSchoolName(`Établissement #${user.school_id}`)
+        setSchoolName(t("schoolFallback", { id: user.school_id }))
         let cancelled = false
         fetch(`${API_BASE_URL}/system/school-settings`, {
             headers: { Authorization: `Bearer ${token}` },
@@ -47,7 +47,7 @@ export function Header({ isResizablePanel = false }: HeaderProps) {
         return () => {
             cancelled = true
         }
-    }, [token, user?.school_id])
+    }, [t, token, user?.school_id])
 
     const loadTopbarData = useCallback(() => {
         if (!token) return
@@ -92,6 +92,15 @@ export function Header({ isResizablePanel = false }: HeaderProps) {
         loadTopbarData()
     }
 
+    const markNotificationRead = async (notificationId: number) => {
+        if (!token) return
+        await fetch(`${API_BASE_URL}/account/notifications/${notificationId}/read`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+        })
+        loadTopbarData()
+    }
+
     return (
         <header className={cn(
             "sticky top-0 z-30 flex h-14 shrink-0 items-center gap-4 border-b border-[#E5E7EB] bg-white px-4 lg:h-[60px] lg:px-6 dark:border-[#3a4248] dark:bg-[#1f2427]",
@@ -116,25 +125,25 @@ export function Header({ isResizablePanel = false }: HeaderProps) {
                 )}
             </div>
             <div className="relative">
-                <button type="button" onClick={() => setNotificationsOpen(prev => !prev)} className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#555] transition hover:bg-[#F5F5F7] dark:text-white dark:hover:bg-[#2b3136]" aria-label="Notifications">
+                <button type="button" onClick={() => { setNotificationsOpen(prev => !prev); setCartOpen(false) }} className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#555] transition hover:bg-[#F5F5F7] dark:text-white dark:hover:bg-[#2b3136]" aria-label={t("notifications")} aria-expanded={notificationsOpen}>
                     <Bell className="h-5 w-5" />
                     {unreadCount > 0 && <span className="absolute -right-0.5 -top-1 rounded-full bg-[#0A84FF] px-1.5 py-0.5 text-[11px] font-bold text-white">{unreadCount}</span>}
                 </button>
                 {notificationsOpen && (
                     <div className="absolute right-0 top-12 z-[1200] w-[340px] rounded-[22px] border border-[#E5E7EB] bg-white p-3 shadow-[0_24px_80px_rgba(15,23,42,0.22)] dark:border-[#3b4248] dark:bg-[#202528]">
-                        <h3 className="px-2 pb-2 text-base font-semibold text-[#111827] dark:text-white">Notifications</h3>
+                        <h3 className="px-2 pb-2 text-base font-semibold text-[#111827] dark:text-white">{t("notifications")}</h3>
                         <div className="max-h-[360px] space-y-2 overflow-y-auto">
                             {notifications.length ? notifications.map(item => (
-                                <div key={item.id} className="rounded-2xl bg-[#F6F7F9] p-3 text-sm dark:bg-[#2a3035]">
-                                    <p className="font-semibold">{item.subject || "Notification"}</p>
+                                <button type="button" key={item.id} onClick={() => void markNotificationRead(item.id)} className={cn("block w-full rounded-2xl p-3 text-left text-sm transition hover:bg-[#EEF1F4] dark:hover:bg-[#343b41]", item.read_at ? "bg-[#F6F7F9] dark:bg-[#2a3035]" : "bg-[#EAF4FF] dark:bg-[#243545]")}>
+                                    <p className="font-semibold">{item.subject || t("notification")}</p>
                                     <p className="mt-1 text-[#6B7280] dark:text-[#b9c2cd]">{item.message}</p>
-                                </div>
-                            )) : <p className="px-2 py-6 text-center text-sm text-[#6B7280]">Aucune notification.</p>}
+                                </button>
+                            )) : <p className="px-2 py-6 text-center text-sm text-[#6B7280]">{t("noNotifications")}</p>}
                         </div>
                     </div>
                 )}
             </div>
-            <button type="button" onClick={toggleTheme} className="relative flex h-9 w-[76px] items-center rounded-full border border-[#D1D5DB] bg-white px-1 transition dark:border-[#3b4248] dark:bg-[#2a3035]" aria-label="Changer de thème">
+            <button type="button" onClick={toggleTheme} className="relative flex h-9 w-[76px] items-center rounded-full border border-[#D1D5DB] bg-white px-1 transition dark:border-[#3b4248] dark:bg-[#2a3035]" aria-label={t("themeToggle")} title={t("themeToggle")}>
                 <span className={cn("absolute left-2 text-[#555] transition dark:text-white", effectiveTheme === "dark" ? "opacity-100" : "opacity-0")}><Sun className="h-4 w-4" /></span>
                 <span className={cn("absolute right-2 text-[#555] transition dark:text-white", effectiveTheme === "dark" ? "opacity-0" : "opacity-100")}><Moon className="h-4 w-4" /></span>
                 <span className={cn("relative z-10 flex h-7 w-7 items-center justify-center rounded-full transition", effectiveTheme === "dark" ? "translate-x-9 bg-white text-black" : "translate-x-0 bg-[#666] text-white")}>
@@ -142,13 +151,13 @@ export function Header({ isResizablePanel = false }: HeaderProps) {
                 </span>
             </button>
             <div className="relative">
-                <button type="button" onClick={() => setCartOpen(prev => !prev)} className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#555] transition hover:bg-[#F5F5F7] dark:text-white dark:hover:bg-[#2b3136]" aria-label="Panier">
+                <button type="button" onClick={() => { setCartOpen(prev => !prev); setNotificationsOpen(false) }} className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#555] transition hover:bg-[#F5F5F7] dark:text-white dark:hover:bg-[#2b3136]" aria-label={t("cart")} aria-expanded={cartOpen}>
                     <ShoppingBasket className="h-5 w-5" />
                     {cart.items.length > 0 && <span className="absolute -right-0.5 -top-1 rounded-full bg-black px-1.5 py-0.5 text-[11px] font-bold text-white dark:bg-white dark:text-black">{cart.items.length}</span>}
                 </button>
                 {cartOpen && (
                     <div className="absolute right-0 top-12 z-[1200] w-[380px] rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-[0_24px_80px_rgba(15,23,42,0.22)] dark:border-[#3b4248] dark:bg-[#202528]">
-                        <h3 className="text-base font-semibold text-[#111827] dark:text-white">Panier</h3>
+                        <h3 className="text-base font-semibold text-[#111827] dark:text-white">{t("cart")}</h3>
                         <div className="mt-3 max-h-[360px] space-y-2 overflow-y-auto">
                             {cart.items.length ? cart.items.map(item => (
                                 <div key={item.id} className="rounded-2xl bg-[#F6F7F9] p-3 dark:bg-[#2a3035]">
@@ -157,7 +166,7 @@ export function Header({ isResizablePanel = false }: HeaderProps) {
                                             <p className="font-semibold">{item.title}</p>
                                             <p className="text-sm text-[#6B7280] dark:text-[#b9c2cd]">{item.line_total.toLocaleString()} {item.currency}</p>
                                         </div>
-                                        <button type="button" onClick={() => removeCartItem(item.id)} className="rounded-full p-2 hover:bg-white/70 dark:hover:bg-black/20" aria-label="Supprimer"><Trash2 className="h-4 w-4" /></button>
+                                        <button type="button" onClick={() => removeCartItem(item.id)} className="rounded-full p-2 hover:bg-white/70 dark:hover:bg-black/20" aria-label={t("remove")} title={t("remove")}><Trash2 className="h-4 w-4" /></button>
                                     </div>
                                     <div className="mt-2 flex items-center gap-2">
                                         <button type="button" onClick={() => updateQuantity(item.id, item.quantity - 1)} className="h-8 w-8 rounded-full border">-</button>
@@ -165,13 +174,13 @@ export function Header({ isResizablePanel = false }: HeaderProps) {
                                         <button type="button" onClick={() => updateQuantity(item.id, item.quantity + 1)} className="h-8 w-8 rounded-full border">+</button>
                                     </div>
                                 </div>
-                            )) : <p className="py-6 text-center text-sm text-[#6B7280]">Votre panier est vide.</p>}
+                            )) : <p className="py-6 text-center text-sm text-[#6B7280]">{t("emptyCart")}</p>}
                         </div>
                         <div className="mt-4 flex items-center justify-between border-t border-[#E5E7EB] pt-3 dark:border-[#3b4248]">
-                            <span className="font-semibold">Total</span>
+                            <span className="font-semibold">{t("total")}</span>
                             <span className="font-bold">{cart.total.toLocaleString()} {cart.currency}</span>
                         </div>
-                        <button type="button" disabled={!cart.items.length} onClick={() => router.push(`/${locale}/dashboard/checkout`)} className="mt-3 w-full rounded-full bg-black px-4 py-3 font-semibold text-white disabled:opacity-50 dark:bg-white dark:text-black">Passer au checkout</button>
+                        <button type="button" disabled={!cart.items.length} onClick={() => router.push(`/${locale}/dashboard/checkout`)} className="mt-3 w-full rounded-full bg-black px-4 py-3 font-semibold text-white disabled:opacity-50 dark:bg-white dark:text-black">{t("checkout")}</button>
                     </div>
                 )}
             </div>

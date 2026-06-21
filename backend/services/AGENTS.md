@@ -11,6 +11,7 @@
 - Services that handle secrets must encrypt, mask, or avoid returning them.
 - Services that mutate finance, AI credits, files, notifications, or tenant data must be deterministic and auditable through their callers.
 - Provider integrations should tolerate missing credentials and report actionable failures.
+- Checkout provider integrations must never mark payments successful before an authenticated provider webhook confirms the transaction.
 
 # Work Guidance
 

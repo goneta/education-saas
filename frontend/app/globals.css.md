@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- Stylesheet for frontend presentation. It participates in Next.js App Router routing.
+- Owns shared light/dark tokens and global presentation for pages, cards, tables, forms, dialogs, menus, status surfaces, and scrollbars.
 
 ## DOX Scope
 
@@ -15,8 +15,7 @@
 
 ## Maintenance Notes
 
-- Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
-- Keep the source file and this document in the same directory.
+- Dark mode should rely on shared variables and selectors instead of route-specific overrides.
 
 ## Verification
 

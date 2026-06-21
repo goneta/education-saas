@@ -77,6 +77,7 @@ Default section order:
 ## User Preferences
 
 - When the user requests a durable behavior change, record it here or in the relevant child AGENTS.md.
+- Continue implementation through verification and closeout without repeatedly asking for confirmation; only surface approvals that are technically unavoidable for protected external actions.
 - Keep local database artifacts such as `education_saas.db` out of normal code commits unless the user explicitly asks to version them.
 - Source files in the project root, `backend/`, `frontend/`, `alembic/`, and their indexed subtrees should have sibling Markdown documentation named with `.md` appended to the full filename, such as `main.py.md` or `page.tsx.md`.
 

@@ -21,6 +21,7 @@
 
 - Keep `down_revision` aligned with the migration chain.
 - `school_memberships` stores durable school transfer/history records and should not be replaced by destructive user updates.
+- Upgrade operations are idempotent for columns, tables, and indexes so partially migrated SQLite/local databases can continue to head safely.
 
 ## Verification
 
