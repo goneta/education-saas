@@ -24,6 +24,8 @@
 - Existing table actions should remain consolidated into one standardized action column: print, view, download, edit, delete.
 - Containers marked `data-teducai-collapsible="false"` are never auto-collapsed; `data-teducai-default-open="true"` starts an enhanced section open.
 - Runtime-injected section, action, and download-menu elements include explicit dark-theme styles to avoid white-on-white content.
+- Edit/delete icons are injected only when the row exposes a real corresponding action; unavailable synthetic actions are not shown.
+- Shared promise-based confirmations are rendered here for dashboard modules and bulk deletion.
 
 ## Verification
 

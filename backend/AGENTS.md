@@ -19,6 +19,8 @@
 - The system super administrator bootstrap must stay idempotent and shared between CLI and HTTP entrypoints.
 - Use `backend.tenancy` helpers for school-scoped routes that support both global `SUPER_ADMIN` access and school-local users.
 - Cash payments and AI credit movements must preserve payment method, validator, internal reference, wallet balances, paired transactions, and audit history.
+- School profile edits, logo uploads, subscriptions, user administration, and RBAC changes must persist through audited tenant-scoped APIs; paid subscriptions remain pending until payment confirmation.
+- User deletion is soft deletion so referenced academic, financial, and audit history remains intact.
 
 # Work Guidance
 

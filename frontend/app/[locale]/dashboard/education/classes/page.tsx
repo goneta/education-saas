@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { requestConfirmation } from "@/lib/confirmation"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -139,7 +140,7 @@ export default function ClassesPage() {
     }
 
     const handleDelete = async (id: number) => {
-        if (!confirm("Are you sure you want to delete this class?")) return
+        if (!await requestConfirmation({ title: "Supprimer cette classe", description: "Cette action est irréversible si la classe n'est pas protégée par des données liées.", confirmLabel: "Supprimer définitivement", destructive: true })) return
 
         try {
             const res = await fetch(`${API_BASE_URL}/education/classes/${id}`, {

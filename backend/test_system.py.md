@@ -21,3 +21,9 @@
 ## Verification
 
 - python -m py_compile backend\models.py backend\schemas.py backend\main.py; python -m pytest backend when relevant
+
+## Coverage
+
+- Verifies persistent school profile updates and localization defaults.
+- Verifies Free activation and paid subscription pending-payment persistence.
+- Verifies tenant-scoped user editing, multi-role assignment, soft deletion, and unique role catalog output.

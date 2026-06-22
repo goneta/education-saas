@@ -6,6 +6,7 @@ import { BadgeCheck, Banknote, BrainCircuit, CreditCard, Gift, Landmark, Plus, R
 import { API_BASE_URL } from "@/lib/config"
 import { useAuth } from "@/contexts/auth-context"
 import { normalizeLocale } from "@/lib/i18n"
+import { requestConfirmation } from "@/lib/confirmation"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface AIWallet {
@@ -529,7 +530,7 @@ export default function AICreditsPage() {
     }
 
     const revokeAllocation = async (allocationId: number) => {
-        if (!token || !confirm("Révoquer cette allocation et restituer les crédits non consommés à l'établissement ?")) return
+        if (!token || !await requestConfirmation({ title: "Révoquer cette allocation", description: "Les crédits non consommés seront restitués à l'établissement. Cette opération sera auditée.", confirmLabel: "Révoquer l'allocation", destructive: true })) return
         const response = await fetch(`${API_BASE_URL}/school/ai/allocations/${allocationId}`, { method: "DELETE", headers })
         const data = await response.json().catch(() => null)
         setMessage(response.ok ? "Allocation révoquée et solde non consommé restitué." : data?.detail || "Révocation impossible.")

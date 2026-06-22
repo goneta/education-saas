@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { requestConfirmation } from "@/lib/confirmation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -208,7 +209,7 @@ export default function FeesPage() {
     }
 
     const handleDelete = async (fee: Fee) => {
-        if (!confirm(`Supprimer le frais "${fee.title}" ? Cette action est definitive.`)) return
+        if (!await requestConfirmation({ title: "Supprimer ce frais", description: `Le frais « ${fee.title} » sera supprimé s'il n'est associé à aucun paiement protégé.`, confirmLabel: "Supprimer définitivement", destructive: true })) return
         try {
             const res = await fetch(`${API_BASE_URL}/finance/fees/${fee.id}`, {
                 method: "DELETE",

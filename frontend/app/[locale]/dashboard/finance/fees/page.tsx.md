@@ -18,6 +18,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- Fee deletion uses the shared TeducAI confirmation dialog before calling the audited API.
 
 ## Verification
 

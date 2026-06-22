@@ -6,6 +6,8 @@ import { CircleHelp, X } from "lucide-react"
 import { API_BASE_URL } from "@/lib/config"
 import { useAuth } from "@/contexts/auth-context"
 import { normalizeLocale } from "@/lib/i18n"
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
+import type { ConfirmationRequest } from "@/lib/confirmation"
 
 type HelpMode = "page" | "modal" | "drawer"
 
@@ -219,6 +221,12 @@ function clickExistingAction(row: HTMLTableRowElement, patterns: RegExp[]) {
     return Boolean(target)
 }
 
+function hasExistingAction(row: HTMLTableRowElement, patterns: RegExp[]) {
+    return Array.from(row.querySelectorAll<HTMLButtonElement | HTMLAnchorElement>("button,a"))
+        .filter(element => !element.dataset.teducaiAction)
+        .some(element => patterns.some(pattern => pattern.test(`${element.textContent || ""} ${element.getAttribute("title") || ""} ${element.getAttribute("aria-label") || ""}`)))
+}
+
 function directCells(row: HTMLTableRowElement) {
     return Array.from(row.children).filter((cell): cell is HTMLTableCellElement => cell instanceof HTMLTableCellElement)
 }
@@ -418,6 +426,8 @@ export function DashboardUxEnhancer() {
     const [helpMode, setHelpMode] = useState<HelpMode>("page")
     const [selectedCount, setSelectedCount] = useState(0)
     const [helpFrame, setHelpFrame] = useState<string | null>(null)
+    const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
+    const [confirmationRequest, setConfirmationRequest] = useState<(ConfirmationRequest & { resolve: (value: boolean) => void }) | null>(null)
 
     const [moduleKey, helpSection] = useMemo(() => {
         const match = MODULE_BY_PATH.find(([pattern]) => pattern.test(pathname || ""))
@@ -476,7 +486,12 @@ export function DashboardUxEnhancer() {
                 const cell = document.createElement("td")
                 cell.dataset.teducaiActionCell = "true"
                 cell.className = "px-3 py-2 text-right"
-                const actions = Object.entries(ACTIONS).filter(([, action]) => can(action.permission))
+                const actions = Object.entries(ACTIONS).filter(([key, action]) => {
+                    if (!can(action.permission)) return false
+                    if (key === "edit") return hasExistingAction(row, [/edit/i, /modifier/i])
+                    if (key === "delete") return hasExistingAction(row, [/delete/i, /supprimer/i, /trash/i])
+                    return true
+                })
                 cell.innerHTML = `<div class="inline-flex items-center gap-1 rounded-full bg-white/80 p-1">${actions.map(([key, action]) => {
                     if (key === "download") {
                         return `<span class="relative inline-flex"><button type="button" data-teducai-action="${key}" title="${action.title}" class="teducai-row-action">${ICONS[action.icon]}</button><span data-teducai-download-menu class="hidden absolute right-0 top-9 z-[1300] w-32 rounded-2xl border border-[#E5E7EB] bg-white p-1 text-left text-xs shadow-xl"><button data-teducai-export="pdf" class="block w-full rounded-xl px-3 py-2 hover:bg-[#F5F5F7]">PDF</button><button data-teducai-export="csv" class="block w-full rounded-xl px-3 py-2 hover:bg-[#F5F5F7]">CSV</button><button data-teducai-export="xlsx" class="block w-full rounded-xl px-3 py-2 hover:bg-[#F5F5F7]">Excel</button></span></span>`
@@ -508,6 +523,15 @@ export function DashboardUxEnhancer() {
         if (main) observer.observe(main, { childList: true, subtree: true })
         return () => observer.disconnect()
     }, [enhanceTables, pathname])
+
+    useEffect(() => {
+        const receiveConfirmation = (event: Event) => {
+            const detail = (event as CustomEvent<ConfirmationRequest & { resolve: (value: boolean) => void }>).detail
+            if (detail) setConfirmationRequest(detail)
+        }
+        window.addEventListener("teducai:confirm", receiveConfirmation)
+        return () => window.removeEventListener("teducai:confirm", receiveConfirmation)
+    }, [])
 
     useEffect(() => {
         const onClick = (event: MouseEvent) => {
@@ -546,11 +570,8 @@ export function DashboardUxEnhancer() {
             if (action === "print") printRow(row)
             if (action === "view") showRowDetails(row)
             if (action === "download") button.parentElement?.querySelector("[data-teducai-download-menu]")?.classList.toggle("hidden")
-            if (action === "edit" && !clickExistingAction(row, [/edit/i, /modifier/i])) alert("Aucun formulaire de modification direct n'est disponible pour cette ligne.")
-            if (action === "delete") {
-                if (!confirm("Confirmer la suppression de cet élément ? Cette action sera auditée si le module backend autorise la suppression.")) return
-                if (!clickExistingAction(row, [/delete/i, /supprimer/i, /trash/i])) alert("Suppression impossible: élément protégé ou action backend non disponible pour ce module.")
-            }
+            if (action === "edit") clickExistingAction(row, [/edit/i, /modifier/i])
+            if (action === "delete") clickExistingAction(row, [/delete/i, /supprimer/i, /trash/i])
         }
         document.addEventListener("click", onClick)
         const onKeyDown = (event: KeyboardEvent) => {
@@ -579,12 +600,40 @@ export function DashboardUxEnhancer() {
     const bulkExport = (format: "pdf" | "csv" | "xlsx") => bulkRows().forEach(row => exportRow(row, format))
     const bulkPrint = () => bulkRows().forEach(printRow)
     const bulkDelete = () => {
-        if (!can("delete") || !confirm(`Supprimer ${selectedCount} élément(s) sélectionné(s) ?`)) return
+        if (!can("delete")) return
+        setConfirmBulkDelete(true)
+    }
+    const confirmSelectedDeletion = () => {
         bulkRows().forEach(row => clickExistingAction(row, [/delete/i, /supprimer/i, /trash/i]))
+        setConfirmBulkDelete(false)
     }
 
     return (
         <>
+            <ConfirmationDialog
+                open={confirmBulkDelete}
+                onOpenChange={setConfirmBulkDelete}
+                title="Supprimer les éléments sélectionnés"
+                description={`Vous allez demander la suppression définitive de ${selectedCount} élément(s). Chaque module appliquera ses règles métier et ses permissions.`}
+                confirmLabel="Supprimer définitivement"
+                destructive
+                onConfirm={confirmSelectedDeletion}
+            />
+            <ConfirmationDialog
+                open={Boolean(confirmationRequest)}
+                onOpenChange={open => {
+                    if (!open && confirmationRequest) confirmationRequest.resolve(false)
+                    if (!open) setConfirmationRequest(null)
+                }}
+                title={confirmationRequest?.title || "Confirmer l'action"}
+                description={confirmationRequest?.description || ""}
+                confirmLabel={confirmationRequest?.confirmLabel}
+                destructive={confirmationRequest?.destructive}
+                onConfirm={() => {
+                    confirmationRequest?.resolve(true)
+                    setConfirmationRequest(null)
+                }}
+            />
             <style>{`
                 .teducai-row-action{display:inline-flex;height:32px;width:32px;align-items:center;justify-content:center;border-radius:9999px;color:#111827;transition:background .2s ease,color .2s ease}
                 .teducai-row-action:hover{background:#F0F1F3;color:#000}

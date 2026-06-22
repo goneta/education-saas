@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- Python source file used by the backend, migrations, scripts, tests, or utilities. It participates in the FastAPI API boundary.
+- Owns tenant-scoped school settings, secure logo upload/public delivery, persistent subscription changes, user administration, role/permission management, templates, and audit APIs.
 
 ## DOX Scope
 
@@ -17,6 +17,9 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- Paid subscription changes create pending platform payments; only Free is activated immediately, and legacy Super Admin updates cannot bypass payment confirmation.
+- Managed user deletion is soft, audited, tenant-scoped, and protects administrator boundaries.
+- Role catalogs deduplicate global and school-specific definitions by stable role key and ignore soft-deleted users in membership counts and listings.
 
 ## Verification
 

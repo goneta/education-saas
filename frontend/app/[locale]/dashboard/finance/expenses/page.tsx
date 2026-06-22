@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { requestConfirmation } from "@/lib/confirmation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -124,7 +125,7 @@ export default function ExpensesPage() {
     }
 
     const handleDelete = async (expense: Expense) => {
-        if (!confirm(`Delete expense "${expense.title}"? This cannot be undone.`)) return
+        if (!await requestConfirmation({ title: "Supprimer cette dépense", description: `La dépense « ${expense.title} » sera supprimée définitivement et l'action sera auditée.`, confirmLabel: "Supprimer définitivement", destructive: true })) return
         try {
             const res = await fetch(`${API_BASE_URL}/finance/expenses/${expense.id}`, {
                 method: "DELETE",

@@ -9,6 +9,7 @@ dist/
 coverage/
 backups/
 storage/
+DOCUMENTS/
 playwright-report/
 test-results/
 *.db

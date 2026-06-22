@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -653,7 +653,25 @@ def platform_payment_webhook(payload: schemas.PlatformPaymentWebhook, x_teducai_
     payment.provider_reference = payload.provider_reference or payment.provider_reference
     payment.metadata_json = {**(payment.metadata_json or {}), **(payload.metadata_json or {})}
     if payload.status == "successful":
-        ai_credits.apply_platform_payment_success(db, payment)
+        if payment.payment_type == "ai_credit_purchase":
+            ai_credits.apply_platform_payment_success(db, payment)
+        elif payment.payment_type == "subscription" and payment.school_id:
+            subscription = db.query(models.SchoolSubscription).filter(
+                models.SchoolSubscription.payment_reference == payment.reference,
+                models.SchoolSubscription.school_id == payment.school_id,
+            ).order_by(models.SchoolSubscription.id.desc()).first()
+            if subscription:
+                now = datetime.now(timezone.utc)
+                renewal = now + (timedelta(days=365) if subscription.billing_cycle == "yearly" else timedelta(days=30))
+                subscription.status = "active"
+                subscription.started_at = now
+                subscription.next_renewal_at = renewal
+                subscription.expires_at = renewal
+                school = db.query(models.School).filter(models.School.id == payment.school_id).first()
+                if school:
+                    school.subscription_plan = subscription.plan
+                    school.subscription_status = "active"
+                    school.current_billing_period_end = renewal
     db.commit()
     db.refresh(payment)
     return payment

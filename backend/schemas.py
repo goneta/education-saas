@@ -128,6 +128,8 @@ class UserResponse(UserBase):
     numref: Optional[str] = None
     school: Optional[SchoolResponse] = None
     mfa_enabled: bool = False
+    phone_number: Optional[str] = None
+    deleted_at: Optional[datetime] = None
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -585,6 +587,31 @@ class SubscriptionSettingsUpdate(BaseModel):
     subscription_status: Optional[str] = None
     storage_quota_mb: Optional[int] = None
     current_billing_period_end: Optional[datetime] = None
+
+
+class SchoolSubscriptionChange(BaseModel):
+    plan: str = Field(pattern="^(free|pro|max)$")
+    billing_cycle: str = Field(default="monthly", pattern="^(monthly|yearly)$")
+    payment_provider: Optional[str] = Field(default=None, pattern="^(cash|stripe|djamo|cinetpay|manual)$")
+
+
+class SchoolSubscriptionResponse(BaseModel):
+    id: int
+    school_id: int
+    plan: str
+    billing_cycle: str
+    amount: float
+    currency: str
+    status: str
+    started_at: Optional[datetime] = None
+    next_renewal_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    payment_provider: Optional[str] = None
+    payment_reference: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserRoleUpdate(BaseModel):

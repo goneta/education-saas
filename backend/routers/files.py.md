@@ -17,6 +17,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- Upload metadata from `file_storage.store_upload` already contains the display name and must not be supplied a second time.
 
 ## Verification
 

@@ -11,6 +11,7 @@
 - Utilities must be framework-compatible with Next.js client/server boundaries.
 - Config helpers must not expose secrets.
 - Localization helpers must preserve French as default and support EN/ES/SW flows.
+- Dashboard modules should call `requestConfirmation` for sensitive/destructive confirmation instead of browser-native prompts.
 
 # Work Guidance
 

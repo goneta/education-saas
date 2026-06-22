@@ -137,6 +137,30 @@ class School(Base):
     classes = relationship("Class", back_populates="school")
     subjects = relationship("Subject", back_populates="school")
 
+
+class SchoolSubscription(Base):
+    __tablename__ = "school_subscriptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    plan = Column(String, default="free", nullable=False, index=True)
+    billing_cycle = Column(String, default="monthly", nullable=False)
+    amount = Column(Float, default=0, nullable=False)
+    currency = Column(String, default="FCFA", nullable=False)
+    status = Column(String, default="active", nullable=False, index=True)
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    next_renewal_at = Column(DateTime(timezone=True), nullable=True)
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    payment_provider = Column(String, nullable=True)
+    payment_reference = Column(String, nullable=True, index=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    school = relationship("School")
+    created_by = relationship("User", foreign_keys=[created_by_id])
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -158,6 +182,7 @@ class User(Base):
     locked_until = Column(DateTime(timezone=True), nullable=True)
     last_login_at = Column(DateTime(timezone=True), nullable=True)
     token_version = Column(Integer, default=0, nullable=False)
+    deleted_at = Column(DateTime(timezone=True), nullable=True, index=True)
     
     # Tenancy
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=True) # Null for Super Admin

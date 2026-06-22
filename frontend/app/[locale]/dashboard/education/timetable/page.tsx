@@ -5,6 +5,7 @@ import type { ReactNode } from "react"
 import { Download, Edit3, FileText, Lock, Plus, RefreshCw, Trash2, Unlock, Upload, Wand2 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { requestConfirmation } from "@/lib/confirmation"
 import { AppleAccordion } from "@/components/ui/apple-accordion"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -217,7 +218,7 @@ export default function TimetablePage() {
     }
 
     const deleteEntry = async (entry: TimetableEntry) => {
-        if (!confirm("Supprimer ce cours ?")) return
+        if (!await requestConfirmation({ title: "Supprimer ce cours", description: "Le cours sera retiré de l'emploi du temps publié. Cette action est irréversible.", confirmLabel: "Supprimer définitivement", destructive: true })) return
         const res = await fetch(`${API_BASE_URL}/education/timetables/${entry.id}`, { method: "DELETE", headers: authHeaders })
         if (res.ok || res.status === 204) await fetchEntries()
     }

@@ -7,7 +7,7 @@
 ## Purpose
 
 - Python source file used by the backend, migrations, scripts, tests, or utilities.
-- Defines the SQLAlchemy data model, including traceable cash fee payments, AI providers, wallets, credit packs, platform payments, school-to-user AI credit allocations, usage logs, and school payment accounts.
+- Defines the SQLAlchemy data model, including traceable cash fee payments, AI billing, persistent school subscriptions, soft-deleted users, RBAC, and school payment accounts.
 
 ## DOX Scope
 

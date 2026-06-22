@@ -31,6 +31,7 @@
 - Dashboard section cards with headings should inherit the global collapsible behavior: collapsed by default, French title normalization when needed, smooth open/close, and preserved standardized row actions.
 - Data-list containers may opt out of automatic collapsing with `data-teducai-collapsible="false"`; critical lists must remain visible after loading.
 - Runtime-enhanced accordions and actions must receive explicit dark-theme styling because their elements are inserted after React render.
+- Destructive dashboard actions must use the shared TeducAI confirmation flow; browser `alert()` and `confirm()` prompts are not allowed.
 
 # Verification
 

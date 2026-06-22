@@ -66,3 +66,89 @@ def test_school_localization_settings_use_country_defaults():
     assert data["primary_language"] == "en"
     assert data["phone_e164"] == "+447700900123"
     assert "London" in data["formatted_address"]
+
+
+def test_settings_user_management_subscription_and_role_deduplication():
+    headers, unique_id = _admin()
+
+    settings = client.put("/system/school-settings", headers=headers, json={
+        "name": f"Persistent School {unique_id}",
+        "phone": "+2250700000000",
+        "email": f"school-{unique_id}@example.com",
+        "website": "https://example.com",
+        "address_structured": {
+            "street": "1 Rue de la Paix",
+            "district": "Plateau",
+            "city": "Abidjan",
+            "region": "Abidjan",
+            "country": "Côte d'Ivoire",
+            "latitude": 5.36,
+            "longitude": -4.0083,
+        },
+    })
+    assert settings.status_code == 200, settings.text
+    persisted = client.get("/system/school-settings", headers=headers)
+    assert persisted.status_code == 200
+    assert persisted.json()["name"] == f"Persistent School {unique_id}"
+    assert persisted.json()["address_structured"]["district"] == "Plateau"
+    logo = client.post(
+        "/system/school-settings/logo",
+        headers=headers,
+        files={"logo": ("logo.png", b"\x89PNG\r\n\x1a\nTeducAI", "image/png")},
+    )
+    assert logo.status_code == 200, logo.text
+    assert logo.json()["logo_url"].endswith("/logo")
+    public_logo = client.get(logo.json()["logo_url"])
+    assert public_logo.status_code == 200
+
+    free_plan = client.post("/system/subscription/change", headers=headers, json={
+        "plan": "free",
+        "billing_cycle": "monthly",
+        "payment_provider": "manual",
+    })
+    assert free_plan.status_code == 200, free_plan.text
+    assert free_plan.json()["subscription"]["status"] == "active"
+
+    paid_plan = client.post("/system/subscription/change", headers=headers, json={
+        "plan": "pro",
+        "billing_cycle": "yearly",
+        "payment_provider": "manual",
+    })
+    assert paid_plan.status_code == 200, paid_plan.text
+    assert paid_plan.json()["subscription"]["status"] == "pending_payment"
+    current_plan = client.get("/system/subscription", headers=headers)
+    assert current_plan.status_code == 200
+    assert current_plan.json()["plan"] == "pro"
+
+    created = client.post("/system/users", headers=headers, json={
+        "email": f"managed-{unique_id}@example.com",
+        "full_name": "Managed User",
+        "password": "SecurePass123!",
+        "role": "teacher",
+        "role_keys": ["teacher"],
+    })
+    assert created.status_code == 200, created.text
+    user_id = created.json()["id"]
+
+    updated = client.put(f"/system/users/{user_id}", headers=headers, json={
+        "full_name": "Managed User Updated",
+        "phone_number": "+2250102030405",
+        "role": "teacher",
+        "role_keys": ["teacher", "educator"],
+    })
+    assert updated.status_code == 200, updated.text
+    details = client.get(f"/system/users/{user_id}", headers=headers)
+    assert details.status_code == 200
+    assert details.json()["full_name"] == "Managed User Updated"
+    assert set(details.json()["role_keys"]) == {"teacher", "educator"}
+
+    deleted = client.delete(f"/system/users/{user_id}", headers=headers)
+    assert deleted.status_code == 204, deleted.text
+    users = client.get("/system/users", headers=headers)
+    assert users.status_code == 200
+    assert user_id not in {row["id"] for row in users.json()}
+
+    catalog = client.get("/system/permissions/catalog", headers=headers)
+    assert catalog.status_code == 200
+    role_keys = catalog.json()["roles"]
+    assert len(role_keys) == len(set(role_keys))

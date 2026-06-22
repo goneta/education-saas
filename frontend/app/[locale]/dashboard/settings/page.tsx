@@ -4,11 +4,14 @@ import { useCallback, useEffect, useState, type PointerEvent } from "react"
 import Image from "next/image"
 import { useTranslations } from "next-intl"
 import { useParams } from "next/navigation"
+import { Pencil, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AppleAccordion } from "@/components/ui/apple-accordion"
 import { ExplainedField, fieldHelp } from "@/components/ui/explained-field"
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { tx, humanizeKey } from "@/lib/product-copy"
@@ -82,6 +85,8 @@ interface ManagedUser {
     role: string
     is_active: boolean
     school_id: number | null
+    phone_number?: string | null
+    role_keys?: string[]
 }
 interface CountryProfile {
     name: string
@@ -94,6 +99,7 @@ interface CountryProfile {
     phone_code: string
 }
 interface SchoolSettings {
+    id: number
     name: string
     school_type: string
     country_code: string
@@ -126,6 +132,20 @@ interface SchoolSettings {
     subscription_plan?: string | null
     subscription_status?: string | null
     current_billing_period_end?: string | null
+}
+interface SchoolSubscription {
+    id: number
+    school_id: number
+    plan: "free" | "pro" | "max"
+    billing_cycle: "monthly" | "yearly"
+    amount: number
+    currency: string
+    status: string
+    started_at: string | null
+    next_renewal_at: string | null
+    expires_at: string | null
+    payment_provider: string | null
+    payment_reference: string | null
 }
 interface ActiveContext {
     user: {
@@ -179,6 +199,9 @@ const SUBSCRIPTION_STATUS_LABELS: Record<string, string> = {
     expired: "Expiré",
     suspended: "Suspendu",
     pending: "En attente",
+    pending_payment: "Paiement en attente",
+    cancelled: "Annulé",
+    trial: "Essai",
 }
 
 export default function SettingsPage() {
@@ -210,6 +233,16 @@ export default function SettingsPage() {
     const [isEditingSchool, setIsEditingSchool] = useState(false)
     const [settingsStatus, setSettingsStatus] = useState("")
     const [settingsError, setSettingsError] = useState("")
+    const [pendingLogo, setPendingLogo] = useState<File | null>(null)
+    const [subscription, setSubscription] = useState<SchoolSubscription | null>(null)
+    const [subscriptionChoice, setSubscriptionChoice] = useState<keyof typeof SUBSCRIPTION_PLANS | null>(null)
+    const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly")
+    const [subscriptionProvider, setSubscriptionProvider] = useState("manual")
+    const [subscriptionLoading, setSubscriptionLoading] = useState(false)
+    const [editingUser, setEditingUser] = useState<ManagedUser | null>(null)
+    const [userDraft, setUserDraft] = useState({ full_name: "", email: "", phone_number: "", role: "staff", role_keys: [] as string[], school_id: "" })
+    const [deletingUser, setDeletingUser] = useState<ManagedUser | null>(null)
+    const [userActionLoading, setUserActionLoading] = useState(false)
     const [selectedPermissionCategory, setSelectedPermissionCategory] = useState("all")
     const [openPanels, setOpenPanels] = useState<Set<string>>(new Set())
 
@@ -231,7 +264,7 @@ export default function SettingsPage() {
     const loadSystemContext = useCallback(async () => {
         if (!token) return
         const headers = { Authorization: `Bearer ${token}` }
-        const [permissionsRes, templatesRes, auditRes, catalogRes, usersRes, countriesRes, settingsRes, activeContextRes] = await Promise.all([
+        const [permissionsRes, templatesRes, auditRes, catalogRes, usersRes, countriesRes, settingsRes, activeContextRes, subscriptionRes] = await Promise.all([
             fetch(`${API_BASE_URL}/system/permissions`, { headers }),
             fetch(`${API_BASE_URL}/system/school-templates`, { headers }),
             fetch(`${API_BASE_URL}/system/audit-logs?limit=20`, { headers }),
@@ -240,15 +273,19 @@ export default function SettingsPage() {
             fetch(`${API_BASE_URL}/system/localization/countries`, { headers }),
             fetch(`${API_BASE_URL}/system/school-settings`, { headers }),
             fetch(`${API_BASE_URL}/system/active-context`, { headers }),
+            fetch(`${API_BASE_URL}/system/subscription`, { headers }),
         ])
         if (permissionsRes.ok) setPermissions(((await permissionsRes.json()) as { permissions: string[] }).permissions)
         if (templatesRes.ok) setTemplates(await templatesRes.json() as Record<string, TemplateSummary>)
         if (auditRes.ok) setAuditLogs(await auditRes.json() as AuditLog[])
         if (catalogRes.ok) {
             const data = await catalogRes.json() as PermissionCatalog
-            setCatalog(data)
-            setRoleDefinitions(data.role_definitions || [])
-            if (data.roles.length && !data.roles.includes(selectedRole)) setSelectedRole(data.roles[0])
+            const uniqueDefinitions = Array.from(new Map((data.role_definitions || []).map(role => [role.key, role])).values())
+            const uniqueRoles = Array.from(new Set(data.roles || []))
+            const normalized = { ...data, roles: uniqueRoles, role_definitions: uniqueDefinitions }
+            setCatalog(normalized)
+            setRoleDefinitions(uniqueDefinitions)
+            if (uniqueRoles.length && !uniqueRoles.includes(selectedRole)) setSelectedRole(uniqueRoles[0])
         }
         if (usersRes.ok) setUsers(await usersRes.json() as ManagedUser[])
         if (countriesRes.ok) setCountries(((await countriesRes.json()) as { countries: Record<string, CountryProfile> }).countries)
@@ -262,6 +299,7 @@ export default function SettingsPage() {
             setActiveContext(context)
             setActiveRole(context.active_role)
         }
+        if (subscriptionRes.ok) setSubscription(await subscriptionRes.json() as SchoolSubscription | null)
     }, [selectedRole, token])
 
     const loadRolePermissions = useCallback(async () => {
@@ -401,6 +439,73 @@ export default function SettingsPage() {
         setUserStatus(res.ok ? `Mot de passe reinitialise pour ${managedUser.email}.` : "Reinitialisation impossible.")
     }
 
+    const openUserEditor = async (managedUser: ManagedUser) => {
+        if (!token) return
+        setUserStatus("")
+        const response = await fetch(`${API_BASE_URL}/system/users/${managedUser.id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+        })
+        const details = response.ok ? await response.json() as ManagedUser : managedUser
+        setEditingUser(details)
+        setUserDraft({
+            full_name: details.full_name || "",
+            email: details.email,
+            phone_number: details.phone_number || "",
+            role: details.role,
+            role_keys: details.role_keys || [details.role],
+            school_id: details.school_id?.toString() || "",
+        })
+    }
+
+    const saveManagedUser = async () => {
+        if (!token || !editingUser) return
+        if (!userDraft.full_name.trim() || !userDraft.email.trim()) {
+            setUserStatus("Le nom et l'adresse e-mail sont obligatoires.")
+            return
+        }
+        setUserActionLoading(true)
+        const response = await fetch(`${API_BASE_URL}/system/users/${editingUser.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({
+                full_name: userDraft.full_name.trim(),
+                email: userDraft.email.trim(),
+                phone_number: userDraft.phone_number.trim() || null,
+                role: userDraft.role,
+                role_keys: Array.from(new Set([...userDraft.role_keys, userDraft.role])),
+                ...(user?.role === "super_admin" ? { school_id: userDraft.school_id ? Number(userDraft.school_id) : null } : {}),
+            }),
+        })
+        const data = await response.json().catch(() => null)
+        setUserActionLoading(false)
+        if (!response.ok) {
+            setUserStatus(data?.detail || "La modification de l'utilisateur a échoué.")
+            return
+        }
+        setEditingUser(null)
+        setUserStatus("Utilisateur mis à jour.")
+        await loadSystemContext()
+    }
+
+    const deleteManagedUser = async () => {
+        if (!token || !deletingUser) return
+        setUserActionLoading(true)
+        const response = await fetch(`${API_BASE_URL}/system/users/${deletingUser.id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+        })
+        const data = response.ok ? null : await response.json().catch(() => null)
+        setUserActionLoading(false)
+        if (!response.ok) {
+            setUserStatus(data?.detail || "La suppression de l'utilisateur a échoué.")
+            return
+        }
+        setDeletingUser(null)
+        setUserStatus("Utilisateur supprimé. Son historique reste conservé pour l'audit.")
+        await loadSystemContext()
+    }
+
     const toggleSchool = async (school: School) => {
         if (!token) return
         const res = await fetch(`${API_BASE_URL}/system/schools/${school.id}/status`, {
@@ -498,14 +603,36 @@ export default function SettingsPage() {
             body: JSON.stringify(nextSettings)
         })
         if (res.ok) {
-            const saved = await res.json() as SchoolSettings
+            let saved = await res.json() as SchoolSettings
+            if (pendingLogo) {
+                const form = new FormData()
+                form.append("logo", pendingLogo)
+                const logoRes = await fetch(`${API_BASE_URL}/system/school-settings/logo`, {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${token}` },
+                    body: form,
+                })
+                if (logoRes.ok) {
+                    saved = await logoRes.json() as SchoolSettings
+                    setPendingLogo(null)
+                } else {
+                    const logoError = await logoRes.json().catch(() => null)
+                    setSettingsError(logoError?.detail || "Les informations ont été enregistrées, mais le logo n'a pas pu être téléversé.")
+                }
+            }
+            const refreshed = await fetch(`${API_BASE_URL}/system/school-settings`, {
+                headers: { Authorization: `Bearer ${token}` },
+                cache: "no-store",
+            })
+            if (refreshed.ok) saved = await refreshed.json() as SchoolSettings
             setSchoolSettings(saved)
             setSavedSchoolSettings(saved)
             setSettingsStatus(successMessage)
             setIsEditingSchool(false)
         } else {
-            const error = await res.text()
-            setSettingsStatus(`Erreur: ${error.slice(0, 120)}`)
+            const error = await res.json().catch(() => null)
+            setSettingsError(error?.detail || "Impossible d'enregistrer les informations de l'établissement.")
+            setSettingsStatus("")
         }
     }
 
@@ -544,21 +671,51 @@ export default function SettingsPage() {
 
     const cancelSchoolEdit = () => {
         if (savedSchoolSettings) setSchoolSettings(savedSchoolSettings)
+        setPendingLogo(null)
         setSettingsError("")
         setSettingsStatus("Modifications annulées.")
         setIsEditingSchool(false)
     }
 
-    const updateSubscription = async (plan: keyof typeof SUBSCRIPTION_PLANS) => {
-        if (!schoolSettings) return
-        const nextRenewal = new Date()
-        nextRenewal.setFullYear(nextRenewal.getFullYear() + 1)
-        await persistSchoolSettings({
-            ...schoolSettings,
-            subscription_plan: plan,
-            subscription_status: "active",
-            current_billing_period_end: nextRenewal.toISOString(),
-        }, `Abonnement ${SUBSCRIPTION_PLANS[plan].label} mis a jour.`)
+    const requestSubscriptionChange = (plan: keyof typeof SUBSCRIPTION_PLANS) => {
+        setSubscriptionChoice(plan)
+        setBillingCycle(subscription?.billing_cycle || "monthly")
+        setSubscriptionProvider(plan === "free" ? "manual" : "cinetpay")
+    }
+
+    const updateSubscription = async () => {
+        if (!subscriptionChoice || !token) return
+        setSubscriptionLoading(true)
+        setSettingsError("")
+        const response = await fetch(`${API_BASE_URL}/system/subscription/change`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({
+                plan: subscriptionChoice,
+                billing_cycle: billingCycle,
+                payment_provider: subscriptionChoice === "free" ? "manual" : subscriptionProvider,
+            }),
+        })
+        const data = await response.json().catch(() => null)
+        if (!response.ok) {
+            setSettingsError(data?.detail || "Impossible de modifier l'abonnement.")
+            setSubscriptionLoading(false)
+            return
+        }
+        setSubscription(data.subscription as SchoolSubscription)
+        setSchoolSettings(previous => previous ? {
+            ...previous,
+            subscription_plan: data.subscription.plan,
+            subscription_status: data.subscription.status,
+            current_billing_period_end: data.subscription.next_renewal_at,
+        } : previous)
+        setSettingsStatus(data.subscription.status === "active"
+            ? `Le plan ${SUBSCRIPTION_PLANS[subscriptionChoice].label} est actif.`
+            : `La demande pour le plan ${SUBSCRIPTION_PLANS[subscriptionChoice].label} attend la confirmation du paiement.`
+        )
+        setSubscriptionChoice(null)
+        setSubscriptionLoading(false)
+        if (data.checkout_url) window.location.assign(data.checkout_url)
     }
 
     const downloadSubscriptionDocument = (type: "invoice" | "receipt") => {
@@ -599,6 +756,105 @@ export default function SettingsPage() {
                 <h1 className="apple-page-title">{tx(locale, "settings")}</h1>
                 <p className="apple-page-description">Contexte établissement, rôles, permissions, localisation et administration de la plateforme.</p>
             </div>
+
+            <Dialog open={Boolean(editingUser)} onOpenChange={open => !open && setEditingUser(null)}>
+                <DialogContent className="max-w-2xl dark:border-[#3b4248] dark:bg-[#202528]">
+                    <DialogHeader>
+                        <DialogTitle>Modifier l&apos;utilisateur</DialogTitle>
+                        <DialogDescription>Les changements sont enregistrés dans la base de données et immédiatement soumis aux règles RBAC et multi-tenant.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <ExplainedField label="Nom complet" required help="Nom officiel affiché dans les listes, documents et journaux d'audit."><input className="apple-input" value={userDraft.full_name} onChange={event => setUserDraft({ ...userDraft, full_name: event.target.value })} /></ExplainedField>
+                        <ExplainedField label="Adresse e-mail" required help="Identifiant de connexion unique et adresse de notification de l'utilisateur."><input className="apple-input" type="email" value={userDraft.email} onChange={event => setUserDraft({ ...userDraft, email: event.target.value })} /></ExplainedField>
+                        <ExplainedField label="Téléphone" help="Numéro professionnel ou personnel utilisé pour les communications autorisées."><input className="apple-input" value={userDraft.phone_number} onChange={event => setUserDraft({ ...userDraft, phone_number: event.target.value })} /></ExplainedField>
+                        <ExplainedField label="Rôle principal" required help="Rôle de base qui détermine les permissions principales du compte.">
+                            <select className="apple-select" value={userDraft.role} onChange={event => setUserDraft({ ...userDraft, role: event.target.value })}>
+                                {(catalog?.roles || PRIMARY_ROLE_KEYS).filter(role => PRIMARY_ROLE_KEYS.includes(role)).map(role => <option key={role} value={role}>{humanizeKey(role)}</option>)}
+                            </select>
+                        </ExplainedField>
+                        {user?.role === "super_admin" && (
+                            <ExplainedField label="Établissement" help="Périmètre de données auquel le compte est rattaché. Seul le Super Administrateur peut le modifier.">
+                                <select className="apple-select" value={userDraft.school_id} onChange={event => setUserDraft({ ...userDraft, school_id: event.target.value })}>
+                                    <option value="">Plateforme / aucun établissement</option>
+                                    {schools.map(school => <option key={school.id} value={school.id}>{school.name}</option>)}
+                                </select>
+                            </ExplainedField>
+                        )}
+                    </div>
+                    <div>
+                        <p className="mb-2 text-sm font-semibold">Rôles additionnels</p>
+                        <div className="grid max-h-48 gap-2 overflow-y-auto rounded-[18px] border p-3 sm:grid-cols-2">
+                            {(catalog?.roles || []).map(role => (
+                                <label key={role} className="flex items-center gap-2 text-sm">
+                                    <input
+                                        type="checkbox"
+                                        checked={userDraft.role_keys.includes(role)}
+                                        onChange={event => setUserDraft(previous => ({
+                                            ...previous,
+                                            role_keys: event.target.checked
+                                                ? Array.from(new Set([...previous.role_keys, role]))
+                                                : previous.role_keys.filter(item => item !== role),
+                                        }))}
+                                    />
+                                    {humanizeKey(role)}
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" disabled={userActionLoading} onClick={() => setEditingUser(null)}>Annuler</Button>
+                        <Button disabled={userActionLoading} onClick={() => void saveManagedUser()}>{userActionLoading ? "Enregistrement..." : "Enregistrer"}</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <ConfirmationDialog
+                open={Boolean(deletingUser)}
+                onOpenChange={open => !open && setDeletingUser(null)}
+                title="Supprimer cet utilisateur"
+                description={`Cette action désactivera définitivement ${deletingUser?.full_name || deletingUser?.email || "cet utilisateur"}. Son historique sera conservé pour l'audit.`}
+                confirmLabel="Supprimer définitivement"
+                destructive
+                loading={userActionLoading}
+                onConfirm={deleteManagedUser}
+            />
+
+            <Dialog open={Boolean(subscriptionChoice)} onOpenChange={open => !open && setSubscriptionChoice(null)}>
+                <DialogContent className="dark:border-[#3b4248] dark:bg-[#202528]">
+                    <DialogHeader>
+                        <DialogTitle>Confirmer le changement de plan</DialogTitle>
+                        <DialogDescription>Le plan Free est activé immédiatement. Les plans payants restent en attente jusqu&apos;à confirmation du paiement.</DialogDescription>
+                    </DialogHeader>
+                    {subscriptionChoice && (
+                        <div className="space-y-4">
+                            <div className="rounded-[18px] border p-4">
+                                <p className="text-lg font-semibold">{SUBSCRIPTION_PLANS[subscriptionChoice].label}</p>
+                                <p className="text-sm text-[#6B7280]">{(billingCycle === "monthly" ? SUBSCRIPTION_PLANS[subscriptionChoice].monthly : SUBSCRIPTION_PLANS[subscriptionChoice].yearly).toLocaleString("fr-FR")} FCFA / {billingCycle === "monthly" ? "mois" : "an"}</p>
+                            </div>
+                            <ExplainedField label="Périodicité" help="Choisissez une facturation mensuelle ou annuelle pour le plan sélectionné.">
+                                <select className="apple-select" value={billingCycle} onChange={event => setBillingCycle(event.target.value as "monthly" | "yearly")}>
+                                    <option value="monthly">Mensuelle</option>
+                                    <option value="yearly">Annuelle</option>
+                                </select>
+                            </ExplainedField>
+                            {subscriptionChoice !== "free" && (
+                                <ExplainedField label="Mode de paiement" help="Le plan payant reste en attente jusqu'à confirmation du fournisseur ou validation manuelle.">
+                                    <select className="apple-select" value={subscriptionProvider} onChange={event => setSubscriptionProvider(event.target.value)}>
+                                        <option value="cinetpay">CinetPay</option>
+                                        <option value="stripe">Stripe</option>
+                                        <option value="djamo">Djamo</option>
+                                        <option value="cash">Espèces / validation manuelle</option>
+                                    </select>
+                                </ExplainedField>
+                            )}
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" disabled={subscriptionLoading} onClick={() => setSubscriptionChoice(null)}>Annuler</Button>
+                        <Button disabled={subscriptionLoading} onClick={() => void updateSubscription()}>{subscriptionLoading ? "Traitement..." : "Confirmer"}</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <AppleAccordion title="Contexte actif" open={openPanels.has("activeContext")} onToggle={() => togglePanel("activeContext")}>
                 <div className="space-y-4">
@@ -698,13 +954,8 @@ export default function SettingsPage() {
                                                     event.currentTarget.value = ""
                                                     return
                                                 }
-                                                const reader = new FileReader()
-                                                reader.onload = () => {
-                                                    updateSchoolSetting("logo_url", String(reader.result || ""))
-                                                    setSettingsError("")
-                                                }
-                                                reader.onerror = () => setSettingsError("Erreur lors de la lecture du fichier logo.")
-                                                reader.readAsDataURL(file)
+                                                setPendingLogo(file)
+                                                setSettingsError("")
                                             }} />
                                         </ExplainedField>
                                         <ExplainedField label="Pays" help="Détermine automatiquement la devise, la langue, le fuseau horaire et les formats locaux.">
@@ -728,7 +979,9 @@ export default function SettingsPage() {
                                     <div className="rounded-[24px] border border-[#E5E7EB] bg-[#F8FAFC] p-4">
                                         <p className="font-semibold text-[#111827]">Logo</p>
                                         <div className="mt-3 flex h-28 items-center justify-center rounded-[20px] border border-dashed border-[#CBD5E1] bg-white">
-                                            {schoolSettings.logo_url ? <Image src={schoolSettings.logo_url} alt="Logo établissement" width={240} height={96} unoptimized className="max-h-24 max-w-[80%] object-contain" /> : <span className="text-sm text-[#6B7280]">Aucun logo</span>}
+                                            {schoolSettings.logo_url
+                                                ? <Image src={schoolSettings.logo_url.startsWith("/") ? `${API_BASE_URL}${schoolSettings.logo_url}` : schoolSettings.logo_url} alt="Logo établissement" width={240} height={96} unoptimized className="max-h-24 max-w-[80%] object-contain" />
+                                                : <span className="text-sm text-[#6B7280]">{pendingLogo ? `Prêt à envoyer : ${pendingLogo.name}` : "Aucun logo"}</span>}
                                         </div>
                                     </div>
                                     <div className="rounded-[24px] border border-[#E5E7EB] bg-white p-4">
@@ -764,8 +1017,9 @@ export default function SettingsPage() {
 
                     <SubscriptionManagement
                         settings={schoolSettings}
-                        onChangePlan={updateSubscription}
-                        onRenew={() => updateSubscription((schoolSettings.subscription_plan || "pro") as keyof typeof SUBSCRIPTION_PLANS)}
+                        subscription={subscription}
+                        onChangePlan={requestSubscriptionChange}
+                        onRenew={() => requestSubscriptionChange((subscription?.plan || schoolSettings.subscription_plan || "pro") as keyof typeof SUBSCRIPTION_PLANS)}
                         onDownload={downloadSubscriptionDocument}
                     />
                 </>
@@ -831,7 +1085,43 @@ export default function SettingsPage() {
                             <Button onClick={createManagedUser}>{tx(locale, "create")}</Button>
                         </div>
                         {userStatus && <p className="text-sm text-[#6B7280]">{userStatus}</p>}
-                        <div className="overflow-x-auto rounded-lg border"><table className="w-full min-w-[760px] text-sm"><thead className="bg-[#F8FAFC]"><tr className="border-b"><th className="px-3 py-2 text-left">Utilisateur</th><th className="px-3 py-2 text-left">Email</th><th className="px-3 py-2 text-left">Role principal</th><th className="px-3 py-2 text-left">Statut</th><th className="px-3 py-2 text-right">Actions</th></tr></thead><tbody>{users.map(managedUser => <tr key={managedUser.id} className="border-b last:border-0"><td className="px-3 py-2 font-medium">{managedUser.full_name || "-"}</td><td className="px-3 py-2">{managedUser.email}</td><td className="px-3 py-2">{managedUser.role}</td><td className="px-3 py-2">{managedUser.is_active ? "Actif" : "Inactif"}</td><td className="px-3 py-2 text-right"><Button variant="outline" size="sm" onClick={() => toggleUserStatus(managedUser)}>{managedUser.is_active ? "Desactiver" : "Reactiver"}</Button><Button variant="outline" size="sm" className="ml-2" onClick={() => resetUserPassword(managedUser)}>Reset MDP</Button></td></tr>)}</tbody></table></div>
+                        <div className="overflow-x-auto rounded-lg border">
+                            <table className="w-full min-w-[860px] text-sm">
+                                <thead className="bg-[#F8FAFC]">
+                                    <tr className="border-b">
+                                        <th className="px-3 py-2 text-left">Utilisateur</th>
+                                        <th className="px-3 py-2 text-left">Email</th>
+                                        <th className="px-3 py-2 text-left">Rôle principal</th>
+                                        <th className="px-3 py-2 text-left">Statut</th>
+                                        <th className="px-3 py-2 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {users.map(managedUser => (
+                                        <tr key={managedUser.id} className="border-b last:border-0">
+                                            <td className="px-3 py-2 font-medium">{managedUser.full_name || "-"}</td>
+                                            <td className="px-3 py-2">{managedUser.email}</td>
+                                            <td className="px-3 py-2">{managedUser.role}</td>
+                                            <td className="px-3 py-2">{managedUser.is_active ? "Actif" : "Inactif"}</td>
+                                            <td className="px-3 py-2 text-right">
+                                                <div className="inline-flex flex-wrap justify-end gap-2">
+                                                    <Button title="Modifier" aria-label="Modifier" variant="outline" size="sm" onClick={() => void openUserEditor(managedUser)}>
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" onClick={() => toggleUserStatus(managedUser)}>
+                                                        {managedUser.is_active ? "Désactiver" : "Réactiver"}
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" onClick={() => resetUserPassword(managedUser)}>Réinitialiser le mot de passe</Button>
+                                                    <Button title="Supprimer" aria-label="Supprimer" variant="outline" size="sm" className="text-red-600" onClick={() => setDeletingUser(managedUser)}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </AppleAccordion>
             )}
@@ -939,11 +1229,13 @@ function LocationMap({
 
 function SubscriptionManagement({
     settings,
+    subscription,
     onChangePlan,
     onRenew,
     onDownload,
 }: {
     settings: SchoolSettings
+    subscription: SchoolSubscription | null
     onChangePlan: (plan: keyof typeof SUBSCRIPTION_PLANS) => void | Promise<void>
     onRenew: () => void | Promise<void>
     onDownload: (type: "invoice" | "receipt") => void
@@ -954,20 +1246,22 @@ function SubscriptionManagement({
         setRenderTime(Date.now())
     }, [])
 
-    const planKey = ((settings.subscription_plan || "free") in SUBSCRIPTION_PLANS ? settings.subscription_plan || "free" : "free") as keyof typeof SUBSCRIPTION_PLANS
+    const persistedPlan = subscription?.plan || settings.subscription_plan || "free"
+    const planKey = (persistedPlan in SUBSCRIPTION_PLANS ? persistedPlan : "free") as keyof typeof SUBSCRIPTION_PLANS
     const plan = SUBSCRIPTION_PLANS[planKey]
-    const renewalDate = settings.current_billing_period_end ? new Date(settings.current_billing_period_end) : null
+    const renewalValue = subscription?.next_renewal_at || settings.current_billing_period_end
+    const renewalDate = renewalValue ? new Date(renewalValue) : null
     const daysRemaining = renewalDate && renderTime ? Math.max(0, Math.ceil((renewalDate.getTime() - renderTime) / 86400000)) : 0
-    const status = settings.subscription_status || "pending"
+    const status = subscription?.status || settings.subscription_status || "pending"
     const statusLabel = SUBSCRIPTION_STATUS_LABELS[status] || "En attente"
-    const paymentRows = planKey === "free" ? [] : [
+    const paymentRows = subscription?.payment_reference ? [
         {
-            id: "PAY-SAA-001",
-            date: renewalDate ? renewalDate.toLocaleDateString("fr-FR") : "-",
-            amount: `${plan.yearly.toLocaleString("fr-FR")} FCFA`,
-            status: "Payé",
+            id: subscription.payment_reference,
+            date: subscription.started_at ? new Date(subscription.started_at).toLocaleDateString("fr-FR") : "-",
+            amount: `${subscription.amount.toLocaleString("fr-FR")} ${subscription.currency}`,
+            status: statusLabel,
         },
-    ]
+    ] : []
 
     return (
         <Card>
@@ -977,7 +1271,7 @@ function SubscriptionManagement({
             <CardContent className="space-y-6">
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                     <SubscriptionMetric label="Plan actuel" value={plan.label} />
-                    <SubscriptionMetric label="Montant payé" value={`${plan.yearly.toLocaleString("fr-FR")} FCFA`} />
+                    <SubscriptionMetric label="Montant payé" value={`${(subscription?.status === "active" ? subscription.amount : 0).toLocaleString("fr-FR")} ${subscription?.currency || "FCFA"}`} />
                     <SubscriptionMetric label="Prochain renouvellement" value={renewalDate ? renewalDate.toLocaleDateString("fr-FR") : "-"} />
                     <SubscriptionMetric label="Jours restants" value={`${daysRemaining}`} />
                     <SubscriptionMetric label="Statut" value={statusLabel} />

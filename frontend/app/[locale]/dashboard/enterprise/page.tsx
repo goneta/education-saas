@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { requestConfirmation } from "@/lib/confirmation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ExplainedField, fieldHelp } from "@/components/ui/explained-field"
@@ -190,7 +191,7 @@ function ListCard({ title, displayTitle, rows, locale }: { title: string; displa
     const [jsonValue, setJsonValue] = useState("")
 
     const remove = async (id: number) => {
-        if (!token || !confirm("Supprimer cet enregistrement ?")) return
+        if (!token || !await requestConfirmation({ title: "Supprimer cet enregistrement", description: "Cette action est irréversible et reste soumise aux règles métier du module.", confirmLabel: "Supprimer définitivement", destructive: true })) return
         const res = await fetch(`${API_BASE_URL}/enterprise/${title}/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
         if (res.ok) location.reload()
     }

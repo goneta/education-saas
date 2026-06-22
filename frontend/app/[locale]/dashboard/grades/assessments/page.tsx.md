@@ -17,6 +17,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- Assessment deletion uses the shared TeducAI confirmation dialog and preserves backend reference checks.
 
 ## Verification
 

@@ -10,6 +10,7 @@
 - Exposes API schemas for schools, users, AI billing, and other modules, including username and system-account flags in user responses.
 - Defines Pydantic API contracts for school settings, cash fee payments, AI providers, wallets, targeted credit packs, manual cash/free credit validation, school allocations, platform payments, and school payments.
 - AI credit purchase contracts carry target context, provider, optional Mobile Money network, redirect URLs, manual-validation notes, checkout URL, and provider status.
+- Defines persistent subscription-change/response contracts and exposes managed-user phone/deletion state.
 
 ## DOX Scope
 

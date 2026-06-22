@@ -1,11 +1,13 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, ConfigDict
 from .. import audit, localization, models, schemas, security, database, rbac, tenancy
+from ..services import ai_credits, file_storage, payment_gateway
 
 router = APIRouter(prefix="/system", tags=["System Configuration"])
 
@@ -219,6 +221,7 @@ class UserAdminUpdate(BaseModel):
     is_active: Optional[bool] = None
     phone_number: Optional[str] = None
     role_keys: Optional[List[str]] = None
+    school_id: Optional[int] = None
 
 
 class PasswordResetRequest(BaseModel):
@@ -245,10 +248,14 @@ def _assert_user_admin(current_user: models.User, db: Session) -> None:
     rbac.require_permission(current_user, "users:manage_settings", db)
 
 
-def _role_definition_payload(role: models.RoleDefinition, db: Session) -> dict:
-    users_count = db.query(models.UserRoleAssignment).filter(
+def _role_definition_payload(role: models.RoleDefinition, db: Session, assignment_school_id: Optional[int] = None) -> dict:
+    users_count = db.query(models.UserRoleAssignment).join(
+        models.User,
+        models.User.id == models.UserRoleAssignment.user_id,
+    ).filter(
         models.UserRoleAssignment.role_key == role.key,
-        models.UserRoleAssignment.school_id == role.school_id,
+        models.UserRoleAssignment.school_id == (assignment_school_id if assignment_school_id is not None else role.school_id),
+        models.User.deleted_at == None,
     ).count()
     return {
         "id": role.id,
@@ -269,11 +276,20 @@ def _ensure_default_roles(db: Session, school_id: Optional[int] = None) -> None:
     for role in rbac.default_role_definitions():
         exists = db.query(models.RoleDefinition).filter(
             models.RoleDefinition.key == role["key"],
-            models.RoleDefinition.school_id == school_id,
+            models.RoleDefinition.school_id == None,
         ).first()
         if not exists:
-            db.add(models.RoleDefinition(**role, school_id=school_id))
+            db.add(models.RoleDefinition(**role, school_id=None))
     db.flush()
+
+
+def _dedupe_role_rows(roles: List[models.RoleDefinition], school_id: Optional[int]) -> List[models.RoleDefinition]:
+    selected: Dict[str, models.RoleDefinition] = {}
+    for role in roles:
+        current = selected.get(role.key)
+        if current is None or (school_id is not None and role.school_id == school_id and current.school_id is None):
+            selected[role.key] = role
+    return sorted(selected.values(), key=lambda row: ((row.category or ""), row.name.lower(), row.key))
 
 
 def _assign_user_roles(db: Session, user: models.User, role_keys: List[str], current_user: models.User) -> None:
@@ -329,6 +345,37 @@ def _school_settings_payload(school: models.School) -> dict:
         "created_at": school.created_at,
         "localization_profile": localization.country_profile(school.country_code),
         "school_type_profile": localization.localized_school_type_profile(school.school_type.value, school.country_code),
+    }
+
+
+SUBSCRIPTION_PRICES = {
+    "free": {"monthly": 0, "yearly": 0},
+    "pro": {"monthly": 99000, "yearly": 900000},
+    "max": {"monthly": 199000, "yearly": 1700000},
+}
+
+
+def _current_subscription(db: Session, school_id: int) -> Optional[models.SchoolSubscription]:
+    return db.query(models.SchoolSubscription).filter(
+        models.SchoolSubscription.school_id == school_id,
+    ).order_by(models.SchoolSubscription.created_at.desc(), models.SchoolSubscription.id.desc()).first()
+
+
+def _managed_user_payload(db: Session, user: models.User) -> dict:
+    assignments = db.query(models.UserRoleAssignment.role_key).filter(
+        models.UserRoleAssignment.user_id == user.id,
+        models.UserRoleAssignment.school_id == user.school_id,
+    ).all()
+    return {
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role.value,
+        "role_keys": sorted({row[0] for row in assignments} | {user.role.value}),
+        "phone_number": user.phone_number,
+        "is_active": user.is_active,
+        "school_id": user.school_id,
+        "deleted_at": user.deleted_at,
     }
 
 @router.post("/reference-data", response_model=ReferenceDataResponse)
@@ -481,6 +528,173 @@ def update_school_settings(
     return _school_settings_payload(school)
 
 
+@router.post("/school-settings/logo", response_model=schemas.SchoolSettingsResponse)
+async def upload_school_logo(
+    logo: UploadFile = File(...),
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    if not current_user.school_id:
+        raise HTTPException(status_code=400, detail="School context is required")
+    rbac.require_permission(current_user, "settings:write", db)
+    school = db.query(models.School).filter(models.School.id == current_user.school_id).first()
+    if not school:
+        raise HTTPException(status_code=404, detail="School not found")
+    if logo.content_type not in {"image/png", "image/jpeg", "image/webp"}:
+        raise HTTPException(status_code=400, detail="Le logo doit être une image PNG, JPEG ou WebP")
+    metadata = await file_storage.store_upload(
+        logo,
+        school.id,
+        document_name=f"Logo {school.name}",
+        user_id=current_user.id,
+        folder="branding",
+    )
+    row = models.SecureFile(
+        **metadata,
+        category="school_logo",
+        visibility="public_internal",
+        is_shareable=False,
+        approval_status="approved",
+        approved_by_id=current_user.id,
+        approved_at=datetime.now(timezone.utc),
+        entity_type="school_logo",
+        entity_id=str(school.id),
+        school_id=school.id,
+        uploaded_by_id=current_user.id,
+    )
+    db.add(row)
+    db.flush()
+    school.logo_url = f"/system/schools/{school.id}/logo"
+    audit.record_audit(
+        db,
+        action="school.logo.updated",
+        current_user=current_user,
+        entity_type="school",
+        entity_id=school.id,
+        details={"file_id": row.id, "content_type": row.content_type},
+    )
+    db.commit()
+    db.refresh(school)
+    return _school_settings_payload(school)
+
+
+@router.get("/schools/{school_id}/logo")
+def public_school_logo(school_id: int, db: Session = Depends(database.get_db)):
+    row = db.query(models.SecureFile).filter(
+        models.SecureFile.school_id == school_id,
+        models.SecureFile.entity_type == "school_logo",
+        models.SecureFile.entity_id == str(school_id),
+        models.SecureFile.status == "active",
+    ).order_by(models.SecureFile.created_at.desc(), models.SecureFile.id.desc()).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Logo not found")
+    if row.storage_backend in {"s3", "minio"}:
+        url = file_storage.signed_download_url(row.storage_backend, row.storage_path, row.content_type, row.original_filename)
+        if url:
+            return RedirectResponse(url)
+    return FileResponse(file_storage.open_stored_file(row.storage_path), media_type=row.content_type)
+
+
+@router.get("/subscription", response_model=Optional[schemas.SchoolSubscriptionResponse])
+def get_current_subscription(
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    if not current_user.school_id:
+        raise HTTPException(status_code=400, detail="School context is required")
+    rbac.require_permission(current_user, "settings:read", db)
+    return _current_subscription(db, current_user.school_id)
+
+
+@router.post("/subscription/change")
+def change_subscription(
+    payload: schemas.SchoolSubscriptionChange,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    if not current_user.school_id:
+        raise HTTPException(status_code=400, detail="School context is required")
+    rbac.require_permission(current_user, "settings:write", db)
+    school = db.query(models.School).filter(models.School.id == current_user.school_id).first()
+    if not school:
+        raise HTTPException(status_code=404, detail="School not found")
+    amount = float(SUBSCRIPTION_PRICES[payload.plan][payload.billing_cycle])
+    now = datetime.now(timezone.utc)
+    next_renewal = now + (timedelta(days=365) if payload.billing_cycle == "yearly" else timedelta(days=30))
+    status_value = "active" if payload.plan == "free" else "pending_payment"
+    payment_reference = None
+    checkout_url = None
+    provider_status = status_value
+    if payload.plan != "free":
+        provider = payload.payment_provider or "manual"
+        payment_reference = ai_credits.platform_payment_reference("SUB")
+        payment = models.PlatformPayment(
+            reference=payment_reference,
+            payer_user_id=current_user.id,
+            school_id=school.id,
+            payment_type="subscription",
+            amount=amount,
+            currency=school.default_currency or "FCFA",
+            country_code=school.country_code,
+            provider=provider,
+            status="pending_payment",
+            beneficiary_entity=ai_credits.beneficiary_for_region(school.country_code, None),
+            credits_amount=0,
+            metadata_json={"plan": payload.plan, "billing_cycle": payload.billing_cycle},
+        )
+        db.add(payment)
+        db.flush()
+        if provider in {"stripe", "djamo", "cinetpay"}:
+            checkout = payment_gateway.create_checkout_session(
+                provider=provider,
+                reference=payment.reference,
+                amount=payment.amount,
+                currency=payment.currency,
+                title=f"Abonnement TeducAI {payload.plan.upper()}",
+            )
+            payment.provider_reference = checkout.provider_reference
+            payment.status = checkout.status
+            checkout_url = checkout.checkout_url
+            provider_status = checkout.status
+    subscription = models.SchoolSubscription(
+        school_id=school.id,
+        plan=payload.plan,
+        billing_cycle=payload.billing_cycle,
+        amount=amount,
+        currency=school.default_currency or "FCFA",
+        status=status_value,
+        started_at=now if payload.plan == "free" else None,
+        next_renewal_at=next_renewal if payload.plan == "free" else None,
+        expires_at=next_renewal if payload.plan == "free" else None,
+        payment_provider=payload.payment_provider,
+        payment_reference=payment_reference,
+        created_by_id=current_user.id,
+    )
+    db.add(subscription)
+    school.subscription_plan = payload.plan
+    school.subscription_status = status_value
+    school.current_billing_period_end = next_renewal if payload.plan == "free" else None
+    audit.record_audit(
+        db,
+        action="school.subscription.changed",
+        current_user=current_user,
+        entity_type="school_subscription",
+        details={
+            "plan": payload.plan,
+            "billing_cycle": payload.billing_cycle,
+            "status": status_value,
+            "payment_reference": payment_reference,
+        },
+    )
+    db.commit()
+    db.refresh(subscription)
+    return {
+        "subscription": schemas.SchoolSubscriptionResponse.model_validate(subscription),
+        "checkout_url": checkout_url,
+        "provider_status": provider_status,
+    }
+
+
 @router.get("/schools", response_model=List[schemas.SchoolResponse])
 def list_schools(
     include_inactive: bool = True,
@@ -622,7 +836,21 @@ def update_school_subscription(
     school = db.query(models.School).filter(models.School.id == school_id).first()
     if not school:
         raise HTTPException(status_code=404, detail="School not found")
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    updates = payload.model_dump(exclude_unset=True)
+    target_plan = updates.get("subscription_plan", school.subscription_plan or "free")
+    target_status = updates.get("subscription_status", school.subscription_status or "active")
+    if target_plan in {"pro", "max"} and target_status == "active":
+        successful_payment = db.query(models.PlatformPayment.id).filter(
+            models.PlatformPayment.school_id == school.id,
+            models.PlatformPayment.payment_type == "subscription",
+            models.PlatformPayment.status == "successful",
+        ).first()
+        if not successful_payment:
+            raise HTTPException(
+                status_code=409,
+                detail="Un abonnement payant ne peut pas être activé sans paiement confirmé.",
+            )
+    for field, value in updates.items():
         if value is not None:
             setattr(school, field, value)
     school.is_active = school.subscription_status != "suspended"
@@ -631,19 +859,35 @@ def update_school_subscription(
     return _school_settings_payload(school)
 
 
-@router.get("/users", response_model=List[schemas.UserResponse])
+@router.get("/users")
 def list_users(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    query = db.query(models.User)
+    query = db.query(models.User).filter(models.User.deleted_at == None)
     if current_user.role == models.UserRole.SUPER_ADMIN:
         pass
     elif current_user.role in [models.UserRole.SCHOOL_ADMIN, models.UserRole.DIRECTION]:
         query = query.filter(models.User.school_id == current_user.school_id)
     else:
         raise HTTPException(status_code=403, detail="Not authorized")
-    return query.order_by(models.User.created_at.desc()).all()
+    return [_managed_user_payload(db, row) for row in query.order_by(models.User.created_at.desc()).all()]
+
+
+@router.get("/users/{user_id}")
+def get_managed_user(
+    user_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _assert_user_admin(current_user, db)
+    query = db.query(models.User).filter(models.User.id == user_id, models.User.deleted_at == None)
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        query = query.filter(models.User.school_id == current_user.school_id)
+    user = query.first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return _managed_user_payload(db, user)
 
 
 @router.get("/users/{user_id}/school-memberships", response_model=List[schemas.SchoolMembershipResponse])
@@ -707,12 +951,13 @@ def update_user_admin(
     db: Session = Depends(database.get_db),
 ):
     _assert_user_admin(current_user, db)
-    query = db.query(models.User).filter(models.User.id == user_id)
+    query = db.query(models.User).filter(models.User.id == user_id, models.User.deleted_at == None)
     if current_user.role != models.UserRole.SUPER_ADMIN:
         query = query.filter(models.User.school_id == current_user.school_id)
     user = query.first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    old_school_id = user.school_id
     old = {"email": user.email, "full_name": user.full_name, "role": user.role.value, "is_active": user.is_active}
     if payload.email is not None:
         duplicate = db.query(models.User).filter(models.User.email == payload.email, models.User.id != user.id).first()
@@ -729,11 +974,22 @@ def update_user_admin(
         user.role = payload.role
         if payload.role == models.UserRole.SUPER_ADMIN:
             user.school_id = None
+    if "school_id" in payload.model_fields_set:
+        if current_user.role != models.UserRole.SUPER_ADMIN:
+            raise HTTPException(status_code=403, detail="Only super admin can change a user's school")
+        if payload.school_id is not None and not db.query(models.School.id).filter(models.School.id == payload.school_id).first():
+            raise HTTPException(status_code=404, detail="School not found")
+        if user.role != models.UserRole.SUPER_ADMIN:
+            user.school_id = payload.school_id
     if payload.is_active is not None:
         user.is_active = payload.is_active
         user.token_version += 1
+    if user.school_id != old_school_id:
+        db.query(models.UserRoleAssignment).filter(models.UserRoleAssignment.user_id == user.id).delete()
     if payload.role_keys is not None:
         _assign_user_roles(db, user, payload.role_keys, current_user)
+    elif user.school_id != old_school_id:
+        _assign_user_roles(db, user, [], current_user)
     audit.record_audit(
         db,
         action="rbac.user.updated",
@@ -744,7 +1000,7 @@ def update_user_admin(
     )
     db.commit()
     db.refresh(user)
-    return user
+    return _managed_user_payload(db, user)
 
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -756,7 +1012,7 @@ def delete_user_admin(
     _assert_user_admin(current_user, db)
     if user_id == current_user.id:
         raise HTTPException(status_code=400, detail="You cannot delete your own account")
-    query = db.query(models.User).filter(models.User.id == user_id)
+    query = db.query(models.User).filter(models.User.id == user_id, models.User.deleted_at == None)
     if current_user.role != models.UserRole.SUPER_ADMIN:
         query = query.filter(models.User.school_id == current_user.school_id)
     user = query.first()
@@ -764,8 +1020,10 @@ def delete_user_admin(
         raise HTTPException(status_code=404, detail="User not found")
     if user.role in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN] and current_user.role != models.UserRole.SUPER_ADMIN:
         raise HTTPException(status_code=403, detail="Only super admin can delete admin accounts")
-    audit.record_audit(db, action="rbac.user.deleted", current_user=current_user, entity_type="user", entity_id=user.id, details={"email": user.email})
-    db.delete(user)
+    audit.record_audit(db, action="rbac.user.deleted_soft", current_user=current_user, entity_type="user", entity_id=user.id, details={"email": user.email})
+    user.is_active = False
+    user.deleted_at = datetime.now(timezone.utc)
+    user.token_version += 1
     db.commit()
 
 
@@ -857,9 +1115,10 @@ def permission_catalog(current_user: models.User = Depends(security.get_current_
     roles = db.query(models.RoleDefinition).filter(
         (models.RoleDefinition.school_id == school_id) | (models.RoleDefinition.school_id == None)
     ).order_by(models.RoleDefinition.category.asc(), models.RoleDefinition.name.asc()).all()
+    roles = _dedupe_role_rows(roles, school_id)
     return {
-        "roles": [role.key for role in roles],
-        "role_definitions": [_role_definition_payload(role, db) for role in roles],
+        "roles": list(dict.fromkeys(role.key for role in roles)),
+        "role_definitions": [_role_definition_payload(role, db, school_id) for role in roles],
         "modules": rbac.permission_modules(),
         "actions": rbac.STANDARD_ACTIONS,
         "custom_role_examples": rbac.CUSTOM_ROLE_EXAMPLES,
@@ -944,7 +1203,8 @@ def list_role_definitions(
     roles = db.query(models.RoleDefinition).filter(
         (models.RoleDefinition.school_id == school_id) | (models.RoleDefinition.school_id == None)
     ).order_by(models.RoleDefinition.category.asc(), models.RoleDefinition.name.asc()).all()
-    return [_role_definition_payload(role, db) for role in roles]
+    roles = _dedupe_role_rows(roles, school_id)
+    return [_role_definition_payload(role, db, school_id) for role in roles]
 
 
 @router.post("/role-management/roles")
@@ -1133,7 +1393,10 @@ def list_role_users(
         models.UserRoleAssignment.school_id == school_id,
     ).all()
     user_ids = [row.user_id for row in assignments]
-    users = db.query(models.User).filter(models.User.id.in_(user_ids)).all() if user_ids else []
+    users = db.query(models.User).filter(
+        models.User.id.in_(user_ids),
+        models.User.deleted_at == None,
+    ).all() if user_ids else []
     return [{"id": user.id, "email": user.email, "full_name": user.full_name, "is_active": user.is_active, "role": user.role.value} for user in users]
 
 

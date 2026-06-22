@@ -126,7 +126,6 @@ async def upload_file(
     approval_status = "pending" if visibility in {"public_external", "public"} and current_user.role in [models.UserRole.STUDENT, models.UserRole.PUPIL] else "approved"
     row = models.SecureFile(
         **metadata,
-        display_name=clean_document_name,
         category=category,
         visibility="public_external" if visibility == "public" else visibility,
         is_shareable=is_shareable,
