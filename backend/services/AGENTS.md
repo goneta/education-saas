@@ -21,6 +21,7 @@
 - School-to-user AI credit allocations must debit and credit paired wallets atomically, reject overdrafts, and refund only unconsumed credits on revocation.
 - School document branding must be resolved through the shared school-document service rather than duplicated in individual PDF routes.
 - School-model defaults must be seeded idempotently at assignment scope and active context must be validated through `school_context`.
+- Student lifecycle mutations must use `student_lifecycle` helpers for global-profile reuse, enrollment resolution, schedule conflicts, academic-year editability, transfer access, and finance isolation.
 
 # Verification
 

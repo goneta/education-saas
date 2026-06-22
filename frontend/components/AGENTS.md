@@ -17,6 +17,7 @@
 - `DashboardUxEnhancer` owns the generic runtime list toolbar and Table/Card presentation for legacy and current tables.
 - Profile avatars must fetch protected image bytes with the active token and provide initials when no image is available.
 - Context selectors and school-model managers must display only backend-authorized options and must not synthesize tenant access locally.
+- Student journey components must never infer finance visibility locally; they render only the enrollment-scoped finance returned by the backend.
 
 # Work Guidance
 

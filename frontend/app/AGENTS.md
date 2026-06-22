@@ -11,6 +11,7 @@
 - Locale-aware routes must preserve the `frontend/app/[locale]` structure.
 - Dashboard pages must work inside the shared dashboard layout and respect mobile/desktop behavior.
 - Public pages should detect session state where applicable and route authenticated users toward the dashboard.
+- The student lifecycle workspace owns transfer decisions, concurrent enrollment entry, duplicate-safe import preview/commit, and strongly confirmed academic-year closure.
 
 # Work Guidance
 

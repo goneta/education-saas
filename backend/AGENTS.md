@@ -24,6 +24,9 @@
 - User profile photos are tenant-protected secure files; only the user or an authorized administrator may upload, read, replace, or delete them.
 - Official PDFs must use the shared school document header so persisted identity, address, phone, email, registration number, and local logo stay consistent.
 - Multi-school data uses organization, school, school-model assignment, and academic-year context; frontend identifiers are never authoritative without backend membership validation.
+- A learner has one durable `StudentGlobalProfile`; school/year/model participation is represented by `StudentEnrollment`, and academic or financial records should carry `student_enrollment_id` when applicable.
+- Closed or archived academic years are read-only at the backend. Historical writes require Super Admin access or a scoped, time-limited, audited `HistoricalDataEditGrant`.
+- Cross-school transfers may expose approved historical academic data but must never expose another school's finance.
 
 # Work Guidance
 

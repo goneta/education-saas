@@ -776,6 +776,75 @@ class StudentProfileResponse(StudentProfileBase):
 class StudentResponse(UserResponse):
     student_profile: Optional[StudentProfileResponse] = None
 
+
+class StudentEnrollmentCreate(BaseModel):
+    student_global_profile_id: Optional[int] = None
+    student_user_id: Optional[int] = None
+    school_model_assignment_id: Optional[int] = None
+    academic_year_id: Optional[int] = None
+    class_id: Optional[int] = None
+    level_id: Optional[int] = None
+    program_id: Optional[int] = None
+    enrollment_type: str = "full_time"
+    schedule_type: str = "morning"
+    allows_concurrent_enrollment: bool = False
+    primary_enrollment: bool = True
+    module_id: Optional[int] = None
+    training_program_id: Optional[int] = None
+    certification_id: Optional[int] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
+    days_of_week: List[str] = []
+    location: Optional[str] = None
+    force: bool = False
+    override_reason: Optional[str] = None
+
+
+class StudentTransferCreate(BaseModel):
+    student_global_profile_id: int
+    from_enrollment_id: int
+    to_school_model_assignment_id: int
+    to_academic_year_id: int
+    academic_data_access_level: str = "full_history"
+    notes: Optional[str] = None
+
+
+class StudentTransferDecision(BaseModel):
+    decision: str
+    notes: Optional[str] = None
+    class_id: Optional[int] = None
+    program_id: Optional[int] = None
+    enrollment_type: str = "full_time"
+    schedule_type: str = "morning"
+
+
+class AcademicYearCloseRequest(BaseModel):
+    school_model_assignment_id: Optional[int] = None
+    confirmation: str
+
+
+class HistoricalEditGrantCreate(BaseModel):
+    organization_id: int
+    school_id: int
+    academic_year_id: int
+    student_global_profile_id: Optional[int] = None
+    resource_type: Optional[str] = None
+    resource_id: Optional[int] = None
+    reason: str = Field(min_length=5)
+    valid_until: datetime
+
+
+class StudentImportCommit(BaseModel):
+    batch_id: int
+    confirm: bool = False
+
+
+class StudentImportRowsPreview(BaseModel):
+    rows: List[Dict[str, Any]]
+    filename: str = "import.json"
+
 # Teacher Schemas
 class TeacherProfileBase(BaseModel):
     specialization: Optional[str] = None

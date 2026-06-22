@@ -21,3 +21,6 @@
 ## Verification
 
 - python -m py_compile backend\routers\<module>.py; python -c "import backend.main as m; print(m.app.title)"
+# Student enrollment scope
+
+Grade creation resolves the exact active enrollment and rejects writes to closed academic years or students outside the active context.

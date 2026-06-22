@@ -18,6 +18,7 @@
 - For PostgreSQL enums, avoid duplicate `CREATE TYPE` failures by using existing-type-safe patterns where needed.
 - Unique constraints containing nullable tenant columns require explicit PostgreSQL partial unique indexes for the global (`school_id IS NULL`) scope.
 - Multi-context migrations must backfill existing schools and business records without replacing historical identifiers or relations.
+- Student lifecycle migrations must preserve legacy student/profile IDs, create deterministic global identities, backfill current enrollments, and record migration counts and warnings.
 
 # Verification
 

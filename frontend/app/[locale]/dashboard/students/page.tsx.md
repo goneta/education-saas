@@ -23,3 +23,6 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
+# Lifecycle navigation
+
+The student list links to the global journey administration workspace for transfers, imports, and academic-year closure.

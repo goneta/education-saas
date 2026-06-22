@@ -21,3 +21,6 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
+# Student journey
+
+The detail view includes a dedicated `Parcours scolaire` tab backed by the global lifecycle API. It displays enrollment history, concurrent study contexts, transfers, lock status, local-only finance, and audited exports.

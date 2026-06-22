@@ -27,6 +27,8 @@
 - Student deletion is logical and excludes deleted users from active lists/details while preserving referenced history.
 - Profile-photo delivery requires authentication and the same tenant/self-or-admin authorization used for upload and deletion.
 - Context routes own authorized organization/school/model/year selection; model-scoped academic routes must filter and create records against the resolved assignment.
+- Student lifecycle routes own global profile search, enrollment history, concurrent enrollment checks, transfers, year closure, edit grants, and permission-aware import/export.
+- Student collection queries must derive visibility from active enrollments rather than only the legacy `users.school_id`.
 
 # Verification
 

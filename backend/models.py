@@ -410,6 +410,189 @@ class StudentProfile(Base):
     education_history = relationship("StudentEducationHistory", back_populates="student", cascade="all, delete-orphan")
     registration_documents = relationship("StudentRegistrationDocument", back_populates="student", cascade="all, delete-orphan")
 
+
+class StudentGlobalProfile(Base):
+    __tablename__ = "student_global_profiles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_profile_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False, unique=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, unique=True, index=True)
+    global_student_number = Column(String, nullable=False, unique=True, index=True)
+    first_name = Column(String, nullable=False)
+    last_name = Column(String, nullable=False)
+    date_of_birth = Column(DateTime, nullable=True, index=True)
+    gender = Column(String, nullable=True)
+    nationality = Column(String, nullable=True)
+    photo_url = Column(String, nullable=True)
+    identity_data = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    student_profile = relationship("StudentProfile")
+    user = relationship("User")
+    enrollments = relationship("StudentEnrollment", back_populates="student_global_profile")
+
+
+class StudentEnrollment(Base):
+    __tablename__ = "student_enrollments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_global_profile_id = Column(Integer, ForeignKey("student_global_profiles.id"), nullable=False, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=False, index=True)
+    academic_year_id = Column(Integer, ForeignKey("academic_years.id"), nullable=False, index=True)
+    class_id = Column(Integer, ForeignKey("classes.id"), nullable=True, index=True)
+    level_id = Column(Integer, nullable=True, index=True)
+    program_id = Column(Integer, ForeignKey("academic_programs.id"), nullable=True, index=True)
+    enrollment_status = Column(String, default="active", nullable=False, index=True)
+    enrollment_type = Column(String, default="full_time", nullable=False, index=True)
+    schedule_type = Column(String, default="morning", nullable=False, index=True)
+    allows_concurrent_enrollment = Column(Boolean, default=False, nullable=False)
+    primary_enrollment = Column(Boolean, default=True, nullable=False, index=True)
+    module_id = Column(Integer, nullable=True, index=True)
+    training_program_id = Column(Integer, ForeignKey("academic_programs.id"), nullable=True, index=True)
+    certification_id = Column(Integer, nullable=True, index=True)
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=True)
+    start_time = Column(Time, nullable=True)
+    end_time = Column(Time, nullable=True)
+    days_of_week = Column(JSON, nullable=True)
+    location = Column(String, nullable=True)
+    transfer_from_school_id = Column(Integer, ForeignKey("schools.id"), nullable=True)
+    transfer_to_school_id = Column(Integer, ForeignKey("schools.id"), nullable=True)
+    created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    override_reason = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    student_global_profile = relationship("StudentGlobalProfile", back_populates="enrollments")
+    organization = relationship("Organization")
+    school = relationship("School", foreign_keys=[school_id])
+    school_model_assignment = relationship("SchoolModelAssignment")
+    academic_year = relationship("AcademicYear")
+    class_ = relationship("Class")
+    program = relationship("AcademicProgram", foreign_keys=[program_id])
+    training_program = relationship("AcademicProgram", foreign_keys=[training_program_id])
+    created_by = relationship("User")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "student_global_profile_id",
+            "school_id",
+            "school_model_assignment_id",
+            "academic_year_id",
+            "class_id",
+            "program_id",
+            name="_student_enrollment_context_uc",
+        ),
+    )
+
+
+class StudentTransferRequest(Base):
+    __tablename__ = "student_transfer_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_global_profile_id = Column(Integer, ForeignKey("student_global_profiles.id"), nullable=False, index=True)
+    from_organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    from_school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    from_school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=False, index=True)
+    from_academic_year_id = Column(Integer, ForeignKey("academic_years.id"), nullable=False, index=True)
+    to_organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    to_school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    to_school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=False, index=True)
+    to_academic_year_id = Column(Integer, ForeignKey("academic_years.id"), nullable=False, index=True)
+    requested_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    approved_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    status = Column(String, default="pending", nullable=False, index=True)
+    academic_data_access_level = Column(String, default="summary", nullable=False)
+    financial_data_access_allowed = Column(Boolean, default=False, nullable=False)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+
+    student_global_profile = relationship("StudentGlobalProfile")
+    requested_by = relationship("User", foreign_keys=[requested_by_user_id])
+    approved_by = relationship("User", foreign_keys=[approved_by_user_id])
+
+
+class AcademicYearLock(Base):
+    __tablename__ = "academic_year_locks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
+    academic_year_id = Column(Integer, ForeignKey("academic_years.id"), nullable=False, index=True)
+    status = Column(String, default="open", nullable=False, index=True)
+    closed_at = Column(DateTime(timezone=True), nullable=True)
+    closed_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    unlock_until = Column(DateTime(timezone=True), nullable=True)
+    unlock_reason = Column(Text, nullable=True)
+    unlocked_by_super_admin_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint(
+            "school_id",
+            "school_model_assignment_id",
+            "academic_year_id",
+            name="_academic_year_lock_context_uc",
+        ),
+    )
+
+
+class HistoricalDataEditGrant(Base):
+    __tablename__ = "historical_data_edit_grants"
+
+    id = Column(Integer, primary_key=True, index=True)
+    granted_by_super_admin_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    academic_year_id = Column(Integer, ForeignKey("academic_years.id"), nullable=False, index=True)
+    student_global_profile_id = Column(Integer, ForeignKey("student_global_profiles.id"), nullable=True, index=True)
+    resource_type = Column(String, nullable=True, index=True)
+    resource_id = Column(Integer, nullable=True, index=True)
+    reason = Column(Text, nullable=False)
+    valid_from = Column(DateTime(timezone=True), nullable=False)
+    valid_until = Column(DateTime(timezone=True), nullable=False, index=True)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    used_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class StudentImportBatch(Base):
+    __tablename__ = "student_import_batches"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=False, index=True)
+    academic_year_id = Column(Integer, ForeignKey("academic_years.id"), nullable=False, index=True)
+    filename = Column(String, nullable=False)
+    source_format = Column(String, nullable=False)
+    status = Column(String, default="preview", nullable=False, index=True)
+    preview_payload = Column(JSON, nullable=False)
+    error_payload = Column(JSON, nullable=True)
+    imported_count = Column(Integer, default=0, nullable=False)
+    duplicate_count = Column(Integer, default=0, nullable=False)
+    created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class StudentLifecycleMigrationReport(Base):
+    __tablename__ = "student_lifecycle_migration_reports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    migration_revision = Column(String, nullable=False, unique=True, index=True)
+    profiles_created = Column(Integer, default=0, nullable=False)
+    enrollments_created = Column(Integer, default=0, nullable=False)
+    records_linked = Column(Integer, default=0, nullable=False)
+    warnings = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
 class StudentEducationHistory(Base):
     __tablename__ = "student_education_history"
     
@@ -585,6 +768,7 @@ class Grade(Base):
     assessment = relationship("Assessment", back_populates="grades")
     
     student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    student_enrollment_id = Column(Integer, ForeignKey("student_enrollments.id"), nullable=True, index=True)
     student = relationship("StudentProfile", back_populates="grades")
 
     # Avoid duplicates
@@ -603,6 +787,7 @@ class Attendance(Base):
     
     # Links
     student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    student_enrollment_id = Column(Integer, ForeignKey("student_enrollments.id"), nullable=True, index=True)
     student = relationship("StudentProfile")
     
     timetable_id = Column(Integer, ForeignKey("timetables.id"), nullable=False)
@@ -663,6 +848,7 @@ class AssignmentSubmission(Base):
     id = Column(Integer, primary_key=True, index=True)
     assignment_id = Column(Integer, ForeignKey("assignments.id"), nullable=False)
     student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    student_enrollment_id = Column(Integer, ForeignKey("student_enrollments.id"), nullable=True, index=True)
     content_text = Column(Text, nullable=True)
     attachment_url = Column(String, nullable=True)
     status = Column(SqEnum(SubmissionStatus), default=SubmissionStatus.SUBMITTED, nullable=False)
@@ -805,6 +991,7 @@ class InternshipAssignment(Base):
     id = Column(Integer, primary_key=True, index=True)
     internship_id = Column(Integer, ForeignKey("internships.id"), nullable=False, index=True)
     student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False, index=True)
+    student_enrollment_id = Column(Integer, ForeignKey("student_enrollments.id"), nullable=True, index=True)
     status = Column(String, default="assigned", nullable=False, index=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -1191,6 +1378,7 @@ class Fee(Base):
     covered_by = Column(JSON, nullable=True)
 
     student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True)
+    student_enrollment_id = Column(Integer, ForeignKey("student_enrollments.id"), nullable=True, index=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=True)
     school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
 
@@ -1228,6 +1416,7 @@ class Payment(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     fee_id = Column(Integer, ForeignKey("fees.id"), nullable=False)
+    student_enrollment_id = Column(Integer, ForeignKey("student_enrollments.id"), nullable=True, index=True)
     fee = relationship("Fee", back_populates="payments")
     recorded_by = relationship("User")
 
@@ -1246,6 +1435,7 @@ class StudentInvoice(Base):
     source_type = Column(String, default="fee", nullable=False, index=True)
     source_id = Column(Integer, nullable=True, index=True)
     student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True, index=True)
+    student_enrollment_id = Column(Integer, ForeignKey("student_enrollments.id"), nullable=True, index=True)
     fee_id = Column(Integer, ForeignKey("fees.id"), nullable=True, index=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
     school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
@@ -1264,6 +1454,7 @@ class OutstandingBalance(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True, index=True)
+    student_enrollment_id = Column(Integer, ForeignKey("student_enrollments.id"), nullable=True, index=True)
     invoice_id = Column(Integer, ForeignKey("student_invoices.id"), nullable=True, index=True)
     fee_id = Column(Integer, ForeignKey("fees.id"), nullable=True, index=True)
     due_date = Column(DateTime, nullable=True)
@@ -1294,6 +1485,7 @@ class CashJournalEntry(Base):
     payment_id = Column(Integer, ForeignKey("payments.id"), nullable=True)
     expense_id = Column(Integer, ForeignKey("expenses.id"), nullable=True)
     student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True)
+    student_enrollment_id = Column(Integer, ForeignKey("student_enrollments.id"), nullable=True, index=True)
     operator_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
     school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
@@ -1316,6 +1508,7 @@ class GeneratedDocument(Base):
     source_type = Column(String, nullable=True, index=True)
     source_id = Column(Integer, nullable=True, index=True)
     student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True, index=True)
+    student_enrollment_id = Column(Integer, ForeignKey("student_enrollments.id"), nullable=True, index=True)
     parent_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
     academic_year_id = Column(Integer, ForeignKey("academic_years.id"), nullable=True)
@@ -1392,6 +1585,7 @@ class CartItem(Base):
     provider_scope = Column(String, default="school", nullable=False, index=True)
     source_type = Column(String, nullable=True, index=True)
     source_id = Column(Integer, nullable=True, index=True)
+    student_enrollment_id = Column(Integer, ForeignKey("student_enrollments.id"), nullable=True, index=True)
     metadata_json = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -1461,6 +1655,7 @@ class StudentRegistrationDocument(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    student_enrollment_id = Column(Integer, ForeignKey("student_enrollments.id"), nullable=True, index=True)
     name = Column(String, nullable=False)
     is_received = Column(Boolean, default=False)
     received_at = Column(DateTime(timezone=True), nullable=True)
@@ -1481,6 +1676,7 @@ class CertificateRequest(Base):
     blocked_reason = Column(String, nullable=True)
     content = Column(Text, nullable=True)
     student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False)
+    student_enrollment_id = Column(Integer, ForeignKey("student_enrollments.id"), nullable=True, index=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
     generated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     generated_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -2129,6 +2325,7 @@ class AIUsageLog(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
     school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
+    student_enrollment_id = Column(Integer, ForeignKey("student_enrollments.id"), nullable=True, index=True)
     wallet_id = Column(Integer, ForeignKey("ai_wallets.id"), nullable=True, index=True)
     provider_id = Column(Integer, ForeignKey("ai_providers.id"), nullable=True)
     model_name = Column(String, nullable=True, index=True)

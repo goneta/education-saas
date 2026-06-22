@@ -21,3 +21,6 @@
 ## Verification
 
 - python -m py_compile backend\routers\<module>.py; python -c "import backend.main as m; print(m.app.title)"
+# Student enrollment scope
+
+Attendance records inherit the active student enrollment and academic-year lock enforcement.

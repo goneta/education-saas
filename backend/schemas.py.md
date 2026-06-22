@@ -28,3 +28,6 @@
 ## Verification
 
 - python -m py_compile backend\models.py backend\schemas.py backend\main.py; python -m pytest backend when relevant
+# Student lifecycle
+
+The schema catalog includes enrollment, transfer, academic-year closure, temporary historical edit grant, and transactional import payloads. These contracts preserve the existing student API while exposing the global student journey separately.

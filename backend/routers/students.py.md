@@ -24,3 +24,6 @@
 ## Verification
 
 - python -m py_compile backend\routers\<module>.py; python -c "import backend.main as m; print(m.app.title)"
+# Global lifecycle integration
+
+Student registration creates or reuses a global profile and a context-bound enrollment. Student lists are derived from active enrollments rather than the user's legacy primary school, so transferred and concurrently enrolled students appear only in the correct active school/model/year context. Updates honor academic-year locks.

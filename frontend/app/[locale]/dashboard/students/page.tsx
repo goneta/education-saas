@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Eye, Plus, Search } from "lucide-react"
+import { Eye, Plus, Route, Search } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -111,9 +111,14 @@ export default function StudentsPage() {
                     <h1 className="text-2xl font-bold text-[#111827]">Élèves</h1>
                     <p className="mt-1 text-sm text-[#6B7280]">Gérez les inscriptions, dossiers et profils des élèves.</p>
                 </div>
+                <div className="flex flex-wrap gap-2">
+                <Button variant="outline" onClick={() => router.push(`/${locale}/dashboard/student-lifecycle`)} className="gap-2">
+                    <Route className="h-4 w-4" /> Parcours et transferts
+                </Button>
                 <Button onClick={() => setShowAddModal(true)} className="rounded-lg bg-black text-white hover:bg-black/90">
                     <Plus className="mr-2 h-4 w-4" /> Ajouter un élève
                 </Button>
+                </div>
             </div>
 
             <div className="relative max-w-md">

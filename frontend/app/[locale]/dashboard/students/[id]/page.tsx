@@ -6,6 +6,7 @@ import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, User, BookOpen, CreditCard, FileText, Printer, CheckSquare } from "lucide-react"
+import { StudentJourney } from "@/components/students/student-journey"
 import { useRouter, useParams } from "next/navigation"
 
 interface Student {
@@ -82,7 +83,7 @@ export default function StudentDetailPage() {
     const [certificates, setCertificates] = useState<Certificate[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const [activeTab, setActiveTab] = useState<"profile" | "fees" | "documents" | "certificates">("profile")
+    const [activeTab, setActiveTab] = useState<"profile" | "journey" | "fees" | "documents" | "certificates">("profile")
 
     useEffect(() => {
         if (!token || !studentId) return
@@ -196,6 +197,12 @@ export default function StudentDetailPage() {
                     onClick={() => setActiveTab("profile")}
                 >
                     <User className="h-4 w-4" /> Profile
+                </button>
+                <button
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "journey" ? "border-black text-[#111827] dark:border-white dark:text-white" : "border-transparent text-[#6B7280] hover:text-[#111827] dark:text-slate-300 dark:hover:text-white"}`}
+                    onClick={() => setActiveTab("journey")}
+                >
+                    <BookOpen className="h-4 w-4" /> Parcours scolaire
                 </button>
                 <button
                     className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "fees" ? "border-black text-[#111827]" : "border-transparent text-[#6B7280] hover:text-[#111827]"}`}
@@ -315,6 +322,8 @@ export default function StudentDetailPage() {
                     </Card>
                 </div>
             )}
+
+            {activeTab === "journey" && <StudentJourney studentUserId={studentId} />}
 
             {activeTab === "documents" && (
                 <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">

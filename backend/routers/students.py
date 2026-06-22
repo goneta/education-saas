@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session, selectinload
 from typing import List
 from datetime import datetime
 from .. import localization, models, rbac, schemas, security, database, tenancy
-from ..services import automation, school_context
+from ..services import automation, school_context, student_lifecycle
 
 router = APIRouter(prefix="/students", tags=["Students"])
 
@@ -20,6 +20,11 @@ def register_student(
     
     school_id = tenancy.resolve_school_id_for_create(current_user, student_in.school_id, db)
     active_context = school_context.resolve_context(db, current_user)
+    active_year_id = active_context.academic_year_id or student_lifecycle.ensure_academic_year_for_context(
+        db,
+        school_id=active_context.school_id,
+        school_model_assignment_id=active_context.school_model_assignment_id,
+    ).id
     if active_context.school_id != school_id:
         raise HTTPException(status_code=403, detail="Le contexte actif ne correspond pas a cet etablissement.")
     existing_person = tenancy.find_existing_person(
@@ -55,6 +60,15 @@ def register_student(
                 school_id=school_id,
                 role=models.UserRole.STUDENT.value,
                 transfer_reason=student_in.transfer_reason,
+            )
+            student_lifecycle.ensure_current_enrollment(
+                db,
+                student_profile=existing_person.student_profile,
+                current_user=current_user,
+                school_id=school_id,
+                school_model_assignment_id=active_context.school_model_assignment_id,
+                academic_year_id=active_year_id,
+                class_id=student_in.profile.current_class_id,
             )
             db.commit()
             db.refresh(existing_person)
@@ -148,6 +162,15 @@ def register_student(
             "Piece d'identite parent 2 ou representant legal",
         ]:
             db.add(models.StudentRegistrationDocument(student_id=new_profile.id, name=document_name))
+        student_lifecycle.ensure_current_enrollment(
+            db,
+            student_profile=new_profile,
+            current_user=current_user,
+            school_id=school_id,
+            school_model_assignment_id=active_context.school_model_assignment_id,
+            academic_year_id=active_year_id,
+            class_id=student_in.profile.current_class_id,
+        )
         db.commit()
         db.refresh(new_user)
         return new_user
@@ -173,10 +196,23 @@ def list_students(
     rbac.require_permission(current_user, "students:view", db)
     # The profile is the durable source of truth. A learner may have a primary
     # role such as PUPIL or a custom role while still owning a StudentProfile.
-    query = db.query(models.User).options(selectinload(models.User.student_profile)).join(models.StudentProfile).filter(models.User.deleted_at == None)
-    query = tenancy.apply_user_school_filter(query, current_user, school_id)
     active_context = school_context.resolve_context(db, current_user)
-    query = query.filter(models.StudentProfile.school_model_assignment_id == active_context.school_model_assignment_id)
+    query = db.query(models.User).options(selectinload(models.User.student_profile)).join(
+        models.StudentProfile
+    ).join(
+        models.StudentGlobalProfile,
+        models.StudentGlobalProfile.student_profile_id == models.StudentProfile.id,
+    ).join(
+        models.StudentEnrollment,
+        models.StudentEnrollment.student_global_profile_id == models.StudentGlobalProfile.id,
+    ).filter(
+        models.User.deleted_at == None,
+        models.StudentEnrollment.school_id == active_context.school_id,
+        models.StudentEnrollment.school_model_assignment_id == active_context.school_model_assignment_id,
+        models.StudentEnrollment.enrollment_status.in_(["active", "transferred_in"]),
+    )
+    if active_context.academic_year_id:
+        query = query.filter(models.StudentEnrollment.academic_year_id == active_context.academic_year_id)
     
     if class_id:
         query = query.filter(models.StudentProfile.current_class_id == class_id)
@@ -199,11 +235,17 @@ def get_student(
     student = db.query(models.User).join(models.StudentProfile).filter(
         models.User.id == student_id,
         models.User.deleted_at == None,
-    )
-    student = tenancy.apply_user_school_filter(student, current_user).first()
+    ).first()
     
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
+    global_profile = student_lifecycle.ensure_global_profile(db, student.student_profile)
+    student_lifecycle.ensure_student_context_access(
+        db,
+        current_user=current_user,
+        global_profile_id=global_profile.id,
+    )
+    db.commit()
         
     return student
 
@@ -227,11 +269,30 @@ def update_student(
 
     student = db.query(models.User).filter(
         models.User.id == student_id,
-    )
-    student = tenancy.apply_user_school_filter(student, current_user).first()
+    ).first()
     
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
+    active_context = school_context.resolve_context(db, current_user)
+    global_profile = student_lifecycle.ensure_global_profile(db, student.student_profile)
+    access = student_lifecycle.ensure_student_context_access(
+        db,
+        current_user=current_user,
+        global_profile_id=global_profile.id,
+        require_edit=True,
+        school_id=active_context.school_id,
+    )
+    if access.enrollment:
+        student_lifecycle.ensure_academic_year_is_editable(
+            db,
+            current_user=current_user,
+            school_id=access.enrollment.school_id,
+            academic_year_id=access.enrollment.academic_year_id,
+            school_model_assignment_id=access.enrollment.school_model_assignment_id,
+            student_global_profile_id=global_profile.id,
+            resource_type="student_profile",
+            resource_id=student.student_profile.id,
+        )
 
     # Update User Fields
     if student_in.full_name:

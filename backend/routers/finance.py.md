@@ -22,3 +22,6 @@
 ## Verification
 
 - python -m py_compile backend\routers\<module>.py; python -c "import backend.main as m; print(m.app.title)"
+# Student enrollment scope
+
+Student fees require an active enrollment in the selected school/model/year and inherit that enrollment ID. Closed academic years reject fee creation unless a valid historical edit grant applies.

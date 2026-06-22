@@ -22,3 +22,6 @@
 ## Verification
 
 - python -m py_compile backend\services\<module>.py; run targeted backend tests when available
+# Enrollment scoping
+
+Invoices generated from student fees inherit `student_enrollment_id`, preserving financial isolation when one learner has multiple active schools or training contexts.

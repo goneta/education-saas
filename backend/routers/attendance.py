@@ -4,6 +4,7 @@ from sqlalchemy import func
 from typing import List, Optional
 from datetime import datetime
 from .. import models, schemas, security, database
+from ..services import school_context, student_lifecycle
 
 router = APIRouter(prefix="/attendance", tags=["Attendance"])
 
@@ -25,14 +26,33 @@ def batch_update_attendance(
     if not timetable:
          raise HTTPException(status_code=404, detail="Timetable not found or access denied")
 
+    active_context = school_context.resolve_context(db, current_user)
+    student_lifecycle.ensure_academic_year_is_editable(
+        db,
+        current_user=current_user,
+        school_id=active_context.school_id,
+        academic_year_id=active_context.academic_year_id,
+        school_model_assignment_id=active_context.school_model_assignment_id,
+        resource_type="attendance",
+    )
     updated_records = []
     
     for student_update in batch_data.students:
+        enrollment = student_lifecycle.active_enrollment_for_student_profile_id(
+            db,
+            student_update.student_id,
+            school_id=active_context.school_id,
+            school_model_assignment_id=active_context.school_model_assignment_id,
+            academic_year_id=active_context.academic_year_id,
+        )
+        if not enrollment:
+            raise HTTPException(status_code=403, detail="Eleve hors du contexte d'inscription actif.")
+        student_profile_id = enrollment.student_global_profile.student_profile_id
         # Check if record exists
         attendance_record = db.query(models.Attendance).filter(
             models.Attendance.timetable_id == batch_data.timetable_id,
             models.Attendance.date == batch_data.date,
-            models.Attendance.student_id == student_update.student_id
+            models.Attendance.student_id == student_profile_id
         ).first()
         
         if attendance_record:
@@ -47,7 +67,8 @@ def batch_update_attendance(
                 date=batch_data.date,
                 status=student_update.status,
                 remarks=student_update.remarks,
-                student_id=student_update.student_id,
+                student_id=student_profile_id,
+                student_enrollment_id=enrollment.id,
                 timetable_id=batch_data.timetable_id,
                 recorded_by_id=current_user.id
             )

@@ -6,7 +6,7 @@ from datetime import datetime, time
 from uuid import uuid4
 
 from .. import audit, models, schemas, database, rbac, security
-from ..services import automation, school_context
+from ..services import automation, school_context, student_lifecycle
 
 router = APIRouter(
     prefix="/finance",
@@ -208,9 +208,26 @@ def create_fee(
         ).first()
         if not student:
             raise HTTPException(status_code=404, detail="Student not found")
-        if current_user.school_id and student.user and student.user.school_id != current_user.school_id:
-            raise HTTPException(status_code=403, detail="Not authorized for this school")
         fee.student_id = student.id
+        enrollment = student_lifecycle.active_enrollment_for_student_profile_id(
+            db,
+            student.id,
+            school_id=active_context.school_id,
+            school_model_assignment_id=active_context.school_model_assignment_id,
+            academic_year_id=active_context.academic_year_id,
+        )
+        if not enrollment:
+            raise HTTPException(status_code=403, detail="L'eleve n'a pas d'inscription active dans ce contexte.")
+        fee.student_enrollment_id = enrollment.id
+        student_lifecycle.ensure_academic_year_is_editable(
+            db,
+            current_user=current_user,
+            school_id=enrollment.school_id,
+            academic_year_id=enrollment.academic_year_id,
+            school_model_assignment_id=enrollment.school_model_assignment_id,
+            student_global_profile_id=enrollment.student_global_profile_id,
+            resource_type="fee",
+        )
 
     fee_data = fee.model_dump(exclude={"school_id"})
     fee_data["due_date"] = fee_data["due_date"] or datetime.utcnow()
@@ -280,6 +297,7 @@ def record_fee_payment(
         raise HTTPException(status_code=400, detail="Payment amount exceeds remaining balance")
     db_payment = models.Payment(
         fee_id=db_fee.id,
+        student_enrollment_id=db_fee.student_enrollment_id,
         amount=payment.amount,
         payment_date=payment.payment_date or datetime.utcnow(),
         note=payment.note,

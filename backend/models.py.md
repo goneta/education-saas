@@ -25,3 +25,8 @@
 ## Verification
 
 - python -m py_compile backend\models.py backend\schemas.py backend\main.py; python -m pytest backend when relevant
+# Student lifecycle
+
+`StudentGlobalProfile` is the unique learner identity. `StudentEnrollment` records each school, model, academic year, class, program, schedule, and concurrent-training context. Transfers, year locks, historical edit grants, import batches, and migration reports preserve cross-school history without sharing finance.
+
+Grades, attendance, assignment submissions, internships, fees, invoices, registration documents, certificates, and AI usage can reference the precise enrollment.

@@ -57,6 +57,7 @@ def ensure_invoice_for_fee(db: Session, fee: models.Fee, current_user: models.Us
             source_id=fee.id,
             fee_id=fee.id,
             student_id=fee.student_id,
+            student_enrollment_id=fee.student_enrollment_id,
             school_id=fee.school_id,
             school_model_assignment_id=fee.school_model_assignment_id,
             created_by_id=current_user.id if current_user else None,
@@ -69,6 +70,7 @@ def ensure_invoice_for_fee(db: Session, fee: models.Fee, current_user: models.Us
     invoice.due_date = fee.due_date
     invoice.status = status
     invoice.student_id = fee.student_id
+    invoice.student_enrollment_id = fee.student_enrollment_id
     db.flush()
     ensure_outstanding_balance(db, invoice, fee)
     ensure_generated_document(
@@ -80,6 +82,7 @@ def ensure_invoice_for_fee(db: Session, fee: models.Fee, current_user: models.Us
         source_id=invoice.id,
         student_id=fee.student_id,
         school_id=fee.school_id,
+        student_enrollment_id=fee.student_enrollment_id,
         current_user=current_user,
         content={"amount_due": invoice.amount_due, "amount_paid": invoice.amount_paid, "remaining_balance": invoice.remaining_balance, "status": invoice.status.value},
     )
@@ -104,6 +107,7 @@ def ensure_outstanding_balance(db: Session, invoice: models.StudentInvoice, fee:
             invoice_id=invoice.id,
             fee_id=fee.id if fee else invoice.fee_id,
             student_id=invoice.student_id,
+            student_enrollment_id=invoice.student_enrollment_id,
             school_id=invoice.school_id,
             school_model_assignment_id=invoice.school_model_assignment_id,
         )
@@ -128,6 +132,7 @@ def ensure_generated_document(
     source_id: int,
     student_id: int | None,
     school_id: int,
+    student_enrollment_id: int | None = None,
     current_user: models.User | None = None,
     content: dict | None = None,
     download_url: str | None = None,
@@ -146,6 +151,7 @@ def ensure_generated_document(
             source_type=source_type,
             source_id=source_id,
             student_id=student_id,
+            student_enrollment_id=student_enrollment_id,
             school_id=school_id,
             generated_by_id=current_user.id if current_user else None,
         )
@@ -207,6 +213,7 @@ def ensure_cash_journal_for_payment(db: Session, payment: models.Payment, fee: m
         description=f"Encaissement {fee.title}",
         payment_id=payment.id,
         student_id=fee.student_id,
+        student_enrollment_id=fee.student_enrollment_id,
         operator_id=payment.recorded_by_id,
         school_id=fee.school_id,
         school_model_assignment_id=fee.school_model_assignment_id,
@@ -319,6 +326,7 @@ def automate_payment(db: Session, payment: models.Payment, fee: models.Fee, curr
         source_id=payment.id,
         student_id=fee.student_id,
         school_id=fee.school_id,
+        student_enrollment_id=fee.student_enrollment_id,
         current_user=current_user,
         content={"amount": payment.amount, "receipt_number": payment.receipt_number, "invoice_number": invoice.invoice_number},
         download_url=f"/documents/students/{fee.student.user_id}/receipt/{payment.id}.pdf" if fee.student else None,
@@ -355,6 +363,7 @@ def automate_certificate(db: Session, certificate: models.CertificateRequest, cu
         source_id=certificate.id,
         student_id=certificate.student_id,
         school_id=certificate.school_id,
+        student_enrollment_id=certificate.student_enrollment_id,
         current_user=current_user,
         content={"status": certificate.status.value, "blocked_reason": certificate.blocked_reason},
         download_url=f"/documents/students/{certificate.student.user_id}/certificate/{certificate.id}.pdf" if certificate.student and certificate.student.user_id else None,

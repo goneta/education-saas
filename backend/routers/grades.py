@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from .. import models, schemas, security, database
-from ..services import automation
+from ..services import automation, school_context, student_lifecycle
 
 router = APIRouter(prefix="/grades", tags=["Grades & Evaluations"])
 
@@ -65,6 +65,15 @@ def get_assessment(
     assessment = db.query(models.Assessment).filter(models.Assessment.id == assessment_id).first()
     if not assessment:
         raise HTTPException(status_code=404, detail="Assessment not found")
+    active_context = school_context.resolve_context(db, current_user)
+    student_lifecycle.ensure_academic_year_is_editable(
+        db,
+        current_user=current_user,
+        school_id=active_context.school_id,
+        academic_year_id=active_context.academic_year_id,
+        school_model_assignment_id=active_context.school_model_assignment_id,
+        resource_type="grade",
+    )
         
     # Security check: Ensure assessment belongs to user's school
     # (Assuming assessment -> class -> school relationship)
@@ -128,15 +137,34 @@ def enter_grades_bulk(
     assessment = db.query(models.Assessment).filter(models.Assessment.id == bulk_in.assessment_id).first()
     if not assessment:
         raise HTTPException(status_code=404, detail="Assessment not found")
+    active_context = school_context.resolve_context(db, current_user)
+    student_lifecycle.ensure_academic_year_is_editable(
+        db,
+        current_user=current_user,
+        school_id=active_context.school_id,
+        academic_year_id=active_context.academic_year_id,
+        school_model_assignment_id=active_context.school_model_assignment_id,
+        resource_type="grade",
+    )
         
     # Process each grade
     count = 0
     touched_students = set()
     for g in bulk_in.grades:
+        enrollment = student_lifecycle.active_enrollment_for_student_profile_id(
+            db,
+            g.student_id,
+            school_id=active_context.school_id,
+            school_model_assignment_id=active_context.school_model_assignment_id,
+            academic_year_id=active_context.academic_year_id,
+        )
+        if not enrollment:
+            raise HTTPException(status_code=403, detail=f"Eleve {g.student_id} hors du contexte d'inscription actif.")
+        student_profile_id = enrollment.student_global_profile.student_profile_id
         # Check existing
         existing = db.query(models.Grade).filter(
             models.Grade.assessment_id == bulk_in.assessment_id,
-            models.Grade.student_id == g.student_id
+            models.Grade.student_id == student_profile_id
         ).first()
         
         if existing:
@@ -145,12 +173,13 @@ def enter_grades_bulk(
         else:
             new_grade = models.Grade(
                 assessment_id=bulk_in.assessment_id,
-                student_id=g.student_id,
+                student_id=student_profile_id,
+                student_enrollment_id=enrollment.id,
                 score=g.score,
                 comment=g.comment
             )
             db.add(new_grade)
-        touched_students.add(g.student_id)
+        touched_students.add(student_profile_id)
         count += 1
     school_id = assessment.current_class.school_id if assessment.current_class else current_user.school_id
     if school_id:
@@ -180,10 +209,16 @@ def get_report_card(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
+    profile = db.query(models.StudentProfile).filter(
+        (models.StudentProfile.id == student_id)
+        | (models.StudentProfile.user_id == student_id)
+    ).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Student not found")
     # Fetch all grades for this student in this term
     # Join Assessment to filter by term, and Subject for info
     grades = db.query(models.Grade).join(models.Assessment).filter(
-        models.Grade.student_id == student_id,
+        models.Grade.student_id == profile.id,
         models.Assessment.term_id == term_id
     ).options(joinedload(models.Grade.assessment).joinedload(models.Assessment.subject)).all()
     

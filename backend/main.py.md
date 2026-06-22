@@ -22,3 +22,6 @@
 ## Verification
 
 - python -m py_compile backend\models.py backend\schemas.py backend\main.py; python -m pytest backend when relevant
+# Student lifecycle
+
+The application registers the `/student-lifecycle` router for global student profiles, enrollments, transfers, academic locks, historical edit grants, and import/export.
