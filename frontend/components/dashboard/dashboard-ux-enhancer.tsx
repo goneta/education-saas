@@ -410,6 +410,99 @@ function toggleSection(header: HTMLElement) {
     ensureSectionToggle(container, collapsed)
 }
 
+function isPlaceholderRow(row: HTMLTableRowElement) {
+    const cells = directCells(row)
+    if (cells.length !== 1) return false
+    const text = (row.textContent || "").trim().toLowerCase()
+    return cells[0].colSpan > 1 || /^(aucun|aucune|chargement|no data|no records|loading)/i.test(text)
+}
+
+function tableRows(table: HTMLTableElement) {
+    return Array.from(table.querySelectorAll<HTMLTableRowElement>("tbody tr")).filter(row => !isPlaceholderRow(row))
+}
+
+function applyTableView(table: HTMLTableElement) {
+    const toolbar = document.querySelector<HTMLElement>(`[data-teducai-list-toolbar="${table.dataset.teducaiTableId}"]`)
+    if (!toolbar) return
+    const query = (toolbar.querySelector<HTMLInputElement>("[data-teducai-list-search]")?.value || "").trim().toLowerCase()
+    const pageSizeValue = toolbar.querySelector<HTMLSelectElement>("[data-teducai-page-size]")?.value || "10"
+    const pageSize = pageSizeValue === "all" ? Number.MAX_SAFE_INTEGER : Number(pageSizeValue)
+    const rows = tableRows(table)
+    const matches = rows.filter(row => !query || (row.textContent || "").toLowerCase().includes(query))
+    Array.from(table.querySelectorAll<HTMLTableRowElement>("tbody tr")).filter(isPlaceholderRow).forEach(row => {
+        row.dataset.teducaiPlaceholderRow = "true"
+        row.style.display = matches.length === 0 && !query ? "" : "none"
+    })
+    const maxPage = Math.max(1, Math.ceil(matches.length / pageSize))
+    const requestedPage = Number(toolbar.dataset.teducaiPage || "1")
+    const page = Math.min(Math.max(1, requestedPage), maxPage)
+    toolbar.dataset.teducaiPage = String(page)
+    const start = (page - 1) * pageSize
+    const visible = new Set(matches.slice(start, start + pageSize))
+    rows.forEach(row => {
+        row.style.display = visible.has(row) ? "" : "none"
+    })
+    const status = toolbar.querySelector<HTMLElement>("[data-teducai-list-status]")
+    if (status) status.textContent = `${matches.length} résultat(s) · page ${page}/${maxPage}`
+    toolbar.querySelector<HTMLButtonElement>("[data-teducai-page='previous']")!.disabled = page <= 1
+    toolbar.querySelector<HTMLButtonElement>("[data-teducai-page='next']")!.disabled = page >= maxPage
+}
+
+function ensureTableToolbar(table: HTMLTableElement, tableIndex: number) {
+    const tableId = table.dataset.teducaiTableId || `table-${tableIndex}`
+    table.dataset.teducaiTableId = tableId
+    if (document.querySelector(`[data-teducai-list-toolbar="${tableId}"]`)) return
+    const toolbar = document.createElement("div")
+    toolbar.dataset.teducaiListToolbar = tableId
+    toolbar.dataset.teducaiPage = "1"
+    toolbar.className = "teducai-list-toolbar"
+    toolbar.innerHTML = `
+        <label class="teducai-list-search">
+            <span class="sr-only">Rechercher dans la liste</span>
+            <input type="search" data-teducai-list-search placeholder="Rechercher dans la liste..." />
+        </label>
+        <div class="teducai-list-controls">
+            <select data-teducai-page-size title="Nombre de lignes par page">
+                <option value="10">10 / page</option>
+                <option value="25">25 / page</option>
+                <option value="50">50 / page</option>
+                <option value="all">Tout afficher</option>
+            </select>
+            <button type="button" data-teducai-view="table" title="Vue tableau">Tableau</button>
+            <button type="button" data-teducai-view="card" title="Vue cartes">Cartes</button>
+            <button type="button" data-teducai-list-reset title="Réinitialiser la recherche et la pagination">Réinitialiser</button>
+            <button type="button" data-teducai-page="previous" title="Page précédente">‹</button>
+            <span data-teducai-list-status></span>
+            <button type="button" data-teducai-page="next" title="Page suivante">›</button>
+        </div>`
+    const wrapper = table.parentElement || table
+    wrapper.parentElement?.insertBefore(toolbar, wrapper)
+    const preferredView = localStorage.getItem("teducai_list_view") || "table"
+    table.classList.toggle("teducai-card-view", preferredView === "card")
+    toolbar.querySelectorAll<HTMLElement>("[data-teducai-view]").forEach(button => {
+        button.dataset.active = String(button.dataset.teducaiView === preferredView)
+    })
+    Array.from(table.querySelectorAll<HTMLTableCellElement>("thead th")).forEach((header, index) => {
+        if (header.dataset.teducaiActionsHead || header.dataset.teducaiSelectHead) return
+        header.dataset.teducaiSortIndex = String(index)
+        header.title = "Trier cette colonne"
+        header.classList.add("cursor-pointer")
+    })
+    applyTableView(table)
+}
+
+function sortTable(table: HTMLTableElement, columnIndex: number, direction: "asc" | "desc") {
+    const body = table.tBodies[0]
+    if (!body) return
+    tableRows(table)
+        .sort((left, right) => {
+            const leftValue = left.cells[columnIndex]?.textContent?.trim() || ""
+            const rightValue = right.cells[columnIndex]?.textContent?.trim() || ""
+            return leftValue.localeCompare(rightValue, "fr", { numeric: true, sensitivity: "base" }) * (direction === "asc" ? 1 : -1)
+        })
+        .forEach(row => body.appendChild(row))
+}
+
 function roleAllowsFallback(role: string | undefined, action: string) {
     if (["super_admin", "school_admin", "admin"].includes(role || "")) return true
     if (["parent", "student", "pupil"].includes(role || "")) return ["view", "download", "print"].includes(action)
@@ -456,6 +549,7 @@ export function DashboardUxEnhancer() {
         const tables = Array.from(document.querySelectorAll<HTMLTableElement>("main table"))
         tables.forEach((table, tableIndex) => {
             normalizeExistingTable(table)
+            ensureTableToolbar(table, tableIndex)
             table.dataset.teducaiEnhanced = "true"
             const headerRow = table.querySelector("thead tr")
             if (headerRow && !headerRow.querySelector("[data-teducai-select-head]")) {
@@ -473,6 +567,10 @@ export function DashboardUxEnhancer() {
                 headerRow.appendChild(actionHead)
             }
             Array.from(table.querySelectorAll<HTMLTableRowElement>("tbody tr")).forEach((row, rowIndex) => {
+                if (isPlaceholderRow(row)) {
+                    row.dataset.teducaiPlaceholderRow = "true"
+                    return
+                }
                 if (row.dataset.teducaiEnhanced === "true") return
                 row.dataset.teducaiEnhanced = "true"
                 row.dataset.teducaiRowKey = row.dataset.teducaiRowKey || `${tableIndex}-${rowIndex}-${row.textContent?.slice(0, 24) || rowIndex}`
@@ -536,6 +634,48 @@ export function DashboardUxEnhancer() {
     useEffect(() => {
         const onClick = (event: MouseEvent) => {
             const target = event.target as HTMLElement
+            const toolbar = target.closest<HTMLElement>("[data-teducai-list-toolbar]")
+            if (toolbar) {
+                const table = document.querySelector<HTMLTableElement>(`table[data-teducai-table-id="${toolbar.dataset.teducaiListToolbar}"]`)
+                if (!table) return
+                const viewButton = target.closest<HTMLElement>("[data-teducai-view]")
+                if (viewButton) {
+                    const view = viewButton.dataset.teducaiView || "table"
+                    localStorage.setItem("teducai_list_view", view)
+                    table.classList.toggle("teducai-card-view", view === "card")
+                    toolbar.querySelectorAll<HTMLElement>("[data-teducai-view]").forEach(button => {
+                        button.dataset.active = String(button.dataset.teducaiView === view)
+                    })
+                    return
+                }
+                const pageButton = target.closest<HTMLButtonElement>("[data-teducai-page]")
+                if (pageButton) {
+                    const current = Number(toolbar.dataset.teducaiPage || "1")
+                    toolbar.dataset.teducaiPage = String(pageButton.dataset.teducaiPage === "next" ? current + 1 : current - 1)
+                    applyTableView(table)
+                    return
+                }
+                if (target.closest("[data-teducai-list-reset]")) {
+                    const search = toolbar.querySelector<HTMLInputElement>("[data-teducai-list-search]")
+                    const size = toolbar.querySelector<HTMLSelectElement>("[data-teducai-page-size]")
+                    if (search) search.value = ""
+                    if (size) size.value = "10"
+                    toolbar.dataset.teducaiPage = "1"
+                    applyTableView(table)
+                    return
+                }
+            }
+            const sortHeader = target.closest<HTMLTableCellElement>("[data-teducai-sort-index]")
+            if (sortHeader) {
+                const table = sortHeader.closest("table")
+                if (!table) return
+                const nextDirection = sortHeader.dataset.teducaiSortDirection === "asc" ? "desc" : "asc"
+                table.querySelectorAll<HTMLElement>("[data-teducai-sort-index]").forEach(header => delete header.dataset.teducaiSortDirection)
+                sortHeader.dataset.teducaiSortDirection = nextDirection
+                sortTable(table, Number(sortHeader.dataset.teducaiSortIndex), nextDirection)
+                applyTableView(table)
+                return
+            }
             const sectionToggle = target.closest<HTMLElement>("[data-teducai-section-toggle]")
             if (sectionToggle) {
                 const header = sectionToggle.closest<HTMLElement>("[data-teducai-collapsible='true']")?.querySelector<HTMLElement>("[data-teducai-collapse-heading]")
@@ -573,7 +713,18 @@ export function DashboardUxEnhancer() {
             if (action === "edit") clickExistingAction(row, [/edit/i, /modifier/i])
             if (action === "delete") clickExistingAction(row, [/delete/i, /supprimer/i, /trash/i])
         }
+        const onInput = (event: Event) => {
+            const target = event.target as HTMLElement
+            const toolbar = target.closest<HTMLElement>("[data-teducai-list-toolbar]")
+            if (!toolbar || (!target.matches("[data-teducai-list-search]") && !target.matches("[data-teducai-page-size]"))) return
+            const table = document.querySelector<HTMLTableElement>(`table[data-teducai-table-id="${toolbar.dataset.teducaiListToolbar}"]`)
+            if (!table) return
+            toolbar.dataset.teducaiPage = "1"
+            applyTableView(table)
+        }
         document.addEventListener("click", onClick)
+        document.addEventListener("input", onInput)
+        document.addEventListener("change", onInput)
         const onKeyDown = (event: KeyboardEvent) => {
             if (!["Enter", " "].includes(event.key)) return
             const target = event.target as HTMLElement
@@ -585,6 +736,8 @@ export function DashboardUxEnhancer() {
         document.addEventListener("keydown", onKeyDown)
         return () => {
             document.removeEventListener("click", onClick)
+            document.removeEventListener("input", onInput)
+            document.removeEventListener("change", onInput)
             document.removeEventListener("keydown", onKeyDown)
         }
     }, [])
@@ -657,6 +810,28 @@ export function DashboardUxEnhancer() {
                 .dark .teducai-row-action:hover{background:#343b41;color:#fff}
                 .dark [data-teducai-action-cell] > div{background:#2a3035!important}
                 .dark [data-teducai-download-menu]{border-color:#3b4248!important;background:#252b30!important;color:#f4f7fb!important}
+                .teducai-list-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px;padding:12px;border:1px solid #e5e7eb;border-radius:18px;background:#fff}
+                .teducai-list-search{min-width:min(100%,280px);flex:1}
+                .teducai-list-search input,.teducai-list-controls select{min-height:42px;width:100%;border:1px solid #d1d5db;border-radius:14px;background:#fff;padding:0 14px;color:#111827;outline:none}
+                .teducai-list-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+                .teducai-list-controls select{width:auto}
+                .teducai-list-controls button{min-height:38px;border:1px solid #d1d5db;border-radius:12px;padding:0 12px;background:#fff;color:#111827}
+                .teducai-list-controls button[data-active="true"]{background:#111827;color:#fff;border-color:#111827}
+                .teducai-list-controls button:disabled{cursor:not-allowed;opacity:.4}
+                [data-teducai-list-status]{font-size:12px;color:#667085}
+                .dark .teducai-list-toolbar{border-color:#3b4248;background:#202528}
+                .dark .teducai-list-search input,.dark .teducai-list-controls select,.dark .teducai-list-controls button{border-color:#4b5563;background:#171b1f;color:#f4f7fb}
+                .dark .teducai-list-controls button[data-active="true"]{background:#4b5563;border-color:#64748b}
+                .dark [data-teducai-list-status]{color:#cbd5e1}
+                table.teducai-card-view thead{display:none}
+                table.teducai-card-view tbody{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+                table.teducai-card-view tr{display:block;border:1px solid #e5e7eb!important;border-radius:18px;background:#fff;padding:12px}
+                table.teducai-card-view td{display:flex!important;align-items:center;justify-content:space-between;gap:14px;border:0!important;padding:8px!important;text-align:right!important;white-space:normal!important}
+                table.teducai-card-view td::before{content:attr(data-label);font-size:12px;font-weight:600;color:#667085;text-align:left}
+                table.teducai-card-view td[data-teducai-action-cell]{border-top:1px solid #e5e7eb!important;margin-top:6px;padding-top:12px!important}
+                table.teducai-card-view td[data-teducai-action-cell]::before{content:""}
+                .dark table.teducai-card-view tr{border-color:#3b4248!important;background:#202528}
+                .dark table.teducai-card-view td::before{color:#cbd5e1}
                 @media (max-width: 767px){
                     html,body{overflow-x:hidden}
                     main table{display:block;width:100%;min-width:0!important;border:0!important}

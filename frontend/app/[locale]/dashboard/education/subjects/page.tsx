@@ -71,7 +71,7 @@ export default function SubjectsPage() {
 
     const handleSave = async () => {
         if (!formData.name.trim()) {
-            setError("Subject name is required")
+            setError("Le nom de la matière est obligatoire.")
             return
         }
         setSaving(true)
@@ -96,10 +96,10 @@ export default function SubjectsPage() {
                 fetchSubjects()
             } else {
                 const data = await res.json()
-                setError(data.detail || "Failed to save subject")
+                setError(data.detail || "Impossible d'enregistrer la matière.")
             }
         } catch {
-            setError("An error occurred")
+            setError("Une erreur est survenue.")
         } finally {
             setSaving(false)
         }
@@ -127,12 +127,12 @@ export default function SubjectsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#111827]">Subjects</h1>
-                    <p className="text-sm text-[#6B7280] mt-1">Manage school subjects and curricula</p>
+                    <h1 className="text-2xl font-bold text-[#111827]">Matières</h1>
+                    <p className="text-sm text-[#6B7280] mt-1">Gérez les matières et programmes de l&apos;établissement.</p>
                 </div>
                 <Button onClick={openCreate} className="bg-black text-white hover:bg-black/90 rounded-lg">
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Subject
+                    Ajouter une matière
                 </Button>
             </div>
 
@@ -140,30 +140,30 @@ export default function SubjectsPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280]" />
                 <input
                     type="search"
-                    placeholder="Search subjects..."
+                    placeholder="Rechercher une matière..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-[#E5E7EB] rounded-lg bg-white text-[#111827] placeholder:text-[#6B7280] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
             </div>
 
-            <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
+            <Card data-teducai-collapsible="false" className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
                 <CardHeader>
-                    <CardTitle className="text-[#111827]">Subject List ({filtered.length})</CardTitle>
+                    <CardTitle className="text-[#111827]">Liste des matières ({filtered.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
-                        <div className="text-center py-12 text-[#6B7280]">Loading subjects...</div>
+                        <div className="text-center py-12 text-[#6B7280]">Chargement des matières...</div>
                     ) : filtered.length === 0 ? (
                         <div className="text-center py-12 text-[#6B7280]">
-                            {searchQuery ? `No subjects found matching "${searchQuery}"` : "No subjects yet. Create your first subject!"}
+                            {searchQuery ? `Aucune matière ne correspond à « ${searchQuery} ».` : "Aucune matière enregistrée. Ajoutez votre première matière."}
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-[#E5E7EB]">
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Name</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Nom</th>
                                         <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Description</th>
                                         <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Coefficient</th>
                                         <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Actions</th>
@@ -180,7 +180,7 @@ export default function SubjectsPage() {
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="h-8 text-[#2563EB] hover:text-[#2563EB] hover:bg-[#F0F1F3]"
+                                                        className="h-8 text-[#111827] hover:bg-[#F0F1F3] dark:text-white dark:hover:bg-[#343b41]"
                                                         onClick={() => openEdit(subject)}
                                                     >
                                                         <Pencil className="h-4 w-4" />
@@ -207,17 +207,17 @@ export default function SubjectsPage() {
             <Dialog open={showModal} onOpenChange={setShowModal}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>{editingSubject ? "Edit Subject" : "Add Subject"}</DialogTitle>
+                        <DialogTitle>{editingSubject ? "Modifier la matière" : "Ajouter une matière"}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         {error && (
                             <div className="bg-red-50 border border-red-200 text-red-800 px-3 py-2 rounded text-sm">{error}</div>
                         )}
                         <div className="space-y-2">
-                            <Label htmlFor="name">Subject Name *</Label>
+                            <Label htmlFor="name">Nom de la matière *</Label>
                             <Input
                                 id="name"
-                                placeholder="e.g. Mathematics, French"
+                                placeholder="Ex. Mathématiques, Français"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             />
@@ -226,7 +226,7 @@ export default function SubjectsPage() {
                             <Label htmlFor="description">Description</Label>
                             <Input
                                 id="description"
-                                placeholder="Optional description"
+                                placeholder="Description facultative"
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             />
@@ -244,9 +244,9 @@ export default function SubjectsPage() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
+                        <Button variant="outline" onClick={() => setShowModal(false)}>Annuler</Button>
                         <Button onClick={handleSave} disabled={saving} className="bg-black text-white hover:bg-black/90">
-                            {saving ? "Saving..." : "Save"}
+                            {saving ? "Enregistrement..." : "Enregistrer"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

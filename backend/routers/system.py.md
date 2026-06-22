@@ -20,6 +20,8 @@
 - Paid subscription changes create pending platform payments; only Free is activated immediately, and legacy Super Admin updates cannot bypass payment confirmation.
 - Managed user deletion is soft, audited, tenant-scoped, and protects administrator boundaries.
 - Role catalogs deduplicate global and school-specific definitions by stable role key and ignore soft-deleted users in membership counts and listings.
+- School logos support secure upload, public internal rendering, replacement, and audited deletion.
+- User profile photos support authenticated tenant-scoped read, self/admin upload, and audited deletion.
 
 ## Verification
 

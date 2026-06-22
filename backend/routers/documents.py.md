@@ -17,6 +17,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- Receipt, certificate, report-card, and diploma PDFs use the persisted school identity and logo through the shared document header.
 
 ## Verification
 

@@ -11,6 +11,7 @@
 - Defines Pydantic API contracts for school settings, cash fee payments, AI providers, wallets, targeted credit packs, manual cash/free credit validation, school allocations, platform payments, and school payments.
 - AI credit purchase contracts carry target context, provider, optional Mobile Money network, redirect URLs, manual-validation notes, checkout URL, and provider status.
 - Defines persistent subscription-change/response contracts and exposes managed-user phone/deletion state.
+- User, student, and teacher responses expose the optional protected profile-photo endpoint.
 
 ## DOX Scope
 

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { AddStudentModal } from "@/components/students/add-student-modal"
 import { EditStudentModal } from "@/components/students/edit-student-modal"
 import { DeleteStudentDialog } from "@/components/students/delete-student-dialog"
+import { ProfileAvatar } from "@/components/users/profile-avatar"
 
 interface StudentProfile {
     registration_number: string
@@ -30,6 +31,7 @@ interface Student {
     role: string
     school_id: number
     is_active: boolean
+    profile_photo_url?: string | null
     student_profile: StudentProfile
 }
 
@@ -151,7 +153,12 @@ export default function StudentsPage() {
                                 <tbody>
                                     {filteredStudents.map(student => (
                                         <tr key={student.id} onClick={() => openStudent(student.id)} className="cursor-pointer border-b border-[#E5E7EB] transition-colors last:border-0 hover:bg-[#F6F7F9]">
-                                            <td className="px-4 py-3 text-sm font-medium text-[#111827]">{student.full_name}</td>
+                                            <td className="px-4 py-3 text-sm font-medium text-[#111827] dark:text-[#f4f7fb]">
+                                                <div className="flex items-center gap-3">
+                                                    <ProfileAvatar userId={student.id} name={student.full_name} photoUrl={student.profile_photo_url} onChanged={fetchStudents} />
+                                                    <span>{student.full_name}</span>
+                                                </div>
+                                            </td>
                                             <td className="px-4 py-3 text-sm text-[#6B7280]">{student.email}</td>
                                             <td className="px-4 py-3 text-sm text-[#6B7280]">{student.student_profile?.registration_number || "-"}</td>
                                             <td className="px-4 py-3 text-sm text-[#6B7280]">{student.student_profile?.gender || "-"}</td>

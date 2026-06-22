@@ -96,23 +96,23 @@ export default async function Home({
   const locale = normalizeLocale(rawLocale)
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A]">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] dark:bg-[#1f2427] dark:text-[#f4f7fb]">
       <MarketingNav locale={locale} />
 
       <main>
-        <section className="relative overflow-hidden border-b border-[#DDE5E8] bg-[#F8FAFC]">
-          <div className="absolute inset-0 bg-[linear-gradient(#DDE5E8_1px,transparent_1px),linear-gradient(90deg,#DDE5E8_1px,transparent_1px)] bg-[size:56px_56px] opacity-45" />
+        <section className="relative overflow-hidden border-b border-[#DDE5E8] bg-[#F8FAFC] dark:border-[#3b4248] dark:bg-[#1f2427]">
+          <div className="absolute inset-0 bg-[linear-gradient(#DDE5E8_1px,transparent_1px),linear-gradient(90deg,#DDE5E8_1px,transparent_1px)] bg-[size:56px_56px] opacity-45 dark:bg-[linear-gradient(#343b41_1px,transparent_1px),linear-gradient(90deg,#343b41_1px,transparent_1px)] dark:opacity-35" />
           <div className="relative mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_0.92fr] lg:px-8">
             <div className="max-w-3xl">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#99F6E4] bg-white px-4 py-2 text-sm font-semibold text-[#0F766E] shadow-sm">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#99F6E4] bg-white px-4 py-2 text-sm font-semibold text-[#0F766E] shadow-sm dark:border-[#3f756f] dark:bg-[#252b30] dark:text-[#5eead4]">
                 <ShieldCheck className="h-4 w-4" />
                 SaaS multi-établissements, sécurisé et international
               </div>
-              <h1 className="max-w-4xl text-4xl font-bold leading-tight tracking-normal text-[#0F172A] sm:text-5xl lg:text-6xl">
+              <h1 className="max-w-4xl text-4xl font-bold leading-tight tracking-normal text-[#0F172A] dark:text-white sm:text-5xl lg:text-6xl">
                 TeducAI – La Plateforme Intelligente de Gestion des
                 Établissements d’Enseignement et de Formation
               </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-[#475569]">
+              <p className="mt-6 max-w-2xl text-lg leading-8 text-[#475569] dark:text-[#c7d0da]">
                 Automatisez la gestion administrative, académique et financière
                 de votre établissement grâce à l’Intelligence Artificielle.
               </p>
@@ -123,14 +123,14 @@ export default async function Home({
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="border-[#94A3B8] bg-white">
+                <Button asChild size="lg" variant="outline" className="border-[#94A3B8] bg-white dark:border-[#56616a] dark:bg-[#252b30] dark:text-white">
                   <Link href={`/${locale}/contact`}>Demander une Démonstration</Link>
                 </Button>
               </div>
             </div>
 
             <div className="relative">
-              <div className="rounded-[2rem] border border-[#CBD5E1] bg-white p-4 shadow-2xl shadow-slate-300/50">
+              <div className="rounded-[2rem] border border-[#CBD5E1] bg-white p-4 shadow-2xl shadow-slate-300/50 dark:border-[#56616a] dark:bg-[#252b30] dark:shadow-black/40">
                 <div className="rounded-[1.5rem] border border-[#E2E8F0] bg-[#0F172A] p-5 text-white">
                   <div className="flex items-center justify-between border-b border-white/10 pb-4">
                     <div>
@@ -183,12 +183,12 @@ export default async function Home({
           </div>
         </section>
 
-        <section className="bg-white py-8">
+        <section className="bg-white py-8 dark:bg-[#202528]">
           <div className="mx-auto flex max-w-7xl flex-wrap gap-3 px-4 sm:px-6 lg:px-8">
             {institutions.map((item) => (
               <span
                 key={item}
-                className="rounded-full border border-[#CBD5E1] bg-[#F8FAFC] px-4 py-2 text-sm font-medium text-[#334155]"
+                className="rounded-full border border-[#CBD5E1] bg-[#F8FAFC] px-4 py-2 text-sm font-medium text-[#334155] dark:border-[#3b4248] dark:bg-[#252b30] dark:text-[#dce3eb]"
               >
                 {item}
               </span>
@@ -196,13 +196,13 @@ export default async function Home({
           </div>
         </section>
 
-        <section id="fonctionnalites" className="bg-[#F1F5F9] py-20">
+        <section id="fonctionnalites" className="bg-[#F1F5F9] py-20 dark:bg-[#1f2427]">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl">
               <p className="text-sm font-bold uppercase tracking-wide text-[#0F766E]">
                 Fonctionnalités
               </p>
-              <h2 className="mt-3 text-3xl font-bold tracking-normal text-[#0F172A] sm:text-4xl">
+              <h2 className="mt-3 text-3xl font-bold tracking-normal text-[#0F172A] dark:text-white sm:text-4xl">
                 Une plateforme complète pour gérer l’administration, la
                 pédagogie, la finance et la relation avec les familles.
               </h2>
@@ -211,12 +211,12 @@ export default async function Home({
               {features.map((feature) => {
                 const Icon = feature.icon
                 return (
-                  <article key={feature.title} className="rounded-lg border border-[#DDE5E8] bg-white p-6 shadow-sm">
+                  <article key={feature.title} className="rounded-lg border border-[#DDE5E8] bg-white p-6 shadow-sm dark:border-[#3b4248] dark:bg-[#252b30]">
                     <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#CCFBF1] text-[#0F766E]">
                       <Icon className="h-5 w-5" />
                     </div>
-                    <h3 className="mt-5 text-xl font-semibold text-[#0F172A]">{feature.title}</h3>
-                    <p className="mt-3 text-sm leading-6 text-[#475569]">{feature.text}</p>
+                    <h3 className="mt-5 text-xl font-semibold text-[#0F172A] dark:text-white">{feature.title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-[#475569] dark:text-[#c7d0da]">{feature.text}</p>
                     <p className="mt-4 flex gap-2 text-sm font-medium text-[#0F766E]">
                       <CheckCircle2 className="mt-0.5 h-4 w-4" />
                       {feature.benefit}
@@ -228,7 +228,7 @@ export default async function Home({
           </div>
         </section>
 
-        <section className="bg-white py-20">
+        <section className="bg-white py-20 dark:bg-[#202528]">
           <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-3 lg:px-8">
             {trustHighlights.map((highlight) => {
               const FeatureIcon = highlight.icon
@@ -236,7 +236,7 @@ export default async function Home({
                 <div key={highlight.title} className="border-l-4 border-[#0F766E] pl-5">
                   <FeatureIcon className="h-7 w-7 text-[#0F766E]" />
                   <h3 className="mt-4 text-xl font-semibold">{highlight.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#475569]">{highlight.text}</p>
+                  <p className="mt-2 text-sm leading-6 text-[#475569] dark:text-[#c7d0da]">{highlight.text}</p>
                 </div>
               )
             })}

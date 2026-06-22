@@ -18,6 +18,7 @@
 - Uses the canonical `/students` collection endpoint without redirect.
 - API failures must be shown to the user instead of being presented as an empty list.
 - Normalizes direct-array and wrapped collection responses, bypasses stale browser caches, and keeps the primary student list visible instead of allowing global auto-collapse.
+- Student rows expose authenticated profile-photo display/upload and refresh the persisted list after replacement.
 
 ## Verification
 

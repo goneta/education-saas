@@ -17,6 +17,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- The public home and hero surfaces inherit the persisted global theme and keep navigation, copy, cards, and calls to action readable in dark mode.
 
 ## Verification
 

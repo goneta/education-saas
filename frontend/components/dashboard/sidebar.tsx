@@ -296,11 +296,11 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                                                         className={cn(
                                                             sidebarItemClass,
                                                             isActive
-                                                ? "bg-[#F0F1F3] font-medium dark:bg-[#30373d]"
+                                                                ? "bg-[#F5F5F7] font-medium dark:bg-[#30373d] dark:text-white"
                                                                 : ""
                                                         )}
                                                     >
-                                                        <Icon className="h-4 w-4" />
+                                                        <Icon className="h-4 w-4 text-current" />
                                                         {item.label}
                                                     </Link>
                                                 )

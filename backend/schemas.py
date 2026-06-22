@@ -129,6 +129,7 @@ class UserResponse(UserBase):
     school: Optional[SchoolResponse] = None
     mfa_enabled: bool = False
     phone_number: Optional[str] = None
+    profile_photo_url: Optional[str] = None
     deleted_at: Optional[datetime] = None
     
     model_config = ConfigDict(from_attributes=True)

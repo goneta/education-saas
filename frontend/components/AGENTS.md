@@ -14,6 +14,8 @@
 - Components enhanced by `DashboardUxEnhancer` may opt out of automatic collapsing with `data-teducai-collapsible="false"` or opt into an initially open state with `data-teducai-default-open="true"`.
 - Shared accordions, cards, and runtime-injected controls must remain readable in both light and dark themes.
 - Reusable destructive confirmations use `components/ui/confirmation-dialog.tsx`; global dashboard requests are coordinated by `DashboardUxEnhancer`.
+- `DashboardUxEnhancer` owns the generic runtime list toolbar and Table/Card presentation for legacy and current tables.
+- Profile avatars must fetch protected image bytes with the active token and provide initials when no image is available.
 
 # Work Guidance
 

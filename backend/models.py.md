@@ -18,6 +18,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- User records persist an optional protected `profile_photo_url`; school records do not own user profile photos.
 
 ## Verification
 

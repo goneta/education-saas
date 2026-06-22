@@ -26,6 +26,8 @@
 - Runtime-injected section, action, and download-menu elements include explicit dark-theme styles to avoid white-on-white content.
 - Edit/delete icons are injected only when the row exposes a real corresponding action; unavailable synthetic actions are not shown.
 - Shared promise-based confirmations are rendered here for dashboard modules and bulk deletion.
+- Every enhanced table receives a reusable dark-compatible toolbar for global search, column sorting, page size/pagination, reset, and persisted Table/Card view.
+- Placeholder, loading, and empty-state rows are excluded from result counts, selection controls, and standardized row actions.
 
 ## Verification
 

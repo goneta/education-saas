@@ -28,12 +28,12 @@ export function MarketingNav({ locale }: MarketingNavProps) {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[#DDE5E8] bg-white/95 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-[#DDE5E8] bg-white/95 backdrop-blur dark:border-[#3b4248] dark:bg-[#1f2427]/95">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href={`/${locale}`} aria-label="TeducAI Accueil">
           <TeducAILogo />
         </Link>
-        <nav className="hidden items-center gap-7 text-sm font-medium text-[#334155] lg:flex">
+        <nav className="hidden items-center gap-7 text-sm font-medium text-[#334155] dark:text-[#dce3eb] lg:flex">
           {links.map((link) => (
             <Link key={link.href} href={link.href} className="hover:text-[#0F766E]">
               {link.label}
@@ -49,7 +49,7 @@ export function MarketingNav({ locale }: MarketingNavProps) {
                   Dashboard
                 </Link>
               </Button>
-              <Button type="button" variant="outline" className="border-[#CBD5E1] text-[#0F172A]" onClick={handleLogout}>
+              <Button type="button" variant="outline" className="border-[#CBD5E1] text-[#0F172A] dark:border-[#56616a] dark:text-white" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
                 Déconnexion
               </Button>
@@ -61,7 +61,7 @@ export function MarketingNav({ locale }: MarketingNavProps) {
                   S&apos;enregistrer
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="border-[#CBD5E1] text-[#0F172A]">
+              <Button asChild variant="outline" className="border-[#CBD5E1] text-[#0F172A] dark:border-[#56616a] dark:text-white">
                 <Link href={`/${locale}/login`}>
                   Se connecter
                 </Link>

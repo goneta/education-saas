@@ -180,26 +180,26 @@ export default function ClassesPage() {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight">Classes Management</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Gestion des classes</h1>
                 <Dialog open={isDialogOpen} onOpenChange={(open) => {
                     setIsDialogOpen(open)
                     if (!open) resetForm()
                 }}>
                     <DialogTrigger asChild>
                         <Button onClick={resetForm}>
-                            <Plus className="mr-2 h-4 w-4" /> Add Class
+                            <Plus className="mr-2 h-4 w-4" /> Ajouter une classe
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>{currentClass ? "Edit Class" : "Add Class"}</DialogTitle>
+                            <DialogTitle>{currentClass ? "Modifier la classe" : "Ajouter une classe"}</DialogTitle>
                             <DialogDescription>
-                                {currentClass ? "Update class details." : "Create a new class for your school."}
+                                {currentClass ? "Modifiez les informations de cette classe." : "Créez une nouvelle classe pour votre établissement."}
                             </DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="name">Class Name</Label>
+                                <Label htmlFor="name">Nom de la classe</Label>
                                 <Input
                                     id="name"
                                     value={formData.name}
@@ -209,7 +209,7 @@ export default function ClassesPage() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="level">Level</Label>
+                                <Label htmlFor="level">Niveau</Label>
                                 <Input
                                     id="level"
                                     value={formData.level}
@@ -218,16 +218,16 @@ export default function ClassesPage() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="teacher">Main Teacher</Label>
+                                <Label htmlFor="teacher">Professeur principal</Label>
                                 <Select
                                     value={formData.main_teacher_id || ""}
                                     onValueChange={(val) => setFormData({ ...formData, main_teacher_id: val === "none" ? null : val })}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select a teacher" />
+                                        <SelectValue placeholder="Sélectionner un professeur" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="none">No Teacher</SelectItem>
+                                        <SelectItem value="none">Aucun professeur</SelectItem>
                                         {teachers.map(t => (
                                             <SelectItem key={t.id} value={t.id.toString()}>{t.full_name}</SelectItem>
                                         ))}
@@ -235,31 +235,31 @@ export default function ClassesPage() {
                                 </Select>
                             </div>
                             <DialogFooter>
-                                <Button type="submit">Save</Button>
+                                <Button type="submit">Enregistrer</Button>
                             </DialogFooter>
                         </form>
                     </DialogContent>
                 </Dialog>
             </div>
 
-            <div className="border rounded-md">
+            <div data-teducai-collapsible="false" className="overflow-x-auto rounded-[22px] border border-[#E5E7EB] bg-white dark:border-[#3b4248] dark:bg-[#202528]">
                 <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 border-b">
+                    <thead className="border-b bg-[#F8FAFC] dark:border-[#3b4248] dark:bg-[#252b30]">
                         <tr>
-                            <th className="px-6 py-3 font-medium text-gray-500">Name</th>
-                            <th className="px-6 py-3 font-medium text-gray-500">Level</th>
-                            <th className="px-6 py-3 font-medium text-gray-500">Main Teacher</th>
+                            <th className="px-6 py-3 font-medium text-gray-500 dark:text-[#eef3f8]">Nom</th>
+                            <th className="px-6 py-3 font-medium text-gray-500 dark:text-[#eef3f8]">Niveau</th>
+                            <th className="px-6 py-3 font-medium text-gray-500 dark:text-[#eef3f8]">Professeur principal</th>
                             <th className="px-6 py-3 font-medium text-gray-500 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y">
                         {isLoading ? (
-                            <tr><td colSpan={3} className="px-6 py-4 text-center">Loading...</td></tr>
+                            <tr><td colSpan={4} className="px-6 py-4 text-center">Chargement...</td></tr>
                         ) : classes.length === 0 ? (
-                            <tr><td colSpan={3} className="px-6 py-4 text-center text-gray-500">No classes found.</td></tr>
+                            <tr><td colSpan={4} className="px-6 py-4 text-center text-gray-500">Aucune classe trouvée.</td></tr>
                         ) : (
                             classes.map((cls) => (
-                                <tr key={cls.id}>
+                                <tr key={cls.id} className="border-b border-[#E5E7EB] last:border-0 hover:bg-[#F6F7F9] dark:border-[#343b41] dark:hover:bg-[#2a3035]">
                                     <td className="px-6 py-4 font-medium">{cls.name}</td>
                                     <td className="px-6 py-4">{cls.level}</td>
                                     <td className="px-6 py-4 text-gray-500">

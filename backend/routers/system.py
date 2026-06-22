@@ -373,6 +373,7 @@ def _managed_user_payload(db: Session, user: models.User) -> dict:
         "role": user.role.value,
         "role_keys": sorted({row[0] for row in assignments} | {user.role.value}),
         "phone_number": user.phone_number,
+        "profile_photo_url": user.profile_photo_url,
         "is_active": user.is_active,
         "school_id": user.school_id,
         "deleted_at": user.deleted_at,
@@ -593,6 +594,27 @@ def public_school_logo(school_id: int, db: Session = Depends(database.get_db)):
         if url:
             return RedirectResponse(url)
     return FileResponse(file_storage.open_stored_file(row.storage_path), media_type=row.content_type)
+
+
+@router.delete("/school-settings/logo", status_code=status.HTTP_204_NO_CONTENT)
+def delete_school_logo(
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    if not current_user.school_id:
+        raise HTTPException(status_code=400, detail="School context is required")
+    rbac.require_permission(current_user, "settings:write", db)
+    school = db.query(models.School).filter(models.School.id == current_user.school_id).first()
+    if not school:
+        raise HTTPException(status_code=404, detail="School not found")
+    school.logo_url = None
+    db.query(models.SecureFile).filter(
+        models.SecureFile.school_id == school.id,
+        models.SecureFile.entity_type == "school_logo",
+        models.SecureFile.status == "active",
+    ).update({"status": "deleted"}, synchronize_session=False)
+    audit.record_audit(db, action="school.logo.deleted", current_user=current_user, entity_type="school", entity_id=school.id)
+    db.commit()
 
 
 @router.get("/subscription", response_model=Optional[schemas.SchoolSubscriptionResponse])
@@ -888,6 +910,101 @@ def get_managed_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return _managed_user_payload(db, user)
+
+
+def _profile_photo_user(db: Session, user_id: int, current_user: models.User) -> models.User:
+    query = db.query(models.User).filter(models.User.id == user_id, models.User.deleted_at == None)
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        query = query.filter(models.User.school_id == current_user.school_id)
+    user = query.first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    if current_user.id != user.id:
+        _assert_user_admin(current_user, db)
+    return user
+
+
+@router.post("/users/{user_id}/profile-photo")
+async def upload_user_profile_photo(
+    user_id: int,
+    photo: UploadFile = File(...),
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    user = _profile_photo_user(db, user_id, current_user)
+    if photo.content_type not in {"image/png", "image/jpeg", "image/webp"}:
+        raise HTTPException(status_code=400, detail="La photo doit être une image PNG, JPEG ou WebP")
+    metadata = await file_storage.store_upload(
+        photo,
+        user.school_id,
+        document_name=f"Photo profil {user.full_name or user.id}",
+        user_id=current_user.id,
+        folder="profiles",
+    )
+    row = models.SecureFile(
+        **metadata,
+        category="profile_photo",
+        visibility="school",
+        is_shareable=False,
+        approval_status="approved",
+        approved_by_id=current_user.id,
+        approved_at=datetime.now(timezone.utc),
+        entity_type="profile_photo",
+        entity_id=str(user.id),
+        school_id=user.school_id,
+        uploaded_by_id=current_user.id,
+    )
+    db.add(row)
+    db.flush()
+    user.profile_photo_url = f"/system/users/{user.id}/profile-photo"
+    audit.record_audit(
+        db,
+        action="user.profile_photo.updated",
+        current_user=current_user,
+        entity_type="user",
+        entity_id=user.id,
+        details={"file_id": row.id},
+    )
+    db.commit()
+    return {"profile_photo_url": user.profile_photo_url}
+
+
+@router.get("/users/{user_id}/profile-photo")
+def get_user_profile_photo(
+    user_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _profile_photo_user(db, user_id, current_user)
+    row = db.query(models.SecureFile).filter(
+        models.SecureFile.entity_type == "profile_photo",
+        models.SecureFile.entity_id == str(user_id),
+        models.SecureFile.status == "active",
+    ).order_by(models.SecureFile.created_at.desc(), models.SecureFile.id.desc()).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Photo introuvable")
+    if row.storage_backend in {"s3", "minio"}:
+        url = file_storage.signed_download_url(row.storage_backend, row.storage_path, row.content_type, row.original_filename)
+        if url:
+            return RedirectResponse(url)
+    return FileResponse(file_storage.open_stored_file(row.storage_path), media_type=row.content_type)
+
+
+@router.delete("/users/{user_id}/profile-photo", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user_profile_photo(
+    user_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    user = _profile_photo_user(db, user_id, current_user)
+    user.profile_photo_url = None
+    db.query(models.SecureFile).filter(
+        models.SecureFile.entity_type == "profile_photo",
+        models.SecureFile.entity_id == str(user.id),
+        models.SecureFile.status == "active",
+    ).update({"status": "deleted"}, synchronize_session=False)
+    audit.record_audit(db, action="user.profile_photo.deleted", current_user=current_user, entity_type="user", entity_id=user.id)
+    db.commit()
 
 
 @router.get("/users/{user_id}/school-memberships", response_model=List[schemas.SchoolMembershipResponse])

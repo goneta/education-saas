@@ -18,6 +18,7 @@
 
 - Account labels must use the `account` translation namespace.
 - Preserve independent sidebar scrolling and dark-mode readability.
+- The active route uses the same dark surface as the hover state and keeps icons/text high contrast.
 
 ## Verification
 

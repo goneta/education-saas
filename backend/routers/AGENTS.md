@@ -24,6 +24,8 @@
 - School AI credit allocations must be tenant-scoped; manual cash/free credit validation is platform-level and Super Admin only.
 - AI credit purchases must return an external checkout URL for configured online providers or a pending manual-validation payment for cash/free methods; credits are applied only after confirmed validation.
 - System settings routes own persistent school profile/logo updates, subscriptions, user administration, and role catalogs; all mutations require tenant-aware permissions and audit records.
+- Student deletion is logical and excludes deleted users from active lists/details while preserving referenced history.
+- Profile-photo delivery requires authentication and the same tenant/self-or-admin authorization used for upload and deletion.
 
 # Verification
 

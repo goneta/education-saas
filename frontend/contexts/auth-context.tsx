@@ -31,16 +31,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [error, setError] = useState<string | null>(null)
 
     const clearSession = useCallback((authToken: string | null) => {
+        localStorage.removeItem("access_token")
+        setToken(null)
+        setUser(null)
+        setError(null)
         if (authToken) {
             void fetch(`${API_BASE_URL}/auth/logout`, {
                 method: "POST",
                 headers: { Authorization: `Bearer ${authToken}` },
             }).catch(() => undefined)
         }
-        localStorage.removeItem("access_token")
-        setToken(null)
-        setUser(null)
-        setError(null)
     }, [])
 
     const expireSession = useCallback((authToken: string | null) => {
@@ -49,6 +49,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const currentLocale = window.location.pathname.split("/").filter(Boolean)[0] || "fr"
         window.location.href = `/${currentLocale}/login?session=expired`
     }, [clearSession])
+
+    const fetchUserInfo = useCallback(async (authToken: string) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                headers: {
+                    Authorization: `Bearer ${authToken}`,
+                },
+            })
+
+            if (response.ok) {
+                const userData = await response.json()
+                setUser(userData)
+            } else if (response.status === 401) {
+                expireSession(authToken)
+            } else {
+                clearSession(authToken)
+            }
+        } catch (err) {
+            console.error("Failed to fetch user info:", err)
+            clearSession(authToken)
+        } finally {
+            setIsLoading(false)
+        }
+    }, [clearSession, expireSession])
 
     // Check for existing token on mount
     useEffect(() => {
@@ -60,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
             setIsLoading(false)
         }
-    }, [])
+    }, [fetchUserInfo])
 
     useEffect(() => {
         if (!token) return
@@ -78,30 +102,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     }, [token, expireSession])
 
-    const fetchUserInfo = async (authToken: string) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/auth/me`, {
-                headers: {
-                    Authorization: `Bearer ${authToken}`,
-                },
-            })
-
-            if (response.ok) {
-                const userData = await response.json()
-                setUser(userData)
-            } else {
-                // Token invalid, clear it
-                localStorage.removeItem("access_token")
-                setToken(null)
-            }
-        } catch (err) {
-            console.error("Failed to fetch user info:", err)
-            localStorage.removeItem("access_token")
-            setToken(null)
-        } finally {
-            setIsLoading(false)
+    useEffect(() => {
+        const handleUnauthorized = () => {
+            const activeToken = localStorage.getItem("access_token")
+            if (activeToken) expireSession(activeToken)
         }
-    }
+        window.addEventListener("teducai:unauthorized", handleUnauthorized)
+        const originalFetch = window.fetch.bind(window)
+        window.fetch = async (...args) => {
+            const response = await originalFetch(...args)
+            const requestUrl = typeof args[0] === "string" ? args[0] : args[0] instanceof Request ? args[0].url : ""
+            if (response.status === 401 && requestUrl.includes(API_BASE_URL) && localStorage.getItem("access_token")) {
+                window.dispatchEvent(new Event("teducai:unauthorized"))
+            }
+            return response
+        }
+        return () => {
+            window.fetch = originalFetch
+            window.removeEventListener("teducai:unauthorized", handleUnauthorized)
+        }
+    }, [expireSession])
 
     const login = async (email: string, password: string, otpCode?: string) => {
         setError(null)

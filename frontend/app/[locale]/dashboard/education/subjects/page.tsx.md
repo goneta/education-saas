@@ -18,6 +18,7 @@
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
 - Subject deletion uses the shared TeducAI confirmation dialog and retains backend protection errors.
+- The subject add form and real persisted list remain visible, localized in French, and compatible with dark mode.
 
 ## Verification
 

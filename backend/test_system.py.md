@@ -27,3 +27,4 @@
 - Verifies persistent school profile updates and localization defaults.
 - Verifies Free activation and paid subscription pending-payment persistence.
 - Verifies tenant-scoped user editing, multi-role assignment, soft deletion, and unique role catalog output.
+- Verifies profile-photo upload, authorized retrieval, and anonymous access denial.

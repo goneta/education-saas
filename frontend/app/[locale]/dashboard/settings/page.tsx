@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState, type PointerEvent } from "react"
+import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react"
 import Image from "next/image"
 import { useTranslations } from "next-intl"
 import { useParams } from "next/navigation"
@@ -234,6 +234,7 @@ export default function SettingsPage() {
     const [settingsStatus, setSettingsStatus] = useState("")
     const [settingsError, setSettingsError] = useState("")
     const [pendingLogo, setPendingLogo] = useState<File | null>(null)
+    const logoInputRef = useRef<HTMLInputElement | null>(null)
     const [subscription, setSubscription] = useState<SchoolSubscription | null>(null)
     const [subscriptionChoice, setSubscriptionChoice] = useState<keyof typeof SUBSCRIPTION_PLANS | null>(null)
     const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly")
@@ -677,6 +678,23 @@ export default function SettingsPage() {
         setIsEditingSchool(false)
     }
 
+    const deleteSchoolLogo = async () => {
+        if (!token || !schoolSettings?.logo_url) return
+        const response = await fetch(`${API_BASE_URL}/system/school-settings/logo`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!response.ok) {
+            const data = await response.json().catch(() => null)
+            setSettingsError(data?.detail || "Impossible de supprimer le logo.")
+            return
+        }
+        setPendingLogo(null)
+        setSchoolSettings(previous => previous ? { ...previous, logo_url: null } : previous)
+        setSavedSchoolSettings(previous => previous ? { ...previous, logo_url: null } : previous)
+        setSettingsStatus("Le logo de l'établissement a été supprimé.")
+    }
+
     const requestSubscriptionChange = (plan: keyof typeof SUBSCRIPTION_PLANS) => {
         setSubscriptionChoice(plan)
         setBillingCycle(subscription?.billing_cycle || "monthly")
@@ -941,7 +959,7 @@ export default function SettingsPage() {
                                             <input disabled={!isEditingSchool} value={schoolSettings.logo_url || ""} onChange={(event) => updateSchoolSetting("logo_url", event.target.value)} className="apple-input" />
                                         </ExplainedField>
                                         <ExplainedField label="Importer un logo" help="Sélectionnez une image. Elle sera prévisualisée et stockée comme donnée locale encodée pour être immédiatement visible.">
-                                            <input disabled={!isEditingSchool} type="file" accept="image/png,image/jpeg,image/webp" className="apple-input pt-2" onChange={(event) => {
+                                            <input ref={logoInputRef} disabled={!isEditingSchool} type="file" accept="image/png,image/jpeg,image/webp" className="apple-input pt-2" onChange={(event) => {
                                                 const file = event.target.files?.[0]
                                                 if (!file) return
                                                 if (!LOGO_ALLOWED_TYPES.includes(file.type)) {
@@ -976,16 +994,29 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
                                 <div className="space-y-4">
-                                    <div className="rounded-[24px] border border-[#E5E7EB] bg-[#F8FAFC] p-4">
-                                        <p className="font-semibold text-[#111827]">Logo</p>
-                                        <div className="mt-3 flex h-28 items-center justify-center rounded-[20px] border border-dashed border-[#CBD5E1] bg-white">
+                                    <div className="rounded-[24px] border border-[#E5E7EB] bg-[#F8FAFC] p-4 dark:border-[#3b4248] dark:bg-[#202528]">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <p className="font-semibold text-[#111827] dark:text-[#f4f7fb]">Logo</p>
+                                            {isEditingSchool && schoolSettings.logo_url && (
+                                                <button type="button" onClick={() => void deleteSchoolLogo()} className="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-300">
+                                                    Supprimer
+                                                </button>
+                                            )}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            disabled={!isEditingSchool}
+                                            onClick={() => logoInputRef.current?.click()}
+                                            className="mt-3 flex h-28 w-full items-center justify-center rounded-[20px] border border-dashed border-[#CBD5E1] bg-white transition hover:border-[#6B7280] disabled:cursor-default dark:border-[#4b5563] dark:bg-[#171b1f] dark:hover:border-[#94a3b8]"
+                                            title={isEditingSchool ? "Cliquer pour sélectionner un logo PNG, JPEG ou WebP" : "Cliquez sur Modifier pour changer le logo"}
+                                        >
                                             {schoolSettings.logo_url
                                                 ? <Image src={schoolSettings.logo_url.startsWith("/") ? `${API_BASE_URL}${schoolSettings.logo_url}` : schoolSettings.logo_url} alt="Logo établissement" width={240} height={96} unoptimized className="max-h-24 max-w-[80%] object-contain" />
-                                                : <span className="text-sm text-[#6B7280]">{pendingLogo ? `Prêt à envoyer : ${pendingLogo.name}` : "Aucun logo"}</span>}
-                                        </div>
+                                                : <span className="text-sm text-[#6B7280] dark:text-[#cbd5e1]">{pendingLogo ? `Prêt à envoyer : ${pendingLogo.name}` : isEditingSchool ? "Cliquer pour importer un logo" : "Aucun logo"}</span>}
+                                        </button>
                                     </div>
-                                    <div className="rounded-[24px] border border-[#E5E7EB] bg-white p-4">
-                                        <p className="font-semibold text-[#111827]">Localisation</p>
+                                    <div className="rounded-[24px] border border-[#E5E7EB] bg-white p-4 dark:border-[#3b4248] dark:bg-[#202528]">
+                                        <p className="font-semibold text-[#111827] dark:text-[#f4f7fb]">Localisation</p>
                                         <div className="mt-3 grid gap-3 md:grid-cols-2">
                                             <ExplainedField label="Latitude" help="Coordonnée GPS nord/sud. Peut être saisie manuellement ou mise à jour via la carte.">
                                                 <input disabled={!isEditingSchool} type="number" step="0.000001" value={schoolSettings.address_structured?.latitude ?? ""} onChange={(event) => updateCoordinates(Number(event.target.value), Number(schoolSettings.address_structured?.longitude || 0))} className="apple-input" />
@@ -1264,7 +1295,7 @@ function SubscriptionManagement({
     ] : []
 
     return (
-        <Card>
+        <Card className="dark:border-[#3b4248] dark:bg-[#202528]">
             <CardHeader>
                 <CardTitle>Gestion des abonnements</CardTitle>
             </CardHeader>
@@ -1283,7 +1314,7 @@ function SubscriptionManagement({
                             key={key}
                             type="button"
                             onClick={() => onChangePlan(key as keyof typeof SUBSCRIPTION_PLANS)}
-                            className={`rounded-[22px] border p-4 text-left transition ${planKey === key ? "border-black bg-black text-white" : "border-[#E5E7EB] bg-white text-[#111827] hover:bg-[#F5F5F7]"}`}
+                            className={`rounded-[22px] border p-4 text-left transition ${planKey === key ? "border-black bg-black text-white dark:border-[#94a3b8] dark:bg-[#343b41]" : "border-[#E5E7EB] bg-white text-[#111827] hover:bg-[#F5F5F7] dark:border-[#3b4248] dark:bg-[#171b1f] dark:text-[#f4f7fb] dark:hover:bg-[#30373d]"}`}
                         >
                             <p className="text-lg font-semibold">{item.label}</p>
                             <p className={`mt-2 text-sm ${planKey === key ? "text-white/80" : "text-[#6B7280]"}`}>{item.monthly.toLocaleString("fr-FR")} FCFA / Mois</p>
@@ -1293,7 +1324,7 @@ function SubscriptionManagement({
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-[22px] border border-[#E5E7EB] bg-white p-4">
+                    <div className="rounded-[22px] border border-[#E5E7EB] bg-white p-4 dark:border-[#3b4248] dark:bg-[#171b1f]">
                         <div className="flex items-center justify-between gap-3">
                             <div>
                                 <h3 className="text-lg font-semibold text-[#111827]">Historique des paiements</h3>
@@ -1314,7 +1345,7 @@ function SubscriptionManagement({
                             </table>
                         </div>
                     </div>
-                    <div className="rounded-[22px] border border-[#E5E7EB] bg-white p-4">
+                    <div className="rounded-[22px] border border-[#E5E7EB] bg-white p-4 dark:border-[#3b4248] dark:bg-[#171b1f]">
                         <h3 className="text-lg font-semibold text-[#111827]">Factures et reçus</h3>
                         <p className="mt-1 text-sm text-[#6B7280]">Téléchargez les justificatifs de l&apos;abonnement pour la comptabilité de l&apos;établissement.</p>
                         <div className="mt-5 flex flex-wrap gap-3">
@@ -1332,7 +1363,7 @@ function SubscriptionManagement({
 
 function SubscriptionMetric({ label, value }: { label: string; value: string }) {
     return (
-        <div className="rounded-[22px] border border-[#E5E7EB] bg-[#F8FAFC] p-4">
+        <div className="rounded-[22px] border border-[#E5E7EB] bg-[#F8FAFC] p-4 dark:border-[#3b4248] dark:bg-[#171b1f]">
             <p className="text-sm text-[#6B7280]">{label}</p>
             <p className="mt-2 text-xl font-semibold text-[#111827]">{value}</p>
         </div>

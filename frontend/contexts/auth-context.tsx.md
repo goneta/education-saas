@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- React/Next.js TypeScript component or page file.
+- Owns authentication state, secure login/logout, idle timeout, user loading, and global API 401 session expiration handling.
 
 ## DOX Scope
 
@@ -17,6 +17,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- Invalid tokens are removed before the logout request to prevent recursive 401 handling, and locale-aware login redirection preserves a clear expiration message.
 
 ## Verification
 

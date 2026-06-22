@@ -17,6 +17,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- Dashboard shell panels, top bar, sidebars, and main content use consistent shared dark surfaces.
 
 ## Verification
 

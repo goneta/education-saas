@@ -3,6 +3,7 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from .. import audit, database, models, pdf, rbac, security
+from ..services import school_documents
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
@@ -72,7 +73,7 @@ def payment_receipt_pdf(student_user_id: int, payment_id: int, db: Session = Dep
         f"Verification: /documents/verify/receipt/{payment.id}?code={payment.receipt_number}",
         f"QR payload: VERIFY:receipt:{payment.id}:{payment.receipt_number}",
     ]
-    return Response(pdf.professional_pdf("Recu de paiement", lines, f"/documents/verify/receipt/{payment.id}?code={payment.receipt_number}"), media_type="application/pdf")
+    return Response(pdf.professional_pdf("Recu de paiement", lines, f"/documents/verify/receipt/{payment.id}?code={payment.receipt_number}", school_header=school_documents.document_header(db, student.school)), media_type="application/pdf")
 
 
 @router.get("/students/{student_user_id}/certificate/{certificate_id}.pdf")
@@ -103,7 +104,7 @@ def certificate_pdf(student_user_id: int, certificate_id: int, db: Session = Dep
         f"Verification: /documents/verify/certificate/{cert.id}?code=CERT-{cert.id}",
         f"QR payload: VERIFY:certificate:{cert.id}:CERT-{cert.id}",
     ]
-    return Response(pdf.professional_pdf("Attestation", lines, f"/documents/verify/certificate/{cert.id}?code=CERT-{cert.id}"), media_type="application/pdf")
+    return Response(pdf.professional_pdf("Attestation", lines, f"/documents/verify/certificate/{cert.id}?code=CERT-{cert.id}", school_header=school_documents.document_header(db, student.school)), media_type="application/pdf")
 
 
 @router.get("/students/{student_user_id}/report-card.pdf")
@@ -132,7 +133,7 @@ def report_card_pdf(student_user_id: int, db: Session = Depends(database.get_db)
             lines.append(f"{assessment.subject.name if assessment and assessment.subject else '-'} / {assessment.title if assessment else '-'}: {grade.score}")
     else:
         lines.append("No grades recorded.")
-    return Response(pdf.professional_pdf("Bulletin scolaire", lines, f"VERIFY:report-card:{student.student_profile.id}:{student.student_profile.registration_number}"), media_type="application/pdf")
+    return Response(pdf.professional_pdf("Bulletin scolaire", lines, f"VERIFY:report-card:{student.student_profile.id}:{student.student_profile.registration_number}", school_header=school_documents.document_header(db, student.school)), media_type="application/pdf")
 
 
 @router.get("/portal")
@@ -257,4 +258,5 @@ def diploma_pdf(diploma_id: int, db: Session = Depends(database.get_db), current
         f"Verification: /documents/verify/diploma/{diploma.id}?code={diploma.certificate_number}",
         f"QR payload: VERIFY:diploma:{diploma.id}:{diploma.certificate_number}",
     ]
-    return Response(pdf.professional_pdf("Diplome certifie", lines, f"/documents/verify/diploma/{diploma.id}?code={diploma.certificate_number}"), media_type="application/pdf")
+    school = db.query(models.School).filter(models.School.id == diploma.school_id).first()
+    return Response(pdf.professional_pdf("Diplome certifie", lines, f"/documents/verify/diploma/{diploma.id}?code={diploma.certificate_number}", school_header=school_documents.document_header(db, school)), media_type="application/pdf")

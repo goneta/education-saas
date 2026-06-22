@@ -167,7 +167,7 @@ def list_students(
     rbac.require_permission(current_user, "students:view", db)
     # The profile is the durable source of truth. A learner may have a primary
     # role such as PUPIL or a custom role while still owning a StudentProfile.
-    query = db.query(models.User).options(selectinload(models.User.student_profile)).join(models.StudentProfile)
+    query = db.query(models.User).options(selectinload(models.User.student_profile)).join(models.StudentProfile).filter(models.User.deleted_at == None)
     query = tenancy.apply_user_school_filter(query, current_user, school_id)
     
     if class_id:
@@ -190,6 +190,7 @@ def get_student(
 ):
     student = db.query(models.User).join(models.StudentProfile).filter(
         models.User.id == student_id,
+        models.User.deleted_at == None,
     )
     student = tenancy.apply_user_school_filter(student, current_user).first()
     
@@ -292,16 +293,11 @@ def delete_student(
         raise HTTPException(status_code=404, detail="Student not found")
 
     try:
-        # Cascade delete handled by DB FK usually, or manual:
-        # Check if we need to manually delete profile? 
-        # SQLAlchemy relationship with cascade='all, delete' on User.student_profile would handle this.
-        # Assuming database level Key constraints or Model cascade is set.
-        # For safety, we delete user, profile should follow if configured, or we delete profile first.
-        
-        if student.student_profile:
-            db.delete(student.student_profile)
-            
-        db.delete(student)
+        # Preserve financial, academic, attendance, internship, and audit
+        # references. Deleted students disappear from active lists but their
+        # historical records remain available to authorized auditors.
+        student.is_active = False
+        student.deleted_at = datetime.utcnow()
         db.commit()
     except Exception as e:
         db.rollback()
@@ -369,6 +365,7 @@ def generate_certificate(
 ):
     student_query = db.query(models.User).join(models.StudentProfile).filter(
         models.User.id == student_id,
+        models.User.deleted_at == None,
     )
     student = tenancy.apply_user_school_filter(student_query, current_user).first()
     if not student or not student.student_profile:
@@ -407,6 +404,7 @@ def list_certificates(
 ):
     student_query = db.query(models.User).join(models.StudentProfile).filter(
         models.User.id == student_id,
+        models.User.deleted_at == None,
     )
     student = tenancy.apply_user_school_filter(student_query, current_user).first()
     if not student or not student.student_profile:

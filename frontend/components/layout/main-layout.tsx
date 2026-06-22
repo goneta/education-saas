@@ -26,7 +26,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     const t = useTranslations("layout")
 
     return (
-        <div className="fixed inset-0 h-dvh w-dvw overflow-hidden bg-[#F6F7F9] font-sans">
+        <div className="fixed inset-0 h-dvh w-dvw overflow-hidden bg-[#F6F7F9] font-sans dark:bg-[#1f2427]">
             <DashboardUxEnhancer />
             <div className="hidden h-full w-full lg:block">
             <ResizablePanelGroup direction="horizontal" className="h-full w-full overflow-hidden">
@@ -39,7 +39,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                     collapsible={true}
                     collapsedSize={4}
                     className={cn(
-                        "h-full min-h-0 overflow-hidden transition-all duration-300 ease-in-out bg-[#F7F8FA]",
+                        "h-full min-h-0 overflow-hidden bg-[#F7F8FA] transition-all duration-300 ease-in-out dark:bg-[#1f2427]",
                         !isAgentPanelOpen && "min-w-[50px] max-w-[50px]"
                     )}
                 >
@@ -50,13 +50,13 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
                 {/* Middle Panel: Navigation/Sidebar - Pure white background */}
                 <ResizablePanel defaultSize={18} minSize={14} maxSize={24} className="h-full overflow-visible">
-                    <div className="relative z-40 flex h-full min-h-0 flex-col overflow-visible border-r border-[#E5E7EB] bg-white">
+                    <div className="relative z-40 flex h-full min-h-0 flex-col overflow-visible border-r border-[#E5E7EB] bg-white dark:border-[#3b4248] dark:bg-[#1f2427]">
                         {/* Toggle Buttons Area */}
-                        <div className="flex shrink-0 gap-1 border-b border-[#E5E7EB] bg-white p-2">
+                        <div className="flex shrink-0 gap-1 border-b border-[#E5E7EB] bg-white p-2 dark:border-[#3b4248] dark:bg-[#1f2427]">
                             <Button
                                 variant={viewMode === 'dashboard' ? 'default' : 'ghost'}
                                 size="sm"
-                                className="h-8 flex-1 text-xs"
+                                className="h-8 flex-1 text-xs dark:text-white"
                                 onClick={() => setViewMode('dashboard')}
                             >
                                 <LayoutDashboard className="mr-1 h-3 w-3" />
@@ -65,7 +65,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                             <Button
                                 variant={viewMode === 'preview' ? 'default' : 'ghost'}
                                 size="sm"
-                                className="h-8 flex-1 text-xs"
+                                className="h-8 flex-1 text-xs dark:text-white"
                                 onClick={() => setViewMode('preview')}
                             >
                                 <Eye className="mr-1 h-3 w-3" />
@@ -82,11 +82,11 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
                 {/* Right Panel: Main Content - Very light grey background */}
                 <ResizablePanel defaultSize={62} minSize={45} className="h-full min-h-0 overflow-hidden">
-                    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#F6F7F9]">
+                    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#F6F7F9] dark:bg-[#1f2427]">
                         {viewMode === 'dashboard' ? (
                             <>
                                 <Header isResizablePanel={true} />
-                                <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#F6F7F9] p-4 md:p-6">
+                                <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#F6F7F9] p-4 dark:bg-[#1f2427] md:p-6">
                                     {children}
                                 </main>
                             </>

@@ -196,6 +196,7 @@ class User(Base):
     address = Column(String, nullable=True)
     address_structured = Column(JSON, nullable=True)
     formatted_address = Column(String, nullable=True)
+    profile_photo_url = Column(String, nullable=True)
 
     # Relationships
     student_profile = relationship("StudentProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")

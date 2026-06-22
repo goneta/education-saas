@@ -99,6 +99,7 @@ export default function TeachersPage() {
                         setShowDeleteDialog(true)
                     }
                 }}
+                onPhotoChanged={fetchTeachers}
             />
             <AddTeacherModal open={showAddModal} onOpenChange={setShowAddModal} onSuccess={fetchTeachers} />
             <EditTeacherModal open={showEditModal} onOpenChange={setShowEditModal} teacher={selectedTeacher} onSuccess={fetchTeachers} />

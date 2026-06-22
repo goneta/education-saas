@@ -207,9 +207,24 @@
   .dark .bg-\[\#F7F8FA\],
   .dark .bg-\[\#F5F5F7\],
   .dark .bg-\[\#F0F1F3\],
+  .dark .bg-\[\#EDEFF2\],
+  .dark .bg-\[\#F8FAFC\],
   .dark .bg-white,
   .dark .bg-background {
     background-color: #202528 !important;
+  }
+
+  .dark .bg-gray-50,
+  .dark .bg-gray-100,
+  .dark .bg-slate-50 {
+    background-color: #252b30 !important;
+  }
+
+  .dark .text-gray-500,
+  .dark .text-gray-600,
+  .dark .text-slate-500,
+  .dark .text-slate-600 {
+    color: #c7d0da !important;
   }
 
   .dark .bg-\[\#FBFBFD\],
@@ -308,7 +323,18 @@
   }
 
   .dark thead {
-    background: #22282c;
+    background: #252b30 !important;
+    color: #eef3f8 !important;
+  }
+
+  .dark thead tr,
+  .dark thead th {
+    background: #252b30 !important;
+    color: #eef3f8 !important;
+  }
+
+  .dark tbody tr {
+    background-color: #202528;
   }
 
   .dark tbody tr:nth-child(even) {

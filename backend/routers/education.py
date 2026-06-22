@@ -793,7 +793,8 @@ def export_timetables(
     if export_format == "pdf":
         lines = [f"Etablissement: {school.name if school else '-'}", f"Total cours: {len(rows)}"]
         lines.extend([" | ".join(map(str, row)) for row in data[:80]])
-        return Response(pdf.professional_pdf("Emploi du temps", lines, f"TIMETABLE:{school_id}:{len(rows)}"), media_type="application/pdf")
+        from ..services import school_documents
+        return Response(pdf.professional_pdf("Emploi du temps", lines, f"TIMETABLE:{school_id}:{len(rows)}", school_header=school_documents.document_header(db, school)), media_type="application/pdf")
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([school.name if school else "TeducAI"])

@@ -47,7 +47,13 @@ def simple_pdf(title: str, lines: list[str]) -> bytes:
     return bytes(pdf)
 
 
-def professional_pdf(title: str, lines: list[str], verification_payload: str | None = None, subtitle: str | None = None) -> bytes:
+def professional_pdf(
+    title: str,
+    lines: list[str],
+    verification_payload: str | None = None,
+    subtitle: str | None = None,
+    school_header: dict | None = None,
+) -> bytes:
     """Generate a branded PDF with a QR image when optional PDF dependencies are installed."""
     try:
         import qrcode
@@ -69,14 +75,33 @@ def professional_pdf(title: str, lines: list[str], verification_payload: str | N
     margin = 18 * mm
 
     page.setFillColor(colors.HexColor("#0F766E"))
-    page.rect(0, height - 34 * mm, width, 34 * mm, stroke=0, fill=1)
+    page.rect(0, height - 42 * mm, width, 42 * mm, stroke=0, fill=1)
+    text_x = margin
+    logo_path = (school_header or {}).get("logo_path")
+    if logo_path:
+        try:
+            page.drawImage(ImageReader(logo_path), margin, height - 35 * mm, 24 * mm, 24 * mm, preserveAspectRatio=True, mask="auto")
+            text_x = margin + 30 * mm
+        except Exception:
+            text_x = margin
     page.setFillColor(colors.white)
-    page.setFont("Helvetica-Bold", 18)
-    page.drawString(margin, height - 18 * mm, title)
-    page.setFont("Helvetica", 9)
-    page.drawString(margin, height - 25 * mm, subtitle or "TeducAI - document certifie")
+    page.setFont("Helvetica-Bold", 11)
+    page.drawString(text_x, height - 13 * mm, (school_header or {}).get("name") or "TeducAI")
+    page.setFont("Helvetica", 7)
+    identity_lines = [
+        (school_header or {}).get("address"),
+        " | ".join(filter(None, [(school_header or {}).get("phone"), (school_header or {}).get("email")])),
+    ]
+    identity_y = height - 19 * mm
+    for identity in filter(None, identity_lines):
+        page.drawString(text_x, identity_y, str(identity)[:105])
+        identity_y -= 4 * mm
+    page.setFont("Helvetica-Bold", 17)
+    page.drawString(text_x, height - 34 * mm, title)
+    page.setFont("Helvetica", 8)
+    page.drawRightString(width - margin, height - 34 * mm, subtitle or "Document certifie")
 
-    y = height - 48 * mm
+    y = height - 54 * mm
     table_data = []
     free_lines = []
     for line in lines:

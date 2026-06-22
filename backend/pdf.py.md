@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- Python source file used by the backend, migrations, scripts, tests, or utilities.
+- Generates branded school PDFs with a common identity header, optional logo image, structured content, and QR verification payload.
 
 ## DOX Scope
 
@@ -17,6 +17,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- Callers should pass the shared school header payload for official school documents.
 
 ## Verification
 

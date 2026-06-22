@@ -21,6 +21,8 @@
 - Cash payments and AI credit movements must preserve payment method, validator, internal reference, wallet balances, paired transactions, and audit history.
 - School profile edits, logo uploads, subscriptions, user administration, and RBAC changes must persist through audited tenant-scoped APIs; paid subscriptions remain pending until payment confirmation.
 - User deletion is soft deletion so referenced academic, financial, and audit history remains intact.
+- User profile photos are tenant-protected secure files; only the user or an authorized administrator may upload, read, replace, or delete them.
+- Official PDFs must use the shared school document header so persisted identity, address, phone, email, registration number, and local logo stay consistent.
 
 # Work Guidance
 

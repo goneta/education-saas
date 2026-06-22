@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Pencil, Trash2 } from "lucide-react"
+import { ProfileAvatar } from "@/components/users/profile-avatar"
 
 export interface Teacher {
     id: number
@@ -10,6 +11,7 @@ export interface Teacher {
     email: string
     phone_number?: string
     address?: string
+    profile_photo_url?: string | null
     teacher_profile?: {
         specialization?: string
         join_date?: string
@@ -24,6 +26,7 @@ interface TeacherListTableProps {
     searchQuery: string
     onEdit: (teacher: Teacher) => void
     onDelete: (id: number) => void
+    onPhotoChanged?: () => void | Promise<void>
 }
 
 export function TeacherListTable({
@@ -32,7 +35,8 @@ export function TeacherListTable({
     error,
     searchQuery,
     onEdit,
-    onDelete
+    onDelete,
+    onPhotoChanged,
 }: TeacherListTableProps) {
     const filteredTeachers = teachers.filter(teacher =>
         teacher.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -80,9 +84,7 @@ export function TeacherListTable({
                                     >
                                         <td className="py-3 px-4 text-sm text-[#111827] font-medium">
                                             <div className="flex items-center gap-3">
-                                                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
-                                                    {teacher.full_name.charAt(0)}
-                                                </div>
+                                                <ProfileAvatar userId={teacher.id} name={teacher.full_name} photoUrl={teacher.profile_photo_url} onChanged={onPhotoChanged} />
                                                 {teacher.full_name}
                                             </div>
                                         </td>

@@ -142,6 +142,19 @@ def test_settings_user_management_subscription_and_role_deduplication():
     assert details.json()["full_name"] == "Managed User Updated"
     assert set(details.json()["role_keys"]) == {"teacher", "educator"}
 
+    photo = client.post(
+        f"/system/users/{user_id}/profile-photo",
+        headers=headers,
+        files={"photo": ("profile.png", b"\x89PNG\r\n\x1a\nTeducAI profile", "image/png")},
+    )
+    assert photo.status_code == 200, photo.text
+    assert photo.json()["profile_photo_url"].endswith("/profile-photo")
+    protected_photo = client.get(photo.json()["profile_photo_url"], headers=headers)
+    assert protected_photo.status_code == 200
+    assert protected_photo.headers["content-type"].startswith("image/png")
+    anonymous_photo = client.get(photo.json()["profile_photo_url"])
+    assert anonymous_photo.status_code == 401
+
     deleted = client.delete(f"/system/users/{user_id}", headers=headers)
     assert deleted.status_code == 204, deleted.text
     users = client.get("/system/users", headers=headers)

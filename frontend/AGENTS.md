@@ -21,6 +21,8 @@
 - Dashboard top-bar notifications, theme toggle, cart, checkout, and bottom user account destinations must remain localized and backed by authenticated APIs.
 - AI credit screens must distinguish platform purchases from school payments and expose cash validation or school allocation controls only to authorized roles.
 - Normalize the configured API base URL and use canonical collection paths so production rewrites do not produce double slashes, 404 responses, or authorization-losing redirects.
+- Shared dashboard tables expose search, sorting, pagination, reset, persisted Table/Card preference, standardized row actions, and dark-mode-safe runtime controls.
+- Student, teacher, and staff profile photos must use authenticated file reads and permission-aware uploads.
 
 # Work Guidance
 
