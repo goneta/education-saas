@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session, selectinload
 from typing import List
 from datetime import datetime
 from .. import localization, models, rbac, schemas, security, database, tenancy
-from ..services import automation
+from ..services import automation, school_context
 
 router = APIRouter(prefix="/students", tags=["Students"])
 
@@ -19,6 +19,9 @@ def register_student(
         raise HTTPException(status_code=403, detail="Not authorized to register students")
     
     school_id = tenancy.resolve_school_id_for_create(current_user, student_in.school_id, db)
+    active_context = school_context.resolve_context(db, current_user)
+    if active_context.school_id != school_id:
+        raise HTTPException(status_code=403, detail="Le contexte actif ne correspond pas a cet etablissement.")
     existing_person = tenancy.find_existing_person(
         db,
         email=student_in.email,
@@ -33,6 +36,7 @@ def register_student(
             if not existing_person.student_profile:
                 existing_person.student_profile = models.StudentProfile(
                     user_id=existing_person.id,
+                    school_model_assignment_id=active_context.school_model_assignment_id,
                     registration_number=student_in.profile.registration_number,
                     date_of_birth=student_in.profile.date_of_birth,
                     gender=student_in.profile.gender,
@@ -44,6 +48,7 @@ def register_student(
                 db.add(existing_person.student_profile)
             elif student_in.profile.current_class_id is not None:
                 existing_person.student_profile.current_class_id = student_in.profile.current_class_id
+            existing_person.student_profile.school_model_assignment_id = active_context.school_model_assignment_id
             tenancy.create_or_transfer_school_membership(
                 db,
                 user=existing_person,
@@ -106,6 +111,7 @@ def register_student(
         # 5. Create Profile
         new_profile = models.StudentProfile(
             user_id=new_user.id,
+            school_model_assignment_id=active_context.school_model_assignment_id,
             registration_number=student_in.profile.registration_number,
             date_of_birth=student_in.profile.date_of_birth,
             gender=student_in.profile.gender,
@@ -169,6 +175,8 @@ def list_students(
     # role such as PUPIL or a custom role while still owning a StudentProfile.
     query = db.query(models.User).options(selectinload(models.User.student_profile)).join(models.StudentProfile).filter(models.User.deleted_at == None)
     query = tenancy.apply_user_school_filter(query, current_user, school_id)
+    active_context = school_context.resolve_context(db, current_user)
+    query = query.filter(models.StudentProfile.school_model_assignment_id == active_context.school_model_assignment_id)
     
     if class_id:
         query = query.filter(models.StudentProfile.current_class_id == class_id)

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from .. import audit, database, models, schemas, security
+from ..services import school_context
 
 router = APIRouter(prefix="/operations", tags=["Institution Operations"])
 
@@ -131,9 +132,11 @@ def enroll_admission(application_id: int, payload: schemas.AdmissionEnrollmentCr
     )
     db.add(student_user)
     db.flush()
+    active_context = school_context.resolve_context(db, current_user)
 
     student = models.StudentProfile(
         user_id=student_user.id,
+        school_model_assignment_id=active_context.school_model_assignment_id,
         registration_number=payload.registration_number or f"ADM-{application.id:05d}-{student_user.id:05d}",
         date_of_birth=payload.date_of_birth,
         gender=payload.gender,
@@ -155,7 +158,11 @@ def enroll_admission(application_id: int, payload: schemas.AdmissionEnrollmentCr
 
     generated_fees = 0
     if payload.generate_fees:
-        schedule_query = db.query(models.FeeSchedule).filter(models.FeeSchedule.school_id == school_id, models.FeeSchedule.is_current == True)
+        schedule_query = db.query(models.FeeSchedule).filter(
+            models.FeeSchedule.school_id == school_id,
+            models.FeeSchedule.school_model_assignment_id == active_context.school_model_assignment_id,
+            models.FeeSchedule.is_current == True,
+        )
         schedules = schedule_query.all()
         for schedule in schedules:
             if schedule.class_id and (not cls or schedule.class_id != cls.id):
@@ -172,6 +179,7 @@ def enroll_admission(application_id: int, payload: schemas.AdmissionEnrollmentCr
                 class_id=cls.id if cls else None,
                 student_id=student.id,
                 school_id=school_id,
+                school_model_assignment_id=active_context.school_model_assignment_id,
                 due_date=datetime.utcnow(),
             ))
             generated_fees += 1

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from backend import audit, database, models, rbac, security
 from backend.routers.ai_automation import maybe_run_chat_automation
 from backend.services.ai_service import ai_service
-from backend.services import ai_credits
+from backend.services import ai_credits, school_context
 
 router = APIRouter(
     prefix="/chat",
@@ -56,12 +56,26 @@ def _ai_scope_for_user(user: models.User, db: Session) -> dict:
         scope = "tous les modules de votre etablissement selon les permissions configurees"
     else:
         scope = "les donnees et modules autorises par vos permissions effectives"
+    active_context = None
+    try:
+        active_context = school_context.resolve_context(db, user)
+    except HTTPException:
+        active_context = None
+    assignment = db.query(models.SchoolModelAssignment).filter(
+        models.SchoolModelAssignment.id == active_context.school_model_assignment_id
+    ).first() if active_context else None
+    if assignment and not assignment.ai_enabled:
+        raise HTTPException(status_code=403, detail="L'IA est desactivee pour le modele scolaire actif.")
     return {
         "user_id": user.id,
         "email": user.email,
         "role": user.role.value,
         "roles": assigned_roles,
         "school_id": user.school_id,
+        "organization_id": active_context.organization_id if active_context else None,
+        "school_model_assignment_id": active_context.school_model_assignment_id if active_context else None,
+        "school_model": assignment.school_model.code if assignment else None,
+        "academic_year_id": active_context.academic_year_id if active_context else None,
         "permissions": permissions.get("permissions", []),
         "scope_summary": scope,
         "refusal_sentence": AI_REFUSAL,

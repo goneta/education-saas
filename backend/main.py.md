@@ -7,7 +7,7 @@
 ## Purpose
 
 - Python source file used by the backend, migrations, scripts, tests, or utilities.
-- Creates the FastAPI app, middleware stack, health/readiness/metrics endpoints, and registers all routers including the secured bootstrap router.
+- Creates the FastAPI app, middleware stack, health/readiness/metrics endpoints, and registers all routers including bootstrap and multi-school context.
 
 ## DOX Scope
 

@@ -18,6 +18,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- School-payment creation and listing are isolated by the active school-model assignment.
 - AI pack purchases accept cash, free, Stripe, Djamo, or CinetPay. Cash/free payments remain pending until Super Admin validation; configured online providers return a checkout URL and remain webhook-confirmed.
 - School-targeted purchases require `ai_credits:create`; manual payment validation is Super Admin only and applies credits idempotently.
 - Successful subscription webhooks activate the matching school subscription and update the school's current billing period.

@@ -6,7 +6,7 @@ from datetime import datetime, time
 from uuid import uuid4
 
 from .. import audit, models, schemas, database, rbac, security
-from ..services import automation
+from ..services import automation, school_context
 
 router = APIRouter(
     prefix="/finance",
@@ -171,6 +171,8 @@ def get_fees(
     rbac.require_permission(current_user, "finance:read", db)
     query = db.query(models.Fee).options(selectinload(models.Fee.payments))
     query = _apply_school_scope(query, models.Fee, current_user)
+    active_context = school_context.resolve_context(db, current_user)
+    query = query.filter(models.Fee.school_model_assignment_id == active_context.school_model_assignment_id)
 
     if status:
         query = query.filter(models.Fee.status == status)
@@ -195,6 +197,9 @@ def create_fee(
 ):
     rbac.require_permission(current_user, "finance:write", db)
     school_id = current_user.school_id or fee.school_id
+    active_context = school_context.resolve_context(db, current_user)
+    if active_context.school_id != school_id:
+        raise HTTPException(status_code=403, detail="Le contexte actif ne correspond pas a cet etablissement.")
 
     if fee.student_id:
         student = db.query(models.StudentProfile).filter(
@@ -209,7 +214,11 @@ def create_fee(
 
     fee_data = fee.model_dump(exclude={"school_id"})
     fee_data["due_date"] = fee_data["due_date"] or datetime.utcnow()
-    new_fee = models.Fee(**fee_data, school_id=school_id)
+    new_fee = models.Fee(
+        **fee_data,
+        school_id=school_id,
+        school_model_assignment_id=active_context.school_model_assignment_id,
+    )
     db.add(new_fee)
     db.flush()
     automation.automate_fee_change(db, new_fee, current_user)
@@ -564,6 +573,8 @@ def list_fee_schedules(
     rbac.require_permission(current_user, "finance:read", db)
     query = db.query(models.FeeSchedule)
     query = _apply_school_scope(query, models.FeeSchedule, current_user)
+    active_context = school_context.resolve_context(db, current_user)
+    query = query.filter(models.FeeSchedule.school_model_assignment_id == active_context.school_model_assignment_id)
     if academic_year_id:
         query = query.filter(models.FeeSchedule.academic_year_id == academic_year_id)
     if class_id:
@@ -583,7 +594,12 @@ def create_fee_schedule(
 ):
     rbac.require_permission(current_user, "finance:write", db)
     school_id = _school_id_for(current_user, schedule.school_id)
-    row = models.FeeSchedule(**schedule.model_dump(exclude={"school_id"}), school_id=school_id)
+    active_context = school_context.resolve_context(db, current_user)
+    row = models.FeeSchedule(
+        **schedule.model_dump(exclude={"school_id"}),
+        school_id=school_id,
+        school_model_assignment_id=active_context.school_model_assignment_id,
+    )
     db.add(row)
     db.commit()
     db.refresh(row)

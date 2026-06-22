@@ -18,6 +18,8 @@
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
 - Timetable PDF exports use the shared persisted school identity and logo header.
+- Class, subject, and academic-year collections are filtered by the validated active school-model assignment.
+- System-default class and subject names are protected and those rows cannot be deleted.
 
 ## Verification
 

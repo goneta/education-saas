@@ -17,6 +17,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- Admission enrollment assigns the student, generated fee schedules, and fees to the active school-model context.
 
 ## Verification
 

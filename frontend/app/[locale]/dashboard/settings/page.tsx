@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { tx, humanizeKey } from "@/lib/product-copy"
 import { normalizeLocale } from "@/lib/i18n"
+import { SchoolModelManager } from "@/components/dashboard/school-model-manager"
 
 interface School {
     id: number
@@ -1163,6 +1164,8 @@ export default function SettingsPage() {
                     {templates[templateChoice] && <div className="grid gap-3 md:grid-cols-3 text-sm"><Info label="Classes" value={templates[templateChoice].classes.join(", ")} /><Info label="Niveaux" value={(templates[templateChoice].levels || []).join(", ")} /><Info label="Matières" value={templates[templateChoice].subjects.join(", ")} /><Info label="Filières / programmes" value={templates[templateChoice].programs.join(", ") || "-"} /><Info label="Diplômes" value={(templates[templateChoice].diplomas || []).join(", ")} /><Info label="Semestres" value={(templates[templateChoice].semesters || []).join(", ")} /><Info label="Certifications" value={(templates[templateChoice].certifications || []).join(", ")} /><Info label="Types d'évaluation" value={(templates[templateChoice].assessment_types || []).join(", ")} /><Info label="Rubriques frais" value={templates[templateChoice].fees.map(fee => fee.name).join(", ")} /></div>}
                 </div>
             </AppleAccordion>
+
+            <SchoolModelManager />
 
             <AppleAccordion title={t("auditTrail")} open={openPanels.has("auditTrail")} onToggle={() => togglePanel("auditTrail")}>
                 <div>

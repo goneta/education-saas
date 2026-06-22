@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, ConfigDict
 from .. import audit, localization, models, schemas, security, database, rbac, tenancy
-from ..services import ai_credits, file_storage, payment_gateway
+from ..services import ai_credits, file_storage, payment_gateway, school_model_templates
 
 router = APIRouter(prefix="/system", tags=["System Configuration"])
 
@@ -769,6 +769,12 @@ def create_school(
     )
     db.add(school)
     db.flush()
+    school_model_templates.ensure_school_foundation(
+        db,
+        school,
+        owner_user_id=current_user.id,
+        seed_defaults=True,
+    )
     audit.record_audit(db, action="school.created", current_user=current_user, entity_type="school", entity_id=school.id)
     db.commit()
     db.refresh(school)
@@ -1544,6 +1550,37 @@ def apply_school_template(
     template = SCHOOL_TEMPLATES.get(template_key)
     if not template:
         raise HTTPException(status_code=404, detail="Template not found")
+    model_code = {
+        "primary": "PRIMARY",
+        "secondary": "GENERAL_SECONDARY",
+        "general": "GENERAL_SECONDARY",
+        "vocational": "VOCATIONAL",
+        "technical": "TECHNICAL",
+        "professional": "PROFESSIONAL",
+        "university": "UNIVERSITY",
+    }[template_key]
+    _organization, assignments, seeded = school_model_templates.ensure_school_foundation(
+        db,
+        school,
+        owner_user_id=current_user.id if current_user.role == models.UserRole.SUPER_ADMIN else None,
+        model_codes=[model_code],
+        seed_defaults=True,
+    )
+    assignment = assignments[0]
+    audit.record_audit(
+        db,
+        action="school.template.applied",
+        current_user=current_user,
+        entity_type="school_model_assignment",
+        entity_id=assignment.id,
+        details={"template": template_key, "model_code": model_code, "created": seeded.get(model_code, {})},
+    )
+    db.commit()
+    return {
+        "template": template_key,
+        "school_model_assignment_id": assignment.id,
+        "created": seeded.get(model_code, {}),
+    }
 
     summary = _template_summary(template_key, template)
     created = {"academic_years": 0, "classes": 0, "subjects": 0, "programs": 0, "fees": 0, "reference_data": 0, "semesters": 0}

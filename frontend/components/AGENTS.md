@@ -16,6 +16,7 @@
 - Reusable destructive confirmations use `components/ui/confirmation-dialog.tsx`; global dashboard requests are coordinated by `DashboardUxEnhancer`.
 - `DashboardUxEnhancer` owns the generic runtime list toolbar and Table/Card presentation for legacy and current tables.
 - Profile avatars must fetch protected image bytes with the active token and provide initials when no image is available.
+- Context selectors and school-model managers must display only backend-authorized options and must not synthesize tenant access locally.
 
 # Work Guidance
 

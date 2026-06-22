@@ -22,6 +22,7 @@
 - Role catalogs deduplicate global and school-specific definitions by stable role key and ignore soft-deleted users in membership counts and listings.
 - School logos support secure upload, public internal rendering, replacement, and audited deletion.
 - User profile photos support authenticated tenant-scoped read, self/admin upload, and audited deletion.
+- Legacy school-template application delegates to assignment-scoped idempotent seeding.
 
 ## Verification
 

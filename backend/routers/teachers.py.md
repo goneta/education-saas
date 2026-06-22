@@ -18,6 +18,7 @@
 - Collection routes accept both `/teachers` and `/teachers/` without redirects.
 - Teacher profiles are the list/detail source of truth so educator, trainer, instructor, or custom primary roles do not hide valid teacher records.
 - Listing requires `teachers:view`, eagerly loads `teacher_profile`, applies tenant scope, and orders records deterministically.
+- Teacher creation, transfer, and listing use the validated active school-model assignment.
 
 ## Verification
 

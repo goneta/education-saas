@@ -26,6 +26,7 @@
 - System settings routes own persistent school profile/logo updates, subscriptions, user administration, and role catalogs; all mutations require tenant-aware permissions and audit records.
 - Student deletion is logical and excludes deleted users from active lists/details while preserving referenced history.
 - Profile-photo delivery requires authentication and the same tenant/self-or-admin authorization used for upload and deletion.
+- Context routes own authorized organization/school/model/year selection; model-scoped academic routes must filter and create records against the resolved assignment.
 
 # Verification
 

@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- Owns dashboard search, active school name, notification center, persistent theme toggle, cart popover, checkout navigation, and locale switching.
+- Owns dashboard search, active organization/school/model/year selector, notification center, persistent theme toggle, cart popover, checkout navigation, and locale switching.
 
 ## DOX Scope
 

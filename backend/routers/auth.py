@@ -4,6 +4,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from .. import crypto_utils, localization, models, schemas, security, database, totp
+from ..services import school_model_templates
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -66,6 +67,13 @@ def register_school(school: schemas.SchoolCreate, owner: schemas.UserCreate, db:
             school_id=new_school.id
         )
         db.add(new_user)
+        db.flush()
+        school_model_templates.ensure_school_foundation(
+            db,
+            new_school,
+            owner_user_id=new_user.id,
+            seed_defaults=False,
+        )
         db.commit()
         db.refresh(new_user)
         

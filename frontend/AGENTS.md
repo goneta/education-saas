@@ -23,6 +23,7 @@
 - Normalize the configured API base URL and use canonical collection paths so production rewrites do not produce double slashes, 404 responses, or authorization-losing redirects.
 - Shared dashboard tables expose search, sorting, pagination, reset, persisted Table/Card preference, standardized row actions, and dark-mode-safe runtime controls.
 - Student, teacher, and staff profile photos must use authenticated file reads and permission-aware uploads.
+- Dashboard API requests propagate the validated active school-model and academic-year context; the global selector persists changes through backend context APIs.
 
 # Work Guidance
 

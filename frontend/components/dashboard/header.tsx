@@ -10,6 +10,7 @@ import { API_BASE_URL } from "@/lib/config"
 import { useAuth } from "@/contexts/auth-context"
 import { useTheme } from "@/contexts/theme-context"
 import { normalizeLocale } from "@/lib/i18n"
+import { ContextSelector } from "@/components/dashboard/context-selector"
 
 interface HeaderProps {
     isResizablePanel?: boolean;
@@ -17,37 +18,16 @@ interface HeaderProps {
 
 export function Header({ isResizablePanel = false }: HeaderProps) {
     const t = useTranslations("app")
-    const { token, user } = useAuth()
+    const { token } = useAuth()
     const { effectiveTheme, toggleTheme } = useTheme()
     const params = useParams()
     const router = useRouter()
     const locale = normalizeLocale(params.locale as string)
-    const [schoolName, setSchoolName] = useState("")
     const [notificationsOpen, setNotificationsOpen] = useState(false)
     const [cartOpen, setCartOpen] = useState(false)
     const [notifications, setNotifications] = useState<Array<{ id: number; subject?: string; message: string; created_at?: string; read_at?: string }>>([])
     const [unreadCount, setUnreadCount] = useState(0)
     const [cart, setCart] = useState<{ items: Array<{ id: number; title: string; quantity: number; unit_amount: number; currency: string; line_total: number }>; total: number; currency: string }>({ items: [], total: 0, currency: "FCFA" })
-
-    useEffect(() => {
-        if (!token || !user?.school_id) {
-            setSchoolName("")
-            return
-        }
-        setSchoolName(t("schoolFallback", { id: user.school_id }))
-        let cancelled = false
-        fetch(`${API_BASE_URL}/system/school-settings`, {
-            headers: { Authorization: `Bearer ${token}` },
-        })
-            .then(response => response.ok ? response.json() : null)
-            .then(data => {
-                if (!cancelled && data?.name) setSchoolName(data.name)
-            })
-            .catch(() => undefined)
-        return () => {
-            cancelled = true
-        }
-    }, [t, token, user?.school_id])
 
     const loadTopbarData = useCallback(() => {
         if (!token) return
@@ -118,11 +98,7 @@ export function Header({ isResizablePanel = false }: HeaderProps) {
                         />
                     </div>
                 </form>
-                {schoolName && (
-                    <div className="min-w-0 truncate text-[16px] font-bold text-black md:text-[18px] dark:text-white" title={schoolName}>
-                        {schoolName}
-                    </div>
-                )}
+                <ContextSelector />
             </div>
             <div className="relative">
                 <button type="button" onClick={() => { setNotificationsOpen(prev => !prev); setCartOpen(false) }} className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#555] transition hover:bg-[#F5F5F7] dark:text-white dark:hover:bg-[#2b3136]" aria-label={t("notifications")} aria-expanded={notificationsOpen}>

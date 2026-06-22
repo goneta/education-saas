@@ -165,9 +165,11 @@ def record_usage(
         _consume_school_allocations(db, user, credits)
     input_cost = (provider.cost_per_1k_input_tokens if provider else 0) * prompt_tokens / 1000
     output_cost = (provider.cost_per_1k_output_tokens if provider else 0) * completion_tokens / 1000
+    preference = db.query(models.UserPreference).filter(models.UserPreference.user_id == user.id).first()
     usage = models.AIUsageLog(
         user_id=user.id,
         school_id=user.school_id,
+        school_model_assignment_id=preference.active_school_model_assignment_id if preference else None,
         wallet_id=wallet.id,
         provider_id=provider.id if provider else None,
         model_name=model_name or (provider.default_model if provider else None),

@@ -23,6 +23,7 @@
 - User deletion is soft deletion so referenced academic, financial, and audit history remains intact.
 - User profile photos are tenant-protected secure files; only the user or an authorized administrator may upload, read, replace, or delete them.
 - Official PDFs must use the shared school document header so persisted identity, address, phone, email, registration number, and local logo stay consistent.
+- Multi-school data uses organization, school, school-model assignment, and academic-year context; frontend identifiers are never authoritative without backend membership validation.
 
 # Work Guidance
 

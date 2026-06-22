@@ -22,6 +22,7 @@
 - User edit/delete actions use tenant-aware backend APIs and TeducAI dialogs.
 - The logo preview is dark-mode safe, clickable in edit mode, supports replacement/deletion, and reloads persisted server state.
 - Subscription plan cards remain readable in both themes and paid plans continue through the confirmation/payment workflow.
+- Administrators can activate multiple school models and initialize assignment-scoped reference data without duplicates.
 
 ## Verification
 

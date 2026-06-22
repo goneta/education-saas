@@ -98,10 +98,48 @@ class PayrollStatus(str, enum.Enum):
 
 # Core Models
 
+class Organization(Base):
+    __tablename__ = "organizations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, index=True)
+    legal_name = Column(String, nullable=True)
+    registration_number = Column(String, nullable=True, unique=True, index=True)
+    logo_url = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    address = Column(String, nullable=True)
+    country = Column(String, default="CI", nullable=False)
+    currency = Column(String, default="XOF", nullable=False)
+    timezone = Column(String, default="Africa/Abidjan", nullable=False)
+    owner_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    subscription_plan = Column(String, default="free", nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    owner = relationship("User", foreign_keys=[owner_user_id])
+    schools = relationship("School", back_populates="organization")
+
+
+class SchoolModel(Base):
+    __tablename__ = "school_models"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String, nullable=False, unique=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    is_system_template = Column(Boolean, default=True, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
 class School(Base):
     __tablename__ = "schools"
 
     id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
     name = Column(String, index=True, nullable=False)
     domain_prefix = Column(String, unique=True, index=True, nullable=False) # subdomain
     school_type = Column(SqEnum(SchoolType), default=SchoolType.GENERAL)
@@ -136,6 +174,29 @@ class School(Base):
     academic_years = relationship("AcademicYear", back_populates="school")
     classes = relationship("Class", back_populates="school")
     subjects = relationship("Subject", back_populates="school")
+    organization = relationship("Organization", back_populates="schools")
+    model_assignments = relationship("SchoolModelAssignment", back_populates="school")
+
+
+class SchoolModelAssignment(Base):
+    __tablename__ = "school_model_assignments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    school_model_id = Column(Integer, ForeignKey("school_models.id"), nullable=False, index=True)
+    display_name = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    ai_enabled = Column(Boolean, default=True, nullable=False)
+    monthly_ai_credit_limit = Column(Integer, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    school = relationship("School", back_populates="model_assignments")
+    school_model = relationship("SchoolModel")
+
+    __table_args__ = (
+        UniqueConstraint("school_id", "school_model_id", name="_school_model_assignment_uc"),
+    )
 
 
 class SchoolSubscription(Base):
@@ -316,6 +377,7 @@ class StudentProfile(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
     
     # Academic Info
     registration_number = Column(String, unique=True, index=True) # Matricule
@@ -367,6 +429,7 @@ class TeacherProfile(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
     
     specialization = Column(String, nullable=True)
     join_date = Column(DateTime, nullable=True)
@@ -384,6 +447,7 @@ class AcademicYear(Base):
     is_current = Column(Boolean, default=False)
     
     school_id = Column(Integer, ForeignKey("schools.id"))
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
     school = relationship("School", back_populates="academic_years")
     
     terms = relationship("Term", back_populates="academic_year")
@@ -408,6 +472,8 @@ class Class(Base):
     level = Column(String) # e.g. "6eme", "10"
     
     school_id = Column(Integer, ForeignKey("schools.id"))
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
+    is_system_default = Column(Boolean, default=False, nullable=False)
     school = relationship("School", back_populates="classes")
     
     # Simplify: One main teacher per class
@@ -428,6 +494,8 @@ class Subject(Base):
     coefficient = Column(Integer, default=1)
     
     school_id = Column(Integer, ForeignKey("schools.id"))
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
+    is_system_default = Column(Boolean, default=False, nullable=False)
     school = relationship("School", back_populates="subjects")
     
     timetables = relationship("Timetable", back_populates="subject")
@@ -675,6 +743,7 @@ class PartnerCompany(Base):
     partnership_file_id = Column(Integer, ForeignKey("secure_files.id"), nullable=True)
     status = Column(String, default="active", nullable=False, index=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
     created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=True)
@@ -715,6 +784,7 @@ class Internship(Base):
     ai_summary = Column(Text, nullable=True)
     final_score = Column(Float, nullable=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
     created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=True)
@@ -888,6 +958,8 @@ class AcademicProgram(Base):
     duration_years = Column(Integer, nullable=True)
     description = Column(Text, nullable=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
+    is_system_default = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     school = relationship("School")
@@ -1120,6 +1192,7 @@ class Fee(Base):
 
     student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=True)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
 
     student = relationship("StudentProfile")
     school = relationship("School")
@@ -1175,6 +1248,7 @@ class StudentInvoice(Base):
     student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True, index=True)
     fee_id = Column(Integer, ForeignKey("fees.id"), nullable=True, index=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
     created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -1199,6 +1273,7 @@ class OutstandingBalance(Base):
     status = Column(SqEnum(StudentInvoiceStatus), default=StudentInvoiceStatus.UNPAID, nullable=False)
     last_payment_at = Column(DateTime(timezone=True), nullable=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     student = relationship("StudentProfile")
@@ -1221,6 +1296,7 @@ class CashJournalEntry(Base):
     student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True)
     operator_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     payment = relationship("Payment")
@@ -1291,6 +1367,10 @@ class UserPreference(Base):
     help_open_mode = Column(String, default="page", nullable=False)
     email_notifications_enabled = Column(Boolean, default=True, nullable=False)
     language = Column(String, nullable=True)
+    active_organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
+    active_school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    active_school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
+    active_academic_year_id = Column(Integer, ForeignKey("academic_years.id"), nullable=True, index=True)
     metadata_json = Column(JSON, nullable=True)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -1366,6 +1446,8 @@ class FeeSchedule(Base):
     class_id = Column(Integer, ForeignKey("classes.id"), nullable=True)
     level = Column(String, nullable=True, index=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
+    is_system_default = Column(Boolean, default=False, nullable=False)
 
     school = relationship("School")
     academic_year = relationship("AcademicYear")
@@ -2046,6 +2128,7 @@ class AIUsageLog(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
     wallet_id = Column(Integer, ForeignKey("ai_wallets.id"), nullable=True, index=True)
     provider_id = Column(Integer, ForeignKey("ai_providers.id"), nullable=True)
     model_name = Column(String, nullable=True, index=True)
@@ -2093,6 +2176,7 @@ class SchoolPayment(Base):
     id = Column(Integer, primary_key=True, index=True)
     reference = Column(String, nullable=False, unique=True, index=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
     payer_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True, index=True)
     invoice_id = Column(Integer, ForeignKey("student_invoices.id"), nullable=True, index=True)
@@ -2127,7 +2211,9 @@ class AuditLog(Base):
     details = Column(JSON, nullable=True)
     ip_address = Column(String, nullable=True)
     user_agent = Column(String, nullable=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=True)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
     actor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

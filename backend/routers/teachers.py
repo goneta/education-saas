@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, selectinload
 from typing import List
 from .. import localization, models, rbac, schemas, security, database, tenancy
+from ..services import school_context
 
 router = APIRouter(prefix="/teachers", tags=["Teachers"])
 
@@ -17,6 +18,9 @@ def register_teacher(
         raise HTTPException(status_code=403, detail="Not authorized to register teachers")
     
     school_id = tenancy.resolve_school_id_for_create(current_user, teacher_in.school_id, db)
+    active_context = school_context.resolve_context(db, current_user)
+    if active_context.school_id != school_id:
+        raise HTTPException(status_code=403, detail="Le contexte actif ne correspond pas a cet etablissement.")
     existing_person = tenancy.find_existing_person(db, email=teacher_in.email, full_name=teacher_in.full_name)
     if existing_person:
         if teacher_in.transfer_reason:
@@ -25,11 +29,13 @@ def register_teacher(
             if not existing_person.teacher_profile:
                 existing_person.teacher_profile = models.TeacherProfile(
                     user_id=existing_person.id,
+                    school_model_assignment_id=active_context.school_model_assignment_id,
                     specialization=teacher_in.profile.specialization,
                     join_date=teacher_in.profile.join_date,
                     bio=teacher_in.profile.bio,
                 )
                 db.add(existing_person.teacher_profile)
+            existing_person.teacher_profile.school_model_assignment_id = active_context.school_model_assignment_id
             tenancy.create_or_transfer_school_membership(
                 db,
                 user=existing_person,
@@ -60,6 +66,7 @@ def register_teacher(
         # 4. Create Profile
         new_profile = models.TeacherProfile(
             user_id=new_user.id,
+            school_model_assignment_id=active_context.school_model_assignment_id,
             specialization=teacher_in.profile.specialization,
             join_date=teacher_in.profile.join_date,
             bio=teacher_in.profile.bio
@@ -97,6 +104,8 @@ def list_teachers(
     # primary role such as EDUCATOR, TRAINER or INSTRUCTOR.
     query = db.query(models.User).options(selectinload(models.User.teacher_profile)).join(models.TeacherProfile)
     query = tenancy.apply_user_school_filter(query, current_user, school_id)
+    active_context = school_context.resolve_context(db, current_user)
+    query = query.filter(models.TeacherProfile.school_model_assignment_id == active_context.school_model_assignment_id)
         
     teachers = query.order_by(models.User.full_name.asc(), models.User.id.asc()).offset(skip).limit(limit).all()
     return teachers

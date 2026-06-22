@@ -7,6 +7,7 @@
 ## Purpose
 
 - Python source file used by the backend, migrations, scripts, tests, or utilities.
+- Records sanitized audit events with active organization, school, and school-model assignment context.
 
 ## DOX Scope
 

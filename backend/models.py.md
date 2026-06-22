@@ -19,6 +19,8 @@
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
 - User records persist an optional protected `profile_photo_url`; school records do not own user profile photos.
+- Organizations own schools; schools activate global school models through assignment rows.
+- Core academic, finance, AI usage, preference, and audit records carry assignment-level context while seeded references expose `is_system_default`.
 
 ## Verification
 

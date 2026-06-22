@@ -110,8 +110,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         window.addEventListener("teducai:unauthorized", handleUnauthorized)
         const originalFetch = window.fetch.bind(window)
         window.fetch = async (...args) => {
-            const response = await originalFetch(...args)
             const requestUrl = typeof args[0] === "string" ? args[0] : args[0] instanceof Request ? args[0].url : ""
+            let requestArgs = args
+            if (requestUrl.includes(API_BASE_URL)) {
+                const existingInit = args[1] || {}
+                const headers = new Headers(
+                    existingInit.headers || (args[0] instanceof Request ? args[0].headers : undefined)
+                )
+                const assignmentId = localStorage.getItem("teducai_school_model_assignment_id")
+                const academicYearId = localStorage.getItem("teducai_academic_year_id")
+                if (assignmentId && !headers.has("X-School-Model-Assignment-ID")) {
+                    headers.set("X-School-Model-Assignment-ID", assignmentId)
+                }
+                if (academicYearId && !headers.has("X-Academic-Year-ID")) {
+                    headers.set("X-Academic-Year-ID", academicYearId)
+                }
+                requestArgs = [args[0], { ...existingInit, headers }]
+            }
+            const response = await originalFetch(...requestArgs)
             if (response.status === 401 && requestUrl.includes(API_BASE_URL) && localStorage.getItem("access_token")) {
                 window.dispatchEvent(new Event("teducai:unauthorized"))
             }

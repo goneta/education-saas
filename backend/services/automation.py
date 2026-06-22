@@ -58,6 +58,7 @@ def ensure_invoice_for_fee(db: Session, fee: models.Fee, current_user: models.Us
             fee_id=fee.id,
             student_id=fee.student_id,
             school_id=fee.school_id,
+            school_model_assignment_id=fee.school_model_assignment_id,
             created_by_id=current_user.id if current_user else None,
         )
         db.add(invoice)
@@ -104,6 +105,7 @@ def ensure_outstanding_balance(db: Session, invoice: models.StudentInvoice, fee:
             fee_id=fee.id if fee else invoice.fee_id,
             student_id=invoice.student_id,
             school_id=invoice.school_id,
+            school_model_assignment_id=invoice.school_model_assignment_id,
         )
         db.add(balance)
     balance.amount_due = invoice.amount_due
@@ -207,6 +209,7 @@ def ensure_cash_journal_for_payment(db: Session, payment: models.Payment, fee: m
         student_id=fee.student_id,
         operator_id=payment.recorded_by_id,
         school_id=fee.school_id,
+        school_model_assignment_id=fee.school_model_assignment_id,
     ))
     audit.record_audit(db, action="automation.cash_journal.created", current_user=current_user, entity_type="payment", entity_id=payment.id, details={"amount": payment.amount})
 

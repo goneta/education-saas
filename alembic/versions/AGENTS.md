@@ -17,6 +17,7 @@
 - Use explicit operations for tables, columns, constraints, indexes, seed data, and enum handling.
 - For PostgreSQL enums, avoid duplicate `CREATE TYPE` failures by using existing-type-safe patterns where needed.
 - Unique constraints containing nullable tenant columns require explicit PostgreSQL partial unique indexes for the global (`school_id IS NULL`) scope.
+- Multi-context migrations must backfill existing schools and business records without replacing historical identifiers or relations.
 
 # Verification
 

@@ -2,10 +2,11 @@ import csv
 import io
 import uuid
 from datetime import datetime, time, timezone
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from sqlalchemy.orm import Session
 from typing import Any, Dict, List, Optional
 from .. import audit, models, pdf, schemas, security, database, tenancy
+from ..services import school_context
 
 router = APIRouter(prefix="/education", tags=["Education"])
 
@@ -197,10 +198,14 @@ def create_class(
         raise HTTPException(status_code=403, detail="Not authorized")
     
     school_id = _resolve_school(current_user, class_in.school_id, db)
+    active_context = school_context.resolve_context(db, current_user)
+    if active_context.school_id != school_id:
+        raise HTTPException(status_code=403, detail="Le contexte actif ne correspond pas a cet etablissement.")
     new_class = models.Class(
         name=class_in.name,
         level=class_in.level,
         school_id=school_id,
+        school_model_assignment_id=active_context.school_model_assignment_id,
         main_teacher_id=class_in.main_teacher_id
     )
     db.add(new_class)
@@ -213,10 +218,15 @@ def list_classes(
     skip: int = 0,
     limit: int = 100,
     school_id: Optional[int] = None,
+    x_school_model_assignment_id: Optional[int] = Header(default=None, alias="X-School-Model-Assignment-ID"),
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
     query = tenancy.apply_school_filter(db.query(models.Class), models.Class, current_user, school_id)
+    active_context = school_context.resolve_context(
+        db, current_user, school_model_assignment_id=x_school_model_assignment_id
+    )
+    query = query.filter(models.Class.school_model_assignment_id == active_context.school_model_assignment_id)
     classes = query.offset(skip).limit(limit).all()
     return classes
 
@@ -278,6 +288,11 @@ def update_class(
     
     if not cls:
         raise HTTPException(status_code=404, detail="Class not found")
+    active_context = school_context.resolve_context(db, current_user)
+    if cls.school_model_assignment_id != active_context.school_model_assignment_id:
+        raise HTTPException(status_code=404, detail="Classe introuvable dans le contexte actif.")
+    if cls.is_system_default and cls.name != class_in.name:
+        raise HTTPException(status_code=409, detail="Le nom d'une classe systeme ne peut pas etre modifie.")
         
     cls.name = class_in.name
     cls.level = class_in.level
@@ -301,6 +316,11 @@ def delete_class(
     
     if not cls:
         raise HTTPException(status_code=404, detail="Class not found")
+    active_context = school_context.resolve_context(db, current_user)
+    if cls.school_model_assignment_id != active_context.school_model_assignment_id:
+        raise HTTPException(status_code=404, detail="Classe introuvable dans le contexte actif.")
+    if cls.is_system_default:
+        raise HTTPException(status_code=409, detail="Une classe systeme ne peut pas etre supprimee.")
         
     db.delete(cls)
     db.commit()
@@ -315,10 +335,15 @@ def list_academic_years(
     limit: int = 100,
     current_only: bool = False,
     school_id: Optional[int] = None,
+    x_school_model_assignment_id: Optional[int] = Header(default=None, alias="X-School-Model-Assignment-ID"),
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
     query = tenancy.apply_school_filter(db.query(models.AcademicYear), models.AcademicYear, current_user, school_id)
+    active_context = school_context.resolve_context(
+        db, current_user, school_model_assignment_id=x_school_model_assignment_id
+    )
+    query = query.filter(models.AcademicYear.school_model_assignment_id == active_context.school_model_assignment_id)
     if current_only:
         query = query.filter(models.AcademicYear.is_current == True)
 
@@ -350,9 +375,11 @@ def create_academic_year(
         raise HTTPException(status_code=403, detail="Not authorized")
         
     school_id = _resolve_school(current_user, year_in.school_id, db)
+    active_context = school_context.resolve_context(db, current_user)
     new_year = models.AcademicYear(
         **year_in.model_dump(exclude={"school_id"}),
         school_id=school_id,
+        school_model_assignment_id=active_context.school_model_assignment_id,
     )
     db.add(new_year)
     db.commit()
@@ -391,9 +418,11 @@ def create_subject(
         raise HTTPException(status_code=403, detail="Not authorized")
         
     school_id = _resolve_school(current_user, subject_in.school_id, db)
+    active_context = school_context.resolve_context(db, current_user)
     new_sub = models.Subject(
         **subject_in.model_dump(exclude={"school_id"}),
-        school_id=school_id
+        school_id=school_id,
+        school_model_assignment_id=active_context.school_model_assignment_id,
     )
     db.add(new_sub)
     db.commit()
@@ -405,10 +434,15 @@ def list_subjects(
     skip: int = 0,
     limit: int = 100,
     school_id: Optional[int] = None,
+    x_school_model_assignment_id: Optional[int] = Header(default=None, alias="X-School-Model-Assignment-ID"),
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
     query = tenancy.apply_school_filter(db.query(models.Subject), models.Subject, current_user, school_id)
+    active_context = school_context.resolve_context(
+        db, current_user, school_model_assignment_id=x_school_model_assignment_id
+    )
+    query = query.filter(models.Subject.school_model_assignment_id == active_context.school_model_assignment_id)
     subjects = query.offset(skip).limit(limit).all()
     return subjects
 
@@ -427,6 +461,11 @@ def update_subject(
     
     if not sub:
         raise HTTPException(status_code=404, detail="Subject not found")
+    active_context = school_context.resolve_context(db, current_user)
+    if sub.school_model_assignment_id != active_context.school_model_assignment_id:
+        raise HTTPException(status_code=404, detail="Matiere introuvable dans le contexte actif.")
+    if sub.is_system_default and subject_in.name is not None and subject_in.name != sub.name:
+        raise HTTPException(status_code=409, detail="Le nom d'une matiere systeme ne peut pas etre modifie.")
         
     update_data = subject_in.dict(exclude_unset=True)
     for key, value in update_data.items():
@@ -450,6 +489,11 @@ def delete_subject(
     
     if not sub:
         raise HTTPException(status_code=404, detail="Subject not found")
+    active_context = school_context.resolve_context(db, current_user)
+    if sub.school_model_assignment_id != active_context.school_model_assignment_id:
+        raise HTTPException(status_code=404, detail="Matiere introuvable dans le contexte actif.")
+    if sub.is_system_default:
+        raise HTTPException(status_code=409, detail="Une matiere systeme ne peut pas etre supprimee.")
         
     db.delete(sub)
     db.commit()

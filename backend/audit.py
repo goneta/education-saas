@@ -47,6 +47,19 @@ def record_audit(
     entity_id: str | int | None = None,
     details: dict | None = None,
 ) -> None:
+    preference = None
+    organization_id = None
+    assignment_id = None
+    if current_user:
+        preference = db.query(models.UserPreference).filter(
+            models.UserPreference.user_id == current_user.id
+        ).first()
+        assignment_id = preference.active_school_model_assignment_id if preference else None
+        organization_id = preference.active_organization_id if preference else None
+        if not organization_id and current_user.school_id:
+            organization_id = db.query(models.School.organization_id).filter(
+                models.School.id == current_user.school_id
+            ).scalar()
     row = models.AuditLog(
         action=action,
         entity_type=entity_type,
@@ -54,6 +67,8 @@ def record_audit(
         details=sanitize_audit_details(details) if details else None,
         actor_id=current_user.id if current_user else None,
         school_id=current_user.school_id if current_user else None,
+        organization_id=organization_id,
+        school_model_assignment_id=assignment_id,
     )
     db.add(row)
 

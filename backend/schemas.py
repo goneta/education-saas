@@ -98,6 +98,7 @@ class SchoolCreate(SchoolBase):
 
 class SchoolResponse(SchoolBase):
     id: int
+    organization_id: Optional[int] = None
     is_active: bool
     created_at: datetime
     formatted_address: Optional[str] = None
@@ -498,6 +499,10 @@ class UserPreferenceResponse(BaseModel):
     help_open_mode: str = "page"
     email_notifications_enabled: bool = True
     language: Optional[str] = None
+    active_organization_id: Optional[int] = None
+    active_school_id: Optional[int] = None
+    active_school_model_assignment_id: Optional[int] = None
+    active_academic_year_id: Optional[int] = None
     metadata_json: Optional[Dict[str, Any]] = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -509,6 +514,47 @@ class UserPreferenceUpdate(BaseModel):
     email_notifications_enabled: Optional[bool] = None
     language: Optional[str] = None
     metadata_json: Optional[Dict[str, Any]] = None
+
+
+class SchoolContextUpdate(BaseModel):
+    school_model_assignment_id: int
+    academic_year_id: Optional[int] = None
+
+
+class SchoolModelAssignmentCreate(BaseModel):
+    school_id: int
+    model_codes: List[str]
+    seed_defaults: bool = True
+
+    model_config = ConfigDict(protected_namespaces=())
+
+
+class SchoolModelAssignmentUpdate(BaseModel):
+    display_name: Optional[str] = None
+    is_active: Optional[bool] = None
+    ai_enabled: Optional[bool] = None
+    monthly_ai_credit_limit: Optional[int] = Field(default=None, ge=0)
+
+
+class OrganizationCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=200)
+    legal_name: Optional[str] = None
+    registration_number: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[EmailStr] = None
+    address: Optional[str] = None
+    country: str = "CI"
+    currency: str = "XOF"
+    timezone: str = "Africa/Abidjan"
+
+
+class OrganizationSchoolCreate(BaseModel):
+    organization_id: int
+    school: SchoolCreate
+    model_codes: List[str]
+    seed_defaults: bool = True
+
+    model_config = ConfigDict(protected_namespaces=())
 
 
 class CartItemCreate(BaseModel):

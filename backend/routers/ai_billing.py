@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 
 from .. import audit, crypto_utils, database, models, rbac, schemas, security
-from ..services import ai_credits, payment_gateway
+from ..services import ai_credits, payment_gateway, school_context as context_service
 
 
 router = APIRouter(tags=["AI Credits & Payments"])
@@ -754,13 +754,18 @@ def create_school_payment_account(payload: schemas.SchoolPaymentAccountCreate, c
 def list_school_payments(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     school_id = _school_context(current_user)
     rbac.require_permission(current_user, "payments:view", db)
-    return db.query(models.SchoolPayment).filter(models.SchoolPayment.school_id == school_id).order_by(models.SchoolPayment.created_at.desc()).limit(500).all()
+    active_context = context_service.resolve_context(db, current_user)
+    return db.query(models.SchoolPayment).filter(
+        models.SchoolPayment.school_id == school_id,
+        models.SchoolPayment.school_model_assignment_id == active_context.school_model_assignment_id,
+    ).order_by(models.SchoolPayment.created_at.desc()).limit(500).all()
 
 
 @router.post("/school/payments/initiate", response_model=schemas.SchoolPaymentResponse)
 def initiate_school_payment(payload: schemas.SchoolPaymentCreate, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     school_id = _school_context(current_user)
     rbac.require_permission(current_user, "payments:create", db)
+    active_context = context_service.resolve_context(db, current_user)
     if payload.school_beneficiary_account_id:
         account = db.query(models.SchoolPaymentAccount).filter(
             models.SchoolPaymentAccount.id == payload.school_beneficiary_account_id,
@@ -771,6 +776,7 @@ def initiate_school_payment(payload: schemas.SchoolPaymentCreate, current_user: 
     row = models.SchoolPayment(
         reference=ai_credits.platform_payment_reference("SCH"),
         school_id=school_id,
+        school_model_assignment_id=active_context.school_model_assignment_id,
         payer_user_id=current_user.id,
         student_id=payload.student_id,
         invoice_id=payload.invoice_id,
