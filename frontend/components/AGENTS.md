@@ -11,6 +11,8 @@
 - Shared components must remain accessible, responsive, and consistent with the Apple-inspired TeducAI visual system.
 - Dashboard shell components must preserve independent scrolling across desktop panels and dedicated mobile navigation.
 - UI primitives should remain generic and avoid embedding module-specific data fetching.
+- Components enhanced by `DashboardUxEnhancer` may opt out of automatic collapsing with `data-teducai-collapsible="false"` or opt into an initially open state with `data-teducai-default-open="true"`.
+- Shared accordions, cards, and runtime-injected controls must remain readable in both light and dark themes.
 
 # Work Guidance
 

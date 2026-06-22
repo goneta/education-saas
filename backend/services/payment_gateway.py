@@ -35,6 +35,8 @@ def _stripe_checkout(
     secret = api_key or os.getenv("STRIPE_SECRET_KEY", "")
     if not secret:
         return CheckoutSession(None, None, "pending_configuration", {"message": "Stripe credentials are not configured"})
+    stripe_currency = "xof" if currency.upper() == "FCFA" else currency.lower()
+    unit_multiplier = 1 if stripe_currency in {"xof"} else 100
     response = httpx.post(
         "https://api.stripe.com/v1/checkout/sessions",
         headers={"Authorization": f"Bearer {secret}"},
@@ -45,8 +47,8 @@ def _stripe_checkout(
             "client_reference_id": reference,
             "metadata[teducai_reference]": reference,
             "line_items[0][quantity]": "1",
-            "line_items[0][price_data][currency]": currency.lower(),
-            "line_items[0][price_data][unit_amount]": str(max(1, round(amount * 100))),
+            "line_items[0][price_data][currency]": stripe_currency,
+            "line_items[0][price_data][unit_amount]": str(max(1, round(amount * unit_multiplier))),
             "line_items[0][price_data][product_data][name]": title[:120],
         },
         timeout=20,

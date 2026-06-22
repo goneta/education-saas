@@ -41,9 +41,9 @@ export function TeacherListTable({
     )
 
     return (
-        <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
+        <Card data-teducai-collapsible="false" className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
             <CardHeader>
-                <CardTitle className="text-[#111827]">Teacher List</CardTitle>
+                <CardTitle className="text-[#111827]">Liste des enseignants ({filteredTeachers.length})</CardTitle>
             </CardHeader>
             <CardContent>
                 {error ? (
@@ -52,12 +52,12 @@ export function TeacherListTable({
                     </div>
                 ) : isLoading ? (
                     <div className="text-center py-12">
-                        <p className="text-[#6B7280]">Loading teachers...</p>
+                        <p className="text-[#6B7280]">Chargement des enseignants...</p>
                     </div>
                 ) : filteredTeachers.length === 0 ? (
                     <div className="text-center py-12">
                         <p className="text-[#6B7280]">
-                            {searchQuery ? `No teachers found matching "${searchQuery}"` : "No teachers found. Add your first teacher!"}
+                            {searchQuery ? `Aucun enseignant ne correspond à « ${searchQuery} ».` : "Aucun enseignant trouvé. Ajoutez votre premier enseignant."}
                         </p>
                     </div>
                 ) : (
@@ -65,10 +65,10 @@ export function TeacherListTable({
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b border-[#E5E7EB]">
-                                    <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Name</th>
-                                    <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Specialization</th>
+                                    <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Nom</th>
+                                    <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Spécialisation</th>
                                     <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Email</th>
-                                    <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Phone</th>
+                                    <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Téléphone</th>
                                     <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Actions</th>
                                 </tr>
                             </thead>
@@ -87,7 +87,7 @@ export function TeacherListTable({
                                             </div>
                                         </td>
                                         <td className="py-3 px-4 text-sm text-[#6B7280]">
-                                            {teacher.teacher_profile?.specialization || "General"}
+                                            {teacher.teacher_profile?.specialization || "Général"}
                                         </td>
                                         <td className="py-3 px-4 text-sm text-[#6B7280]">{teacher.email}</td>
                                         <td className="py-3 px-4 text-sm text-[#6B7280]">{teacher.phone_number || "-"}</td>
@@ -99,7 +99,7 @@ export function TeacherListTable({
                                                     className="h-8 text-[#2563EB] hover:text-[#2563EB] hover:bg-[#F0F1F3]"
                                                     onClick={() => onEdit(teacher)}
                                                 >
-                                                    <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                                                    <Pencil className="h-3.5 w-3.5 mr-1" /> Modifier
                                                 </Button>
                                                 <Button
                                                     variant="ghost"
@@ -107,7 +107,7 @@ export function TeacherListTable({
                                                     className="h-8 text-red-600 hover:text-red-600 hover:bg-red-50"
                                                     onClick={() => onDelete(teacher.id)}
                                                 >
-                                                    <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+                                                    <Trash2 className="h-3.5 w-3.5 mr-1" /> Supprimer
                                                 </Button>
                                             </div>
                                         </td>

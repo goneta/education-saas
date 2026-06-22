@@ -212,6 +212,24 @@
     background-color: #202528 !important;
   }
 
+  .dark .bg-\[\#FBFBFD\],
+  .dark .bg-\[\#FAFAFC\] {
+    background-color: #202528 !important;
+  }
+
+  .dark main section,
+  .dark main article,
+  .dark main [class*="rounded-"][class*="border"] {
+    border-color: #3b4248;
+  }
+
+  .dark main section[class*="bg-white"],
+  .dark main article[class*="bg-white"],
+  .dark main div[class*="bg-white"] {
+    background-color: #202528 !important;
+    color: #f4f7fb;
+  }
+
   .dark .hover\:bg-\[\#F5F5F7\]:hover,
   .dark .hover\:bg-white\/70:hover {
     background-color: #30373d !important;

@@ -325,8 +325,12 @@ class AICreditPurchaseRequest(BaseModel):
     pack_id: int
     owner_type: str = "user"
     target_user_id: Optional[int] = None
-    provider: str = "manual"
+    provider: str = Field(default="cash", pattern="^(cash|free|stripe|djamo|cinetpay)$")
     payment_method: Optional[str] = None
+    mobile_money_network: Optional[str] = None
+    success_url: Optional[str] = None
+    cancel_url: Optional[str] = None
+    note: Optional[str] = None
 
 
 class PlatformPaymentCreate(BaseModel):
@@ -342,6 +346,9 @@ class PlatformPaymentCreate(BaseModel):
     credits_amount: int = 0
     owner_type: str = "user"
     target_user_id: Optional[int] = None
+    mobile_money_network: Optional[str] = None
+    success_url: Optional[str] = None
+    cancel_url: Optional[str] = None
     metadata_json: Optional[Dict[str, Any]] = None
 
 
@@ -372,6 +379,8 @@ class PlatformPaymentResponse(BaseModel):
     validated_by_id: Optional[int] = None
     validated_at: Optional[datetime] = None
     metadata_json: Optional[Dict[str, Any]] = None
+    checkout_url: Optional[str] = None
+    provider_status: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

@@ -12,6 +12,7 @@
 - Services that mutate finance, AI credits, files, notifications, or tenant data must be deterministic and auditable through their callers.
 - Provider integrations should tolerate missing credentials and report actionable failures.
 - Checkout provider integrations must never mark payments successful before an authenticated provider webhook confirms the transaction.
+- Payment adapters must normalize provider-specific currency rules, including zero-decimal XOF/FCFA amounts.
 
 # Work Guidance
 

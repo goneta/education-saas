@@ -17,6 +17,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- Accordion headers, bodies, borders, descriptions, and hover states use shared light/dark-compatible surfaces and text colors.
 
 ## Verification
 

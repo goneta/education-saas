@@ -2,10 +2,11 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
-import { BadgeCheck, BrainCircuit, Landmark, Plus, RefreshCw, ShieldCheck, Wallet } from "lucide-react"
+import { BadgeCheck, Banknote, BrainCircuit, CreditCard, Gift, Landmark, Plus, RefreshCw, ShieldCheck, Smartphone, Wallet } from "lucide-react"
 import { API_BASE_URL } from "@/lib/config"
 import { useAuth } from "@/contexts/auth-context"
 import { normalizeLocale } from "@/lib/i18n"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface AIWallet {
     id: number
@@ -63,6 +64,7 @@ interface PlatformPayment {
     currency: string
     reference: string
     beneficiary_entity: string
+    provider: string
     created_at: string
 }
 
@@ -210,7 +212,11 @@ export default function AICreditsPage() {
         description: "",
         target_type: "both",
     })
-    const [purchaseProvider, setPurchaseProvider] = useState("stripe")
+    const [purchaseDialog, setPurchaseDialog] = useState<{ pack: AICreditPack; scope: "me" | "school" } | null>(null)
+    const [purchaseProvider, setPurchaseProvider] = useState("cinetpay")
+    const [purchaseNetwork, setPurchaseNetwork] = useState("orange_money")
+    const [purchaseNote, setPurchaseNote] = useState("")
+    const [purchaseLoading, setPurchaseLoading] = useState(false)
     const [manualPaymentForm, setManualPaymentForm] = useState({
         owner_type: "user",
         user_id: "",
@@ -308,21 +314,54 @@ export default function AICreditsPage() {
         void load()
     }, [load])
 
-    const purchase = async (packId: number, scope: "me" | "school") => {
-        if (!token) return
-        setMessage("Creation du paiement TeducAI...")
-        const endpoint = scope === "school" ? "/school/ai/purchase" : "/me/ai/purchase"
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-            method: "POST",
-            headers: { ...headers, "Content-Type": "application/json" },
-            body: JSON.stringify({ pack_id: packId, provider: purchaseProvider }),
-        })
-        const data = await response.json().catch(() => null)
-        if (response.ok) {
-            setMessage(`Paiement cree: ${data.reference}. Beneficiaire: ${data.beneficiary_entity}.`)
+    const openPurchase = (pack: AICreditPack, scope: "me" | "school") => {
+        setPurchaseProvider("cinetpay")
+        setPurchaseNetwork("orange_money")
+        setPurchaseNote("")
+        setPurchaseDialog({ pack, scope })
+    }
+
+    const purchase = async () => {
+        if (!token || !purchaseDialog) return
+        if (purchaseProvider === "free" && !purchaseNote.trim()) {
+            setMessage("Veuillez indiquer le motif de la demande gratuite.")
+            return
+        }
+        setPurchaseLoading(true)
+        setMessage("Création du paiement TeducAI...")
+        try {
+            const endpoint = purchaseDialog.scope === "school" ? "/school/ai/purchase" : "/me/ai/purchase"
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                method: "POST",
+                headers: { ...headers, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    pack_id: purchaseDialog.pack.id,
+                    provider: purchaseProvider,
+                    payment_method: purchaseProvider,
+                    mobile_money_network: purchaseProvider === "cinetpay" ? purchaseNetwork : undefined,
+                    note: purchaseNote || undefined,
+                    success_url: `${window.location.origin}/${params.locale}/dashboard/ai-credits`,
+                    cancel_url: `${window.location.origin}/${params.locale}/dashboard/ai-credits`,
+                }),
+            })
+            const data = await response.json().catch(() => null)
+            if (!response.ok) {
+                setMessage(data?.detail || "Achat de crédits impossible.")
+                return
+            }
+            setPurchaseDialog(null)
+            if (data.checkout_url) {
+                window.location.assign(data.checkout_url)
+                return
+            }
+            const manual = ["cash", "free"].includes(purchaseProvider)
+            setMessage(manual
+                ? `Demande ${data.reference} enregistrée. Elle attend une validation manuelle.`
+                : `Paiement ${data.reference} créé avec le statut ${data.provider_status || data.status}.`
+            )
             void load()
-        } else {
-            setMessage(data?.detail || "Achat de credits impossible.")
+        } finally {
+            setPurchaseLoading(false)
         }
     }
 
@@ -508,6 +547,25 @@ export default function AICreditsPage() {
         if (response.ok) void load()
     }
 
+    const validatePendingPayment = async (paymentId: number) => {
+        if (!token) return
+        const response = await fetch(`${API_BASE_URL}/platform/ai/payments/${paymentId}/manual-validate`, {
+            method: "POST",
+            headers,
+        })
+        const data = await response.json().catch(() => null)
+        setMessage(response.ok ? "Paiement manuel validé et crédits ajoutés." : data?.detail || "Validation impossible.")
+        if (response.ok) void load()
+    }
+
+    const purchaseMethods = [
+        { key: "cash", label: "Espèces", icon: Banknote },
+        { key: "stripe", label: "Stripe", icon: CreditCard },
+        { key: "djamo", label: "Djamo", icon: CreditCard },
+        { key: "cinetpay", label: "CinetPay", icon: Smartphone },
+        { key: "free", label: "Gratuit", icon: Gift },
+    ]
+
     return (
         <div className="space-y-6 pb-10">
             <div className="flex flex-col gap-4 rounded-[32px] border border-[#E5E7EB] bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
@@ -555,11 +613,6 @@ export default function AICreditsPage() {
 
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
                 <CardShell title="Acheter des credits IA" subtitle="Ces paiements sont des paiements plateforme TeducAI, encaisses par Thunderfam selon la region.">
-                    <select className="apple-select mb-4 max-w-xs" value={purchaseProvider} onChange={event => setPurchaseProvider(event.target.value)} title="Moyen de paiement utilisé pour initier l'achat.">
-                        <option value="stripe">Carte bancaire - Stripe</option>
-                        <option value="djamo">Carte bancaire - Djamo</option>
-                        <option value="cinetpay">Mobile Money - CinetPay</option>
-                    </select>
                     <div className="grid gap-3 md:grid-cols-2">
                         {packs.map(pack => (
                             <div key={pack.id} className="rounded-[24px] border border-[#E5E7EB] p-4">
@@ -572,8 +625,8 @@ export default function AICreditsPage() {
                                 </div>
                                 {pack.description && <p className="mt-2 text-sm text-[#6B7280]">{pack.description}</p>}
                                 <div className="mt-4 flex flex-wrap gap-2">
-                                    {pack.target_type !== "school" && <button type="button" onClick={() => void purchase(pack.id, "me")} className="rounded-full bg-black px-4 py-2 text-sm font-medium text-white hover:bg-black/90">Acheter pour moi</button>}
-                                    {canManageSchool && pack.target_type !== "user" && <button type="button" onClick={() => void purchase(pack.id, "school")} className="rounded-full border border-[#D1D5DB] px-4 py-2 text-sm hover:bg-[#F5F5F7]">Acheter pour l&apos;ecole</button>}
+                                    {pack.target_type !== "school" && <button type="button" onClick={() => openPurchase(pack, "me")} className="rounded-full bg-black px-4 py-2 text-sm font-medium text-white hover:bg-black/90">Acheter pour moi</button>}
+                                    {canManageSchool && pack.target_type !== "user" && <button type="button" onClick={() => openPurchase(pack, "school")} className="rounded-full border border-[#D1D5DB] px-4 py-2 text-sm hover:bg-[#F5F5F7]">Acheter pour l&apos;ecole</button>}
                                 </div>
                             </div>
                         ))}
@@ -753,6 +806,14 @@ export default function AICreditsPage() {
                         </form>
                     </CardShell>
                     <CardShell title="Paiements plateforme TeducAI">
+                        <div className="mb-4 space-y-2">
+                            {platformPayments.filter(item => item.status === "pending_manual_validation").map(item => (
+                                <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-amber-300 bg-amber-50 px-3 py-2 text-sm dark:border-amber-800 dark:bg-[#342f20]">
+                                    <span>{item.reference} · {item.provider} · {money(item.amount, item.currency)}</span>
+                                    <button type="button" onClick={() => void validatePendingPayment(item.id)} className="rounded-full bg-black px-3 py-1.5 text-white dark:bg-white dark:text-black">Valider</button>
+                                </div>
+                            ))}
+                        </div>
                         <Table headers={["Date", "Type", "Reference", "Montant", "Beneficiaire", "Statut"]} rows={platformPayments.map(item => [item.created_at, item.payment_type, item.reference, money(item.amount, item.currency), item.beneficiary_entity, item.status])} />
                         {analytics && (
                             <div className="mt-5 rounded-[22px] bg-[#F5F5F7] p-4 text-sm">
@@ -763,6 +824,60 @@ export default function AICreditsPage() {
                     </CardShell>
                 </div>
             )}
+            <Dialog open={Boolean(purchaseDialog)} onOpenChange={open => !open && setPurchaseDialog(null)}>
+                <DialogContent className="sm:max-w-[560px] dark:border-[#3b4248] dark:bg-[#202528]">
+                    <DialogHeader>
+                        <DialogTitle>Paiement des crédits IA</DialogTitle>
+                    </DialogHeader>
+                    {purchaseDialog && (
+                        <div className="space-y-5">
+                            <div className="rounded-[20px] bg-[#F5F5F7] p-4 dark:bg-[#2a3035]">
+                                <p className="font-semibold">{purchaseDialog.pack.name}</p>
+                                <p className="mt-1 text-sm text-[#6B7280]">
+                                    {purchaseDialog.pack.credits_amount.toLocaleString("fr-FR")} crédits · {money(purchaseDialog.pack.price, purchaseDialog.pack.currency)} · {purchaseDialog.scope === "school" ? "Établissement" : "Mon compte"}
+                                </p>
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                {purchaseMethods.map(({ key, label, icon: Icon }) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        onClick={() => setPurchaseProvider(key)}
+                                        className={`flex items-center gap-3 rounded-[18px] border p-4 text-left transition ${purchaseProvider === key ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black" : "border-[#D1D5DB] hover:bg-[#F5F5F7] dark:border-[#3b4248] dark:hover:bg-[#2a3035]"}`}
+                                    >
+                                        <Icon className="h-5 w-5" /> {label}
+                                    </button>
+                                ))}
+                            </div>
+                            {purchaseProvider === "cinetpay" && (
+                                <select className="apple-select" value={purchaseNetwork} onChange={event => setPurchaseNetwork(event.target.value)}>
+                                    <option value="orange_money">Orange Money</option>
+                                    <option value="wave">Wave</option>
+                                    <option value="mtn_money">MTN Money</option>
+                                    <option value="moov_money">Moov Money</option>
+                                </select>
+                            )}
+                            {["cash", "free"].includes(purchaseProvider) && (
+                                <textarea
+                                    className="apple-input min-h-24 py-3"
+                                    value={purchaseNote}
+                                    onChange={event => setPurchaseNote(event.target.value)}
+                                    placeholder={purchaseProvider === "free" ? "Motif obligatoire de la demande gratuite" : "Référence ou note pour la validation en espèces"}
+                                />
+                            )}
+                            <p className="text-sm text-[#6B7280]">
+                                Les paiements en espèces et les demandes gratuites restent en attente jusqu&apos;à validation par un Super Administrateur.
+                            </p>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <button type="button" onClick={() => setPurchaseDialog(null)} className="rounded-full border border-[#D1D5DB] px-5 py-2.5 dark:border-[#3b4248]">Annuler</button>
+                        <button type="button" disabled={purchaseLoading} onClick={() => void purchase()} className="rounded-full bg-black px-5 py-2.5 font-medium text-white disabled:opacity-50 dark:bg-white dark:text-black">
+                            {purchaseLoading ? "Initialisation..." : "Continuer le paiement"}
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

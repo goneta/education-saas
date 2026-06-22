@@ -66,20 +66,22 @@ def find_existing_person(
     full_name: Optional[str] = None,
     date_of_birth: Optional[datetime] = None,
 ) -> Optional[models.User]:
-    predicates = []
+    strong_predicates = []
     if email:
-        predicates.append(models.User.email == email)
+        strong_predicates.append(models.User.email == email)
     if phone:
-        predicates.append(or_(models.User.phone_number == phone, models.User.phone_e164 == phone))
+        strong_predicates.append(or_(models.User.phone_number == phone, models.User.phone_e164 == phone))
     if numref:
-        predicates.append(models.User.numref == numref)
+        strong_predicates.append(models.User.numref == numref)
     if registration_number:
-        predicates.append(models.StudentProfile.registration_number == registration_number)
-    if full_name and date_of_birth:
-        predicates.append(and_(models.User.full_name == full_name, models.StudentProfile.date_of_birth == date_of_birth))
-    if not predicates:
+        strong_predicates.append(models.StudentProfile.registration_number == registration_number)
+    if strong_predicates:
+        return db.query(models.User).outerjoin(models.StudentProfile).filter(or_(*strong_predicates)).first()
+    if not (full_name and date_of_birth):
         return None
-    return db.query(models.User).outerjoin(models.StudentProfile).filter(or_(*predicates)).first()
+    return db.query(models.User).outerjoin(models.StudentProfile).filter(
+        and_(models.User.full_name == full_name, models.StudentProfile.date_of_birth == date_of_birth)
+    ).first()
 
 
 def create_or_transfer_school_membership(

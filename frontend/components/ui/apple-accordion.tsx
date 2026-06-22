@@ -23,19 +23,19 @@ export function AppleAccordion({
 }: AppleAccordionProps) {
     return (
         <section className={cn(
-            "overflow-hidden rounded-[24px] border border-[#E5E7EB] bg-white shadow-sm transition-colors duration-300",
-            open && "bg-[#FBFBFD]"
+            "overflow-hidden rounded-[24px] border border-[#E5E7EB] bg-white shadow-sm transition-colors duration-300 dark:border-[#3b4248] dark:bg-[#202528] dark:text-[#f4f7fb]",
+            open && "bg-[#FBFBFD] dark:bg-[#202528]"
         )}>
             <button
                 type="button"
                 onClick={onToggle}
                 aria-expanded={open}
-                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-[#F5F5F7]"
+                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-[#F5F5F7] dark:hover:bg-[#2a3035]"
                 title={open ? "Cliquez pour refermer cette section" : hint}
             >
                 <span>
-                    <span className="block text-lg font-semibold text-[#111827]">{title}</span>
-                    {!open && <span className="mt-1 block text-sm font-normal text-[#6B7280]">{hint}</span>}
+                    <span className="block text-lg font-semibold text-[#111827] dark:text-[#f4f7fb]">{title}</span>
+                    {!open && <span className="mt-1 block text-sm font-normal text-[#6B7280] dark:text-[#b9c2cd]">{hint}</span>}
                 </span>
                 <ChevronDown className={cn("h-5 w-5 shrink-0 text-[#6B7280] transition-transform duration-300", open && "rotate-180")} />
             </button>

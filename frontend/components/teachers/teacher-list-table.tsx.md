@@ -16,6 +16,7 @@
 ## Maintenance Notes
 
 - An API error takes precedence over the empty-list state so production communication failures remain visible.
+- The primary teacher list opts out of global auto-collapse, exposes the loaded count, and uses dark-compatible table/action surfaces.
 
 ## Verification
 

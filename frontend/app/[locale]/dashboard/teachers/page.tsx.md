@@ -17,6 +17,7 @@
 
 - Uses the canonical `/teachers` collection endpoint without redirect.
 - API failures must be passed to the list component instead of silently rendering an empty result.
+- Normalizes direct-array and wrapped collection responses and bypasses stale browser caches before passing data to the table.
 
 ## Verification
 

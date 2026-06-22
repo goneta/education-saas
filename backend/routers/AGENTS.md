@@ -20,7 +20,9 @@
 - Preserve existing route prefixes and response shapes unless the task explicitly changes an API contract.
 - Collection endpoints exposed through the Next.js proxy should accept canonical no-slash URLs without redirect; keep a hidden slash-compatible route when existing clients use it.
 - Student and teacher profile ownership is the durable domain signal; do not hide valid profiles solely because a user's active primary role is an alternate learner or teaching role.
+- Student and teacher collection endpoints must enforce their view permission, eager-load profile data, and return a deterministic tenant-scoped order.
 - School AI credit allocations must be tenant-scoped; manual cash/free credit validation is platform-level and Super Admin only.
+- AI credit purchases must return an external checkout URL for configured online providers or a pending manual-validation payment for cash/free methods; credits are applied only after confirmed validation.
 
 # Verification
 

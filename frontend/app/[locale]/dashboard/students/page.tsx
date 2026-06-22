@@ -1,12 +1,12 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Plus, Search, Eye } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { Eye, Plus, Search } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
-import { useParams, useRouter } from "next/navigation"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { AddStudentModal } from "@/components/students/add-student-modal"
 import { EditStudentModal } from "@/components/students/edit-student-modal"
 import { DeleteStudentDialog } from "@/components/students/delete-student-dialog"
@@ -33,12 +33,21 @@ interface Student {
     student_profile: StudentProfile
 }
 
+function normalizeStudents(payload: unknown): Student[] {
+    if (Array.isArray(payload)) return payload as Student[]
+    if (payload && typeof payload === "object") {
+        const value = payload as { items?: unknown; students?: unknown; data?: unknown }
+        const rows = value.students ?? value.items ?? value.data
+        if (Array.isArray(rows)) return rows as Student[]
+    }
+    return []
+}
+
 export default function StudentsPage() {
     const { token } = useAuth()
     const params = useParams()
     const router = useRouter()
     const locale = params.locale as string
-
     const [searchQuery, setSearchQuery] = useState("")
     const [showAddModal, setShowAddModal] = useState(false)
     const [showEditModal, setShowEditModal] = useState(false)
@@ -48,184 +57,114 @@ export default function StudentsPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    // Fetch students from API
-    const fetchStudents = async () => {
+    const fetchStudents = useCallback(async () => {
         if (!token) {
-            setError("Not authenticated")
+            setError("Vous devez être connecté pour consulter les élèves.")
             setIsLoading(false)
             return
         }
-
+        setIsLoading(true)
+        setError(null)
         try {
-            setIsLoading(true)
-            setError(null)
-
             const response = await fetch(`${API_BASE_URL}/students`, {
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                },
+                headers: { Authorization: `Bearer ${token}` },
                 cache: "no-store",
             })
-
+            const payload = await response.json().catch(() => null)
             if (!response.ok) {
-                const payload = await response.json().catch(() => null)
                 if (response.status === 401) throw new Error("Votre session a expiré. Veuillez vous reconnecter.")
                 throw new Error(payload?.detail || `Impossible de charger les élèves (${response.status}).`)
             }
-
-            const data = await response.json()
-            if (!Array.isArray(data)) throw new Error("La réponse de la liste des élèves est invalide.")
-            setStudents(data)
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "An error occurred")
+            const rows = normalizeStudents(payload)
+            if (!Array.isArray(payload) && rows.length === 0) throw new Error("La réponse de la liste des élèves est invalide.")
+            setStudents(rows)
+        } catch (reason) {
+            setStudents([])
+            setError(reason instanceof Error ? reason.message : "Impossible de charger les élèves.")
         } finally {
             setIsLoading(false)
         }
-    }
-
-    // Fetch students on component mount
-    useEffect(() => {
-        fetchStudents()
-    // Student list loading is intentionally bound to the auth token.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token])
 
-    // Filter students based on search query
-    const filteredStudents = students.filter(student =>
-        student.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (student.student_profile?.registration_number || "").toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    useEffect(() => {
+        void fetchStudents()
+    }, [fetchStudents])
 
-    const handleStudentAdded = () => {
-        // Refresh the student list
-        fetchStudents()
-    }
+    const filteredStudents = useMemo(() => {
+        const query = searchQuery.trim().toLowerCase()
+        if (!query) return students
+        return students.filter(student =>
+            student.full_name.toLowerCase().includes(query) ||
+            student.email.toLowerCase().includes(query) ||
+            (student.student_profile?.registration_number || "").toLowerCase().includes(query)
+        )
+    }, [searchQuery, students])
 
-    const handleRowClick = (studentId: number) => {
-        router.push(`/${locale}/dashboard/students/${studentId}`)
-    }
+    const openStudent = (studentId: number) => router.push(`/${locale}/dashboard/students/${studentId}`)
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#111827]">Students</h1>
-                    <p className="text-sm text-[#6B7280] mt-1">
-                        Manage student registrations and profiles
-                    </p>
+                    <h1 className="text-2xl font-bold text-[#111827]">Élèves</h1>
+                    <p className="mt-1 text-sm text-[#6B7280]">Gérez les inscriptions, dossiers et profils des élèves.</p>
                 </div>
-                <Button
-                    onClick={() => setShowAddModal(true)}
-                    className="bg-black text-white hover:bg-black/90 rounded-lg"
-                >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Student
+                <Button onClick={() => setShowAddModal(true)} className="rounded-lg bg-black text-white hover:bg-black/90">
+                    <Plus className="mr-2 h-4 w-4" /> Ajouter un élève
                 </Button>
             </div>
 
-            {/* Search Bar */}
             <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280]" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B7280]" />
                 <input
                     type="search"
-                    placeholder="Search students..."
+                    placeholder="Rechercher un élève..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-[#E5E7EB] rounded-lg bg-white text-[#111827] placeholder:text-[#6B7280] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    onChange={event => setSearchQuery(event.target.value)}
+                    className="w-full rounded-lg border border-[#E5E7EB] bg-white py-2 pl-10 pr-4 text-[#111827] placeholder:text-[#6B7280] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary dark:border-[#3b4248] dark:bg-[#202528] dark:text-[#f4f7fb]"
                 />
             </div>
 
-            {/* Error Message */}
-            {error && (
-                <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
-                    {error}
-                </div>
-            )}
+            {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-800 dark:border-red-900 dark:bg-[#3a2528] dark:text-red-100">{error}</div>}
 
-            {/* Students Table Card */}
-            <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
+            <Card data-teducai-collapsible="false" className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
                 <CardHeader>
-                    <CardTitle className="text-[#111827]">Student List</CardTitle>
+                    <CardTitle className="text-[#111827]">Liste des élèves ({filteredStudents.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
-                        <div className="text-center py-12">
-                            <p className="text-[#6B7280]">Loading students...</p>
-                        </div>
+                        <p className="py-12 text-center text-[#6B7280]">Chargement des élèves...</p>
                     ) : filteredStudents.length === 0 ? (
-                        <div className="text-center py-12">
-                            <p className="text-[#6B7280]">
-                                {searchQuery ? `No students found matching "${searchQuery}"` : "No students found. Add your first student!"}
-                            </p>
-                        </div>
+                        <p className="py-12 text-center text-[#6B7280]">
+                            {searchQuery ? `Aucun élève ne correspond à « ${searchQuery} ».` : "Aucun élève trouvé. Ajoutez votre premier élève."}
+                        </p>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-[#E5E7EB]">
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Name</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Email</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Registration No.</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Gender</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Status</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Actions</th>
+                                        {["Nom", "Email", "Matricule", "Genre", "Statut", "Actions"].map(label => (
+                                            <th key={label} className="px-4 py-3 text-left text-sm font-medium text-[#6B7280]">{label}</th>
+                                        ))}
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredStudents.map((student) => (
-                                        <tr
-                                            key={student.id}
-                                            className="border-b border-[#E5E7EB] last:border-0 hover:bg-[#F6F7F9] transition-colors cursor-pointer"
-                                            onClick={() => handleRowClick(student.id)}
-                                        >
-                                            <td className="py-3 px-4 text-sm text-[#111827] font-medium">{student.full_name}</td>
-                                            <td className="py-3 px-4 text-sm text-[#6B7280]">{student.email}</td>
-                                            <td className="py-3 px-4 text-sm text-[#6B7280]">{student.student_profile.registration_number}</td>
-                                            <td className="py-3 px-4 text-sm text-[#6B7280]">{student.student_profile.gender}</td>
-                                            <td className="py-3 px-4">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${student.is_active
-                                                    ? "bg-green-100 text-green-800"
-                                                    : "bg-gray-100 text-gray-800"
-                                                    }`}>
-                                                    {student.is_active ? "Active" : "Inactive"}
+                                    {filteredStudents.map(student => (
+                                        <tr key={student.id} onClick={() => openStudent(student.id)} className="cursor-pointer border-b border-[#E5E7EB] transition-colors last:border-0 hover:bg-[#F6F7F9]">
+                                            <td className="px-4 py-3 text-sm font-medium text-[#111827]">{student.full_name}</td>
+                                            <td className="px-4 py-3 text-sm text-[#6B7280]">{student.email}</td>
+                                            <td className="px-4 py-3 text-sm text-[#6B7280]">{student.student_profile?.registration_number || "-"}</td>
+                                            <td className="px-4 py-3 text-sm text-[#6B7280]">{student.student_profile?.gender || "-"}</td>
+                                            <td className="px-4 py-3">
+                                                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${student.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
+                                                    {student.is_active ? "Actif" : "Inactif"}
                                                 </span>
                                             </td>
-                                            <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
+                                            <td className="px-4 py-3" onClick={event => event.stopPropagation()}>
                                                 <div className="flex gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-8 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                                                        onClick={() => handleRowClick(student.id)}
-                                                    >
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-8 text-[#2563EB] hover:text-[#2563EB] hover:bg-[#F0F1F3]"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            setSelectedStudent(student)
-                                                            setShowEditModal(true)
-                                                        }}
-                                                    >
-                                                        Edit
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-8 text-red-600 hover:text-red-600 hover:bg-red-50"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            setSelectedStudent(student)
-                                                            setShowDeleteDialog(true)
-                                                        }}
-                                                    >
-                                                        Delete
-                                                    </Button>
+                                                    <Button variant="ghost" size="sm" onClick={() => openStudent(student.id)} title="Afficher les détails"><Eye className="h-4 w-4" /></Button>
+                                                    <Button variant="ghost" size="sm" onClick={() => { setSelectedStudent(student); setShowEditModal(true) }}>Modifier</Button>
+                                                    <Button variant="ghost" size="sm" className="text-red-600" onClick={() => { setSelectedStudent(student); setShowDeleteDialog(true) }}>Supprimer</Button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -237,28 +176,9 @@ export default function StudentsPage() {
                 </CardContent>
             </Card>
 
-            {/* Add Student Modal */}
-            <AddStudentModal
-                open={showAddModal}
-                onOpenChange={setShowAddModal}
-                onSuccess={handleStudentAdded}
-            />
-
-            {/* Edit Student Modal */}
-            <EditStudentModal
-                open={showEditModal}
-                onOpenChange={setShowEditModal}
-                student={selectedStudent}
-                onSuccess={handleStudentAdded}
-            />
-
-            {/* Delete Student Dialog */}
-            <DeleteStudentDialog
-                open={showDeleteDialog}
-                onOpenChange={setShowDeleteDialog}
-                student={selectedStudent}
-                onSuccess={handleStudentAdded}
-            />
+            <AddStudentModal open={showAddModal} onOpenChange={setShowAddModal} onSuccess={fetchStudents} />
+            <EditStudentModal open={showEditModal} onOpenChange={setShowEditModal} student={selectedStudent} onSuccess={fetchStudents} />
+            <DeleteStudentDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog} student={selectedStudent} onSuccess={fetchStudents} />
         </div>
     )
 }

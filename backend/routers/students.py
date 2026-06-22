@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from typing import List
 from datetime import datetime
-from .. import localization, models, schemas, security, database, tenancy
+from .. import localization, models, rbac, schemas, security, database, tenancy
 from ..services import automation
 
 router = APIRouter(prefix="/students", tags=["Students"])
@@ -164,9 +164,10 @@ def list_students(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
+    rbac.require_permission(current_user, "students:view", db)
     # The profile is the durable source of truth. A learner may have a primary
     # role such as PUPIL or a custom role while still owning a StudentProfile.
-    query = db.query(models.User).join(models.StudentProfile)
+    query = db.query(models.User).options(selectinload(models.User.student_profile)).join(models.StudentProfile)
     query = tenancy.apply_user_school_filter(query, current_user, school_id)
     
     if class_id:
@@ -178,7 +179,7 @@ def list_students(
             (models.StudentProfile.registration_number.ilike(pattern))
         )
         
-    students = query.offset(skip).limit(limit).all()
+    students = query.order_by(models.User.full_name.asc(), models.User.id.asc()).offset(skip).limit(limit).all()
     return students
 
 @router.get("/{student_id}", response_model=schemas.StudentResponse)

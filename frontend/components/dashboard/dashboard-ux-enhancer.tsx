@@ -368,6 +368,7 @@ function enhanceCollapsibleSections() {
 
         const container = sectionContainerForHeading(heading)
         if (!container) return
+        if (container.dataset.teducaiCollapsible === "false" || container.closest("[data-teducai-collapsible='false']")) return
         const headerRoot = directHeaderRoot(container, heading)
         if (container.dataset.teducaiCollapsible === "true") {
             ensureSectionToggle(container, container.dataset.teducaiCollapsed === "false")
@@ -377,17 +378,18 @@ function enhanceCollapsibleSections() {
         if (!contentNodes.length) return
 
         container.dataset.teducaiCollapsible = "true"
-        container.dataset.teducaiCollapsed = "true"
+        const defaultOpen = container.dataset.teducaiDefaultOpen === "true"
+        container.dataset.teducaiCollapsed = defaultOpen ? "false" : "true"
         contentNodes.forEach(child => { child.dataset.teducaiCollapsibleContent = "true" })
 
         const clickable = headerRoot
         clickable.dataset.teducaiCollapseHeading = "true"
         clickable.setAttribute("role", "button")
         clickable.setAttribute("tabindex", "0")
-        clickable.setAttribute("aria-expanded", "false")
+        clickable.setAttribute("aria-expanded", defaultOpen ? "true" : "false")
         clickable.setAttribute("title", "Cliquer pour ouvrir ou refermer cette section")
         clickable.classList.add("teducai-collapse-heading")
-        ensureSectionToggle(container, false)
+        ensureSectionToggle(container, defaultOpen)
     })
 }
 
@@ -596,6 +598,16 @@ export function DashboardUxEnhancer() {
                 [data-teducai-collapsible="true"]:hover .teducai-section-chevron{color:#111827}
                 [data-teducai-collapsible-content="true"]{max-height:6000px;opacity:1;overflow:hidden;transition:max-height .28s ease,opacity .22s ease,margin .22s ease,padding .22s ease}
                 [data-teducai-collapsible="true"][data-teducai-collapsed="true"] [data-teducai-collapsible-content="true"]{max-height:0!important;opacity:0!important;margin-top:0!important;margin-bottom:0!important;padding-top:0!important;padding-bottom:0!important;pointer-events:none}
+                .dark [data-teducai-collapsible="true"],
+                .dark [data-teducai-collapsible="true"][data-teducai-collapsed="false"]{background:#202528!important;border-color:#3b4248!important;color:#f4f7fb!important}
+                .dark [data-teducai-collapsible="true"] .teducai-collapse-heading,
+                .dark [data-teducai-collapsible="true"] [data-teducai-collapsible-content="true"]{background:transparent!important;color:#f4f7fb!important}
+                .dark [data-teducai-collapsible="true"] .teducai-section-chevron{color:#aeb8c4}
+                .dark [data-teducai-collapsible="true"]:hover .teducai-section-chevron{color:#fff}
+                .dark .teducai-row-action{color:#e7edf5}
+                .dark .teducai-row-action:hover{background:#343b41;color:#fff}
+                .dark [data-teducai-action-cell] > div{background:#2a3035!important}
+                .dark [data-teducai-download-menu]{border-color:#3b4248!important;background:#252b30!important;color:#f4f7fb!important}
                 @media (max-width: 767px){
                     html,body{overflow-x:hidden}
                     main table{display:block;width:100%;min-width:0!important;border:0!important}

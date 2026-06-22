@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 
 from .. import audit, crypto_utils, database, models, rbac, schemas, security
-from ..services import ai_credits
+from ..services import ai_credits, payment_gateway
 
 
 router = APIRouter(tags=["AI Credits & Payments"])
@@ -55,6 +55,39 @@ def _payment_account_response(row: models.SchoolPaymentAccount) -> dict:
         "has_secret_key": bool(row.secret_key_encrypted),
         "created_at": row.created_at,
         "updated_at": row.updated_at,
+    }
+
+
+def _platform_payment_response(
+    row: models.PlatformPayment,
+    *,
+    checkout_url: Optional[str] = None,
+    provider_status: Optional[str] = None,
+) -> dict:
+    return {
+        "id": row.id,
+        "reference": row.reference,
+        "payer_user_id": row.payer_user_id,
+        "school_id": row.school_id,
+        "payment_type": row.payment_type,
+        "amount": row.amount,
+        "currency": row.currency,
+        "country_code": row.country_code,
+        "region": row.region,
+        "provider": row.provider,
+        "provider_reference": row.provider_reference,
+        "status": row.status,
+        "beneficiary_entity": row.beneficiary_entity,
+        "pack_id": row.pack_id,
+        "credits_amount": row.credits_amount,
+        "wallet_id": row.wallet_id,
+        "validated_by_id": row.validated_by_id,
+        "validated_at": row.validated_at,
+        "metadata_json": row.metadata_json,
+        "created_at": row.created_at,
+        "updated_at": row.updated_at,
+        "checkout_url": checkout_url,
+        "provider_status": provider_status,
     }
 
 
@@ -491,9 +524,18 @@ def revoke_school_ai_allocation(
 @router.post("/school/ai/purchase", response_model=schemas.PlatformPaymentResponse)
 def school_ai_purchase(payload: schemas.AICreditPurchaseRequest, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     _school_context(current_user)
-    rbac.require_permission(current_user, "ai_automation:create", db)
+    rbac.require_permission(current_user, "ai_credits:create", db)
     payload.owner_type = "school"
-    return initiate_platform_payment(schemas.PlatformPaymentCreate(pack_id=payload.pack_id, provider=payload.provider, payment_type="ai_credit_purchase", owner_type="school"), current_user, db)
+    return initiate_platform_payment(schemas.PlatformPaymentCreate(
+        pack_id=payload.pack_id,
+        provider=payload.provider,
+        payment_type="ai_credit_purchase",
+        owner_type="school",
+        mobile_money_network=payload.mobile_money_network,
+        success_url=payload.success_url,
+        cancel_url=payload.cancel_url,
+        metadata_json={"note": payload.note} if payload.note else None,
+    ), current_user, db)
 
 
 @router.get("/school/ai/transactions", response_model=list[schemas.AICreditTransactionResponse])
@@ -518,7 +560,16 @@ def my_ai_usage(current_user: models.User = Depends(security.get_current_user), 
 @router.post("/me/ai/purchase", response_model=schemas.PlatformPaymentResponse)
 def my_ai_purchase(payload: schemas.AICreditPurchaseRequest, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     payload.owner_type = "user"
-    return initiate_platform_payment(schemas.PlatformPaymentCreate(pack_id=payload.pack_id, provider=payload.provider, payment_type="ai_credit_purchase", owner_type="user"), current_user, db)
+    return initiate_platform_payment(schemas.PlatformPaymentCreate(
+        pack_id=payload.pack_id,
+        provider=payload.provider,
+        payment_type="ai_credit_purchase",
+        owner_type="user",
+        mobile_money_network=payload.mobile_money_network,
+        success_url=payload.success_url,
+        cancel_url=payload.cancel_url,
+        metadata_json={"note": payload.note} if payload.note else None,
+    ), current_user, db)
 
 
 @router.get("/me/ai/transactions", response_model=list[schemas.AICreditTransactionResponse])
@@ -534,7 +585,12 @@ def initiate_platform_payment(payload: schemas.PlatformPaymentCreate, current_us
         raise HTTPException(status_code=404, detail="AI credit pack not found")
     if pack and pack.target_type not in {"both", payload.owner_type}:
         raise HTTPException(status_code=400, detail="This AI credit pack is not available for the selected beneficiary")
-    amount = payload.amount if payload.amount is not None else (pack.price if pack else 0)
+    if payload.provider not in {"cash", "free", "stripe", "djamo", "cinetpay"}:
+        raise HTTPException(status_code=400, detail="Unsupported AI credit payment method")
+    note = str((payload.metadata_json or {}).get("note") or "").strip()
+    if payload.provider == "free" and not note:
+        raise HTTPException(status_code=400, detail="Un motif est obligatoire pour une demande gratuite")
+    amount = 0 if payload.provider == "free" else payload.amount if payload.amount is not None else (pack.price if pack else 0)
     currency = payload.currency or (pack.currency if pack else "FCFA")
     country_code = payload.country_code or (pack.country_code if pack else (current_user.school.country_code if current_user.school else "CI"))
     region = payload.region or (pack.region if pack else None)
@@ -550,19 +606,41 @@ def initiate_platform_payment(payload: schemas.PlatformPaymentCreate, current_us
         region=region,
         provider=payload.provider,
         provider_reference=payload.provider_reference,
-        status="pending",
+        status="pending_manual_validation" if payload.provider in {"cash", "free"} else "pending",
         beneficiary_entity=payload.beneficiary_entity or ai_credits.beneficiary_for_region(country_code, region),
         pack_id=pack.id if pack else payload.pack_id,
         credits_amount=payload.credits_amount or (pack.credits_amount if pack else 0),
         wallet_id=wallet.id,
-        metadata_json=payload.metadata_json or {"separation": "platform_payment_to_teducai"},
+        metadata_json={**(payload.metadata_json or {}), "separation": "platform_payment_to_teducai", "owner_type": payload.owner_type},
     )
     db.add(payment)
     db.flush()
+    checkout_url = None
+    provider_status = payment.status
+    if payload.provider in {"stripe", "djamo", "cinetpay"}:
+        session = payment_gateway.create_checkout_session(
+            provider=payload.provider,
+            reference=payment.reference,
+            amount=payment.amount,
+            currency=payment.currency,
+            title=pack.name if pack else "Crédits IA TeducAI",
+            success_url=payload.success_url,
+            cancel_url=payload.cancel_url,
+            mobile_money_network=payload.mobile_money_network,
+        )
+        payment.provider_reference = session.provider_reference
+        payment.status = session.status
+        payment.metadata_json = {
+            **(payment.metadata_json or {}),
+            "provider_payload": session.provider_payload,
+            "mobile_money_network": payload.mobile_money_network,
+        }
+        checkout_url = session.checkout_url
+        provider_status = session.status
     audit.record_audit(db, action="platform.payment.initiated", current_user=current_user, entity_type="platform_payment", entity_id=payment.reference, details={"beneficiary": payment.beneficiary_entity, "amount": amount, "currency": currency})
     db.commit()
     db.refresh(payment)
-    return payment
+    return _platform_payment_response(payment, checkout_url=checkout_url, provider_status=provider_status)
 
 
 @router.post("/platform/payments/webhook", response_model=schemas.PlatformPaymentResponse)
@@ -588,6 +666,39 @@ def get_platform_payment(payment_id: int, current_user: models.User = Depends(se
         raise HTTPException(status_code=404, detail="Payment not found")
     if current_user.role != models.UserRole.SUPER_ADMIN and payment.payer_user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
+    return payment
+
+
+@router.post("/platform/ai/payments/{payment_id}/manual-validate", response_model=schemas.PlatformPaymentResponse)
+def validate_manual_ai_payment(
+    payment_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _super_admin(current_user)
+    payment = db.query(models.PlatformPayment).filter(models.PlatformPayment.id == payment_id).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Paiement plateforme introuvable")
+    if payment.provider not in {"cash", "free"}:
+        raise HTTPException(status_code=400, detail="Ce paiement n'est pas une demande manuelle")
+    if payment.status == "successful":
+        return payment
+    if payment.status != "pending_manual_validation":
+        raise HTTPException(status_code=409, detail="Ce paiement ne peut plus être validé")
+    payment.status = "successful"
+    payment.validated_by_id = current_user.id
+    payment.validated_at = datetime.utcnow()
+    ai_credits.apply_platform_payment_success(db, payment, current_user)
+    audit.record_audit(
+        db,
+        action="platform.ai_credit_payment.manual_validated",
+        current_user=current_user,
+        entity_type="platform_payment",
+        entity_id=payment.reference,
+        details={"provider": payment.provider, "credits": payment.credits_amount, "wallet_id": payment.wallet_id},
+    )
+    db.commit()
+    db.refresh(payment)
     return payment
 
 

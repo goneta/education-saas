@@ -22,6 +22,8 @@
 - Section chevrons are rendered as small, borderless controls at the right edge of the section container and must not be injected into the title flow.
 - The enhancer also normalizes common remaining English dashboard labels, add buttons, and empty-state messages into French when rendered.
 - Existing table actions should remain consolidated into one standardized action column: print, view, download, edit, delete.
+- Containers marked `data-teducai-collapsible="false"` are never auto-collapsed; `data-teducai-default-open="true"` starts an enhanced section open.
+- Runtime-injected section, action, and download-menu elements include explicit dark-theme styles to avoid white-on-white content.
 
 ## Verification
 

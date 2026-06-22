@@ -19,6 +19,7 @@
 - Use these helpers instead of ad hoc `current_user.school_id` checks when a route can be used by `SUPER_ADMIN`.
 - `SUPER_ADMIN` must remain global with `school_id = None`; school-dependent creation must require an explicit payload school.
 - `SCHOOL_ADMIN` must remain scoped to `current_user.school_id`.
+- Duplicate-person lookup prioritizes strong identifiers such as email, phone, reference, or registration number; name and birth date are used only when no strong identifier is supplied.
 
 ## Verification
 

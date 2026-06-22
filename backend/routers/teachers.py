@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from typing import List
-from .. import localization, models, schemas, security, database, tenancy
+from .. import localization, models, rbac, schemas, security, database, tenancy
 
 router = APIRouter(prefix="/teachers", tags=["Teachers"])
 
@@ -92,12 +92,13 @@ def list_teachers(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
+    rbac.require_permission(current_user, "teachers:view", db)
     # The profile is the durable source of truth. Teaching staff can have a
     # primary role such as EDUCATOR, TRAINER or INSTRUCTOR.
-    query = db.query(models.User).join(models.TeacherProfile)
+    query = db.query(models.User).options(selectinload(models.User.teacher_profile)).join(models.TeacherProfile)
     query = tenancy.apply_user_school_filter(query, current_user, school_id)
         
-    teachers = query.offset(skip).limit(limit).all()
+    teachers = query.order_by(models.User.full_name.asc(), models.User.id.asc()).offset(skip).limit(limit).all()
     return teachers
 
 @router.get("/{teacher_id}", response_model=schemas.TeacherResponse)

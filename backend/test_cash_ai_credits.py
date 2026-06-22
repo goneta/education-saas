@@ -4,7 +4,7 @@ from sqlalchemy.pool import StaticPool
 
 from backend import database, models, schemas
 from backend.routers import ai_billing
-from backend.services import ai_credits
+from backend.services import ai_credits, payment_gateway
 
 
 def _session():
@@ -143,3 +143,77 @@ def test_free_credit_requires_a_reason():
         assert getattr(exc, "status_code", None) == 400
     else:
         raise AssertionError("Une attribution gratuite sans motif doit être refusée")
+
+
+def test_user_purchase_creates_manual_validation_request():
+    db = _session()
+    _school, _super_admin, _school_admin, teacher = _fixtures(db)
+    pack = models.AICreditPack(
+        name="Pack espèces",
+        credits_amount=1500,
+        price=7000,
+        currency="FCFA",
+        country_code="CI",
+        region="africa",
+        target_type="user",
+        is_active=True,
+    )
+    db.add(pack)
+    db.commit()
+
+    result = ai_billing.my_ai_purchase(
+        schemas.AICreditPurchaseRequest(pack_id=pack.id, provider="cash", note="Paiement à la caisse"),
+        teacher,
+        db,
+    )
+
+    assert result["status"] == "pending_manual_validation"
+    assert result["provider"] == "cash"
+    assert result["wallet_id"] == ai_credits.wallet_for_user(db, teacher).id
+    assert ai_credits.wallet_for_user(db, teacher).balance_credits == 0
+
+    validated = ai_billing.validate_manual_ai_payment(result["id"], _super_admin, db)
+    assert validated.status == "successful"
+    assert ai_credits.wallet_for_user(db, teacher).balance_credits == 1500
+
+
+def test_online_purchase_returns_checkout_url(monkeypatch):
+    db = _session()
+    _school, _super_admin, _school_admin, teacher = _fixtures(db)
+    pack = models.AICreditPack(
+        name="Pack Stripe",
+        credits_amount=4000,
+        price=15000,
+        currency="FCFA",
+        country_code="CI",
+        region="africa",
+        target_type="user",
+        is_active=True,
+    )
+    db.add(pack)
+    db.commit()
+    monkeypatch.setattr(
+        payment_gateway,
+        "create_checkout_session",
+        lambda **_kwargs: payment_gateway.CheckoutSession(
+            "https://checkout.example.test/ai",
+            "provider-123",
+            "redirect_required",
+            {"ok": True},
+        ),
+    )
+
+    result = ai_billing.my_ai_purchase(
+        schemas.AICreditPurchaseRequest(
+            pack_id=pack.id,
+            provider="stripe",
+            success_url="https://teducai.test/success",
+            cancel_url="https://teducai.test/cancel",
+        ),
+        teacher,
+        db,
+    )
+
+    assert result["checkout_url"] == "https://checkout.example.test/ai"
+    assert result["provider_status"] == "redirect_required"
+    assert result["provider_reference"] == "provider-123"

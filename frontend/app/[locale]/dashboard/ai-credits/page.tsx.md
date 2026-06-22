@@ -18,6 +18,8 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- Pack buttons open a localized payment dialog carrying pack, target wallet, amount, currency, and provider context.
+- Cash/free purchases create pending manual-validation payments; Stripe, Djamo, and CinetPay follow returned checkout URLs. Super Admin can validate eligible pending payments from the platform-payment list.
 
 ## Verification
 
