@@ -149,7 +149,7 @@ export default async function Home({
                     ))}
                   </div>
                   <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">
-                    <div className="rounded-xl bg-white p-4 text-[#0F172A]">
+                    <div className="rounded-xl bg-white p-4 text-[#0F172A] dark:bg-[#F8FAFC] dark:text-[#0F172A]">
                       <div className="mb-4 flex items-center justify-between">
                         <p className="font-semibold">Flux académique</p>
                         <LineChart className="h-5 w-5 text-[#0F766E]" />
@@ -164,7 +164,7 @@ export default async function Home({
                                 style={{ width: `${82 - index * 14}%` }}
                               />
                             </div>
-                            <span className="w-24 text-xs text-[#475569]">{item}</span>
+                            <span className="w-24 text-xs text-[#475569] dark:text-[#334155]">{item}</span>
                           </div>
                         ))}
                       </div>

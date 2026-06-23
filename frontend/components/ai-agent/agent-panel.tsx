@@ -10,6 +10,13 @@ import { formatPreviewContent } from "@/lib/ai-preview"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/auth-context"
 
+async function readChatError(response: Response) {
+    const payload = await response.json().catch(() => null)
+    if (typeof payload?.detail === "string") return payload.detail
+    if (Array.isArray(payload?.detail) && payload.detail[0]?.msg) return payload.detail[0].msg
+    return "Action IA impossible."
+}
+
 export function AgentPanel() {
     const { isAgentPanelOpen, toggleAgentPanel, aiStatus, setAiStatus, agentAction, setAgentAction, setViewMode, setPreviewContent } = useLayout()
     const { token, user } = useAuth()
@@ -61,8 +68,7 @@ export function AgentPanel() {
 
 
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Server Error: ${response.status} ${errorText}`);
+                throw new Error(await readChatError(response));
             }
 
             const data = await response.json().catch(async () => ({ message: await response.text() }))
@@ -90,7 +96,7 @@ export function AgentPanel() {
             if (errorName === 'AbortError') {
                 errorMessage = t("agentTimeout");
             } else if (errorText) {
-                errorMessage = `Error: ${errorText}`;
+                errorMessage = errorText;
             }
 
             setMessages(prev => [...prev, { role: 'agent', content: errorMessage }])

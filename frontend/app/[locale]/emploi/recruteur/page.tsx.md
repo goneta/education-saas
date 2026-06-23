@@ -17,6 +17,8 @@
 
 - Recruiter accounts must remain scoped to TeducAI Emploi and must not imply school data access.
 - Payment provider/status is handled by the backend.
+- Backend validation errors should be mapped to field-level messages, especially duplicate email and phone/password validation, without rendering raw JSON.
+- Successful registration redirects to login instead of leaving the registration form visible.
 
 ## Verification
 

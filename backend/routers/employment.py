@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -31,6 +32,11 @@ def _recruiter_for_user(db: Session, user: models.User) -> models.RecruiterProfi
     if not row:
         raise HTTPException(status_code=403, detail="Compte recruteur TeducAI Emploi requis.")
     return row
+
+
+def _require_recruiter_payment(recruiter: models.RecruiterProfile) -> None:
+    if recruiter.payment_status != "confirmed":
+        raise HTTPException(status_code=402, detail="Paiement: pending, must pay before using the service.")
 
 
 def _cv_response(cv: models.StudentCV) -> dict:
@@ -161,7 +167,9 @@ def register_external_student(payload: schemas.ExternalStudentRegister, db: Sess
 @router.post("/recruiters/register")
 def register_recruiter(payload: schemas.RecruiterRegister, db: Session = Depends(database.get_db)):
     if db.query(models.User.id).filter(models.User.email == payload.email).first():
-        raise HTTPException(status_code=409, detail="Un compte existe deja avec cet email.")
+        raise HTTPException(status_code=409, detail=[{"loc": ["body", "email"], "msg": "Un compte existe deja avec cet email."}])
+    if payload.phone and len(re.sub(r"\D", "", payload.phone)) < 6:
+        raise HTTPException(status_code=422, detail=[{"loc": ["body", "phone"], "msg": "Numero de telephone invalide."}])
     security.validate_password_strength(payload.password)
     user = models.User(
         email=payload.email,
@@ -208,6 +216,20 @@ def register_recruiter(payload: schemas.RecruiterRegister, db: Session = Depends
     audit.record_audit(db, action="employment.recruiter.created", current_user=user, entity_type="recruiter_profile", entity_id=recruiter.id)
     db.commit()
     return {"user_id": user.id, "recruiter_id": recruiter.id, "payment_status": recruiter.payment_status}
+
+
+@router.get("/recruiter/me")
+def recruiter_me(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    recruiter = _recruiter_for_user(db, current_user)
+    return {
+        "id": recruiter.id,
+        "company_name": recruiter.company_name,
+        "contact_name": recruiter.contact_name,
+        "subscription_plan": recruiter.subscription_plan,
+        "payment_status": recruiter.payment_status,
+        "offers_allowed": recruiter.offers_allowed,
+        "cv_views_allowed": recruiter.cv_views_allowed,
+    }
 
 
 @router.get("/me/cv")
@@ -278,6 +300,7 @@ def recruiter_jobs(current_user: models.User = Depends(security.get_current_user
 @router.post("/recruiter/jobs", response_model=schemas.JobOfferResponse)
 def create_job(payload: schemas.JobOfferCreate, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     recruiter = _recruiter_for_user(db, current_user)
+    _require_recruiter_payment(recruiter)
     count = db.query(models.JobOffer).filter(models.JobOffer.recruiter_id == recruiter.id, models.JobOffer.status != "archived").count()
     if recruiter.offers_allowed and count >= recruiter.offers_allowed:
         raise HTTPException(status_code=402, detail="Limite d'offres atteinte pour votre abonnement.")
@@ -292,6 +315,7 @@ def create_job(payload: schemas.JobOfferCreate, current_user: models.User = Depe
 @router.put("/recruiter/jobs/{job_id}", response_model=schemas.JobOfferResponse)
 def update_job(job_id: int, payload: schemas.JobOfferUpdate, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     recruiter = _recruiter_for_user(db, current_user)
+    _require_recruiter_payment(recruiter)
     row = db.query(models.JobOffer).filter(models.JobOffer.id == job_id, models.JobOffer.recruiter_id == recruiter.id).first()
     if not row:
         raise HTTPException(status_code=404, detail="Offre introuvable.")
@@ -307,6 +331,7 @@ def update_job(job_id: int, payload: schemas.JobOfferUpdate, current_user: model
 @router.delete("/recruiter/jobs/{job_id}")
 def delete_or_archive_job(job_id: int, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     recruiter = _recruiter_for_user(db, current_user)
+    _require_recruiter_payment(recruiter)
     row = db.query(models.JobOffer).filter(models.JobOffer.id == job_id, models.JobOffer.recruiter_id == recruiter.id).first()
     if not row:
         raise HTTPException(status_code=404, detail="Offre introuvable.")
@@ -350,12 +375,14 @@ def my_applications(current_user: models.User = Depends(security.get_current_use
 @router.get("/recruiter/applications", response_model=list[schemas.JobApplicationResponse])
 def recruiter_applications(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     recruiter = _recruiter_for_user(db, current_user)
+    _require_recruiter_payment(recruiter)
     return db.query(models.JobApplication).join(models.JobOffer).filter(models.JobOffer.recruiter_id == recruiter.id).order_by(models.JobApplication.created_at.desc()).all()
 
 
 @router.post("/recruiter/interviews", response_model=schemas.JobInterviewResponse)
 def create_interview(payload: schemas.JobInterviewCreate, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     recruiter = _recruiter_for_user(db, current_user)
+    _require_recruiter_payment(recruiter)
     application = db.query(models.JobApplication).join(models.JobOffer).filter(
         models.JobApplication.id == payload.job_application_id,
         models.JobOffer.recruiter_id == recruiter.id,

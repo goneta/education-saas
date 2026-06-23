@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- React/Next.js TypeScript component or page file. It provides reusable UI behavior.
+- Reusable TeducAI marketing logo mark and wordmark.
 
 ## DOX Scope
 
@@ -15,7 +15,7 @@
 
 ## Maintenance Notes
 
-- Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
+- The wordmark and tagline must remain readable in both light and dark navigation bars.
 - Keep the source file and this document in the same directory.
 
 ## Verification

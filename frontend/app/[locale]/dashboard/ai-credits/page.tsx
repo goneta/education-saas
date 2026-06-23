@@ -2,7 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
-import { BadgeCheck, Banknote, BrainCircuit, CreditCard, Gift, Landmark, Plus, RefreshCw, ShieldCheck, Smartphone, Wallet } from "lucide-react"
+import { AlertTriangle, BadgeCheck, Banknote, BrainCircuit, CreditCard, Gift, Landmark, Plus, RefreshCw, ShieldCheck, Smartphone, Wallet } from "lucide-react"
 import { API_BASE_URL } from "@/lib/config"
 import { useAuth } from "@/contexts/auth-context"
 import { normalizeLocale } from "@/lib/i18n"
@@ -94,8 +94,11 @@ interface AIProvider {
     id: number
     name: string
     provider_type: string
+    account_label?: string | null
     default_model?: string | null
     currency: string
+    available_credits: number
+    credits_last_synced_at?: string | null
     is_active: boolean
     priority: number
     has_api_key?: boolean
@@ -107,6 +110,17 @@ interface AnalyticsSummary {
     estimated_cost: number
     credits_sold: number
     wallet_balance: number
+}
+
+interface AIMonitoring {
+    providers: AIProvider[]
+    total_provider_credits: number
+    total_credits_purchased: number
+    total_wallet_balance: number
+    remaining_system_credits: number
+    low_credit_threshold: number
+    notification_enabled: boolean
+    low_credit_alert: boolean
 }
 
 interface CreditTargetUser {
@@ -149,10 +163,10 @@ function money(amount: number, currency: string) {
 
 function CardShell({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
     return (
-        <section className="rounded-[28px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
+        <section className="rounded-[28px] border border-[#E5E7EB] bg-white p-5 shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
             <div className="mb-4">
-                <h2 className="text-xl font-semibold text-[#111827]">{title}</h2>
-                {subtitle && <p className="mt-1 text-sm text-[#6B7280]">{subtitle}</p>}
+                <h2 className="text-xl font-semibold text-[#111827] dark:text-white">{title}</h2>
+                {subtitle && <p className="mt-1 text-sm text-[#6B7280] dark:text-[#c7d0da]">{subtitle}</p>}
             </div>
             {children}
         </section>
@@ -160,7 +174,16 @@ function CardShell({ title, subtitle, children }: { title: string; subtitle?: st
 }
 
 function StatusBadge({ value }: { value: string }) {
-    return <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusColor[value] || "bg-[#F5F5F7] text-[#111827]"}`}>{value}</span>
+    return <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusColor[value] || "bg-[#F5F5F7] text-[#111827] dark:bg-[#2a3035] dark:text-white"}`}>{value}</span>
+}
+
+function Metric({ label, value, danger = false }: { label: string; value: number; danger?: boolean }) {
+    return (
+        <div className={`rounded-[20px] border p-4 ${danger ? "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/30" : "border-[#E5E7EB] bg-[#F8FAFC] dark:border-[#3b4248] dark:bg-[#252b30]"}`}>
+            <p className={`text-xs font-medium ${danger ? "text-red-700 dark:text-red-200" : "text-[#6B7280] dark:text-[#c7d0da]"}`}>{label}</p>
+            <p className={`mt-2 text-2xl font-semibold ${danger ? "text-red-800 dark:text-red-100" : "text-[#111827] dark:text-white"}`}>{Number(value || 0).toLocaleString("fr-FR")}</p>
+        </div>
+    )
 }
 
 export default function AICreditsPage() {
@@ -179,6 +202,7 @@ export default function AICreditsPage() {
     const [schoolPayments, setSchoolPayments] = useState<SchoolPayment[]>([])
     const [providers, setProviders] = useState<AIProvider[]>([])
     const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null)
+    const [monitoring, setMonitoring] = useState<AIMonitoring | null>(null)
     const [targetUsers, setTargetUsers] = useState<CreditTargetUser[]>([])
     const [targetSchools, setTargetSchools] = useState<CreditTargetSchool[]>([])
     const [schoolUsers, setSchoolUsers] = useState<CreditTargetUser[]>([])
@@ -196,6 +220,8 @@ export default function AICreditsPage() {
         name: "",
         provider_type: "openai",
         api_key: "",
+        account_label: "",
+        available_credits: "0",
         base_url: "",
         default_model: "gpt-4.1-mini",
         currency: "USD",
@@ -244,6 +270,7 @@ export default function AICreditsPage() {
         daily_credit_limit: "",
         monthly_credit_limit: "",
     })
+    const [thresholdForm, setThresholdForm] = useState({ low_credit_threshold: "0", notification_enabled: true })
 
     const isSuperAdmin = user?.role === "super_admin"
     const canManageSchool = useMemo(() => {
@@ -289,15 +316,21 @@ export default function AICreditsPage() {
             }
 
             if (isSuperAdmin) {
-                const [providersRes, platformPaymentsRes, analyticsRes, targetsRes] = await Promise.all([
+                const [providersRes, platformPaymentsRes, analyticsRes, targetsRes, monitoringRes] = await Promise.all([
                     fetch(`${API_BASE_URL}/platform/ai/providers`, { headers }),
                     fetch(`${API_BASE_URL}/platform/ai/payments`, { headers }),
                     fetch(`${API_BASE_URL}/platform/ai/analytics`, { headers }),
                     fetch(`${API_BASE_URL}/platform/ai/credit-targets`, { headers }),
+                    fetch(`${API_BASE_URL}/platform/ai/monitoring`, { headers }),
                 ])
                 if (providersRes.ok) setProviders(await providersRes.json())
                 if (platformPaymentsRes.ok) setPlatformPayments(await platformPaymentsRes.json())
                 if (analyticsRes.ok) setAnalytics(await analyticsRes.json())
+                if (monitoringRes.ok) {
+                    const data = await monitoringRes.json()
+                    setMonitoring(data)
+                    setThresholdForm({ low_credit_threshold: String(data.low_credit_threshold ?? 0), notification_enabled: Boolean(data.notification_enabled) })
+                }
                 if (targetsRes.ok) {
                     const targets = await targetsRes.json()
                     setTargetUsers(targets.users || [])
@@ -393,6 +426,8 @@ export default function AICreditsPage() {
                 name: providerForm.name,
                 provider_type: providerForm.provider_type,
                 api_key: providerForm.api_key || undefined,
+                account_label: providerForm.account_label || undefined,
+                available_credits: Number(providerForm.available_credits || 0),
                 base_url: providerForm.base_url || undefined,
                 default_model: providerForm.default_model,
                 currency: providerForm.currency,
@@ -404,7 +439,7 @@ export default function AICreditsPage() {
         })
         if (response.ok) {
             setMessage("Provider IA cree. La cle API est chiffree en base et n'est jamais affichee.")
-            setProviderForm({ name: "", provider_type: "openai", api_key: "", base_url: "", default_model: "gpt-4.1-mini", currency: "USD", cost_per_1k_input_tokens: "0", cost_per_1k_output_tokens: "0", priority: "100" })
+            setProviderForm({ name: "", provider_type: "openai", api_key: "", account_label: "", available_credits: "0", base_url: "", default_model: "gpt-4.1-mini", currency: "USD", cost_per_1k_input_tokens: "0", cost_per_1k_output_tokens: "0", priority: "100" })
             void load()
         } else {
             setMessage("Creation du provider IA impossible.")
@@ -479,6 +514,40 @@ export default function AICreditsPage() {
         } else {
             setMessage("Mise a jour des limites impossible.")
         }
+    }
+
+    const updateMonitoringSettings = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        if (!token) return
+        const response = await fetch(`${API_BASE_URL}/platform/ai/monitoring/settings`, {
+            method: "PUT",
+            headers: { ...headers, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                low_credit_threshold: Number(thresholdForm.low_credit_threshold || 0),
+                notification_enabled: thresholdForm.notification_enabled,
+            }),
+        })
+        const data = await response.json().catch(() => null)
+        if (response.ok) {
+            setMonitoring(data)
+            setMessage("Seuil d'alerte IA mis a jour.")
+        } else {
+            setMessage(data?.detail || "Mise a jour du seuil impossible.")
+        }
+    }
+
+    const syncProviderCredits = async (provider: AIProvider) => {
+        if (!token) return
+        const value = window.prompt(`Credits disponibles pour ${provider.name}`, String(provider.available_credits ?? 0))
+        if (value === null) return
+        const response = await fetch(`${API_BASE_URL}/platform/ai/providers/${provider.id}`, {
+            method: "PUT",
+            headers: { ...headers, "Content-Type": "application/json" },
+            body: JSON.stringify({ available_credits: Number(value) }),
+        })
+        const data = await response.json().catch(() => null)
+        setMessage(response.ok ? "Credits provider mis a jour." : data?.detail || "Mise a jour du provider impossible.")
+        if (response.ok) void load()
     }
 
     const validateManualPayment = async (event: FormEvent<HTMLFormElement>) => {
@@ -587,7 +656,7 @@ export default function AICreditsPage() {
                 </button>
             </div>
 
-            {message && <div className="rounded-[22px] border border-[#E5E7EB] bg-[#F5F5F7] p-4 text-sm text-[#111827]">{message}</div>}
+            {message && <div className="rounded-[22px] border border-[#E5E7EB] bg-[#F5F5F7] p-4 text-sm text-[#111827] dark:border-[#3b4248] dark:bg-[#2a3035] dark:text-white">{message}</div>}
 
             <div className="grid gap-4 lg:grid-cols-4">
                 <div className="rounded-[28px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
@@ -611,6 +680,50 @@ export default function AICreditsPage() {
                     <p className="text-xs text-[#6B7280]">Flux financiers isoles</p>
                 </div>
             </div>
+
+            {isSuperAdmin && monitoring && (
+                <CardShell title="Monitoring credits IA plateforme" subtitle="Credits provider disponibles, credits vendus ou attribues, et seuil d'alerte Super Admin.">
+                    {monitoring.low_credit_alert && (
+                        <div className="mb-4 flex items-center gap-2 rounded-[18px] border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200">
+                            <AlertTriangle className="h-5 w-5" />
+                            Credits IA restants sous le seuil configure.
+                        </div>
+                    )}
+                    <div className="grid gap-3 md:grid-cols-4">
+                        <Metric label="Credits providers" value={monitoring.total_provider_credits} />
+                        <Metric label="Credits achetes/alloues" value={monitoring.total_credits_purchased} />
+                        <Metric label="Credits restants systeme" value={monitoring.remaining_system_credits} danger={monitoring.low_credit_alert} />
+                        <Metric label="Solde wallets" value={monitoring.total_wallet_balance} />
+                    </div>
+                    <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        {monitoring.providers.map(provider => (
+                            <div key={provider.id} className="rounded-[20px] border border-[#E5E7EB] p-4 dark:border-[#3b4248]">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="font-semibold text-[#111827] dark:text-white">{provider.name}</p>
+                                        <p className="text-xs text-[#6B7280] dark:text-[#c7d0da]">{provider.provider_type}{provider.account_label ? ` - ${provider.account_label}` : ""}</p>
+                                    </div>
+                                    <StatusBadge value={provider.is_active ? "active" : "inactive"} />
+                                </div>
+                                <p className="mt-4 text-2xl font-semibold text-[#111827] dark:text-white">{provider.available_credits.toLocaleString("fr-FR")}</p>
+                                <p className="text-xs text-[#6B7280] dark:text-[#c7d0da]">Derniere synchro: {provider.credits_last_synced_at || "Non renseignee"}</p>
+                                <button type="button" onClick={() => void syncProviderCredits(provider)} className="mt-3 rounded-full border border-[#D1D5DB] px-3 py-2 text-sm hover:bg-[#F5F5F7] dark:border-[#56616a] dark:hover:bg-[#2a3035]">Mettre a jour</button>
+                            </div>
+                        ))}
+                    </div>
+                    <form onSubmit={updateMonitoringSettings} className="mt-5 flex flex-wrap items-end gap-3 rounded-[20px] border border-[#E5E7EB] p-4 dark:border-[#3b4248]">
+                        <label className="grid gap-1 text-sm font-medium text-[#111827] dark:text-white">
+                            Seuil minimum
+                            <input className="apple-input" type="number" value={thresholdForm.low_credit_threshold} onChange={event => setThresholdForm({ ...thresholdForm, low_credit_threshold: event.target.value })} />
+                        </label>
+                        <label className="flex min-h-11 items-center gap-2 text-sm text-[#111827] dark:text-white">
+                            <input type="checkbox" checked={thresholdForm.notification_enabled} onChange={event => setThresholdForm({ ...thresholdForm, notification_enabled: event.target.checked })} />
+                            Notification active
+                        </label>
+                        <button className="rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white dark:bg-white dark:text-black">Enregistrer le seuil</button>
+                    </form>
+                </CardShell>
+            )}
 
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
                 <CardShell title="Acheter des credits IA" subtitle="Ces paiements sont des paiements plateforme TeducAI, encaisses par Thunderfam selon la region.">

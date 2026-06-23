@@ -2369,6 +2369,9 @@ class AIProvider(Base):
     api_key_encrypted = Column(String, nullable=True)
     base_url = Column(String, nullable=True)
     default_model = Column(String, nullable=True)
+    account_label = Column(String, nullable=True)
+    available_credits = Column(Integer, default=0, nullable=False)
+    credits_last_synced_at = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, default=False, nullable=False, index=True)
     priority = Column(Integer, default=100, nullable=False, index=True)
     cost_per_1k_input_tokens = Column(Float, default=0, nullable=False)
@@ -2376,6 +2379,18 @@ class AIProvider(Base):
     currency = Column(String, default="USD", nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class PlatformAISettings(Base):
+    __tablename__ = "platform_ai_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    low_credit_threshold = Column(Integer, default=0, nullable=False)
+    notification_enabled = Column(Boolean, default=True, nullable=False)
+    updated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    updated_by = relationship("User")
 
 
 class AICreditPack(Base):

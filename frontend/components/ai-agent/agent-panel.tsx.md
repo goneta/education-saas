@@ -19,6 +19,7 @@
 - Keep the source file and this document in the same directory.
 - Chat bubbles, composer, placeholder, attachments, microphone, send action, and collapse control remain readable in dark mode.
 - Structured AI response objects must be normalized through `formatPreviewContent` before writing to the shared Preview panel.
+- Backend chat errors must be displayed as clean user-facing messages from `detail`, not as raw HTTP/JSON wrappers.
 
 ## Verification
 

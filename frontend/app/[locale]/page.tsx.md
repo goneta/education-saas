@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- React/Next.js TypeScript component or page file. It participates in Next.js App Router routing.
+- Public localized homepage for the TeducAI marketing site, including hero, feature cards, trust sections, and dashboard preview mockup.
 
 ## DOX Scope
 
@@ -18,6 +18,7 @@
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
 - The public home and hero surfaces inherit the persisted global theme and keep navigation, copy, cards, and calls to action readable in dark mode.
+- Dashboard preview mockup intentionally keeps inner white cards light in dark mode so embedded chart labels stay readable.
 
 ## Verification
 

@@ -171,6 +171,8 @@ class AIProviderBase(BaseModel):
     api_key: Optional[str] = None
     base_url: Optional[str] = None
     default_model: Optional[str] = None
+    account_label: Optional[str] = None
+    available_credits: int = Field(default=0, ge=0)
     is_active: bool = False
     priority: int = 100
     cost_per_1k_input_tokens: float = 0
@@ -188,6 +190,8 @@ class AIProviderUpdate(BaseModel):
     api_key: Optional[str] = None
     base_url: Optional[str] = None
     default_model: Optional[str] = None
+    account_label: Optional[str] = None
+    available_credits: Optional[int] = Field(default=None, ge=0)
     is_active: Optional[bool] = None
     priority: Optional[int] = None
     cost_per_1k_input_tokens: Optional[float] = None
@@ -201,6 +205,9 @@ class AIProviderResponse(BaseModel):
     provider_type: str
     base_url: Optional[str] = None
     default_model: Optional[str] = None
+    account_label: Optional[str] = None
+    available_credits: int = 0
+    credits_last_synced_at: Optional[datetime] = None
     is_active: bool
     priority: int
     cost_per_1k_input_tokens: float
@@ -211,6 +218,22 @@ class AIProviderResponse(BaseModel):
     updated_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PlatformAISettingsUpdate(BaseModel):
+    low_credit_threshold: int = Field(ge=0)
+    notification_enabled: bool = True
+
+
+class PlatformAIMonitoringResponse(BaseModel):
+    providers: List[AIProviderResponse] = []
+    total_provider_credits: int = 0
+    total_credits_purchased: int = 0
+    total_wallet_balance: int = 0
+    remaining_system_credits: int = 0
+    low_credit_threshold: int = 0
+    notification_enabled: bool = True
+    low_credit_alert: bool = False
 
 
 class AICreditPackBase(BaseModel):

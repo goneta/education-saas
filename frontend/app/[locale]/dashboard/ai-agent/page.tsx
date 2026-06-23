@@ -11,6 +11,13 @@ import { useLayout } from "@/context/layout-context"
 
 type ChatMessage = { role: "user" | "agent"; content: string }
 
+async function readChatError(response: Response) {
+    const payload = await response.json().catch(() => null)
+    if (typeof payload?.detail === "string") return payload.detail
+    if (Array.isArray(payload?.detail) && payload.detail[0]?.msg) return payload.detail[0].msg
+    return "Action IA impossible."
+}
+
 function downloadText(content: string, extension: "txt" | "csv" | "xls") {
     const type = extension === "txt" ? "text/plain" : extension === "csv" ? "text/csv" : "application/vnd.ms-excel"
     const blob = new Blob([content], { type: `${type};charset=utf-8` })
@@ -61,8 +68,8 @@ export default function MobileAIAgentPage() {
                 },
                 body: JSON.stringify({ message: prompt }),
             })
+            if (!response.ok) throw new Error(await readChatError(response))
             const data = await response.json().catch(() => null)
-            if (!response.ok) throw new Error(data?.detail || "Action IA impossible.")
             const message = data?.message || "Résultat généré."
             const output = formatPreviewContent(data?.data ?? data?.message)
             setMessages(previous => [...previous, { role: "agent", content: message }])

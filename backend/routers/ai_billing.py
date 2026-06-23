@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .. import audit, crypto_utils, database, models, rbac, schemas, security
@@ -30,6 +31,9 @@ def _provider_response(row: models.AIProvider) -> dict:
         "provider_type": row.provider_type,
         "base_url": row.base_url,
         "default_model": row.default_model,
+        "account_label": row.account_label,
+        "available_credits": row.available_credits,
+        "credits_last_synced_at": row.credits_last_synced_at,
         "is_active": row.is_active,
         "priority": row.priority,
         "cost_per_1k_input_tokens": row.cost_per_1k_input_tokens,
@@ -39,6 +43,16 @@ def _provider_response(row: models.AIProvider) -> dict:
         "created_at": row.created_at,
         "updated_at": row.updated_at,
     }
+
+
+def _platform_ai_settings(db: Session) -> models.PlatformAISettings:
+    row = db.query(models.PlatformAISettings).order_by(models.PlatformAISettings.id.asc()).first()
+    if row:
+        return row
+    row = models.PlatformAISettings(low_credit_threshold=0, notification_enabled=True)
+    db.add(row)
+    db.flush()
+    return row
 
 
 def _payment_account_response(row: models.SchoolPaymentAccount) -> dict:
@@ -131,6 +145,9 @@ def create_ai_provider(payload: schemas.AIProviderCreate, current_user: models.U
         api_key_encrypted=crypto_utils.encrypt_secret(payload.api_key),
         base_url=payload.base_url,
         default_model=payload.default_model,
+        account_label=payload.account_label,
+        available_credits=payload.available_credits,
+        credits_last_synced_at=datetime.utcnow(),
         is_active=payload.is_active,
         priority=payload.priority,
         cost_per_1k_input_tokens=payload.cost_per_1k_input_tokens,
@@ -153,10 +170,13 @@ def update_ai_provider(provider_id: int, payload: schemas.AIProviderUpdate, curr
         raise HTTPException(status_code=404, detail="Provider not found")
     updates = payload.model_dump(exclude_unset=True)
     api_key = updates.pop("api_key", None)
+    credits_was_updated = "available_credits" in updates
     for key, value in updates.items():
         setattr(row, key, value)
     if api_key is not None:
         row.api_key_encrypted = crypto_utils.encrypt_secret(api_key)
+    if credits_was_updated:
+        row.credits_last_synced_at = datetime.utcnow()
     audit.record_audit(db, action="platform.ai_provider.updated", current_user=current_user, entity_type="ai_provider", entity_id=row.id, details={"fields": sorted(updates.keys())})
     db.commit()
     db.refresh(row)
@@ -173,6 +193,54 @@ def delete_ai_provider(provider_id: int, current_user: models.User = Depends(sec
     audit.record_audit(db, action="platform.ai_provider.disabled", current_user=current_user, entity_type="ai_provider", entity_id=row.id)
     db.commit()
     return {"status": "disabled"}
+
+
+@router.get("/platform/ai/monitoring", response_model=schemas.PlatformAIMonitoringResponse)
+def platform_ai_monitoring(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    _super_admin(current_user)
+    providers = db.query(models.AIProvider).order_by(models.AIProvider.priority.asc()).all()
+    settings = _platform_ai_settings(db)
+    total_provider_credits = sum(provider.available_credits or 0 for provider in providers)
+    total_credits_purchased = int(db.query(func.coalesce(func.sum(models.PlatformPayment.credits_amount), 0)).filter(
+        models.PlatformPayment.payment_type.in_(["ai_credit_purchase", "ai_credit_grant"]),
+        models.PlatformPayment.status == "successful",
+    ).scalar() or 0)
+    total_wallet_balance = int(db.query(func.coalesce(func.sum(models.AIWallet.balance_credits), 0)).scalar() or 0)
+    remaining_system_credits = total_provider_credits - total_credits_purchased
+    db.commit()
+    return {
+        "providers": [_provider_response(provider) for provider in providers],
+        "total_provider_credits": total_provider_credits,
+        "total_credits_purchased": total_credits_purchased,
+        "total_wallet_balance": total_wallet_balance,
+        "remaining_system_credits": remaining_system_credits,
+        "low_credit_threshold": settings.low_credit_threshold,
+        "notification_enabled": settings.notification_enabled,
+        "low_credit_alert": settings.notification_enabled and remaining_system_credits < settings.low_credit_threshold,
+    }
+
+
+@router.put("/platform/ai/monitoring/settings", response_model=schemas.PlatformAIMonitoringResponse)
+def update_platform_ai_monitoring_settings(
+    payload: schemas.PlatformAISettingsUpdate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _super_admin(current_user)
+    settings = _platform_ai_settings(db)
+    settings.low_credit_threshold = payload.low_credit_threshold
+    settings.notification_enabled = payload.notification_enabled
+    settings.updated_by_id = current_user.id
+    audit.record_audit(
+        db,
+        action="platform.ai_monitoring.settings_updated",
+        current_user=current_user,
+        entity_type="platform_ai_settings",
+        entity_id=settings.id,
+        details={"low_credit_threshold": settings.low_credit_threshold, "notification_enabled": settings.notification_enabled},
+    )
+    db.commit()
+    return platform_ai_monitoring(current_user, db)
 
 
 @router.get("/platform/ai/credit-packs", response_model=list[schemas.AICreditPackResponse])

@@ -16,6 +16,7 @@
 ## Maintenance Notes
 
 - Use `formatPreviewContent` before rendering backend `data` so structured lists, tables, and analytics objects are readable in Preview mode.
+- Backend chat errors must be displayed as clean user-facing messages from `detail`, not raw JSON or HTTP status wrappers.
 - Keep the source file and this document in the same directory.
 
 ## Verification

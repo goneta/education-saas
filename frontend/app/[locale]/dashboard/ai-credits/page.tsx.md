@@ -7,7 +7,7 @@
 ## Purpose
 
 - React/Next.js TypeScript component or page file. It participates in Next.js App Router routing.
-- Provides the AI credits and separated payments dashboard: online purchases, Super Admin cash/free validation, user/school-targeted packs, school-to-user allocations and revocation, providers, wallets, usage, and transactions.
+- Provides the AI credits and separated payments dashboard: online purchases, Super Admin cash/free validation, user/school-targeted packs, school-to-user allocations and revocation, providers, provider-level credit monitoring, low-credit threshold alerts, wallets, usage, and transactions.
 
 ## DOX Scope
 
@@ -21,6 +21,7 @@
 - Pack buttons open a localized payment dialog carrying pack, target wallet, amount, currency, and provider context.
 - Cash/free purchases create pending manual-validation payments; Stripe, Djamo, and CinetPay follow returned checkout URLs. Super Admin can validate eligible pending payments from the platform-payment list.
 - Credit allocation revocation uses the shared TeducAI confirmation dialog.
+- Super Admin monitoring cards display configured provider credits, purchased/allocated credits, remaining platform credits, wallet balances, and a configurable low-credit threshold.
 
 ## Verification
 

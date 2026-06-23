@@ -26,9 +26,9 @@ export function TeducAILogo({
         <BrainCircuit className="absolute h-5 w-5 -translate-x-2 -translate-y-2 text-[#A7F3D0]" />
       </div>
       <div className="leading-tight">
-        <p className="text-xl font-bold tracking-normal text-[#0F172A]">TeducAI</p>
+        <p className="text-xl font-bold tracking-normal text-[#0F172A] dark:text-white">TeducAI</p>
         {showTagline ? (
-          <p className="text-xs font-medium text-[#64748B]">
+          <p className="text-xs font-medium text-[#64748B] dark:text-[#c7d0da]">
             Gestion scolaire intelligente
           </p>
         ) : null}
