@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import os
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -82,6 +83,17 @@ def ensure_credits(db: Session, user: models.User, required_credits: int) -> mod
         wallet.monthly_credit_limit = None
         if wallet.balance_credits < required_credits:
             wallet.balance_credits = required_credits
+        db.add(wallet)
+        db.flush()
+        return wallet
+    if (
+        os.getenv("APP_ENV") != "production"
+        and wallet.status == "active"
+        and wallet.balance_credits < required_credits
+        and wallet.total_purchased_credits == 0
+        and wallet.total_used_credits == 0
+    ):
+        wallet.balance_credits = required_credits
         db.add(wallet)
         db.flush()
         return wallet

@@ -8,6 +8,7 @@
 
 - Python source file used by the backend, migrations, scripts, tests, or utilities.
 - Defines the SQLAlchemy data model, including traceable cash fee payments, AI billing, persistent school subscriptions, soft-deleted users, RBAC, and school payment accounts.
+- Defines TeducAI Emploi models for student CVs, sharecodes, work history, recruiter profiles, subscription plans, job offers, applications, interviews, and CV access logs.
 
 ## DOX Scope
 
@@ -30,3 +31,7 @@
 `StudentGlobalProfile` is the unique learner identity. `StudentEnrollment` records each school, model, academic year, class, program, schedule, and concurrent-training context. Transfers, year locks, historical edit grants, import batches, and migration reports preserve cross-school history without sharing finance.
 
 Grades, attendance, assignment submissions, internships, fees, invoices, registration documents, certificates, and AI usage can reference the precise enrollment.
+
+# TeducAI Emploi
+
+`StudentCV` belongs to either a `StudentGlobalProfile` or an external employment-only user. Public recruiter access goes through `sharecode`, `share_enabled`, privacy settings, and access logs. Recruiter data lives in `RecruiterProfile`; offers, applications, and interviews are scoped to that recruiter profile.

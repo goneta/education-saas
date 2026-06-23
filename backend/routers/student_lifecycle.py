@@ -16,7 +16,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from .. import audit, database, models, rbac, schemas, security
-from ..services import school_context, student_lifecycle
+from ..services import employment, school_context, student_lifecycle
 
 
 router = APIRouter(prefix="/student-lifecycle", tags=["Student lifecycle"])
@@ -338,6 +338,7 @@ def create_enrollment(
     )
     db.add(row)
     db.flush()
+    employment.ensure_student_cv(db, profile, current_user=current_user)
     if payload.primary_enrollment:
         db.query(models.StudentEnrollment).filter(
             models.StudentEnrollment.student_global_profile_id == profile.id,
@@ -555,13 +556,18 @@ def close_academic_year(
     row.status = "closed"
     row.closed_at = _now()
     row.closed_by_user_id = current_user.id
+    cv_count = employment.refresh_cv_from_academic_year(
+        db,
+        academic_year_id=academic_year_id,
+        current_user=current_user,
+    )
     audit.record_audit(
         db,
         action="academic_year.closed",
         current_user=current_user,
         entity_type="academic_year",
         entity_id=academic_year_id,
-        details={"confirmation": "CLOTURER"},
+        details={"confirmation": "CLOTURER", "employment_cv_updated": cv_count},
     )
     db.commit()
     return {"academic_year_id": academic_year_id, "status": "closed", "closed_at": row.closed_at}

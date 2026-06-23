@@ -845,6 +845,184 @@ class StudentImportRowsPreview(BaseModel):
     rows: List[Dict[str, Any]]
     filename: str = "import.json"
 
+
+class StudentCVUpdate(BaseModel):
+    professional_title: Optional[str] = None
+    summary: Optional[str] = None
+    sectors: List[str] = []
+    looking_for_job: Optional[bool] = None
+    privacy_settings: Optional[Dict[str, Any]] = None
+    academic_timeline: Optional[List[Dict[str, Any]]] = None
+    skills: List[str] = []
+    languages: List[str] = []
+    portfolio: List[Dict[str, Any]] = []
+    availability: Optional[str] = None
+    cv_photo_url: Optional[str] = None
+
+
+class StudentCVWorkHistoryCreate(BaseModel):
+    company: str
+    sector: Optional[str] = None
+    position: str
+    experience_type: str = "stage"
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    current: bool = False
+    description: Optional[str] = None
+    missions: List[str] = []
+    skills_used: List[str] = []
+    proof_document_url: Optional[str] = None
+    reference_contact: Optional[str] = None
+
+
+class StudentCVWorkHistoryResponse(StudentCVWorkHistoryCreate):
+    id: int
+    locked: bool = False
+    verified_by_entity: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class StudentCVResponse(BaseModel):
+    id: int
+    sharecode: str
+    share_enabled: bool
+    is_external: bool
+    professional_title: Optional[str] = None
+    summary: Optional[str] = None
+    sectors: List[str] = []
+    looking_for_job: bool
+    cv_photo_url: Optional[str] = None
+    privacy_settings: Dict[str, Any] = {}
+    academic_timeline: List[Dict[str, Any]] = []
+    skills: List[str] = []
+    languages: List[str] = []
+    portfolio: List[Dict[str, Any]] = []
+    availability: Optional[str] = None
+    external_identity: Optional[Dict[str, Any]] = None
+    work_history: List[StudentCVWorkHistoryResponse] = []
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SharecodeLookup(BaseModel):
+    sharecode: str = Field(min_length=4, max_length=80)
+
+
+class ExternalStudentRegister(BaseModel):
+    email: EmailStr
+    password: str
+    first_name: str
+    last_name: str
+    phone: Optional[str] = None
+    sector: Optional[str] = None
+    professional_title: Optional[str] = None
+    payment_provider: str = Field(default="manual", pattern="^(cash|free|stripe|djamo|cinetpay|manual)$")
+
+
+class RecruiterRegister(BaseModel):
+    email: EmailStr
+    password: str
+    company_name: str
+    contact_name: str
+    sector: Optional[str] = None
+    phone: Optional[str] = None
+    website: Optional[str] = None
+    plan: str = "sharecode_only"
+    payment_provider: str = Field(default="manual", pattern="^(cash|free|stripe|djamo|cinetpay|manual)$")
+
+
+class JobOfferCreate(BaseModel):
+    title: str
+    company: str
+    sector: str
+    offer_type: str = "emploi"
+    location: Optional[str] = None
+    workplace_mode: str = "on_site"
+    description: str
+    missions: Optional[List[str]] = []
+    required_skills: Optional[List[str]] = []
+    required_degree: Optional[str] = None
+    required_level: Optional[str] = None
+    required_experience: Optional[str] = None
+    salary: Optional[str] = None
+    deadline: Optional[datetime] = None
+    status: str = "draft"
+
+
+class JobOfferUpdate(BaseModel):
+    title: Optional[str] = None
+    company: Optional[str] = None
+    sector: Optional[str] = None
+    offer_type: Optional[str] = None
+    location: Optional[str] = None
+    workplace_mode: Optional[str] = None
+    description: Optional[str] = None
+    missions: Optional[List[str]] = None
+    required_skills: Optional[List[str]] = None
+    required_degree: Optional[str] = None
+    required_level: Optional[str] = None
+    required_experience: Optional[str] = None
+    salary: Optional[str] = None
+    deadline: Optional[datetime] = None
+    status: Optional[str] = None
+
+
+class JobOfferResponse(JobOfferCreate):
+    id: int
+    recruiter_id: int
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class JobApplicationCreate(BaseModel):
+    motivation_message: Optional[str] = None
+    attached_documents: List[Dict[str, Any]] = []
+
+
+class JobApplicationResponse(BaseModel):
+    id: int
+    student_cv_id: int
+    job_offer_id: int
+    motivation_message: Optional[str] = None
+    attached_documents: Optional[List[Dict[str, Any]]] = []
+    status: str
+    status_history: Optional[List[Dict[str, Any]]] = []
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class JobInterviewCreate(BaseModel):
+    job_application_id: int
+    scheduled_at: datetime
+    duration_minutes: int = 30
+    mode: str = "presentiel"
+    location_or_link: Optional[str] = None
+    note: Optional[str] = None
+
+
+class JobInterviewResponse(BaseModel):
+    id: int
+    recruiter_id: int
+    student_cv_id: int
+    job_application_id: int
+    scheduled_at: datetime
+    duration_minutes: int
+    mode: str
+    location_or_link: Optional[str] = None
+    note: Optional[str] = None
+    status: str
+    created_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
 # Teacher Schemas
 class TeacherProfileBase(BaseModel):
     specialization: Optional[str] = None

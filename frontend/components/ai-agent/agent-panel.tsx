@@ -6,6 +6,7 @@ import { Mic, Paperclip, Send, PanelLeftClose, PanelLeftOpen, BookOpen } from "l
 import { useLayout } from "@/context/layout-context"
 import { useState, useRef, useEffect } from "react"
 import { API_BASE_URL } from "@/lib/config"
+import { formatPreviewContent } from "@/lib/ai-preview"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/auth-context"
 
@@ -64,14 +65,14 @@ export function AgentPanel() {
                 throw new Error(`Server Error: ${response.status} ${errorText}`);
             }
 
-            const data = await response.json()
+            const data = await response.json().catch(async () => ({ message: await response.text() }))
 
             setAiStatus("idle")
             setAgentAction(null)
 
             if (data.type === 'content') {
                 setMessages(prev => [...prev, { role: 'agent', content: data.message }])
-                setPreviewContent(data.data) // Set the markdown/data content
+                setPreviewContent(formatPreviewContent(data.data ?? data.message))
                 setViewMode("preview")
             } else {
                 setMessages(prev => [...prev, { role: 'agent', content: data.message }])

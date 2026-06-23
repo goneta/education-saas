@@ -517,6 +517,188 @@ class StudentTransferRequest(Base):
     approved_by = relationship("User", foreign_keys=[approved_by_user_id])
 
 
+class StudentCV(Base):
+    __tablename__ = "student_cvs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_global_profile_id = Column(Integer, ForeignKey("student_global_profiles.id"), nullable=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    sharecode = Column(String, nullable=False, unique=True, index=True)
+    share_enabled = Column(Boolean, default=True, nullable=False, index=True)
+    share_expires_at = Column(DateTime(timezone=True), nullable=True)
+    is_external = Column(Boolean, default=False, nullable=False, index=True)
+    professional_title = Column(String, nullable=True)
+    summary = Column(Text, nullable=True)
+    sectors = Column(JSON, nullable=True)
+    looking_for_job = Column(Boolean, default=False, nullable=False, index=True)
+    cv_photo_url = Column(String, nullable=True)
+    privacy_settings = Column(JSON, nullable=True)
+    academic_timeline = Column(JSON, nullable=True)
+    skills = Column(JSON, nullable=True)
+    languages = Column(JSON, nullable=True)
+    portfolio = Column(JSON, nullable=True)
+    availability = Column(String, nullable=True)
+    external_identity = Column(JSON, nullable=True)
+    last_auto_updated_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    student_global_profile = relationship("StudentGlobalProfile")
+    user = relationship("User")
+    work_history = relationship("StudentCVWorkHistory", back_populates="student_cv", cascade="all, delete-orphan")
+    applications = relationship("JobApplication", back_populates="student_cv")
+
+
+class StudentCVWorkHistory(Base):
+    __tablename__ = "student_cv_work_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_cv_id = Column(Integer, ForeignKey("student_cvs.id"), nullable=False, index=True)
+    company = Column(String, nullable=False)
+    sector = Column(String, nullable=True, index=True)
+    position = Column(String, nullable=False)
+    experience_type = Column(String, default="stage", nullable=False, index=True)
+    start_date = Column(DateTime, nullable=True)
+    end_date = Column(DateTime, nullable=True)
+    current = Column(Boolean, default=False, nullable=False)
+    description = Column(Text, nullable=True)
+    missions = Column(JSON, nullable=True)
+    skills_used = Column(JSON, nullable=True)
+    proof_document_url = Column(String, nullable=True)
+    reference_contact = Column(String, nullable=True)
+    locked = Column(Boolean, default=False, nullable=False)
+    verified_by_entity = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    student_cv = relationship("StudentCV", back_populates="work_history")
+
+
+class RecruiterProfile(Base):
+    __tablename__ = "recruiter_profiles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True, index=True)
+    company_name = Column(String, nullable=False, index=True)
+    sector = Column(String, nullable=True, index=True)
+    contact_name = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    website = Column(String, nullable=True)
+    subscription_plan = Column(String, default="sharecode_only", nullable=False, index=True)
+    payment_status = Column(String, default="pending", nullable=False, index=True)
+    offers_allowed = Column(Integer, default=0, nullable=False)
+    cv_views_allowed = Column(Integer, default=0, nullable=False)
+    cv_views_used = Column(Integer, default=0, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User")
+    job_offers = relationship("JobOffer", back_populates="recruiter")
+
+
+class EmploymentSubscriptionPlan(Base):
+    __tablename__ = "employment_subscription_plans"
+
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String, nullable=False, unique=True, index=True)
+    name = Column(String, nullable=False)
+    price = Column(Float, default=0, nullable=False)
+    currency = Column(String, default="FCFA", nullable=False)
+    duration_days = Column(Integer, default=30, nullable=False)
+    job_offer_limit = Column(Integer, default=0, nullable=False)
+    cv_view_limit = Column(Integer, default=0, nullable=False)
+    sharecode_access = Column(Boolean, default=True, nullable=False)
+    cv_search_access = Column(Boolean, default=False, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class JobOffer(Base):
+    __tablename__ = "job_offers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    recruiter_id = Column(Integer, ForeignKey("recruiter_profiles.id"), nullable=False, index=True)
+    title = Column(String, nullable=False, index=True)
+    company = Column(String, nullable=False, index=True)
+    sector = Column(String, nullable=False, index=True)
+    offer_type = Column(String, default="emploi", nullable=False, index=True)
+    location = Column(String, nullable=True, index=True)
+    workplace_mode = Column(String, default="on_site", nullable=False, index=True)
+    description = Column(Text, nullable=False)
+    missions = Column(JSON, nullable=True)
+    required_skills = Column(JSON, nullable=True)
+    required_degree = Column(String, nullable=True)
+    required_level = Column(String, nullable=True)
+    required_experience = Column(String, nullable=True)
+    salary = Column(String, nullable=True)
+    deadline = Column(DateTime, nullable=True, index=True)
+    status = Column(String, default="draft", nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    recruiter = relationship("RecruiterProfile", back_populates="job_offers")
+    applications = relationship("JobApplication", back_populates="job_offer")
+
+
+class JobApplication(Base):
+    __tablename__ = "job_applications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_cv_id = Column(Integer, ForeignKey("student_cvs.id"), nullable=False, index=True)
+    job_offer_id = Column(Integer, ForeignKey("job_offers.id"), nullable=False, index=True)
+    motivation_message = Column(Text, nullable=True)
+    attached_documents = Column(JSON, nullable=True)
+    status = Column(String, default="submitted", nullable=False, index=True)
+    status_history = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    student_cv = relationship("StudentCV", back_populates="applications")
+    job_offer = relationship("JobOffer", back_populates="applications")
+
+    __table_args__ = (
+        UniqueConstraint("student_cv_id", "job_offer_id", name="_job_application_cv_offer_uc"),
+    )
+
+
+class JobInterview(Base):
+    __tablename__ = "job_interviews"
+
+    id = Column(Integer, primary_key=True, index=True)
+    recruiter_id = Column(Integer, ForeignKey("recruiter_profiles.id"), nullable=False, index=True)
+    student_cv_id = Column(Integer, ForeignKey("student_cvs.id"), nullable=False, index=True)
+    job_application_id = Column(Integer, ForeignKey("job_applications.id"), nullable=False, index=True)
+    scheduled_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    duration_minutes = Column(Integer, default=30, nullable=False)
+    mode = Column(String, default="presentiel", nullable=False, index=True)
+    location_or_link = Column(String, nullable=True)
+    note = Column(Text, nullable=True)
+    status = Column(String, default="scheduled", nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    recruiter = relationship("RecruiterProfile")
+    student_cv = relationship("StudentCV")
+    job_application = relationship("JobApplication")
+
+
+class StudentCVAccessLog(Base):
+    __tablename__ = "student_cv_access_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_cv_id = Column(Integer, ForeignKey("student_cvs.id"), nullable=False, index=True)
+    recruiter_id = Column(Integer, ForeignKey("recruiter_profiles.id"), nullable=True, index=True)
+    access_type = Column(String, nullable=False, index=True)
+    sharecode_used = Column(String, nullable=True, index=True)
+    ip_address = Column(String, nullable=True, index=True)
+    user_agent = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    student_cv = relationship("StudentCV")
+    recruiter = relationship("RecruiterProfile")
+
+
 class AcademicYearLock(Base):
     __tablename__ = "academic_year_locks"
 

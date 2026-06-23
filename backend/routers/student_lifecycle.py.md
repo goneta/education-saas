@@ -8,3 +8,5 @@ Exposes the global student journey API: search, enrollment history, concurrent e
 - Transfer approval never grants financial visibility.
 - Import is previewed and persisted as a batch before an explicit transactional commit.
 - Exports support PDF, CSV, XLSX, Markdown, XML, and JSON and are audited.
+- New enrollments ensure the global student profile has a TeducAI Emploi CV/sharecode.
+- Academic-year closure refreshes employment CV academic snapshots for enrolled students and records the update count in audit details.

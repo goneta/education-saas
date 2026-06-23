@@ -14,6 +14,7 @@
 - User, student, and teacher responses expose the optional protected profile-photo endpoint.
 - Context contracts cover active assignment/year changes, school-model activation, non-destructive deactivation, AI enablement, and model-level limits.
 - Organization owners can create additional schools with a selected set of model codes.
+- TeducAI Emploi contracts cover student CV updates, work history, sharecode lookup, external student registration, recruiter registration, job offers, applications, and interviews.
 
 ## DOX Scope
 

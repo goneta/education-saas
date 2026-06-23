@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- React/Next.js TypeScript component or page file. It provides reusable UI behavior.
+- React/Next.js TypeScript component for public marketing navigation, including the public TeducAI Emploi entry point.
 
 ## DOX Scope
 

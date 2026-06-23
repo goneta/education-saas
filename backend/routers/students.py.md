@@ -20,6 +20,7 @@
 - Listing requires `students:view`, eagerly loads `student_profile`, applies tenant scope, and orders records deterministically.
 - Deletion is logical: the user is deactivated and hidden from active list/detail APIs while dependent academic and financial history is preserved.
 - Student creation, transfer, and listing use the validated active school-model assignment.
+- Student creation also ensures a TeducAI Emploi CV/sharecode exists for the global student profile.
 
 ## Verification
 

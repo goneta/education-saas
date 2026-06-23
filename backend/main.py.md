@@ -7,7 +7,7 @@
 ## Purpose
 
 - Python source file used by the backend, migrations, scripts, tests, or utilities.
-- Creates the FastAPI app, middleware stack, health/readiness/metrics endpoints, and registers all routers including bootstrap and multi-school context.
+- Creates the FastAPI app, middleware stack, health/readiness/metrics endpoints, and registers all routers including bootstrap, multi-school context, student lifecycle, and TeducAI Emploi.
 
 ## DOX Scope
 
@@ -25,3 +25,7 @@
 # Student lifecycle
 
 The application registers the `/student-lifecycle` router for global student profiles, enrollments, transfers, academic locks, historical edit grants, and import/export.
+
+# TeducAI Emploi
+
+The application registers the `/employment` router for public sharecode/CV discovery and authenticated student/recruiter employment workflows.

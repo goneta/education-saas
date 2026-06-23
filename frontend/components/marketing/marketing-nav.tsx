@@ -17,6 +17,7 @@ export function MarketingNav({ locale }: MarketingNavProps) {
   const { isAuthenticated, isLoading, logout } = useAuth()
   const links = [
     { href: `/${locale}`, label: "Accueil" },
+    { href: `/${locale}/emploi`, label: "Emploi" },
     { href: `/${locale}#fonctionnalites`, label: "Fonctionnalités" },
     { href: `/${locale}/pricing`, label: "Tarification" },
     { href: `/${locale}/contact`, label: "Contact" },

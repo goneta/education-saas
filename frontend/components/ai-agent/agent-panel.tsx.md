@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- React/Next.js TypeScript component or page file. It provides reusable UI behavior.
+- Dashboard AI Agent panel for chat requests, provider-backed responses, and automatic Preview mode switching when content or structured data is returned.
 
 ## DOX Scope
 
@@ -18,6 +18,7 @@
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
 - Chat bubbles, composer, placeholder, attachments, microphone, send action, and collapse control remain readable in dark mode.
+- Structured AI response objects must be normalized through `formatPreviewContent` before writing to the shared Preview panel.
 
 ## Verification
 

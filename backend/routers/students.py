@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session, selectinload
 from typing import List
 from datetime import datetime
 from .. import localization, models, rbac, schemas, security, database, tenancy
-from ..services import automation, school_context, student_lifecycle
+from ..services import automation, employment, school_context, student_lifecycle
 
 router = APIRouter(prefix="/students", tags=["Students"])
 
@@ -70,6 +70,7 @@ def register_student(
                 academic_year_id=active_year_id,
                 class_id=student_in.profile.current_class_id,
             )
+            employment.ensure_student_cv(db, student_lifecycle.ensure_global_profile(db, existing_person.student_profile), current_user=current_user)
             db.commit()
             db.refresh(existing_person)
             return existing_person
@@ -162,7 +163,7 @@ def register_student(
             "Piece d'identite parent 2 ou representant legal",
         ]:
             db.add(models.StudentRegistrationDocument(student_id=new_profile.id, name=document_name))
-        student_lifecycle.ensure_current_enrollment(
+        enrollment = student_lifecycle.ensure_current_enrollment(
             db,
             student_profile=new_profile,
             current_user=current_user,
@@ -171,6 +172,7 @@ def register_student(
             academic_year_id=active_year_id,
             class_id=student_in.profile.current_class_id,
         )
+        employment.ensure_student_cv(db, student_lifecycle.ensure_global_profile(db, new_profile), current_user=current_user)
         db.commit()
         db.refresh(new_user)
         return new_user

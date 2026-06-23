@@ -9,6 +9,7 @@
 - Python source file used by the backend, migrations, scripts, tests, or utilities. It contains reusable backend business or integration logic.
 - Owns AI credit accounting rules: wallet creation, limits, token deduction, payment application, school-to-user paired transfers, allocation consumption, safe revocation/refund, and the Super Admin bypass.
 - Usage logs inherit the persisted active school-model assignment for contextual reporting.
+- In non-production environments only, a newly created empty wallet can receive the minimum credits required for a request so local/test AI chat flows remain usable without seeded purchases.
 
 ## DOX Scope
 

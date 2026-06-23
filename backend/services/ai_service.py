@@ -1,8 +1,10 @@
 import json
 import logging
 import os
+import re
 from typing import Any, Dict, Literal, Optional, TypedDict
 
+from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 
 from .. import crypto_utils, models
@@ -13,6 +15,9 @@ except ImportError:  # pragma: no cover - depends on deployment dependencies
     OpenAI = None
 
 logger = logging.getLogger(__name__)
+load_dotenv()
+if os.getenv("APP_ENV") == "production":
+    load_dotenv(".env.production", override=True)
 
 
 class AIResponse(TypedDict):
@@ -84,7 +89,11 @@ class AIService:
                 response["model_name"] = response.get("model_name") or provider.default_model
                 return response
             except Exception as exc:  # pragma: no cover - external provider failure path
-                logger.exception("Configured AI provider %s failed: %s", provider.provider_type, exc)
+                logger.warning(
+                    "Configured AI provider failed; trying next provider",
+                    extra={"provider_id": provider.id, "provider_type": provider.provider_type, "model": provider.default_model},
+                    exc_info=True,
+                )
                 failures.append(f"{provider.name}: {exc}")
                 continue
         fallback = self.generate_response(message, user_context or {})
@@ -109,12 +118,12 @@ class AIService:
         if provider.base_url:
             client_kwargs["base_url"] = provider.base_url
         client = OpenAI(**client_kwargs)
-        return self._call_openai_client(client, provider.default_model or self.model, message, user_context)
+        return self._call_openai_client(client, provider.default_model or self.model, message, user_context, suppress_errors=False)
 
     def _call_openai(self, message: str, user_context: Dict[str, Any]) -> AIResponse:
         return self._call_openai_client(self.client, self.model, message, user_context)
 
-    def _call_openai_client(self, client: Any, model: str, message: str, user_context: Dict[str, Any]) -> AIResponse:
+    def _call_openai_client(self, client: Any, model: str, message: str, user_context: Dict[str, Any], *, suppress_errors: bool = True) -> AIResponse:
         try:
             system_prompt = """
 You are TeducAI, an expert assistant for a school-management SaaS platform.
@@ -144,7 +153,7 @@ for short guidance and operational answers. Keep school data privacy in mind.
             )
 
             content = response.choices[0].message.content or "{}"
-            parsed = json.loads(content)
+            parsed = self._parse_json_response(content)
             normalized = self._normalize_response(parsed)
             usage = getattr(response, "usage", None)
             normalized["model_name"] = model
@@ -153,6 +162,8 @@ for short guidance and operational answers. Keep school data privacy in mind.
             return normalized
         except Exception as exc:  # pragma: no cover - external service failure path
             logger.exception("AI provider call failed: %s", exc)
+            if not suppress_errors:
+                raise
             return {
                 "type": "chat",
                 "message": "The AI provider is temporarily unavailable. Please try again shortly.",
@@ -162,6 +173,27 @@ for short guidance and operational answers. Keep school data privacy in mind.
                 "prompt_tokens": None,
                 "completion_tokens": None,
             }
+
+    def _parse_json_response(self, content: str) -> Dict[str, Any]:
+        """Parse provider JSON without failing on markdown fences or preambles."""
+        stripped = content.strip()
+        if not stripped:
+            return {}
+        try:
+            parsed = json.loads(stripped)
+            return parsed if isinstance(parsed, dict) else {"type": "content", "message": "Resultat genere.", "data": parsed}
+        except json.JSONDecodeError:
+            fenced = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", stripped, flags=re.DOTALL | re.IGNORECASE)
+            if fenced:
+                parsed = json.loads(fenced.group(1))
+                return parsed if isinstance(parsed, dict) else {"type": "content", "message": "Resultat genere.", "data": parsed}
+            start = stripped.find("{")
+            end = stripped.rfind("}")
+            if start != -1 and end > start:
+                parsed = json.loads(stripped[start:end + 1])
+                return parsed if isinstance(parsed, dict) else {"type": "content", "message": "Resultat genere.", "data": parsed}
+            logger.warning("AI provider returned non-JSON content; wrapping as content preview")
+            return {"type": "content", "message": "Resultat IA genere.", "data": stripped}
 
     def _normalize_response(self, value: Dict[str, Any]) -> AIResponse:
         response_type = value.get("type") if value.get("type") in {"chat", "content"} else "chat"

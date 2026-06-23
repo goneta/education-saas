@@ -7,6 +7,7 @@
 ## Purpose
 
 - Python source file used by the backend, migrations, scripts, tests, or utilities.
+- Loads `.env` by default and overlays `.env.production` only when `APP_ENV=production`, so production DATABASE_URL can drive backend/Alembic without breaking local tests.
 
 ## DOX Scope
 

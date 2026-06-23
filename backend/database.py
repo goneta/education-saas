@@ -4,6 +4,8 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+if os.getenv("APP_ENV") == "production":
+    load_dotenv(".env.production", override=True)
 
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./education_saas.db")
 

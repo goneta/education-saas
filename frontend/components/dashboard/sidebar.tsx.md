@@ -8,6 +8,7 @@
 
 - Owns dashboard navigation, collapsible module groups, and the bottom user account menu.
 - Exposes localized account destinations for overview, renewals, security, sessions, contact, payments, credit, invoices, preferences, notifications, team members, and referrals.
+- Includes TeducAI Emploi dashboard entries for student CV/sharecode management and recruiter offer/application management.
 
 ## DOX Scope
 

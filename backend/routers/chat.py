@@ -101,7 +101,8 @@ def _is_cross_scope_request(message: str, user: models.User) -> bool:
     return False
 
 
-@router.post("/", response_model=ChatResponse)
+@router.post("", response_model=ChatResponse)
+@router.post("/", response_model=ChatResponse, include_in_schema=False)
 async def chat_with_ai(
     request_body: ChatRequest,
     http_request: Request,

@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown"
 import { useTranslations } from "next-intl"
 import { ArrowLeft, Download, FileImage, Mic, Paperclip, Printer, RefreshCw, RotateCcw, Send, Share2 } from "lucide-react"
 import { API_BASE_URL } from "@/lib/config"
+import { formatPreviewContent } from "@/lib/ai-preview"
 import { useAuth } from "@/contexts/auth-context"
 import { useLayout } from "@/context/layout-context"
 
@@ -63,7 +64,7 @@ export default function MobileAIAgentPage() {
             const data = await response.json().catch(() => null)
             if (!response.ok) throw new Error(data?.detail || "Action IA impossible.")
             const message = data?.message || "Résultat généré."
-            const output = String(data?.data || data?.message || "")
+            const output = formatPreviewContent(data?.data ?? data?.message)
             setMessages(previous => [...previous, { role: "agent", content: message }])
             if (output) {
                 setPreview(output)

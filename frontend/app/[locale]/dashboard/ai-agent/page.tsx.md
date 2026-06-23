@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- React/Next.js TypeScript component or page file. It participates in Next.js App Router routing.
+- Mobile dashboard Agent IA route with chat, local Preview view, shared desktop Preview synchronization, print/download actions, and structured AI output normalization.
 
 ## DOX Scope
 
@@ -15,7 +15,7 @@
 
 ## Maintenance Notes
 
-- Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
+- Use `formatPreviewContent` before rendering backend `data` so structured lists, tables, and analytics objects are readable in Preview mode.
 - Keep the source file and this document in the same directory.
 
 ## Verification

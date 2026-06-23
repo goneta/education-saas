@@ -127,6 +127,8 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
             items: [
                 { href: `/${locale}/dashboard/operations`, label: t("operations"), icon: Settings },
                 { href: `/${locale}/dashboard/enterprise`, label: t("enterprise"), icon: BarChart3 },
+                { href: `/${locale}/dashboard/emploi`, label: "Emploi et CV", icon: BriefcaseBusiness },
+                { href: `/${locale}/dashboard/emploi-recruteur`, label: "Espace recruteur", icon: BriefcaseBusiness },
             ]
         },
         {
