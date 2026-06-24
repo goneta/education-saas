@@ -53,10 +53,15 @@ def _database_accepts_recruiter_role(db: Session) -> bool:
     bind = db.get_bind()
     if bind.dialect.name != "postgresql":
         return True
-    return bool(db.execute(text(
-        "select 1 from pg_enum e join pg_type t on t.oid = e.enumtypid "
-        "where t.typname = 'userrole' and e.enumlabel = 'recruiter'"
-    )).first())
+    try:
+        return bool(db.execute(text(
+            "select 1 from pg_enum e join pg_type t on t.oid = e.enumtypid "
+            "where t.typname = 'userrole' and e.enumlabel = 'recruiter'"
+        )).first())
+    except SQLAlchemyError:
+        logger.exception("Recruiter role enum capability check failed; falling back to staff role")
+        db.rollback()
+        return False
 
 
 def _require_paid_recruiter_if_authenticated(request: Request, db: Session) -> None:
@@ -264,25 +269,10 @@ def register_recruiter(payload: schemas.RecruiterRegister, request: Request, db:
         db.flush()
         logger.info("Recruiter profile row created", extra={"user_id": user.id, "recruiter_id": recruiter.id, "payment_status": recruiter.payment_status})
 
-        payment = models.PlatformPayment(
-            reference=f"EMP-REC-{user.id}-{int(_now().timestamp())}",
-            payer_user_id=user.id,
-            payment_type="employment_recruiter_subscription",
-            amount=0,
-            currency="FCFA",
-            provider=payload.payment_provider,
-            status=recruiter.payment_status,
-            beneficiary_entity="platform",
-            metadata_json={"module": "teducai_emploi", "plan": payload.plan},
-        )
-        db.add(payment)
-        db.flush()
-        logger.info("Recruiter payment row created", extra={"user_id": user.id, "recruiter_id": recruiter.id, "payment_id": payment.id, "status": payment.status})
-
-        audit.record_audit(db, action="employment.recruiter.created", current_user=user, entity_type="recruiter_profile", entity_id=recruiter.id)
         db.commit()
-        logger.info("Recruiter registration committed", extra={"user_id": user.id, "recruiter_id": recruiter.id})
-        return {"user_id": user.id, "recruiter_id": recruiter.id, "payment_status": recruiter.payment_status}
+        db.refresh(user)
+        db.refresh(recruiter)
+        logger.info("Recruiter core registration committed", extra={"user_id": user.id, "recruiter_id": recruiter.id})
     except HTTPException:
         db.rollback()
         raise
@@ -298,6 +288,30 @@ def register_recruiter(payload: schemas.RecruiterRegister, request: Request, db:
         db.rollback()
         logger.exception("Recruiter registration unexpected failure", extra={"payload": _safe_recruiter_payload(payload)})
         raise HTTPException(status_code=500, detail="Inscription recruteur indisponible pour le moment. Veuillez reessayer.")
+
+    try:
+        payment = models.PlatformPayment(
+            reference=f"EMP-REC-{user.id}-{int(_now().timestamp())}",
+            payer_user_id=user.id,
+            payment_type="employment_recruiter_subscription",
+            amount=0,
+            currency="FCFA",
+            provider=payload.payment_provider,
+            status=recruiter.payment_status,
+            beneficiary_entity="platform",
+            metadata_json={"module": "teducai_emploi", "plan": payload.plan},
+        )
+        db.add(payment)
+        db.flush()
+        logger.info("Recruiter payment row created", extra={"user_id": user.id, "recruiter_id": recruiter.id, "payment_id": payment.id, "status": payment.status})
+        audit.record_audit(db, action="employment.recruiter.created", current_user=user, entity_type="recruiter_profile", entity_id=recruiter.id)
+        db.commit()
+        logger.info("Recruiter payment and audit committed", extra={"user_id": user.id, "recruiter_id": recruiter.id})
+    except Exception:
+        db.rollback()
+        logger.exception("Recruiter registration side effects failed after core account creation", extra={"user_id": user.id, "recruiter_id": recruiter.id})
+
+    return {"user_id": user.id, "recruiter_id": recruiter.id, "payment_status": recruiter.payment_status}
 
 
 @router.get("/recruiter/me")
