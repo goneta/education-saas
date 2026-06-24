@@ -4,6 +4,7 @@
 
 - Adds the `recruiter` value to the production `userrole` enum for recruiter accounts created through TeducAI Emploi.
 - Backfills active users with recruiter profiles to the `recruiter` role after the PostgreSQL enum value is committed.
+- Superseded for SQLAlchemy inserts by `20260624_0027`, which adds the uppercase `RECRUITER` enum label.
 
 ## Local Contracts
 

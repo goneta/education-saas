@@ -56,7 +56,7 @@ def _database_accepts_recruiter_role(db: Session) -> bool:
     try:
         return bool(db.execute(text(
             "select 1 from pg_enum e join pg_type t on t.oid = e.enumtypid "
-            "where t.typname = 'userrole' and e.enumlabel = 'recruiter'"
+            "where t.typname = 'userrole' and e.enumlabel = 'RECRUITER'"
         )).first())
     except SQLAlchemyError:
         logger.exception("Recruiter role enum capability check failed; falling back to staff role")

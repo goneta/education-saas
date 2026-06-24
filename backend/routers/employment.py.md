@@ -21,7 +21,7 @@
 - Recruiter endpoints must stay limited to the connected recruiter's profile, offers, applications, and interviews.
 - Recruiter registration logs sanitized payloads, validation milestones, database row creation, side-effect failures, and stack traces on failure; passwords must never be logged.
 - Recruiter registration must return JSON `HTTPException` details for validation, integrity, and server failures instead of plain-text Uvicorn 500 responses.
-- New recruiter users use `UserRole.RECRUITER` only when the database enum supports it; `RecruiterProfile` remains authoritative and keeps older/fallback `staff` rows routable as recruiters.
+- New recruiter users use `UserRole.RECRUITER` only when the PostgreSQL enum contains the SQLAlchemy-stored `RECRUITER` label; `RecruiterProfile` remains authoritative and keeps older/fallback `staff` rows routable as recruiters.
 - Core recruiter account/profile creation must not fail solely because payment or audit side-effect rows fail; those failures are logged after the core account is committed.
 - Recruiters with `payment_status != confirmed` may read their dashboard profile and own offer list, but premium actions such as creating/updating/deleting offers, viewing CV/profile search results, viewing applications, or creating interviews must return a clean 402 payment-required message.
 - Keep audit events for CV creation/update, sharecode regeneration, job offer changes, applications, and interview invitations.
