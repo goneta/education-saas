@@ -17,7 +17,12 @@ depends_on = None
 def upgrade() -> None:
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
-        op.execute("ALTER TYPE userrole ADD VALUE IF NOT EXISTS 'recruiter'")
+        with op.get_context().autocommit_block():
+            op.execute("ALTER TYPE userrole ADD VALUE IF NOT EXISTS 'recruiter'")
+        op.execute(
+            "UPDATE users SET role = 'recruiter' "
+            "WHERE id IN (SELECT user_id FROM recruiter_profiles WHERE is_active = true)"
+        )
 
 
 def downgrade() -> None:

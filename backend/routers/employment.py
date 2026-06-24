@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import re
+import logging
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, selectinload
 
@@ -11,6 +14,7 @@ from .. import audit, database, models, schemas, security
 from ..services import employment
 
 router = APIRouter(prefix="/employment", tags=["TeducAI Emploi"])
+logger = logging.getLogger(__name__)
 
 
 def _now() -> datetime:
@@ -37,6 +41,22 @@ def _recruiter_for_user(db: Session, user: models.User) -> models.RecruiterProfi
 def _require_recruiter_payment(recruiter: models.RecruiterProfile) -> None:
     if recruiter.payment_status != "confirmed":
         raise HTTPException(status_code=402, detail="Paiement: pending, must pay before using the service.")
+
+
+def _safe_recruiter_payload(payload: schemas.RecruiterRegister) -> dict:
+    data = payload.model_dump()
+    data["password"] = "***"
+    return data
+
+
+def _database_accepts_recruiter_role(db: Session) -> bool:
+    bind = db.get_bind()
+    if bind.dialect.name != "postgresql":
+        return True
+    return bool(db.execute(text(
+        "select 1 from pg_enum e join pg_type t on t.oid = e.enumtypid "
+        "where t.typname = 'userrole' and e.enumlabel = 'recruiter'"
+    )).first())
 
 
 def _require_paid_recruiter_if_authenticated(request: Request, db: Session) -> None:
@@ -190,57 +210,94 @@ def register_external_student(payload: schemas.ExternalStudentRegister, db: Sess
 
 
 @router.post("/recruiters/register")
-def register_recruiter(payload: schemas.RecruiterRegister, db: Session = Depends(database.get_db)):
-    if db.query(models.User.id).filter(models.User.email == payload.email).first():
-        raise HTTPException(status_code=409, detail=[{"loc": ["body", "email"], "msg": "Un compte existe deja avec cet email."}])
-    if payload.phone and len(re.sub(r"\D", "", payload.phone)) < 6:
-        raise HTTPException(status_code=422, detail=[{"loc": ["body", "phone"], "msg": "Numero de telephone invalide."}])
-    security.validate_password_strength(payload.password)
-    user = models.User(
-        email=payload.email,
-        hashed_password=security.get_password_hash(payload.password),
-        full_name=payload.contact_name,
-        role=models.UserRole.RECRUITER,
-        school_id=None,
-        is_active=True,
+def register_recruiter(payload: schemas.RecruiterRegister, request: Request, db: Session = Depends(database.get_db)):
+    logger.info(
+        "Recruiter registration received",
+        extra={"payload": _safe_recruiter_payload(payload), "client": request.client.host if request.client else None},
     )
-    db.add(user)
-    db.flush()
-    plan_limits = {
-        "promo": (1, 10),
-        "sharecode_only": (0, 25),
-        "job_posts": (5, 50),
-        "cvtheque_limited": (3, 100),
-        "cvtheque_advanced": (20, 1000),
-    }
-    offers_allowed, cv_views_allowed = plan_limits.get(payload.plan, (0, 25))
-    recruiter = models.RecruiterProfile(
-        user_id=user.id,
-        company_name=payload.company_name,
-        contact_name=payload.contact_name,
-        sector=payload.sector,
-        phone=payload.phone,
-        website=payload.website,
-        subscription_plan=payload.plan,
-        payment_status="confirmed" if payload.payment_provider == "free" else "pending",
-        offers_allowed=offers_allowed,
-        cv_views_allowed=cv_views_allowed,
-    )
-    db.add(recruiter)
-    db.add(models.PlatformPayment(
-        reference=f"EMP-REC-{user.id}-{int(_now().timestamp())}",
-        payer_user_id=user.id,
-        payment_type="employment_recruiter_subscription",
-        amount=0,
-        currency="FCFA",
-        provider=payload.payment_provider,
-        status=recruiter.payment_status,
-        beneficiary_entity="platform",
-        metadata_json={"module": "teducai_emploi", "plan": payload.plan},
-    ))
-    audit.record_audit(db, action="employment.recruiter.created", current_user=user, entity_type="recruiter_profile", entity_id=recruiter.id)
-    db.commit()
-    return {"user_id": user.id, "recruiter_id": recruiter.id, "payment_status": recruiter.payment_status}
+    try:
+        if db.query(models.User.id).filter(models.User.email == payload.email).first():
+            logger.info("Recruiter registration rejected: duplicate email", extra={"email": payload.email})
+            raise HTTPException(status_code=409, detail=[{"loc": ["body", "email"], "msg": "Un compte existe deja avec cet email."}])
+        if payload.phone and len(re.sub(r"\D", "", payload.phone)) < 6:
+            logger.info("Recruiter registration rejected: invalid phone", extra={"email": payload.email})
+            raise HTTPException(status_code=422, detail=[{"loc": ["body", "phone"], "msg": "Numero de telephone invalide."}])
+        security.validate_password_strength(payload.password)
+        logger.info("Recruiter registration validation passed", extra={"email": payload.email, "plan": payload.plan})
+
+        recruiter_role = models.UserRole.RECRUITER if _database_accepts_recruiter_role(db) else models.UserRole.STAFF
+        if recruiter_role == models.UserRole.STAFF:
+            logger.warning("Recruiter enum value unavailable; using staff role with recruiter profile", extra={"email": payload.email})
+        user = models.User(
+            email=payload.email,
+            hashed_password=security.get_password_hash(payload.password),
+            full_name=payload.contact_name,
+            role=recruiter_role,
+            school_id=None,
+            is_active=True,
+        )
+        db.add(user)
+        db.flush()
+        logger.info("Recruiter user row created", extra={"user_id": user.id, "role": user.role.value})
+
+        plan_limits = {
+            "promo": (1, 10),
+            "sharecode_only": (0, 25),
+            "job_posts": (5, 50),
+            "cvtheque_limited": (3, 100),
+            "cvtheque_advanced": (20, 1000),
+        }
+        offers_allowed, cv_views_allowed = plan_limits.get(payload.plan, (0, 25))
+        recruiter = models.RecruiterProfile(
+            user_id=user.id,
+            company_name=payload.company_name,
+            contact_name=payload.contact_name,
+            sector=payload.sector,
+            phone=payload.phone,
+            website=payload.website,
+            subscription_plan=payload.plan,
+            payment_status="confirmed" if payload.payment_provider == "free" else "pending",
+            offers_allowed=offers_allowed,
+            cv_views_allowed=cv_views_allowed,
+        )
+        db.add(recruiter)
+        db.flush()
+        logger.info("Recruiter profile row created", extra={"user_id": user.id, "recruiter_id": recruiter.id, "payment_status": recruiter.payment_status})
+
+        payment = models.PlatformPayment(
+            reference=f"EMP-REC-{user.id}-{int(_now().timestamp())}",
+            payer_user_id=user.id,
+            payment_type="employment_recruiter_subscription",
+            amount=0,
+            currency="FCFA",
+            provider=payload.payment_provider,
+            status=recruiter.payment_status,
+            beneficiary_entity="platform",
+            metadata_json={"module": "teducai_emploi", "plan": payload.plan},
+        )
+        db.add(payment)
+        db.flush()
+        logger.info("Recruiter payment row created", extra={"user_id": user.id, "recruiter_id": recruiter.id, "payment_id": payment.id, "status": payment.status})
+
+        audit.record_audit(db, action="employment.recruiter.created", current_user=user, entity_type="recruiter_profile", entity_id=recruiter.id)
+        db.commit()
+        logger.info("Recruiter registration committed", extra={"user_id": user.id, "recruiter_id": recruiter.id})
+        return {"user_id": user.id, "recruiter_id": recruiter.id, "payment_status": recruiter.payment_status}
+    except HTTPException:
+        db.rollback()
+        raise
+    except IntegrityError:
+        db.rollback()
+        logger.exception("Recruiter registration database integrity failure", extra={"payload": _safe_recruiter_payload(payload)})
+        raise HTTPException(status_code=409, detail="Un compte existe deja avec ces informations.")
+    except SQLAlchemyError:
+        db.rollback()
+        logger.exception("Recruiter registration database failure", extra={"payload": _safe_recruiter_payload(payload)})
+        raise HTTPException(status_code=500, detail="Inscription recruteur indisponible pour le moment. Veuillez reessayer.")
+    except Exception:
+        db.rollback()
+        logger.exception("Recruiter registration unexpected failure", extra={"payload": _safe_recruiter_payload(payload)})
+        raise HTTPException(status_code=500, detail="Inscription recruteur indisponible pour le moment. Veuillez reessayer.")
 
 
 @router.get("/recruiter/me")

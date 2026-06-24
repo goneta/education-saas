@@ -18,7 +18,27 @@ export default function RecruiterRegisterPage({ params }: { params: Promise<{ lo
   const [status, setStatus] = useState("")
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
-  const mapBackendErrors = (payload: unknown) => {
+  const validateForm = () => {
+    const errors: Record<string, string> = {}
+    if (!form.company_name.trim()) errors.company_name = "Entreprise requise."
+    if (!form.contact_name.trim()) errors.contact_name = "Contact requis."
+    if (!form.email.trim()) errors.email = "Email requis."
+    if (form.password.length < 12) errors.password = "Le mot de passe doit contenir au moins 12 caracteres."
+    else if (!/[A-Z]/.test(form.password) || !/[a-z]/.test(form.password) || !/\d/.test(form.password) || !/[^A-Za-z0-9]/.test(form.password)) {
+      errors.password = "Le mot de passe doit contenir une majuscule, une minuscule, un chiffre et un caractere special."
+    }
+    if (form.phone && form.phone.replace(/\D/g, "").length < 6) errors.phone = "Numero de telephone invalide."
+    return errors
+  }
+
+  const readBackendError = async (response: Response) => {
+    const contentType = response.headers.get("content-type") || ""
+    if (contentType.includes("application/json")) return response.json().catch(() => null)
+    const text = await response.text().catch(() => "")
+    return { detail: text || (response.status >= 500 ? "Erreur serveur." : "Requete refusee.") }
+  }
+
+  const mapBackendErrors = (payload: unknown, statusCode: number) => {
     const errors: Record<string, string> = {}
     const detail = (payload as { detail?: unknown } | null)?.detail
     if (Array.isArray(detail)) {
@@ -34,6 +54,9 @@ export default function RecruiterRegisterPage({ params }: { params: Promise<{ lo
       else if (lower.includes("mot de passe") || lower.includes("password")) errors.password = message
       else errors.form = message
     }
+    if (!Object.keys(errors).length && statusCode >= 500) {
+      errors.form = "Le service d'inscription recruteur est momentanement indisponible. Veuillez reessayer."
+    }
     return errors
   }
 
@@ -41,19 +64,25 @@ export default function RecruiterRegisterPage({ params }: { params: Promise<{ lo
     event.preventDefault()
     setStatus("Création en cours...")
     setFieldErrors({})
+    const clientErrors = validateForm()
+    if (Object.keys(clientErrors).length) {
+      setFieldErrors(clientErrors)
+      setStatus("")
+      return
+    }
     const response = await fetch(`${API_BASE_URL}/employment/recruiters/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, payment_provider: "manual" }),
     })
-    const data = await response.json().catch(() => null)
+    const data = await readBackendError(response)
     if (response.ok) {
       setStatus("Compte recruteur créé. Redirection vers la connexion...")
       router.push(`/${locale}/login?intent=recruiter`)
       return
     }
-    const errors = mapBackendErrors(data)
-    setFieldErrors(Object.keys(errors).length ? errors : { form: "Inscription impossible. Vérifiez les champs du formulaire." })
+    const errors = mapBackendErrors(data, response.status)
+    setFieldErrors(Object.keys(errors).length ? errors : { form: response.status >= 500 ? "Le service d'inscription recruteur est momentanement indisponible. Veuillez reessayer." : "Inscription impossible. Vérifiez les champs du formulaire." })
     setStatus("")
   }
 
