@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- React/Next.js TypeScript component or page file. It provides reusable UI behavior.
+- Guards authenticated dashboard routes and redirects users away from dashboards that do not match their account type.
 
 ## DOX Scope
 
@@ -17,6 +17,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- Recruiter and external-student dashboard access is enforced here in addition to backend API checks.
 
 ## Verification
 

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { normalizeLocale } from "@/lib/i18n"
+import { dashboardPathForUser } from "@/lib/auth-routing"
 
 export function LoginForm() {
     const router = useRouter()
@@ -37,9 +38,8 @@ export function LoginForm() {
         setIsLoading(true)
 
         try {
-            await login(email, password, otpCode)
-            // Redirect to dashboard on success
-            router.push(`/${locale}/dashboard`)
+            const user = await login(email, password, otpCode)
+            router.push(dashboardPathForUser(user, locale))
         } catch (err) {
             setError(err instanceof Error ? err.message : t("failed"))
         } finally {

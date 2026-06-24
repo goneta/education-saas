@@ -9,6 +9,7 @@ import { MarketingFooter } from "@/components/marketing/marketing-footer"
 import { Button } from "@/components/ui/button"
 import { API_BASE_URL } from "@/lib/config"
 import { normalizeLocale } from "@/lib/i18n"
+import { useAuth } from "@/contexts/auth-context"
 
 type Props = { params: Promise<{ locale: string }> }
 
@@ -38,6 +39,7 @@ type JobOffer = {
 export default function EmploiPage({ params }: Props) {
   const { locale: rawLocale } = use(params)
   const locale = normalizeLocale(rawLocale)
+  const { token } = useAuth()
   const [sharecode, setSharecode] = useState("")
   const [sector, setSector] = useState("")
   const [sectors, setSectors] = useState<string[]>([])
@@ -54,8 +56,10 @@ export default function EmploiPage({ params }: Props) {
   useEffect(() => {
     const url = new URL(`${API_BASE_URL}/employment/public-profiles`, window.location.origin)
     if (sector) url.searchParams.set("sector", sector)
-    fetch(url.toString()).then(res => res.json()).then(data => setProfiles(Array.isArray(data) ? data : [])).catch(() => setProfiles([]))
-  }, [sector])
+    fetch(url.toString(), {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    }).then(res => res.json()).then(data => setProfiles(Array.isArray(data) ? data : [])).catch(() => setProfiles([]))
+  }, [sector, token])
 
   const lookup = async (event: FormEvent) => {
     event.preventDefault()
@@ -63,7 +67,7 @@ export default function EmploiPage({ params }: Props) {
     setSelectedCv(null)
     const response = await fetch(`${API_BASE_URL}/employment/sharecode/lookup`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify({ sharecode }),
     })
     const data = await response.json().catch(() => null)

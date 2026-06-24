@@ -20,6 +20,7 @@ import { normalizeLocale } from "@/lib/i18n"
 import { LanguageSwitcher } from "@/components/layout/language-switcher"
 import { API_BASE_URL } from "@/lib/config"
 import { useAuth } from "@/contexts/auth-context"
+import { dashboardPathForUser } from "@/lib/auth-routing"
 
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
     const { isAgentPanelOpen, viewMode, setViewMode, previewContent } = useLayout()
@@ -153,12 +154,27 @@ function MobileDashboardShell({ children }: { children: React.ReactNode }) {
         }
     }, [token, user?.school_id])
 
-    const navItems = [
-        { href: `/${locale}/dashboard`, label: "Accueil", Icon: Home },
-        { href: `/${locale}/dashboard/ai-agent`, label: "Agent IA", Icon: Bot },
-        { href: `/${locale}/dashboard/enterprise`, label: "Alertes", Icon: Bell },
-        { href: `/${locale}/dashboard`, label: "Recherche", Icon: Search },
-    ]
+    const homeHref = dashboardPathForUser(user, locale)
+    const isRecruiter = user?.account_type === "recruiter" || user?.role === "recruiter"
+    const isExternalStudent = user?.account_type === "external_student" || user?.is_external_student
+    const navItems = isRecruiter
+        ? [
+            { href: homeHref, label: "Recruteur", Icon: Home },
+            { href: `/${locale}/dashboard/checkout`, label: "Paiement", Icon: Bell },
+            { href: homeHref, label: "Offres", Icon: Search },
+        ]
+        : isExternalStudent
+            ? [
+                { href: homeHref, label: "CV", Icon: Home },
+                { href: homeHref, label: "Sharecode", Icon: Search },
+                { href: `/${locale}/dashboard/account/overview`, label: "Compte", Icon: Bell },
+            ]
+            : [
+                { href: homeHref, label: "Accueil", Icon: Home },
+                { href: `/${locale}/dashboard/ai-agent`, label: "Agent IA", Icon: Bot },
+                { href: `/${locale}/dashboard/enterprise`, label: "Alertes", Icon: Bell },
+                { href: homeHref, label: "Recherche", Icon: Search },
+            ]
 
     const isAgentPage = pathname?.includes("/dashboard/ai-agent")
 

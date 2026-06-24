@@ -8,7 +8,11 @@ interface User {
     email: string
     full_name: string
     role: string
-    school_id: number
+    school_id: number | null
+    account_type?: string
+    dashboard_path?: string
+    recruiter_payment_status?: string | null
+    is_external_student?: boolean
 }
 
 interface AuthContextType {
@@ -16,7 +20,7 @@ interface AuthContextType {
     token: string | null
     isAuthenticated: boolean
     isLoading: boolean
-    login: (email: string, password: string, otpCode?: string) => Promise<void>
+    login: (email: string, password: string, otpCode?: string) => Promise<User>
     logout: () => void
     error: string | null
 }
@@ -61,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (response.ok) {
                 const userData = await response.json()
                 setUser(userData)
+                return userData as User
             } else if (response.status === 401) {
                 expireSession(authToken)
             } else {
@@ -72,6 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } finally {
             setIsLoading(false)
         }
+        return null
     }, [clearSession, expireSession])
 
     // Check for existing token on mount
@@ -170,8 +176,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem("access_token", accessToken)
             setToken(accessToken)
 
-            // Fetch user info
-            await fetchUserInfo(accessToken)
+            const userData = await fetchUserInfo(accessToken)
+            if (!userData) throw new Error("Connexion impossible. Veuillez réessayer.")
+            return userData
         } catch (err) {
             setError(err instanceof Error ? err.message : "An error occurred")
             setIsLoading(false)

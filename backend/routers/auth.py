@@ -162,8 +162,58 @@ def login_for_access_token(
     return {"access_token": access_token, "token_type": "bearer", "expires_in": security.ACCESS_TOKEN_EXPIRE_MINUTES * 60}
 
 @router.get("/me", response_model=schemas.UserResponse)
-def read_users_me(current_user: models.User = Depends(security.get_current_user)):
-    return current_user
+def read_users_me(
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    recruiter = db.query(models.RecruiterProfile).filter(
+        models.RecruiterProfile.user_id == current_user.id,
+        models.RecruiterProfile.is_active == True,  # noqa: E712
+    ).first()
+    external_cv = db.query(models.StudentCV.id).filter(
+        models.StudentCV.user_id == current_user.id,
+        models.StudentCV.is_external == True,  # noqa: E712
+    ).first()
+    if recruiter:
+        account_type = "recruiter"
+        dashboard_path = "/dashboard/emploi-recruteur"
+    elif external_cv:
+        account_type = "external_student"
+        dashboard_path = "/dashboard/emploi"
+    elif current_user.role in {models.UserRole.STUDENT, models.UserRole.PUPIL}:
+        account_type = "student"
+        dashboard_path = "/dashboard"
+    elif current_user.role == models.UserRole.SUPER_ADMIN:
+        account_type = "super_admin"
+        dashboard_path = "/dashboard/settings"
+    elif current_user.role in {models.UserRole.SCHOOL_ADMIN, models.UserRole.ADMIN}:
+        account_type = "school_admin"
+        dashboard_path = "/dashboard"
+    else:
+        account_type = "staff"
+        dashboard_path = "/dashboard"
+
+    return {
+        "id": current_user.id,
+        "email": current_user.email,
+        "username": current_user.username,
+        "full_name": current_user.full_name,
+        "role": current_user.role,
+        "is_active": current_user.is_active,
+        "is_verified": current_user.is_verified,
+        "is_system_account": current_user.is_system_account,
+        "school_id": current_user.school_id,
+        "account_type": account_type,
+        "dashboard_path": dashboard_path,
+        "recruiter_payment_status": recruiter.payment_status if recruiter else None,
+        "is_external_student": bool(external_cv),
+        "numref": current_user.numref,
+        "school": current_user.school,
+        "mfa_enabled": current_user.mfa_enabled,
+        "phone_number": current_user.phone_number,
+        "profile_photo_url": current_user.profile_photo_url,
+        "deleted_at": current_user.deleted_at,
+    }
 
 
 @router.post("/mfa/setup", response_model=schemas.MfaSetupResponse)

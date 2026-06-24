@@ -7,6 +7,7 @@
 ## Purpose
 
 - Owns authentication state, secure login/logout, idle timeout, user loading, and global API 401 session expiration handling.
+- Stores backend account-type metadata used for role-based dashboard redirection and route protection.
 
 ## DOX Scope
 
@@ -19,6 +20,7 @@
 - Keep the source file and this document in the same directory.
 - Invalid tokens are removed before the logout request to prevent recursive 401 handling, and locale-aware login redirection preserves a clear expiration message.
 - Authenticated API requests automatically propagate cached school-model and academic-year IDs; the backend still validates both values.
+- `login()` resolves with the freshly loaded user profile so callers can redirect to the backend-recommended dashboard immediately.
 
 ## Verification
 

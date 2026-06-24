@@ -17,6 +17,7 @@
 
 - Recruiter accounts must remain scoped to TeducAI Emploi and must not imply school data access.
 - Payment provider/status is handled by the backend.
+- Newly created recruiter users must be sent to login so `/auth/me` can route them into the recruiter dashboard after authentication.
 - Backend validation errors should be mapped to field-level messages, especially duplicate email and phone/password validation, without rendering raw JSON.
 - Successful registration redirects to login instead of leaving the registration form visible.
 

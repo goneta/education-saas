@@ -39,6 +39,29 @@ def _require_recruiter_payment(recruiter: models.RecruiterProfile) -> None:
         raise HTTPException(status_code=402, detail="Paiement: pending, must pay before using the service.")
 
 
+def _require_paid_recruiter_if_authenticated(request: Request, db: Session) -> None:
+    auth_header = request.headers.get("authorization") or ""
+    scheme, _, token = auth_header.partition(" ")
+    if scheme.lower() != "bearer" or not token:
+        return
+    try:
+        payload = security.jwt.decode(token, security.SECRET_KEY, algorithms=[security.ALGORITHM])
+    except Exception:
+        return
+    email = payload.get("sub")
+    if not email:
+        return
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        return
+    recruiter = db.query(models.RecruiterProfile).filter(
+        models.RecruiterProfile.user_id == user.id,
+        models.RecruiterProfile.is_active == True,  # noqa: E712
+    ).first()
+    if recruiter:
+        _require_recruiter_payment(recruiter)
+
+
 def _cv_response(cv: models.StudentCV) -> dict:
     return {
         "id": cv.id,
@@ -77,7 +100,8 @@ def public_jobs(sector: str | None = None, db: Session = Depends(database.get_db
 
 
 @router.get("/public-profiles")
-def public_profiles(sector: str | None = None, q: str | None = None, db: Session = Depends(database.get_db)):
+def public_profiles(request: Request, sector: str | None = None, q: str | None = None, db: Session = Depends(database.get_db)):
+    _require_paid_recruiter_if_authenticated(request, db)
     query = db.query(models.StudentCV).options(selectinload(models.StudentCV.work_history)).filter(
         models.StudentCV.looking_for_job == True,  # noqa: E712
         models.StudentCV.share_enabled == True,  # noqa: E712
@@ -98,6 +122,7 @@ def public_profiles(sector: str | None = None, q: str | None = None, db: Session
 
 @router.post("/sharecode/lookup")
 def lookup_sharecode(payload: schemas.SharecodeLookup, request: Request, db: Session = Depends(database.get_db)):
+    _require_paid_recruiter_if_authenticated(request, db)
     ip_address = request.client.host if request.client else None
     employment.rate_limit_sharecode(db, ip_address=ip_address)
     cv = db.query(models.StudentCV).options(selectinload(models.StudentCV.work_history)).filter(
@@ -175,7 +200,7 @@ def register_recruiter(payload: schemas.RecruiterRegister, db: Session = Depends
         email=payload.email,
         hashed_password=security.get_password_hash(payload.password),
         full_name=payload.contact_name,
-        role=models.UserRole.STAFF,
+        role=models.UserRole.RECRUITER,
         school_id=None,
         is_active=True,
     )

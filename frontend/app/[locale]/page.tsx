@@ -100,11 +100,11 @@ export default async function Home({
       <MarketingNav locale={locale} />
 
       <main>
-        <section className="relative overflow-hidden border-b border-[#DDE5E8] bg-[#F8FAFC] dark:border-[#3b4248] dark:bg-[#1f2427]">
+        <section className="relative overflow-hidden border-b border-[#DDE5E8] bg-[#F8FAFC] dark:border-[#3b4248] dark:bg-[#111827]">
           <div className="absolute inset-0 bg-[linear-gradient(#DDE5E8_1px,transparent_1px),linear-gradient(90deg,#DDE5E8_1px,transparent_1px)] bg-[size:56px_56px] opacity-45 dark:bg-[linear-gradient(#343b41_1px,transparent_1px),linear-gradient(90deg,#343b41_1px,transparent_1px)] dark:opacity-35" />
           <div className="relative mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_0.92fr] lg:px-8">
             <div className="max-w-3xl">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#99F6E4] bg-white px-4 py-2 text-sm font-semibold text-[#0F766E] shadow-sm dark:border-[#3f756f] dark:bg-[#252b30] dark:text-[#5eead4]">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#99F6E4] bg-white px-4 py-2 text-sm font-semibold text-[#0F766E] shadow-sm dark:border-[#5eead4] dark:bg-[#1f2937] dark:text-white">
                 <ShieldCheck className="h-4 w-4" />
                 SaaS multi-établissements, sécurisé et international
               </div>
@@ -196,10 +196,10 @@ export default async function Home({
           </div>
         </section>
 
-        <section id="fonctionnalites" className="bg-[#F1F5F9] py-20 dark:bg-[#1f2427]">
+        <section id="fonctionnalites" className="bg-[#F1F5F9] py-20 dark:bg-[#111827]">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl">
-              <p className="text-sm font-bold uppercase tracking-wide text-[#0F766E]">
+              <p className="text-sm font-bold uppercase tracking-wide text-[#0F766E] dark:text-white">
                 Fonctionnalités
               </p>
               <h2 className="mt-3 text-3xl font-bold tracking-normal text-[#0F172A] dark:text-white sm:text-4xl">
@@ -211,13 +211,13 @@ export default async function Home({
               {features.map((feature) => {
                 const Icon = feature.icon
                 return (
-                  <article key={feature.title} className="rounded-lg border border-[#DDE5E8] bg-white p-6 shadow-sm dark:border-[#3b4248] dark:bg-[#252b30]">
+                  <article key={feature.title} className="rounded-lg border border-[#DDE5E8] bg-white p-6 shadow-sm dark:border-[#4b5563] dark:bg-[#1f2937]">
                     <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#CCFBF1] text-[#0F766E]">
                       <Icon className="h-5 w-5" />
                     </div>
                     <h3 className="mt-5 text-xl font-semibold text-[#0F172A] dark:text-white">{feature.title}</h3>
                     <p className="mt-3 text-sm leading-6 text-[#475569] dark:text-[#c7d0da]">{feature.text}</p>
-                    <p className="mt-4 flex gap-2 text-sm font-medium text-[#0F766E]">
+                    <p className="mt-4 flex gap-2 text-sm font-medium text-[#0F766E] dark:text-white">
                       <CheckCircle2 className="mt-0.5 h-4 w-4" />
                       {feature.benefit}
                     </p>

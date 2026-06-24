@@ -18,6 +18,7 @@
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
 - Dashboard shell panels, top bar, sidebars, and main content use consistent shared dark surfaces.
+- Mobile dashboard bottom navigation must use the current user's role-aware dashboard home and avoid exposing school navigation to recruiter/external-student accounts.
 
 ## Verification
 

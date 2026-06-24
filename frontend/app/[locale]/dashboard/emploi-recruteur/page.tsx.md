@@ -18,6 +18,7 @@
 - Recruiter actions must remain scoped by backend recruiter profile ownership.
 - Deleting an offer with applications should archive it rather than physically removing it.
 - Pending-payment recruiters can open and navigate the dashboard, see a red `Paiement: pending` banner, and receive a payment modal when attempting premium actions.
+- The page must not auto-call premium application/CV endpoints for pending recruiters; restricted reads are triggered by explicit actions and show the payment modal.
 
 ## Verification
 

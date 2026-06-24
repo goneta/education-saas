@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- React/Next.js TypeScript component or page file. It provides reusable UI behavior.
+- Renders the shared sign-in form and redirects successful logins to the correct role/account dashboard.
 
 ## DOX Scope
 
@@ -17,6 +17,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- Redirect decisions use `frontend/lib/auth-routing.ts` and the authenticated `/auth/me` metadata.
 
 ## Verification
 

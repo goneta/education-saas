@@ -176,6 +176,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
     }, [accountRolePresets, roleOptions])
 
     const displayName = user?.full_name || user?.email || "Utilisateur"
+    const accountType = user?.account_type || (user?.role === "recruiter" ? "recruiter" : user?.is_external_student ? "external_student" : "school_user")
     const initials = displayName
         .split(/\s+/)
         .filter(Boolean)
@@ -257,6 +258,17 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                 <nav className="grid items-start px-2 text-sm font-medium lg:px-4 space-y-2 mt-4">
                     {sidebarSections.map((section, idx) => {
+                        const items = section.items.filter(item => {
+                            if (accountType === "recruiter") {
+                                return item.href.includes("/dashboard/emploi-recruteur")
+                            }
+                            if (accountType === "external_student") {
+                                return item.href.includes("/dashboard/emploi") && !item.href.includes("/dashboard/emploi-recruteur")
+                            }
+                            if (item.href.includes("/dashboard/emploi-recruteur")) return false
+                            return true
+                        })
+                        if (!items.length) return null
                         const isOpen = !section.title || openSections.includes(section.title)
 
                         return (
@@ -287,7 +299,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                                 )}>
                                     <div className="overflow-hidden">
                                         <div className="space-y-1 mt-1">
-                                            {section.items.map((item) => {
+                                            {items.map((item) => {
                                                 const Icon = item.icon
                                                 const isActive = pathname === item.href || (item.href !== `/${locale}/dashboard` && pathname?.startsWith(item.href))
                                                 return (

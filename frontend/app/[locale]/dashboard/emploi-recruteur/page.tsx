@@ -37,9 +37,16 @@ export default function RecruiterDashboardPage() {
   const load = () => {
     if (!token) return
     const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
-    fetch(`${API_BASE_URL}/employment/recruiter/me`, { headers }).then(res => res.ok ? res.json() : null).then(data => data && setProfile(data)).catch(() => undefined)
+    fetch(`${API_BASE_URL}/employment/recruiter/me`, { headers }).then(res => res.ok ? res.json() : null).then(data => {
+      if (!data) return
+      setProfile(data)
+      if (data.payment_status === "confirmed") {
+        fetch(`${API_BASE_URL}/employment/recruiter/applications`, { headers }).then(res => res.json()).then(appData => setApplications(Array.isArray(appData) ? appData : [])).catch(() => undefined)
+      } else {
+        setApplications([])
+      }
+    }).catch(() => undefined)
     fetch(`${API_BASE_URL}/employment/recruiter/jobs`, { headers }).then(res => res.json()).then(data => setJobs(Array.isArray(data) ? data : [])).catch(() => undefined)
-    fetch(`${API_BASE_URL}/employment/recruiter/applications`, { headers }).then(res => res.json()).then(data => setApplications(Array.isArray(data) ? data : [])).catch(() => undefined)
   }
 
   useEffect(load, [token])
@@ -88,6 +95,24 @@ export default function RecruiterDashboardPage() {
     if (response.ok) load()
   }
 
+  const loadApplications = async () => {
+    if (!token) return
+    if (isPaymentPending) {
+      setPaymentModalOpen(true)
+      return
+    }
+    const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
+    const response = await fetch(`${API_BASE_URL}/employment/recruiter/applications`, { headers })
+    if (!response.ok) {
+      const message = await readUserMessage(response)
+      if (message === PENDING_PAYMENT_MESSAGE) setPaymentModalOpen(true)
+      setStatus(message === PENDING_PAYMENT_MESSAGE ? "" : message)
+      return
+    }
+    const data = await response.json().catch(() => [])
+    setApplications(Array.isArray(data) ? data : [])
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-5">
       <header>
@@ -129,10 +154,13 @@ export default function RecruiterDashboardPage() {
       </section>
 
       <section className="rounded-lg border bg-white p-5 dark:border-[#3b4248] dark:bg-[#252b30]">
-        <h2 className="text-lg font-semibold">Candidatures recues</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold">Candidatures recues</h2>
+          <Button type="button" variant="outline" onClick={loadApplications}>Voir les candidatures</Button>
+        </div>
         <div className="mt-4 grid gap-3">
           {applications.map(item => <div key={item.id} className="rounded-lg border p-3 text-sm dark:border-[#56616a]">CV #{item.student_cv_id} - Offre #{item.job_offer_id} - {item.status}</div>)}
-          {!applications.length && <p className="text-sm text-[#64748B]">Aucune candidature.</p>}
+          {!applications.length && <p className="text-sm text-[#64748B] dark:text-[#c7d0da]">{isPaymentPending ? "Paiement requis pour consulter les CV et candidatures." : "Aucune candidature."}</p>}
         </div>
       </section>
       {status && <p className="text-sm text-[#475569]">{status}</p>}

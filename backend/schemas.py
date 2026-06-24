@@ -126,6 +126,10 @@ class UserResponse(UserBase):
     is_verified: bool = False
     is_system_account: bool = False
     school_id: Optional[int]
+    account_type: str = "school_user"
+    dashboard_path: str = "/dashboard"
+    recruiter_payment_status: Optional[str] = None
+    is_external_student: bool = False
     numref: Optional[str] = None
     school: Optional[SchoolResponse] = None
     mfa_enabled: bool = False

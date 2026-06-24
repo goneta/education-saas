@@ -10,6 +10,7 @@
 - Defines the SQLAlchemy data model, including traceable cash fee payments, AI billing, persistent school subscriptions, soft-deleted users, RBAC, and school payment accounts.
 - AI provider records include optional account labels, manually synced available credits, and last-sync timestamps; `PlatformAISettings` stores platform low-credit alert settings.
 - Defines TeducAI Emploi models for student CVs, sharecodes, work history, recruiter profiles, subscription plans, job offers, applications, interviews, and CV access logs.
+- `UserRole.RECRUITER` is the primary role for newly registered recruiter accounts; `RecruiterProfile` remains the authoritative recruiter-domain record.
 
 ## DOX Scope
 
@@ -35,4 +36,4 @@ Grades, attendance, assignment submissions, internships, fees, invoices, registr
 
 # TeducAI Emploi
 
-`StudentCV` belongs to either a `StudentGlobalProfile` or an external employment-only user. Public recruiter access goes through `sharecode`, `share_enabled`, privacy settings, and access logs. Recruiter data lives in `RecruiterProfile`; offers, applications, and interviews are scoped to that recruiter profile.
+`StudentCV` belongs to either a `StudentGlobalProfile` or an external employment-only user. Public recruiter access goes through `sharecode`, `share_enabled`, privacy settings, payment restrictions, and access logs. Recruiter data lives in `RecruiterProfile`; offers, applications, and interviews are scoped to that recruiter profile.

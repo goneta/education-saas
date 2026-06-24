@@ -11,6 +11,7 @@ class UserRole(str, enum.Enum):
     SUPER_ADMIN = "super_admin" # Ministry / Platform Owner
     SCHOOL_ADMIN = "school_admin"
     ADMIN = "admin"
+    RECRUITER = "recruiter"
     CASHIER = "cashier"
     ACCOUNTANT = "accountant"
     REGISTRAR = "registrar"
