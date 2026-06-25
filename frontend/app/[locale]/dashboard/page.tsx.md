@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- React/Next.js TypeScript component or page file. It participates in Next.js App Router routing.
+- Role-aware dashboard landing page. School users see operational school metrics, while Super Admins see a multi-establishment administration center.
 
 ## DOX Scope
 
@@ -15,8 +15,9 @@
 
 ## Maintenance Notes
 
-- Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
-- Keep the source file and this document in the same directory.
+- Super Admin mode loads authorized schools and audit logs from system APIs, exposes `Catalogue Global` and `Gestion par établissement` tabs, and provides module links for each major sidebar rubric.
+- School management actions may create a new establishment or toggle active/suspended status through existing Super Admin-protected system endpoints.
+- The management context includes rubric, school, academic year, model, country, city, and status filters; deeper CRUD stays owned by the linked domain pages and backend RBAC.
 
 ## Verification
 

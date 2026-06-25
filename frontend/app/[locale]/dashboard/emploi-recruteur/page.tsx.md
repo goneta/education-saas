@@ -21,6 +21,7 @@
 - The page must not auto-call premium application/CV endpoints for pending recruiters; restricted reads are triggered by explicit actions and show the payment modal.
 - Logo uploads accept JPG, PNG, or WebP files and rely on backend SecureFile ownership, validation, and public logo serving.
 - Recruiter AI credit purchase must route through `/dashboard/checkout?purchase=ai-credits` so balance updates remain payment-confirmation driven.
+- ShareCode search must remain fully visible beside the recruiter AI panel on desktop, tablet, and mobile; use wrapping/grid layouts instead of fixed-width inline controls.
 
 ## Verification
 

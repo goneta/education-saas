@@ -373,11 +373,14 @@ export default function RecruiterDashboardPage() {
         </Panel>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-3">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] 2xl:grid-cols-3">
         <Panel title="Rechercher un etudiant par ShareCode">
-          <div className="flex gap-2">
-            <input value={sharecode} onChange={event => setSharecode(event.target.value.toUpperCase())} className="min-h-11 flex-1 rounded-lg border px-3 dark:border-[#56616a] dark:bg-[#1f2427]" placeholder="STU..." />
-            <Button onClick={lookupSharecode} className="bg-black text-white"><Search className="h-4 w-4" /></Button>
+          <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <input value={sharecode} onChange={event => setSharecode(event.target.value.toUpperCase())} className="min-h-11 w-full min-w-0 rounded-lg border px-3 dark:border-[#56616a] dark:bg-[#1f2427]" placeholder="STU..." />
+            <Button onClick={lookupSharecode} className="min-h-11 w-full bg-black px-4 text-white sm:w-auto">
+              <Search className="h-4 w-4" />
+              <span className="sm:inline">Chercher</span>
+            </Button>
           </div>
           {sharecodeResult && <pre className="mt-3 max-h-64 overflow-auto rounded-lg bg-[#F8FAFC] p-3 text-xs dark:bg-[#1f2427]">{JSON.stringify(sharecodeResult, null, 2)}</pre>}
         </Panel>
@@ -428,5 +431,5 @@ function TagsField(props: { label: string; value: string; onChange: (value: stri
 }
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
-  return <section className="rounded-lg border bg-white p-5 dark:border-[#3b4248] dark:bg-[#252b30]"><h2 className="mb-4 text-lg font-semibold">{title}</h2>{children}</section>
+  return <section className="min-w-0 overflow-hidden rounded-lg border bg-white p-5 dark:border-[#3b4248] dark:bg-[#252b30]"><h2 className="mb-4 text-lg font-semibold">{title}</h2>{children}</section>
 }

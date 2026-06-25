@@ -69,6 +69,7 @@ export default function EmploymentDashboardPage() {
   const [agentPrompt, setAgentPrompt] = useState("Analyse mon profil et propose trois offres compatibles.")
   const [agentResult, setAgentResult] = useState("")
   const [credits, setCredits] = useState(250)
+  const [openSection, setOpenSection] = useState("competences")
   const [photoPreview, setPhotoPreview] = useState("")
   const [photoUploading, setPhotoUploading] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
@@ -85,6 +86,17 @@ export default function EmploymentDashboardPage() {
   })
 
   const headers = useMemo(() => token ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` } : null, [token])
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem("teducai:emploi:open-section")
+    if (stored) setOpenSection(stored)
+  }, [])
+
+  const toggleSection = (section: string) => {
+    const next = openSection === section ? "" : section
+    setOpenSection(next)
+    window.localStorage.setItem("teducai:emploi:open-section", next)
+  }
 
   const load = () => {
     if (!headers) return
@@ -306,7 +318,7 @@ export default function EmploymentDashboardPage() {
       </form>
 
       <section className="grid gap-4 xl:grid-cols-3">
-        <Panel title="Competences detaillees">
+        <Panel title="Competences detaillees" collapsible open={openSection === "competences"} onToggle={() => toggleSection("competences")}>
           <Repeater
             items={cv.detailed_skills || []}
             add={() => setCv({ ...cv, detailed_skills: [...(cv.detailed_skills || []), skillTemplate] })}
@@ -319,7 +331,7 @@ export default function EmploymentDashboardPage() {
             )}
           />
         </Panel>
-        <Panel title="Parcours academique">
+        <Panel title="Parcours academique" collapsible open={openSection === "academique"} onToggle={() => toggleSection("academique")}>
           <Repeater
             items={cv.academic_credentials || []}
             add={() => setCv({ ...cv, academic_credentials: [...(cv.academic_credentials || []), { school: "", degree: "", field: "" }] })}
@@ -331,7 +343,7 @@ export default function EmploymentDashboardPage() {
             )}
           />
         </Panel>
-        <Panel title="Certificats">
+        <Panel title="Certificats" collapsible open={openSection === "certificats"} onToggle={() => toggleSection("certificats")}>
           <Repeater
             items={cv.certificates || []}
             add={() => setCv({ ...cv, certificates: [...(cv.certificates || []), { name: "", issuer: "" }] })}
@@ -346,7 +358,7 @@ export default function EmploymentDashboardPage() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <Panel title="Experiences professionnelles">
+        <Panel title="Experiences professionnelles" collapsible open={openSection === "experiences"} onToggle={() => toggleSection("experiences")}>
           <div className="grid gap-3 md:grid-cols-2">
             <Field label="Entreprise" value={work.company} onChange={value => setWork({ ...work, company: value })} />
             <Field label="Poste" value={work.position} onChange={value => setWork({ ...work, position: value })} />
@@ -363,7 +375,7 @@ export default function EmploymentDashboardPage() {
           <Button type="button" onClick={addWork} className="mt-3 bg-black text-white">Ajouter experience</Button>
           <div className="mt-4 grid gap-2">{(cv.work_history || []).map(item => <div key={item.id} className="rounded-lg border p-3 text-sm dark:border-[#56616a]">{item.position} - {item.company} ({item.experience_type})</div>)}</div>
         </Panel>
-        <Panel title="Offres recommandees">
+        <Panel title="Offres recommandees" collapsible open={openSection === "offres"} onToggle={() => toggleSection("offres")}>
           <div className="grid gap-3">
             {recommendations.map(({ score, job }) => (
               <div key={job.id} className="rounded-lg border p-4 dark:border-[#56616a]">
@@ -437,6 +449,20 @@ function Repeater<T>({ items, add, render }: { items: T[]; add: () => void; rend
   return <div className="grid gap-3"><Button type="button" variant="outline" onClick={add}>Ajouter</Button>{items.map(render)}</div>
 }
 
-function Panel({ title, children }: { title: string; children: ReactNode }) {
-  return <section data-teducai-collapsible="false" className="rounded-lg border bg-white p-5 dark:border-[#3b4248] dark:bg-[#252b30]"><h2 className="mb-4 text-lg font-semibold">{title}</h2>{children}</section>
+function Panel({ title, children, collapsible = false, open = true, onToggle }: { title: string; children: ReactNode; collapsible?: boolean; open?: boolean; onToggle?: () => void }) {
+  return (
+    <section data-teducai-collapsible="false" className="min-w-0 overflow-hidden rounded-lg border bg-white p-5 dark:border-[#3b4248] dark:bg-[#252b30]">
+      {collapsible ? (
+        <button type="button" onClick={onToggle} aria-expanded={open} className="flex w-full items-center justify-between gap-3 text-left text-lg font-semibold">
+          <span>{title}</span>
+          <span className="text-2xl leading-none text-[#64748B] dark:text-[#c7d0da]">{open ? "-" : "+"}</span>
+        </button>
+      ) : (
+        <h2 className="mb-4 text-lg font-semibold">{title}</h2>
+      )}
+      <div className={`grid transition-all duration-300 ease-out ${open ? "mt-4 grid-rows-[1fr] opacity-100" : "mt-0 grid-rows-[0fr] opacity-0"}`}>
+        <div className="min-h-0 overflow-hidden">{children}</div>
+      </div>
+    </section>
+  )
 }

@@ -18,6 +18,8 @@
 - Dark mode should rely on shared variables and selectors instead of route-specific overrides.
 - Global selectors cover legacy near-white card colors, bordered rounded surfaces, forms, tables, and section containers so opened content never becomes white-on-white.
 - Table headers, rows, inputs, selects, dialogs, legacy utility colors, disabled states, and hover states share explicit dark-mode contrast rules.
+- Public dark mode also normalizes legacy slate text utilities to readable light colors.
+- `.admin-input` and `.admin-select` are shared compact form controls for dashboard administration surfaces.
 
 ## Verification
 

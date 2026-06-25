@@ -198,6 +198,9 @@
   }
 
   .dark .text-\[\#6B7280\],
+  .dark .text-\[\#64748B\],
+  .dark .text-\[\#475569\],
+  .dark .text-\[\#334155\],
   .dark .text-\[\#6e6e73\],
   .dark .text-\[\#7a7a7a\] {
     color: #b9c2cd !important;
@@ -256,6 +259,31 @@
   .dark .border-\[\#e0e0e0\],
   .dark .border-input {
     border-color: #3b4248 !important;
+  }
+
+  .admin-input,
+  .admin-select {
+    min-height: 44px;
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid #CBD5E1;
+    background: #ffffff;
+    padding: 0.5rem 0.75rem;
+    color: #111827;
+    outline: none;
+  }
+
+  .admin-input:focus,
+  .admin-select:focus {
+    border-color: #111827;
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+  }
+
+  .dark .admin-input,
+  .dark .admin-select {
+    border-color: #56616a;
+    background: #1f2427;
+    color: #ffffff;
   }
 
   .dark .apple-input,
