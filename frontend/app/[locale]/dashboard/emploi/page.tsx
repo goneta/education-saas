@@ -69,7 +69,7 @@ export default function EmploymentDashboardPage() {
   const [agentPrompt, setAgentPrompt] = useState("Analyse mon profil et propose trois offres compatibles.")
   const [agentResult, setAgentResult] = useState("")
   const [credits, setCredits] = useState(250)
-  const [openSection, setOpenSection] = useState("competences")
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set(["competences"]))
   const [photoPreview, setPhotoPreview] = useState("")
   const [photoUploading, setPhotoUploading] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
@@ -88,14 +88,25 @@ export default function EmploymentDashboardPage() {
   const headers = useMemo(() => token ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` } : null, [token])
 
   useEffect(() => {
-    const stored = window.localStorage.getItem("teducai:emploi:open-section")
-    if (stored) setOpenSection(stored)
+    const stored = window.localStorage.getItem("teducai:emploi:open-sections")
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) setOpenSections(new Set(parsed.filter(item => typeof item === "string")))
+      } catch {
+        setOpenSections(new Set(stored ? [stored] : []))
+      }
+    }
   }, [])
 
   const toggleSection = (section: string) => {
-    const next = openSection === section ? "" : section
-    setOpenSection(next)
-    window.localStorage.setItem("teducai:emploi:open-section", next)
+    setOpenSections(previous => {
+      const next = new Set(previous)
+      if (next.has(section)) next.delete(section)
+      else next.add(section)
+      window.localStorage.setItem("teducai:emploi:open-sections", JSON.stringify(Array.from(next)))
+      return next
+    })
   }
 
   const load = () => {
@@ -318,7 +329,7 @@ export default function EmploymentDashboardPage() {
       </form>
 
       <section className="grid gap-4 xl:grid-cols-3">
-        <Panel title="Competences detaillees" collapsible open={openSection === "competences"} onToggle={() => toggleSection("competences")}>
+        <Panel title="Competences detaillees" collapsible open={openSections.has("competences")} onToggle={() => toggleSection("competences")}>
           <Repeater
             items={cv.detailed_skills || []}
             add={() => setCv({ ...cv, detailed_skills: [...(cv.detailed_skills || []), skillTemplate] })}
@@ -331,7 +342,7 @@ export default function EmploymentDashboardPage() {
             )}
           />
         </Panel>
-        <Panel title="Parcours academique" collapsible open={openSection === "academique"} onToggle={() => toggleSection("academique")}>
+        <Panel title="Parcours academique" collapsible open={openSections.has("academique")} onToggle={() => toggleSection("academique")}>
           <Repeater
             items={cv.academic_credentials || []}
             add={() => setCv({ ...cv, academic_credentials: [...(cv.academic_credentials || []), { school: "", degree: "", field: "" }] })}
@@ -343,7 +354,7 @@ export default function EmploymentDashboardPage() {
             )}
           />
         </Panel>
-        <Panel title="Certificats" collapsible open={openSection === "certificats"} onToggle={() => toggleSection("certificats")}>
+        <Panel title="Certificats" collapsible open={openSections.has("certificats")} onToggle={() => toggleSection("certificats")}>
           <Repeater
             items={cv.certificates || []}
             add={() => setCv({ ...cv, certificates: [...(cv.certificates || []), { name: "", issuer: "" }] })}
@@ -358,7 +369,7 @@ export default function EmploymentDashboardPage() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <Panel title="Experiences professionnelles" collapsible open={openSection === "experiences"} onToggle={() => toggleSection("experiences")}>
+        <Panel title="Experiences professionnelles" collapsible open={openSections.has("experiences")} onToggle={() => toggleSection("experiences")}>
           <div className="grid gap-3 md:grid-cols-2">
             <Field label="Entreprise" value={work.company} onChange={value => setWork({ ...work, company: value })} />
             <Field label="Poste" value={work.position} onChange={value => setWork({ ...work, position: value })} />
@@ -375,7 +386,7 @@ export default function EmploymentDashboardPage() {
           <Button type="button" onClick={addWork} className="mt-3 bg-black text-white">Ajouter experience</Button>
           <div className="mt-4 grid gap-2">{(cv.work_history || []).map(item => <div key={item.id} className="rounded-lg border p-3 text-sm dark:border-[#56616a]">{item.position} - {item.company} ({item.experience_type})</div>)}</div>
         </Panel>
-        <Panel title="Offres recommandees" collapsible open={openSection === "offres"} onToggle={() => toggleSection("offres")}>
+        <Panel title="Offres recommandees" collapsible open={openSections.has("offres")} onToggle={() => toggleSection("offres")}>
           <div className="grid gap-3">
             {recommendations.map(({ score, job }) => (
               <div key={job.id} className="rounded-lg border p-4 dark:border-[#56616a]">

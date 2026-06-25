@@ -359,7 +359,9 @@ function translateDashboardCopy() {
 }
 
 function ensureSectionToggle(container: HTMLElement, expanded: boolean) {
-    const toggles = Array.from(container.querySelectorAll<HTMLElement>("[data-teducai-section-toggle]"))
+    const toggles = Array.from(container.children).filter(
+        (child): child is HTMLElement => child instanceof HTMLElement && child.dataset.teducaiSectionToggle === "true"
+    )
     toggles.slice(1).forEach(toggle => toggle.remove())
     const toggle = toggles[0] || document.createElement("span")
     if (!toggle.dataset.teducaiSectionToggle) {
@@ -370,6 +372,21 @@ function ensureSectionToggle(container: HTMLElement, expanded: boolean) {
     const nextText = expanded ? "⌃" : "⌄"
     if (toggle.textContent !== nextText) toggle.textContent = nextText
     if (toggle.parentElement !== container) container.appendChild(toggle)
+}
+
+function sectionStorageKey(container: HTMLElement, heading: HTMLElement) {
+    const title = normalizeCopyKey(heading.textContent || "")
+    const index = Array.from(document.querySelectorAll<HTMLElement>("main h2, main h3, main h4, main [data-teducai-section-title]")).indexOf(heading)
+    return `teducai:accordion:${window.location.pathname}:${title || "section"}:${Math.max(index, 0)}`
+}
+
+function persistedSectionOpen(container: HTMLElement, heading: HTMLElement, fallback: boolean) {
+    const key = container.dataset.teducaiAccordionKey || sectionStorageKey(container, heading)
+    container.dataset.teducaiAccordionKey = key
+    const saved = window.localStorage.getItem(key)
+    if (saved === "open") return true
+    if (saved === "closed") return false
+    return fallback
 }
 
 function enhanceCollapsibleSections() {
@@ -389,7 +406,7 @@ function enhanceCollapsibleSections() {
         if (!contentNodes.length) return
 
         container.dataset.teducaiCollapsible = "true"
-        const defaultOpen = container.dataset.teducaiDefaultOpen === "true"
+        const defaultOpen = persistedSectionOpen(container, heading, container.dataset.teducaiDefaultOpen === "true")
         container.dataset.teducaiCollapsed = defaultOpen ? "false" : "true"
         contentNodes.forEach(child => { child.dataset.teducaiCollapsibleContent = "true" })
 
@@ -410,6 +427,9 @@ function toggleSection(header: HTMLElement) {
     const collapsed = container.dataset.teducaiCollapsed !== "false"
     container.dataset.teducaiCollapsed = collapsed ? "false" : "true"
     header.setAttribute("aria-expanded", collapsed ? "true" : "false")
+    if (container.dataset.teducaiAccordionKey) {
+        window.localStorage.setItem(container.dataset.teducaiAccordionKey, collapsed ? "open" : "closed")
+    }
     ensureSectionToggle(container, collapsed)
 }
 
@@ -681,7 +701,10 @@ export function DashboardUxEnhancer() {
             }
             const sectionToggle = target.closest<HTMLElement>("[data-teducai-section-toggle]")
             if (sectionToggle) {
-                const header = sectionToggle.closest<HTMLElement>("[data-teducai-collapsible='true']")?.querySelector<HTMLElement>("[data-teducai-collapse-heading]")
+                const container = sectionToggle.closest<HTMLElement>("[data-teducai-collapsible='true']")
+                const header = container ? Array.from(container.children).find(
+                    (child): child is HTMLElement => child instanceof HTMLElement && child.dataset.teducaiCollapseHeading === "true"
+                ) : null
                 if (header) toggleSection(header)
                 return
             }

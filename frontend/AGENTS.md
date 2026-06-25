@@ -33,6 +33,7 @@
 - After frontend UI changes, run targeted ESLint and, when practical, `npm run build`.
 - Keep table/list action behavior consistent with standardized row actions.
 - Dashboard section cards with headings should inherit the global collapsible behavior: collapsed by default, French title normalization when needed, smooth open/close, and preserved standardized row actions.
+- Collapsible dashboard sections must keep independent open/closed state; toggling one section must not implicitly open, close, or remove controls from another section.
 - Data-list containers may opt out of automatic collapsing with `data-teducai-collapsible="false"`; critical lists must remain visible after loading.
 - Runtime-enhanced accordions and actions must receive explicit dark-theme styling because their elements are inserted after React render.
 - Destructive dashboard actions must use the shared TeducAI confirmation flow; browser `alert()` and `confirm()` prompts are not allowed.

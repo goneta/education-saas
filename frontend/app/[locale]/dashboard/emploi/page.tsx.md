@@ -19,7 +19,7 @@
 - Keep controls compact, mobile-safe, and dark-mode readable inside the dashboard shell.
 - Recommended jobs are informational until the authenticated student applies; application authorization and duplicate checks stay backend-owned.
 - Detailed skills, academic credentials, and certificates open their full editable form immediately from `Ajouter`, support row-level save/delete, and persist through the CV update endpoint.
-- Detailed skills, academic credentials, certificates, work history, and recommended jobs render as controlled accordions with smooth open/close behavior and local persistence of the active section.
+- Detailed skills, academic credentials, certificates, work history, and recommended jobs render as controlled accordions with smooth open/close behavior; each section keeps independent locally persisted open/closed state.
 - Student AI credit purchase must route through `/dashboard/checkout?purchase=ai-credits` so credits are applied only by the payment flow.
 
 ## Verification

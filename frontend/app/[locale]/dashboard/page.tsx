@@ -158,6 +158,7 @@ function SuperAdminControlCenter({ token, locale }: { token: string | null; loca
     const [schools, setSchools] = useState<SchoolRow[]>([])
     const [audits, setAudits] = useState<AuditRow[]>([])
     const [tab, setTab] = useState<"catalog" | "school">("catalog")
+    const [openPanels, setOpenPanels] = useState<Set<string>>(() => new Set(["catalog-global"]))
     const [moduleLabel, setModuleLabel] = useState(modules[0].label)
     const [selectedSchoolId, setSelectedSchoolId] = useState<number | "">("")
     const [filters, setFilters] = useState({ model: "", country: "", city: "", status: "all", year: "2025-2026" })
@@ -175,6 +176,27 @@ function SuperAdminControlCenter({ token, locale }: { token: string | null; loca
         if (filters.city && !(school.formatted_address || school.address || "").toLowerCase().includes(filters.city.toLowerCase())) return false
         return true
     })
+
+    useEffect(() => {
+        const stored = window.localStorage.getItem("teducai:super-admin:open-panels")
+        if (!stored) return
+        try {
+            const parsed = JSON.parse(stored)
+            if (Array.isArray(parsed)) setOpenPanels(new Set(parsed.filter(item => typeof item === "string")))
+        } catch {
+            setOpenPanels(new Set())
+        }
+    }, [])
+
+    const togglePanel = (panel: string) => {
+        setOpenPanels(previous => {
+            const next = new Set(previous)
+            if (next.has(panel)) next.delete(panel)
+            else next.add(panel)
+            window.localStorage.setItem("teducai:super-admin:open-panels", JSON.stringify(Array.from(next)))
+            return next
+        })
+    }
 
     const load = () => {
         if (!headers) return
@@ -273,7 +295,7 @@ function SuperAdminControlCenter({ token, locale }: { token: string | null; loca
 
             {tab === "catalog" ? (
                 <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-                    <Panel title={`Catalogue Global - ${selectedModule.label}`}>
+                    <Panel title={`Catalogue Global - ${selectedModule.label}`} open={openPanels.has("catalog-global")} onToggle={() => togglePanel("catalog-global")}>
                         <p className="text-sm leading-6 text-[#64748B] dark:text-[#dce3eb]">{selectedModule.catalog}</p>
                         <div className="mt-4 grid gap-2 sm:grid-cols-2">
                             {["Créer", "Modifier", "Archiver", "Restaurer", "Importer", "Exporter"].map((action, index) => (
@@ -284,7 +306,7 @@ function SuperAdminControlCenter({ token, locale }: { token: string | null; loca
                             ))}
                         </div>
                     </Panel>
-                    <Panel title="Administration plateforme TeducAI">
+                    <Panel title="Administration plateforme TeducAI" open={openPanels.has("platform-admin")} onToggle={() => togglePanel("platform-admin")}>
                         <div className="grid gap-2">
                             {platformModules.map(item => (
                                 <Link key={item.label} href={`/${locale}${item.href}`} className="rounded-lg border p-3 text-sm transition hover:border-black dark:border-[#56616a] dark:hover:border-white">
@@ -294,7 +316,7 @@ function SuperAdminControlCenter({ token, locale }: { token: string | null; loca
                             ))}
                         </div>
                     </Panel>
-                    <Panel title="Rubriques administrables">
+                    <Panel title="Rubriques administrables" open={openPanels.has("manageable-rubrics")} onToggle={() => togglePanel("manageable-rubrics")}>
                         <div className="grid max-h-[520px] gap-2 overflow-auto pr-1">
                             {modules.map(item => (
                                 <button key={item.label} type="button" onClick={() => setModuleLabel(item.label)} className={`rounded-lg border p-3 text-left text-sm transition dark:border-[#56616a] ${item.label === moduleLabel ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black" : "bg-white dark:bg-[#252b30]"}`}>
@@ -307,7 +329,7 @@ function SuperAdminControlCenter({ token, locale }: { token: string | null; loca
                 </section>
             ) : (
                 <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-                    <Panel title="Gestion complète des établissements">
+                    <Panel title="Gestion complète des établissements" open={openPanels.has("school-management")} onToggle={() => togglePanel("school-management")}>
                         <form onSubmit={createSchool} className="grid gap-3 md:grid-cols-2">
                             <input value={schoolForm.name} onChange={event => setSchoolForm({ ...schoolForm, name: event.target.value })} required placeholder="Nom de l'établissement" className="admin-input" />
                             <input value={schoolForm.domain_prefix} onChange={event => setSchoolForm({ ...schoolForm, domain_prefix: event.target.value })} required placeholder="Domaine court" className="admin-input" />
@@ -334,7 +356,7 @@ function SuperAdminControlCenter({ token, locale }: { token: string | null; loca
                             ))}
                         </div>
                     </Panel>
-                    <Panel title={`Gestion ${selectedModule.label} par établissement`}>
+                    <Panel title={`Gestion ${selectedModule.label} par établissement`} open={openPanels.has("school-rubric-management")} onToggle={() => togglePanel("school-rubric-management")}>
                         <p className="text-sm leading-6 text-[#64748B] dark:text-[#dce3eb]">Contexte actif: {selectedSchool?.name || "Tous les établissements"} - {filters.year}. Les actions ci-dessous ouvrent la rubrique existante avec le contexte sélectionné comme repère opérationnel.</p>
                         <div className="mt-4 grid gap-2 sm:grid-cols-2">
                             {["Créer", "Modifier", "Supprimer", "Importer", "Exporter", "Archiver", "Historique"].map(action => (
@@ -383,8 +405,18 @@ function AdminStat({ icon, label, value }: { icon: ReactNode; label: string; val
     return <div className="rounded-lg border bg-white p-4 dark:border-[#3b4248] dark:bg-[#202528]"><div className="h-5 w-5 text-[#0F766E]">{icon}</div><p className="mt-3 text-sm text-[#64748B] dark:text-[#dce3eb]">{label}</p><p className="text-2xl font-bold">{value}</p></div>
 }
 
-function Panel({ title, children }: { title: string; children: ReactNode }) {
-    return <section data-teducai-collapsible="false" className="min-w-0 rounded-lg border bg-white p-5 dark:border-[#3b4248] dark:bg-[#202528]"><h2 className="mb-4 text-lg font-semibold">{title}</h2>{children}</section>
+function Panel({ title, children, open, onToggle }: { title: string; children: ReactNode; open: boolean; onToggle: () => void }) {
+    return (
+        <section data-teducai-collapsible="false" className="min-w-0 overflow-hidden rounded-lg border bg-white p-5 dark:border-[#3b4248] dark:bg-[#202528]">
+            <button type="button" onClick={onToggle} aria-expanded={open} className="flex w-full items-center justify-between gap-3 text-left text-lg font-semibold">
+                <span>{title}</span>
+                <span className={`text-2xl leading-none text-[#64748B] transition-transform duration-300 dark:text-[#c7d0da] ${open ? "rotate-180" : ""}`}>⌄</span>
+            </button>
+            <div className={`grid transition-[grid-template-rows,opacity,margin] duration-300 ease-out ${open ? "mt-4 grid-rows-[1fr] opacity-100" : "mt-0 grid-rows-[0fr] opacity-0"}`}>
+                <div className="min-h-0 overflow-hidden">{children}</div>
+            </div>
+        </section>
+    )
 }
 
 function Control({ label, children }: { label: string; children: ReactNode }) {

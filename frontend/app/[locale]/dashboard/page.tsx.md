@@ -20,6 +20,8 @@
 - School management actions may create a new establishment or toggle active/suspended status through existing Super Admin-protected system endpoints.
 - The management context includes rubric, school, academic year, model, country, city, and status filters; deeper CRUD stays owned by the linked domain pages and backend RBAC.
 
+- Super Admin section panels are independent accordions with smooth open/close animation and locally persisted state; toggling one panel must not affect the others.
+
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
