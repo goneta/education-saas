@@ -8,7 +8,7 @@
 
 - Owns dashboard navigation, collapsible module groups, and the bottom user account menu.
 - Exposes localized account destinations for overview, renewals, security, sessions, contact, payments, credit, invoices, preferences, notifications, team members, and referrals.
-- Includes TeducAI Emploi dashboard entries for student CV/sharecode management and recruiter offer/application management.
+- Includes TeducAI Emploi dashboard entries for student CV/sharecode management, recruiter ATS management, and Super Admin employment oversight.
 
 ## DOX Scope
 
@@ -20,7 +20,7 @@
 - Account labels must use the `account` translation namespace.
 - Preserve independent sidebar scrolling and dark-mode readability.
 - The active route uses the same dark surface as the hover state and keeps icons/text high contrast.
-- Sidebar entries are filtered by account type: recruiters see recruiter workspace links, external students see CV workspace links, and school users do not see recruiter-only dashboards.
+- Sidebar entries are filtered by account type: recruiters see recruiter workspace links, external students see CV workspace links, school users do not see recruiter-only dashboards, and the Admin Emploi entry is visible only to `super_admin`.
 
 ## Verification
 

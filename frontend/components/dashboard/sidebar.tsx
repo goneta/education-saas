@@ -129,6 +129,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/enterprise`, label: t("enterprise"), icon: BarChart3 },
                 { href: `/${locale}/dashboard/emploi`, label: "Emploi et CV", icon: BriefcaseBusiness },
                 { href: `/${locale}/dashboard/emploi-recruteur`, label: "Espace recruteur", icon: BriefcaseBusiness },
+                { href: `/${locale}/dashboard/emploi-admin`, label: "Admin Emploi", icon: ShieldCheck },
             ]
         },
         {
@@ -266,6 +267,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                                 return item.href.includes("/dashboard/emploi") && !item.href.includes("/dashboard/emploi-recruteur")
                             }
                             if (item.href.includes("/dashboard/emploi-recruteur")) return false
+                            if (item.href.includes("/dashboard/emploi-admin") && user?.role !== "super_admin") return false
                             return true
                         })
                         if (!items.length) return null

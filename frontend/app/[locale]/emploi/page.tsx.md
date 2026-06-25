@@ -18,6 +18,7 @@
 - Public CV rendering must only display fields returned by the backend public payload.
 - Keep sharecode errors generic and avoid exposing partial student existence.
 - When an authenticated token exists, pass it to CV search/sharecode requests so pending recruiter restrictions are enforced by the backend.
+- Public employment sections, cards, selects, inputs, and descriptions must stay high contrast in dark mode.
 
 ## Verification
 

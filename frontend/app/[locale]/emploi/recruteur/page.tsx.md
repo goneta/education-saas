@@ -22,6 +22,7 @@
 - Server failures should show a service-unavailable registration message, while 400/422/409 responses remain field-aware validation errors.
 - The form pre-validates the backend password policy before sending the request.
 - Successful registration redirects to login instead of leaving the registration form visible.
+- Labels, selects, inputs, validation messages, and service errors must remain readable in dark mode.
 
 ## Verification
 

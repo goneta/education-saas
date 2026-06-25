@@ -34,10 +34,10 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A]">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] dark:bg-[#1f2427] dark:text-[#f4f7fb]">
       <MarketingNav locale={locale} />
       <main>
-        <section className="border-b border-[#DDE5E8] bg-white py-16">
+        <section className="border-b border-[#DDE5E8] bg-white py-16 dark:border-[#3b4248] dark:bg-[#202528]">
           <div className="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
             <div>
               <p className="text-sm font-bold uppercase tracking-wide text-[#0F766E]">
@@ -46,13 +46,13 @@ export default function ContactPage() {
               <h1 className="mt-4 text-4xl font-bold tracking-normal sm:text-5xl">
                 Parlons de votre projet TeducAI.
               </h1>
-              <p className="mt-5 text-lg leading-8 text-[#475569]">
+              <p className="mt-5 text-lg leading-8 text-[#475569] dark:text-[#c7d0da]">
                 Notre équipe accompagne les écoles, centres de formation,
                 universités et groupes multi-sites en Afrique, en Europe et au
                 Royaume-Uni.
               </p>
 
-              <div className="mt-8 space-y-5 text-sm leading-6 text-[#334155]">
+              <div className="mt-8 space-y-5 text-sm leading-6 text-[#334155] dark:text-[#dce3eb]">
                 <p className="flex gap-3">
                   <Building2 className="mt-1 h-5 w-5 text-[#0F766E]" />
                   THUNDERFAM GROUP LIMITED COTE D’IVOIRE, TGL-CI, créée le
@@ -76,26 +76,26 @@ export default function ContactPage() {
 
             <form
               onSubmit={handleSubmit}
-              className="rounded-lg border border-[#DDE5E8] bg-[#F8FAFC] p-6 shadow-sm"
+              className="rounded-lg border border-[#DDE5E8] bg-[#F8FAFC] p-6 shadow-sm dark:border-[#56616a] dark:bg-[#252b30]"
             >
               <div className="grid gap-5 sm:grid-cols-2">
                 {contactFields.map(([name, label, type]) => (
                   <div key={name} className="space-y-2">
-                    <Label htmlFor={name}>{label}</Label>
-                    <Input id={name} name={name} type={type} required />
+                    <Label htmlFor={name} className="dark:text-white">{label}</Label>
+                    <Input id={name} name={name} type={type} required className="dark:border-[#56616a] dark:bg-[#1f2427] dark:text-white" />
                   </div>
                 ))}
               </div>
               <div className="mt-5 space-y-2">
-                <Label htmlFor="message">Message</Label>
-                <Textarea id="message" name="message" rows={6} required />
+                <Label htmlFor="message" className="dark:text-white">Message</Label>
+                <Textarea id="message" name="message" rows={6} required className="dark:border-[#56616a] dark:bg-[#1f2427] dark:text-white" />
               </div>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Button type="submit" className="bg-[#0F766E] hover:bg-[#115E59]">
                   <Send className="h-4 w-4" />
                   Envoyer
                 </Button>
-                <Button asChild variant="outline" className="border-[#CBD5E1]">
+                <Button asChild variant="outline" className="border-[#CBD5E1] dark:border-[#56616a] dark:bg-[#252b30] dark:text-white">
                   <a href={mailto}>Envoyer par email</a>
                 </Button>
                 {sent ? (

@@ -880,11 +880,15 @@ class StudentCVUpdate(BaseModel):
     looking_for_job: Optional[bool] = None
     privacy_settings: Optional[Dict[str, Any]] = None
     academic_timeline: Optional[List[Dict[str, Any]]] = None
+    academic_credentials: List[Dict[str, Any]] = []
+    certificates: List[Dict[str, Any]] = []
     skills: List[str] = []
+    detailed_skills: List[Dict[str, Any]] = []
     languages: List[str] = []
     portfolio: List[Dict[str, Any]] = []
     availability: Optional[str] = None
     cv_photo_url: Optional[str] = None
+    desired_location: Optional[str] = None
 
 
 class StudentCVWorkHistoryCreate(BaseModel):
@@ -898,6 +902,8 @@ class StudentCVWorkHistoryCreate(BaseModel):
     description: Optional[str] = None
     missions: List[str] = []
     skills_used: List[str] = []
+    technologies_used: List[str] = []
+    skills_acquired: List[str] = []
     proof_document_url: Optional[str] = None
     reference_contact: Optional[str] = None
 
@@ -923,10 +929,15 @@ class StudentCVResponse(BaseModel):
     cv_photo_url: Optional[str] = None
     privacy_settings: Dict[str, Any] = {}
     academic_timeline: List[Dict[str, Any]] = []
+    academic_credentials: List[Dict[str, Any]] = []
+    certificates: List[Dict[str, Any]] = []
     skills: List[str] = []
+    detailed_skills: List[Dict[str, Any]] = []
     languages: List[str] = []
     portfolio: List[Dict[str, Any]] = []
     availability: Optional[str] = None
+    desired_location: Optional[str] = None
+    total_experience_years: float = 0
     external_identity: Optional[Dict[str, Any]] = None
     work_history: List[StudentCVWorkHistoryResponse] = []
     created_at: Optional[datetime] = None
@@ -962,6 +973,33 @@ class RecruiterRegister(BaseModel):
     payment_provider: str = Field(default="manual", pattern="^(cash|free|stripe|djamo|cinetpay|manual)$")
 
 
+class RecruiterProfileUpdate(BaseModel):
+    company_name: Optional[str] = None
+    contact_name: Optional[str] = None
+    sector: Optional[str] = None
+    phone: Optional[str] = None
+    website: Optional[str] = None
+    logo_url: Optional[str] = None
+    company_description: Optional[str] = None
+
+
+class RecruiterSubscriptionUpdate(BaseModel):
+    plan: str = "sharecode_only"
+    duration_months: int = Field(default=1, ge=1, le=12)
+    auto_renew: bool = False
+    payment_provider: str = Field(default="manual", pattern="^(cash|free|stripe|djamo|cinetpay|manual)$")
+
+
+class EmploymentAICreditPurchase(BaseModel):
+    credits: int = Field(ge=10, le=100000)
+    payment_provider: str = Field(default="manual", pattern="^(cash|free|stripe|djamo|cinetpay|manual)$")
+
+
+class EmploymentAgentRequest(BaseModel):
+    prompt: str = Field(min_length=3, max_length=2000)
+    mode: str = "recruiter"
+
+
 class JobOfferCreate(BaseModel):
     title: str
     company: str
@@ -970,12 +1008,24 @@ class JobOfferCreate(BaseModel):
     location: Optional[str] = None
     workplace_mode: str = "on_site"
     description: str
+    application_start_at: Optional[datetime] = None
     missions: Optional[List[str]] = []
     required_skills: Optional[List[str]] = []
+    desired_skills: Optional[List[str]] = []
+    required_languages: Optional[List[str]] = []
     required_degree: Optional[str] = None
     required_level: Optional[str] = None
     required_experience: Optional[str] = None
     salary: Optional[str] = None
+    salary_fixed: Optional[float] = None
+    salary_min: Optional[float] = None
+    salary_max: Optional[float] = None
+    currency: str = "FCFA"
+    contract_type: Optional[str] = None
+    minimum_academic_level: Optional[str] = None
+    required_years_experience: Optional[float] = None
+    positions_count: int = 1
+    desired_start_date: Optional[datetime] = None
     deadline: Optional[datetime] = None
     status: str = "draft"
 
@@ -988,12 +1038,24 @@ class JobOfferUpdate(BaseModel):
     location: Optional[str] = None
     workplace_mode: Optional[str] = None
     description: Optional[str] = None
+    application_start_at: Optional[datetime] = None
     missions: Optional[List[str]] = None
     required_skills: Optional[List[str]] = None
+    desired_skills: Optional[List[str]] = None
+    required_languages: Optional[List[str]] = None
     required_degree: Optional[str] = None
     required_level: Optional[str] = None
     required_experience: Optional[str] = None
     salary: Optional[str] = None
+    salary_fixed: Optional[float] = None
+    salary_min: Optional[float] = None
+    salary_max: Optional[float] = None
+    currency: Optional[str] = None
+    contract_type: Optional[str] = None
+    minimum_academic_level: Optional[str] = None
+    required_years_experience: Optional[float] = None
+    positions_count: Optional[int] = None
+    desired_start_date: Optional[datetime] = None
     deadline: Optional[datetime] = None
     status: Optional[str] = None
 
@@ -1001,6 +1063,7 @@ class JobOfferUpdate(BaseModel):
 class JobOfferResponse(JobOfferCreate):
     id: int
     recruiter_id: int
+    ai_match_summary: Optional[Dict[str, Any]] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -1018,12 +1081,23 @@ class JobApplicationResponse(BaseModel):
     job_offer_id: int
     motivation_message: Optional[str] = None
     attached_documents: Optional[List[Dict[str, Any]]] = []
+    ai_match_score: float = 0
+    ai_match_details: Optional[Dict[str, Any]] = None
     status: str
     status_history: Optional[List[Dict[str, Any]]] = []
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class EmploymentNotificationCreate(BaseModel):
+    audience: str = Field(pattern="^(all_recruiters|all_students|targeted|ai_campaign)$")
+    title: str
+    message: str
+    recruiter_id: Optional[int] = None
+    student_cv_id: Optional[int] = None
+    payload: Optional[Dict[str, Any]] = None
 
 
 class JobInterviewCreate(BaseModel):

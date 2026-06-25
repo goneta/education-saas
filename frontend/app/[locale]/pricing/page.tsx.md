@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- React/Next.js TypeScript component or page file. It participates in Next.js App Router routing.
+- Public TeducAI pricing page for Free, Pro, and Max plan presentation with billing choices and subscription calls to action.
 
 ## DOX Scope
 
@@ -15,8 +15,8 @@
 
 ## Maintenance Notes
 
-- Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
-- Keep the source file and this document in the same directory.
+- Plan cards, billing options, feature lists, and buttons must stay high contrast in light and dark mode.
+- Subscription CTAs route to the localized contact page with the selected plan slug.
 
 ## Verification
 

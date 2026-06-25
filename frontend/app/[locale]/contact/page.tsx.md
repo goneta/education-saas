@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- React/Next.js TypeScript component or page file. It participates in Next.js App Router routing.
+- Public contact page for TeducAI project inquiries, company contact details, and email/contact form actions.
 
 ## DOX Scope
 
@@ -15,8 +15,8 @@
 
 ## Maintenance Notes
 
-- Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
-- Keep the source file and this document in the same directory.
+- Keep the form and company details readable in light and dark mode.
+- The current form is client-side only and prepares user feedback without posting private data to an API.
 
 ## Verification
 

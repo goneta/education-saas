@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from .. import audit, models
 
@@ -38,6 +38,21 @@ SECTORS = [
     "Agriculture",
     "Hotellerie",
     "Autre",
+]
+
+SKILL_CATEGORIES = [
+    "Informatique",
+    "Intelligence Artificielle",
+    "Developpement logiciel",
+    "Reseaux",
+    "Langues",
+    "Gestion",
+    "Comptabilite",
+    "Marketing",
+    "Design",
+    "Communication",
+    "Leadership",
+    "Soft Skills",
 ]
 
 
@@ -181,9 +196,14 @@ def public_cv_payload(cv: models.StudentCV) -> dict[str, Any]:
         "looking_for_job": cv.looking_for_job,
         "cv_photo_url": cv.cv_photo_url or (profile.photo_url if profile else None),
         "skills": cv.skills or [],
+        "detailed_skills": cv.detailed_skills or [],
         "languages": cv.languages or [],
         "portfolio": cv.portfolio or [],
+        "certificates": cv.certificates or [],
+        "academic_credentials": cv.academic_credentials or [],
         "availability": cv.availability,
+        "desired_location": cv.desired_location,
+        "total_experience_years": cv.total_experience_years or 0,
         "work_history": [
             {
                 "id": item.id,
@@ -197,6 +217,8 @@ def public_cv_payload(cv: models.StudentCV) -> dict[str, Any]:
                 "description": item.description,
                 "missions": item.missions or [],
                 "skills_used": item.skills_used or [],
+                "technologies_used": item.technologies_used or [],
+                "skills_acquired": item.skills_acquired or [],
                 "verified_by_entity": item.verified_by_entity,
             }
             for item in cv.work_history
@@ -208,6 +230,86 @@ def public_cv_payload(cv: models.StudentCV) -> dict[str, Any]:
     if privacy.get("show_direct_contact") and cv.user:
         payload["contact"] = {"email": cv.user.email, "phone": cv.user.phone_number}
     return payload
+
+
+def _tokens(values: Any) -> set[str]:
+    if not values:
+        return set()
+    if isinstance(values, str):
+        values = [values]
+    tokens: set[str] = set()
+    for value in values:
+        if isinstance(value, dict):
+            source = " ".join(str(value.get(key, "")) for key in ["name", "skill", "category", "level", "label", "title"])
+        else:
+            source = str(value)
+        for part in source.replace("/", " ").replace(",", " ").lower().split():
+            if len(part) >= 2:
+                tokens.add(part)
+    return tokens
+
+
+def calculate_experience_years(cv: models.StudentCV) -> float:
+    total_days = 0
+    now = _utcnow().replace(tzinfo=None)
+    for item in cv.work_history or []:
+        if not item.start_date:
+            continue
+        end = item.end_date or now
+        total_days += max((end - item.start_date).days, 0)
+    return round(total_days / 365, 1)
+
+
+def match_score(job: models.JobOffer, cv: models.StudentCV) -> dict[str, Any]:
+    required = _tokens(job.required_skills or [])
+    desired = _tokens(job.desired_skills or [])
+    cv_skills = _tokens((cv.skills or []) + (cv.detailed_skills or []))
+    languages_required = _tokens(job.required_languages or [])
+    cv_languages = _tokens(cv.languages or [])
+    sector_match = bool(job.sector and job.sector.lower() in " ".join(cv.sectors or []).lower())
+    experience = cv.total_experience_years or calculate_experience_years(cv)
+    required_years = job.required_years_experience or 0
+
+    required_hits = len(required & cv_skills)
+    desired_hits = len(desired & cv_skills)
+    language_hits = len(languages_required & cv_languages)
+    score = 25 if sector_match else 0
+    score += 35 if not required else min(35, round(required_hits / max(len(required), 1) * 35))
+    score += 15 if not desired else min(15, round(desired_hits / max(len(desired), 1) * 15))
+    score += 15 if not languages_required else min(15, round(language_hits / max(len(languages_required), 1) * 15))
+    score += 10 if experience >= required_years else round((experience / max(required_years, 1)) * 10)
+    return {
+        "score": int(min(100, score)),
+        "required_skill_matches": sorted(required & cv_skills),
+        "desired_skill_matches": sorted(desired & cv_skills),
+        "language_matches": sorted(languages_required & cv_languages),
+        "sector_match": sector_match,
+        "experience_years": experience,
+    }
+
+
+def candidate_matches(db: Session, job: models.JobOffer, *, limit: int = 20) -> list[dict[str, Any]]:
+    rows = db.query(models.StudentCV).options(selectinload(models.StudentCV.work_history)).filter(
+        models.StudentCV.share_enabled == True,  # noqa: E712
+        models.StudentCV.looking_for_job == True,  # noqa: E712
+    ).limit(250).all()
+    ranked = []
+    for cv in rows:
+        details = match_score(job, cv)
+        payload = public_cv_payload(cv)
+        ranked.append({"cv": payload, "score": details["score"], "details": details})
+    ranked.sort(key=lambda item: item["score"], reverse=True)
+    return ranked[:limit]
+
+
+def recommended_jobs(db: Session, cv: models.StudentCV, *, limit: int = 20) -> list[dict[str, Any]]:
+    jobs = db.query(models.JobOffer).filter(models.JobOffer.status == "published").order_by(models.JobOffer.created_at.desc()).limit(200).all()
+    ranked = []
+    for job in jobs:
+        details = match_score(job, cv)
+        ranked.append({"job": job, "score": details["score"], "details": details})
+    ranked.sort(key=lambda item: item["score"], reverse=True)
+    return ranked[:limit]
 
 
 def rate_limit_sharecode(db: Session, *, ip_address: str | None) -> None:

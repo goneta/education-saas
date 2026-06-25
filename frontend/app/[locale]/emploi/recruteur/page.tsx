@@ -102,8 +102,8 @@ export default function RecruiterRegisterPage({ params }: { params: Promise<{ lo
             <Field label="Telephone" value={form.phone} error={fieldErrors.phone} onChange={value => setForm({ ...form, phone: value })} />
           </div>
           <Field label="Site web" value={form.website} error={fieldErrors.website} onChange={value => setForm({ ...form, website: value })} />
-          <label className="grid gap-1 text-sm font-medium">Offre
-            <select value={form.plan} onChange={event => setForm({ ...form, plan: event.target.value })} className="min-h-11 rounded-lg border border-[#CBD5E1] bg-white px-3 dark:border-[#56616a] dark:bg-[#1f2427]">
+          <label className="grid gap-1 text-sm font-medium text-[#0F172A] dark:text-white">Offre
+            <select value={form.plan} onChange={event => setForm({ ...form, plan: event.target.value })} className="min-h-11 rounded-lg border border-[#CBD5E1] bg-white px-3 text-[#0F172A] dark:border-[#56616a] dark:bg-[#1f2427] dark:text-white">
               <option value="sharecode_only">Acces sharecode uniquement</option>
               <option value="job_posts">Publication d&apos;offres</option>
               <option value="cvtheque_limited">CVtheque limitee</option>
@@ -123,9 +123,9 @@ export default function RecruiterRegisterPage({ params }: { params: Promise<{ lo
 
 function Field({ label, value, onChange, type = "text", error, required = false }: { label: string; value: string; onChange: (value: string) => void; type?: string; error?: string; required?: boolean }) {
   return (
-    <label className="grid gap-1 text-sm font-medium">
+    <label className="grid gap-1 text-sm font-medium text-[#0F172A] dark:text-white">
       {label}
-      <input type={type} value={value} required={required} onChange={event => onChange(event.target.value)} aria-invalid={Boolean(error)} className="min-h-11 rounded-lg border border-[#CBD5E1] bg-white px-3 text-[16px] outline-none focus:border-black aria-[invalid=true]:border-red-500 dark:border-[#56616a] dark:bg-[#1f2427]" />
+      <input type={type} value={value} required={required} onChange={event => onChange(event.target.value)} aria-invalid={Boolean(error)} className="min-h-11 rounded-lg border border-[#CBD5E1] bg-white px-3 text-[16px] text-[#0F172A] outline-none focus:border-black aria-[invalid=true]:border-red-500 dark:border-[#56616a] dark:bg-[#1f2427] dark:text-white" />
       {error && <span className="text-xs font-medium text-red-700 dark:text-red-300">{error}</span>}
     </label>
   )

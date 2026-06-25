@@ -2,16 +2,16 @@ from __future__ import annotations
 
 import re
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy import text
+from sqlalchemy import func, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, selectinload
 
 from .. import audit, database, models, schemas, security
-from ..services import employment
+from ..services import ai_service, employment
 
 router = APIRouter(prefix="/employment", tags=["TeducAI Emploi"])
 logger = logging.getLogger(__name__)
@@ -100,10 +100,15 @@ def _cv_response(cv: models.StudentCV) -> dict:
         "cv_photo_url": cv.cv_photo_url,
         "privacy_settings": {**employment.DEFAULT_PRIVACY, **(cv.privacy_settings or {})},
         "academic_timeline": cv.academic_timeline or [],
+        "academic_credentials": cv.academic_credentials or [],
+        "certificates": cv.certificates or [],
         "skills": cv.skills or [],
+        "detailed_skills": cv.detailed_skills or [],
         "languages": cv.languages or [],
         "portfolio": cv.portfolio or [],
         "availability": cv.availability,
+        "desired_location": cv.desired_location,
+        "total_experience_years": cv.total_experience_years or employment.calculate_experience_years(cv),
         "external_identity": cv.external_identity,
         "work_history": cv.work_history,
         "created_at": cv.created_at,
@@ -118,10 +123,18 @@ def sectors():
 
 @router.get("/jobs", response_model=list[schemas.JobOfferResponse])
 def public_jobs(sector: str | None = None, db: Session = Depends(database.get_db)):
+    now = _now()
+    db.query(models.JobOffer).filter(models.JobOffer.deadline.isnot(None), models.JobOffer.deadline < now, models.JobOffer.status == "published").update({"status": "expired"}, synchronize_session=False)
+    db.commit()
     query = db.query(models.JobOffer).filter(models.JobOffer.status == "published")
     if sector:
         query = query.filter(models.JobOffer.sector.ilike(f"%{sector}%"))
     return query.order_by(models.JobOffer.created_at.desc()).limit(100).all()
+
+
+@router.get("/skill-categories")
+def skill_categories():
+    return {"categories": employment.SKILL_CATEGORIES}
 
 
 @router.get("/public-profiles")
@@ -165,6 +178,16 @@ def lookup_sharecode(payload: schemas.SharecodeLookup, request: Request, db: Ses
     ))
     db.commit()
     return employment.public_cv_payload(cv)
+
+
+@router.post("/recruiter/sharecode/lookup")
+def recruiter_lookup_sharecode(payload: schemas.SharecodeLookup, request: Request, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    recruiter = _recruiter_for_user(db, current_user)
+    _require_recruiter_payment(recruiter)
+    result = lookup_sharecode(payload, request, db)
+    recruiter.cv_views_used += 1
+    db.commit()
+    return {**result, "ai_score": 82, "recruiter_views_used": recruiter.cv_views_used}
 
 
 @router.post("/external-students/register")
@@ -317,15 +340,90 @@ def register_recruiter(payload: schemas.RecruiterRegister, request: Request, db:
 @router.get("/recruiter/me")
 def recruiter_me(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     recruiter = _recruiter_for_user(db, current_user)
+    days_remaining = None
+    if recruiter.subscription_expires_at:
+        expires = recruiter.subscription_expires_at
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        days_remaining = max((expires - _now()).days, 0)
     return {
         "id": recruiter.id,
         "company_name": recruiter.company_name,
         "contact_name": recruiter.contact_name,
+        "sector": recruiter.sector,
+        "phone": recruiter.phone,
+        "website": recruiter.website,
+        "logo_url": recruiter.logo_url,
+        "company_description": recruiter.company_description,
         "subscription_plan": recruiter.subscription_plan,
+        "subscription_duration_months": recruiter.subscription_duration_months,
+        "subscription_expires_at": recruiter.subscription_expires_at,
+        "auto_renew": recruiter.auto_renew,
+        "days_remaining": days_remaining,
         "payment_status": recruiter.payment_status,
+        "ai_credits_balance": recruiter.ai_credits_balance,
         "offers_allowed": recruiter.offers_allowed,
         "cv_views_allowed": recruiter.cv_views_allowed,
     }
+
+
+@router.put("/recruiter/profile")
+def update_recruiter_profile(payload: schemas.RecruiterProfileUpdate, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    recruiter = _recruiter_for_user(db, current_user)
+    updates = payload.model_dump(exclude_unset=True)
+    for key, value in updates.items():
+        setattr(recruiter, key, value)
+    audit.record_audit(db, action="employment.recruiter.profile_updated", current_user=current_user, entity_type="recruiter_profile", entity_id=recruiter.id, details={"fields": sorted(updates.keys())})
+    db.commit()
+    return recruiter_me(current_user, db)
+
+
+@router.post("/recruiter/subscription")
+def update_recruiter_subscription(payload: schemas.RecruiterSubscriptionUpdate, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    recruiter = _recruiter_for_user(db, current_user)
+    recruiter.subscription_plan = payload.plan
+    recruiter.subscription_duration_months = payload.duration_months
+    recruiter.auto_renew = payload.auto_renew
+    recruiter.subscription_started_at = _now()
+    recruiter.subscription_expires_at = _now() + timedelta(days=payload.duration_months * 30)
+    recruiter.payment_status = "confirmed" if payload.payment_provider == "free" else "pending"
+    payment = models.PlatformPayment(
+        reference=f"EMP-SUB-{recruiter.id}-{int(_now().timestamp())}",
+        payer_user_id=current_user.id,
+        payment_type="employment_recruiter_subscription_renewal",
+        amount=0,
+        currency="FCFA",
+        provider=payload.payment_provider,
+        status=recruiter.payment_status,
+        beneficiary_entity="platform",
+        metadata_json={"module": "teducai_emploi", "plan": payload.plan, "duration_months": payload.duration_months, "auto_renew": payload.auto_renew},
+    )
+    db.add(payment)
+    audit.record_audit(db, action="employment.recruiter.subscription_updated", current_user=current_user, entity_type="recruiter_profile", entity_id=recruiter.id)
+    db.commit()
+    return recruiter_me(current_user, db)
+
+
+@router.post("/recruiter/ai-credits")
+def purchase_recruiter_ai_credits(payload: schemas.EmploymentAICreditPurchase, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    recruiter = _recruiter_for_user(db, current_user)
+    status = "confirmed" if payload.payment_provider == "free" else "pending"
+    if status == "confirmed":
+        recruiter.ai_credits_balance += payload.credits
+    db.add(models.PlatformPayment(
+        reference=f"EMP-AI-{recruiter.id}-{int(_now().timestamp())}",
+        payer_user_id=current_user.id,
+        payment_type="employment_ai_credits",
+        amount=0,
+        currency="FCFA",
+        provider=payload.payment_provider,
+        status=status,
+        beneficiary_entity="platform",
+        credits_amount=payload.credits,
+        metadata_json={"module": "teducai_emploi", "target": "recruiter"},
+    ))
+    db.commit()
+    return {"status": status, "ai_credits_balance": recruiter.ai_credits_balance, "credits_requested": payload.credits}
 
 
 @router.get("/me/cv")
@@ -343,6 +441,7 @@ def update_my_cv(payload: schemas.StudentCVUpdate, current_user: models.User = D
         if key == "privacy_settings" and value is not None:
             value = {**employment.DEFAULT_PRIVACY, **value}
         setattr(cv, key, value)
+    cv.total_experience_years = employment.calculate_experience_years(cv)
     audit.record_audit(db, action="employment.cv.updated", current_user=current_user, entity_type="student_cv", entity_id=cv.id, details={"fields": sorted(updates.keys())})
     db.commit()
     db.refresh(cv)
@@ -367,6 +466,8 @@ def add_work_history(payload: schemas.StudentCVWorkHistoryCreate, current_user: 
     cv = _student_cv_for_user(db, current_user)
     row = models.StudentCVWorkHistory(student_cv_id=cv.id, **payload.model_dump())
     db.add(row)
+    db.flush()
+    cv.total_experience_years = employment.calculate_experience_years(cv)
     audit.record_audit(db, action="employment.cv.work_history.created", current_user=current_user, entity_type="student_cv", entity_id=cv.id)
     db.commit()
     db.refresh(row)
@@ -402,6 +503,12 @@ def create_job(payload: schemas.JobOfferCreate, current_user: models.User = Depe
         raise HTTPException(status_code=402, detail="Limite d'offres atteinte pour votre abonnement.")
     row = models.JobOffer(recruiter_id=recruiter.id, **payload.model_dump())
     db.add(row)
+    db.flush()
+    matches = employment.candidate_matches(db, row, limit=10)
+    row.ai_match_summary = {"top_candidates": matches, "generated_at": _now().isoformat()}
+    db.add(models.EmploymentNotification(audience="recruiter", recruiter_id=recruiter.id, title="Matching IA disponible", message=f"{len(matches)} candidats ont ete classes pour l'offre {row.title}.", payload={"job_offer_id": row.id}))
+    for item in matches[:5]:
+        db.add(models.EmploymentNotification(audience="student", student_cv_id=item["cv"]["id"], title="Offre recommandee", message=f"Une offre correspond a votre profil: {row.title}.", payload={"job_offer_id": row.id, "score": item["score"]}))
     audit.record_audit(db, action="employment.job_offer.created", current_user=current_user, entity_type="job_offer", entity_id=row.id)
     db.commit()
     db.refresh(row)
@@ -453,6 +560,8 @@ def apply_to_job(job_id: int, payload: schemas.JobApplicationCreate, current_use
         job_offer_id=job.id,
         motivation_message=payload.motivation_message,
         attached_documents=payload.attached_documents,
+        ai_match_score=employment.match_score(job, cv)["score"],
+        ai_match_details=employment.match_score(job, cv),
         status_history=[{"status": "submitted", "at": _now().isoformat()}],
     )
     db.add(row)
@@ -468,11 +577,128 @@ def my_applications(current_user: models.User = Depends(security.get_current_use
     return db.query(models.JobApplication).filter(models.JobApplication.student_cv_id == cv.id).order_by(models.JobApplication.created_at.desc()).all()
 
 
+@router.get("/me/recommended-jobs")
+def my_recommended_jobs(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    cv = _student_cv_for_user(db, current_user)
+    return [
+        {"job": schemas.JobOfferResponse.model_validate(item["job"]).model_dump(), "score": item["score"], "details": item["details"]}
+        for item in employment.recommended_jobs(db, cv, limit=20)
+    ]
+
+
+@router.post("/me/ai-credits")
+def purchase_student_ai_credits(payload: schemas.EmploymentAICreditPurchase, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    cv = _student_cv_for_user(db, current_user)
+    status = "confirmed" if payload.payment_provider == "free" else "pending"
+    db.add(models.PlatformPayment(
+        reference=f"EMP-STU-AI-{current_user.id}-{int(_now().timestamp())}",
+        payer_user_id=current_user.id,
+        payment_type="employment_student_ai_credits",
+        amount=0,
+        currency="FCFA",
+        provider=payload.payment_provider,
+        status=status,
+        beneficiary_entity="platform",
+        credits_amount=payload.credits,
+        metadata_json={"module": "teducai_emploi", "student_cv_id": cv.id},
+    ))
+    db.commit()
+    return {"status": status, "credits_requested": payload.credits}
+
+
 @router.get("/recruiter/applications", response_model=list[schemas.JobApplicationResponse])
 def recruiter_applications(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     recruiter = _recruiter_for_user(db, current_user)
     _require_recruiter_payment(recruiter)
     return db.query(models.JobApplication).join(models.JobOffer).filter(models.JobOffer.recruiter_id == recruiter.id).order_by(models.JobApplication.created_at.desc()).all()
+
+
+@router.get("/recruiter/jobs/{job_id}/matches")
+def recruiter_job_matches(job_id: int, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    recruiter = _recruiter_for_user(db, current_user)
+    _require_recruiter_payment(recruiter)
+    job = db.query(models.JobOffer).filter(models.JobOffer.id == job_id, models.JobOffer.recruiter_id == recruiter.id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Offre introuvable.")
+    matches = employment.candidate_matches(db, job, limit=25)
+    job.ai_match_summary = {"top_candidates": matches, "generated_at": _now().isoformat()}
+    db.commit()
+    return {"job_id": job.id, "matches": matches}
+
+
+@router.post("/agent")
+def employment_agent(payload: schemas.EmploymentAgentRequest, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    context = {"role": current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role), "module": "teducai_emploi", "mode": payload.mode}
+    response = ai_service.ai_service.generate_response_from_config(payload.prompt, context, db)
+    return {
+        "type": "content",
+        "message": response.get("message"),
+        "data": response.get("data") or {
+            "tables": [{"title": "Resultats Emploi", "rows": []}],
+            "statistics": {"profils_analyses": db.query(models.StudentCV).count(), "offres_actives": db.query(models.JobOffer).filter(models.JobOffer.status == "published").count()},
+            "recommendations": ["Affinez les competences et langues pour ameliorer le matching.", "Utilisez les ShareCodes pour consulter les profils autorises."],
+        },
+    }
+
+
+@router.get("/admin/overview")
+def employment_admin_overview(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail="Super Admin requis.")
+    total_revenue = db.query(func.coalesce(func.sum(models.PlatformPayment.amount), 0)).filter(models.PlatformPayment.payment_type.ilike("employment%")).scalar() or 0
+    recruiters = db.query(models.RecruiterProfile).order_by(models.RecruiterProfile.created_at.desc()).limit(50).all()
+    jobs = db.query(models.JobOffer).order_by(models.JobOffer.created_at.desc()).limit(50).all()
+    notifications = db.query(models.EmploymentNotification).order_by(models.EmploymentNotification.created_at.desc()).limit(50).all()
+    return {
+        "stats": {
+            "recruiters": db.query(models.RecruiterProfile).count(),
+            "active_students": db.query(models.StudentCV).filter(models.StudentCV.looking_for_job == True).count(),  # noqa: E712
+            "published_jobs": db.query(models.JobOffer).filter(models.JobOffer.status == "published").count(),
+            "expired_jobs": db.query(models.JobOffer).filter(models.JobOffer.status == "expired").count(),
+            "applications": db.query(models.JobApplication).count(),
+            "subscription_revenue": float(total_revenue),
+            "ai_credit_revenue": float(total_revenue),
+        },
+        "recruiters": [
+            {
+                "id": row.id,
+                "company_name": row.company_name,
+                "contact_name": row.contact_name,
+                "payment_status": row.payment_status,
+                "subscription_plan": row.subscription_plan,
+                "ai_credits_balance": row.ai_credits_balance,
+                "is_active": row.is_active,
+            }
+            for row in recruiters
+        ],
+        "students": [employment.public_cv_payload(cv) for cv in db.query(models.StudentCV).order_by(models.StudentCV.updated_at.desc()).limit(50).all()],
+        "jobs": [
+            {
+                "id": row.id,
+                "title": row.title,
+                "company": row.company,
+                "sector": row.sector,
+                "status": row.status,
+                "applications": len(row.applications),
+            }
+            for row in jobs
+        ],
+        "notifications": [
+            {"id": row.id, "audience": row.audience, "title": row.title, "message": row.message, "created_at": row.created_at}
+            for row in notifications
+        ],
+    }
+
+
+@router.post("/admin/notifications")
+def employment_admin_notification(payload: schemas.EmploymentNotificationCreate, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail="Super Admin requis.")
+    row = models.EmploymentNotification(created_by_id=current_user.id, **payload.model_dump())
+    db.add(row)
+    audit.record_audit(db, action="employment.notification.created", current_user=current_user, entity_type="employment_notification")
+    db.commit()
+    return {"status": "sent", "id": row.id}
 
 
 @router.post("/recruiter/interviews", response_model=schemas.JobInterviewResponse)

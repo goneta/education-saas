@@ -86,7 +86,7 @@ export default function EmploiPage({ params }: Props) {
         <section className="border-b border-[#DDE5E8] bg-white py-10 dark:border-[#3b4248] dark:bg-[#202528]">
           <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#99F6E4] px-4 py-2 text-sm font-semibold text-[#0F766E]">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#99F6E4] px-4 py-2 text-sm font-semibold text-[#0F766E] dark:text-white">
                 <BriefcaseBusiness className="h-4 w-4" />
                 TeducAI Emploi
               </div>
@@ -103,7 +103,7 @@ export default function EmploiPage({ params }: Props) {
             <form onSubmit={lookup} className="rounded-lg border border-[#DDE5E8] bg-[#F8FAFC] p-5 dark:border-[#3b4248] dark:bg-[#252b30]">
               <label className="text-sm font-semibold">Acces par sharecode</label>
               <div className="mt-3 flex gap-2">
-                <input value={sharecode} onChange={event => setSharecode(event.target.value.toUpperCase())} placeholder="STU2024001-KC" className="min-h-11 flex-1 rounded-lg border border-[#CBD5E1] bg-white px-3 text-[16px] outline-none focus:border-black dark:border-[#56616a] dark:bg-[#1f2427]" />
+              <input value={sharecode} onChange={event => setSharecode(event.target.value.toUpperCase())} placeholder="STU2024001-KC" className="min-h-11 flex-1 rounded-lg border border-[#CBD5E1] bg-white px-3 text-[16px] text-[#0F172A] outline-none focus:border-black dark:border-[#56616a] dark:bg-[#1f2427] dark:text-white" />
                 <Button type="submit" className="bg-black text-white"><Search className="h-4 w-4" /> Rechercher</Button>
               </div>
               {status && <p className="mt-3 text-sm text-[#475569] dark:text-[#c7d0da]">{status}</p>}
@@ -117,7 +117,7 @@ export default function EmploiPage({ params }: Props) {
         <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-2xl font-bold">Recherche par secteur</h2>
-            <select value={sector} onChange={event => setSector(event.target.value)} className="min-h-11 rounded-lg border border-[#CBD5E1] bg-white px-3 dark:border-[#56616a] dark:bg-[#252b30]">
+            <select value={sector} onChange={event => setSector(event.target.value)} className="min-h-11 rounded-lg border border-[#CBD5E1] bg-white px-3 text-[#0F172A] dark:border-[#56616a] dark:bg-[#252b30] dark:text-white">
               <option value="">Tous les secteurs</option>
               {sectors.map(item => <option key={item} value={item}>{item}</option>)}
             </select>
@@ -128,7 +128,7 @@ export default function EmploiPage({ params }: Props) {
                 <UserRoundSearch className="h-6 w-6 text-[#0F766E]" />
                 <h3 className="mt-3 font-semibold">{profile.name || "Profil etudiant"}</h3>
                 <p className="text-sm text-[#475569] dark:text-[#c7d0da]">{profile.professional_title || "Disponible"}</p>
-                <p className="mt-3 line-clamp-3 text-sm leading-6">{profile.summary}</p>
+                <p className="mt-3 line-clamp-3 text-sm leading-6 text-[#334155] dark:text-[#dce3eb]">{profile.summary}</p>
                 <div className="mt-3 flex flex-wrap gap-2">{(profile.skills || []).slice(0, 4).map(skill => <span key={skill} className="rounded-full bg-[#ECFDF5] px-2 py-1 text-xs text-[#047857]">{skill}</span>)}</div>
               </button>
             ))}
@@ -145,7 +145,7 @@ export default function EmploiPage({ params }: Props) {
                   <p className="text-sm font-semibold text-[#0F766E]">{job.sector} - {job.offer_type}</p>
                   <h3 className="mt-2 text-xl font-semibold">{job.title}</h3>
                   <p className="text-sm text-[#475569] dark:text-[#c7d0da]">{job.company} - {job.location || job.workplace_mode}</p>
-                  <p className="mt-3 line-clamp-3 text-sm leading-6">{job.description}</p>
+                  <p className="mt-3 line-clamp-3 text-sm leading-6 text-[#334155] dark:text-[#dce3eb]">{job.description}</p>
                 </article>
               ))}
             </div>

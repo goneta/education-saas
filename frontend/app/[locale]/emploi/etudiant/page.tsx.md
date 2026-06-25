@@ -17,6 +17,7 @@
 
 - External student registration posts to the employment API and should not grant school-scoped dashboard data.
 - Payment state is returned by the backend and should remain visible to the user.
+- Labels and inputs must remain readable in dark mode because this page is a public onboarding route.
 
 ## Verification
 

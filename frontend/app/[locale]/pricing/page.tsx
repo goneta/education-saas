@@ -58,10 +58,10 @@ export default async function PricingPage({
   const locale = normalizeLocale(rawLocale)
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A]">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] dark:bg-[#1f2427] dark:text-[#f4f7fb]">
       <MarketingNav locale={locale} />
       <main>
-        <section className="border-b border-[#DDE5E8] bg-white py-20">
+        <section className="border-b border-[#DDE5E8] bg-white py-20 dark:border-[#3b4248] dark:bg-[#202528]">
           <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
             <p className="text-sm font-bold uppercase tracking-normal text-[#0F766E]">
               Tarification
@@ -69,7 +69,7 @@ export default async function PricingPage({
             <h1 className="mt-4 text-4xl font-bold tracking-normal sm:text-5xl">
               Choisissez le plan TeducAI adapté à votre établissement.
             </h1>
-            <p className="mt-5 text-lg leading-8 text-[#475569]">
+            <p className="mt-5 text-lg leading-8 text-[#475569] dark:text-[#c7d0da]">
               Les offres Pro et Max sont configurées selon le pays, la taille,
               les modules activés, les volumes de notification et le niveau
               d&apos;accompagnement souhaité.
@@ -82,10 +82,10 @@ export default async function PricingPage({
             {plans.map((plan) => (
               <article
                 key={plan.name}
-                className={`relative rounded-[22px] border bg-white p-7 shadow-sm ${
+                className={`relative rounded-[22px] border bg-white p-7 shadow-sm dark:bg-[#252b30] ${
                   plan.highlighted
-                    ? "border-[#0F766E] ring-2 ring-[#99F6E4]"
-                    : "border-[#DDE5E8]"
+                    ? "border-[#0F766E] ring-2 ring-[#99F6E4] dark:ring-[#0F766E]"
+                    : "border-[#DDE5E8] dark:border-[#56616a]"
                 }`}
               >
                 {plan.highlighted ? (
@@ -95,12 +95,12 @@ export default async function PricingPage({
                   </div>
                 ) : null}
                 <h2 className="text-2xl font-bold">{plan.name}</h2>
-                <p className="mt-3 text-sm leading-6 text-[#475569]">{plan.description}</p>
+                <p className="mt-3 text-sm leading-6 text-[#475569] dark:text-[#c7d0da]">{plan.description}</p>
                 {plan.billingOptions ? (
                   <fieldset className="mt-6 space-y-3">
                     <legend className="sr-only">Choix de facturation {plan.name}</legend>
                     {plan.billingOptions.map((option, index) => (
-                      <label key={option} className="flex items-center gap-3 rounded-[16px] border border-[#DDE5E8] px-4 py-3 text-sm font-semibold text-[#0F172A]">
+                      <label key={option} className="flex items-center gap-3 rounded-[16px] border border-[#DDE5E8] px-4 py-3 text-sm font-semibold text-[#0F172A] dark:border-[#56616a] dark:text-white">
                         <input
                           type="radio"
                           name={`billing-${plan.slug}`}
@@ -117,7 +117,7 @@ export default async function PricingPage({
                 )}
                 <div className="mt-7 space-y-3">
                   {plan.features.map((feature) => (
-                    <p key={feature} className="flex gap-2 text-sm text-[#334155]">
+                    <p key={feature} className="flex gap-2 text-sm text-[#334155] dark:text-[#dce3eb]">
                       <CheckCircle2 className="mt-0.5 h-4 w-4 text-[#0F766E]" />
                       {feature}
                     </p>
