@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- Authenticated recruiter ATS workspace for company profile/logo metadata, subscriptions, AI credits, enriched job offers, automatic candidate matching, ShareCode lookup, recruiter AI agent, own offers, archiving, and received applications.
+- Authenticated recruiter ATS workspace for company profile, SecureFile-backed company logo upload/preview/removal, subscriptions, checkout-based AI credits, enriched job offers, automatic candidate matching, ShareCode lookup, recruiter AI agent, own offers, archiving, and received applications.
 
 ## DOX Scope
 
@@ -19,7 +19,8 @@
 - Deleting an offer with applications should archive it rather than physically removing it.
 - Pending-payment recruiters can open and navigate the dashboard, see a red `Paiement: pending` banner, and receive a payment modal when attempting premium actions.
 - The page must not auto-call premium application/CV endpoints for pending recruiters; restricted reads are triggered by explicit actions and show the payment modal.
-- Logo/photo previews accept recruiter-managed URLs or compact data URLs; backend ownership and storage policy remain authoritative for any future binary upload endpoint.
+- Logo uploads accept JPG, PNG, or WebP files and rely on backend SecureFile ownership, validation, and public logo serving.
+- Recruiter AI credit purchase must route through `/dashboard/checkout?purchase=ai-credits` so balance updates remain payment-confirmation driven.
 
 ## Verification
 

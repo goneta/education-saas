@@ -29,6 +29,7 @@ type JobOffer = {
   id: number
   title: string
   company: string
+  company_logo_url?: string
   sector: string
   offer_type: string
   location?: string
@@ -132,7 +133,7 @@ export default function EmploiPage({ params }: Props) {
                 <div className="mt-3 flex flex-wrap gap-2">{(profile.skills || []).slice(0, 4).map(skill => <span key={skill} className="rounded-full bg-[#ECFDF5] px-2 py-1 text-xs text-[#047857]">{skill}</span>)}</div>
               </button>
             ))}
-            {!profiles.length && <p className="text-sm text-[#64748B]">Aucun profil public pour ce filtre.</p>}
+            {!profiles.length && <p className="text-sm text-[#64748B] dark:text-[#e5edf7]">Aucun profil public pour ce filtre.</p>}
           </div>
         </section>
 
@@ -143,7 +144,7 @@ export default function EmploiPage({ params }: Props) {
               {jobs.map(job => (
                 <article key={job.id} className="rounded-lg border border-[#DDE5E8] p-5 dark:border-[#3b4248]">
                   <p className="text-sm font-semibold text-[#0F766E]">{job.sector} - {job.offer_type}</p>
-                  <h3 className="mt-2 text-xl font-semibold">{job.title}</h3>
+                  <h3 className="mt-2 flex items-center gap-2 text-xl font-semibold">{job.company_logo_url && <img src={assetUrl(job.company_logo_url)} alt="" className="h-8 w-8 rounded-lg object-cover" />}{job.title}</h3>
                   <p className="text-sm text-[#475569] dark:text-[#c7d0da]">{job.company} - {job.location || job.workplace_mode}</p>
                   <p className="mt-3 line-clamp-3 text-sm leading-6 text-[#334155] dark:text-[#dce3eb]">{job.description}</p>
                 </article>
@@ -172,4 +173,10 @@ function CvPanel({ cv }: { cv: PublicCV }) {
       </div>
     </section>
   )
+}
+
+function assetUrl(path?: string) {
+  if (!path) return ""
+  if (path.startsWith("http") || path.startsWith("data:")) return path
+  return `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`
 }

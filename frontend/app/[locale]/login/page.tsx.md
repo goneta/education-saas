@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- React/Next.js TypeScript component or page file. It participates in Next.js App Router routing.
+- Public localized login page that presents role-aware TeducAI value copy beside the authenticated login form.
 
 ## DOX Scope
 
@@ -17,6 +17,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- The login hero, feature cards, grid background, and support card must remain high-contrast in dark mode.
 
 ## Verification
 

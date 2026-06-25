@@ -30,14 +30,14 @@ export function MarketingNav({ locale }: MarketingNavProps) {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[#DDE5E8] bg-white/95 backdrop-blur dark:border-[#3b4248] dark:bg-[#111827]/95">
+    <header className="sticky top-0 z-40 border-b border-[#DDE5E8] bg-white/95 backdrop-blur dark:border-[#3b4248] dark:bg-[#0f1419]">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href={`/${locale}`} aria-label="TeducAI Accueil">
           <TeducAILogo />
         </Link>
         <nav className="hidden items-center gap-7 text-sm font-medium text-[#334155] dark:text-white lg:flex">
           {links.map((link) => (
-            <Link key={link.href} href={link.href} className="hover:text-[#0F766E] dark:hover:text-white">
+            <Link key={link.href} href={link.href} className="hover:text-[#0F766E] dark:text-white dark:hover:text-[#5eead4]">
               {link.label}
             </Link>
           ))}

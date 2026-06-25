@@ -4,17 +4,19 @@ import re
 import logging
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy import func, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, selectinload
 
 from .. import audit, database, models, schemas, security
-from ..services import ai_service, employment
+from ..services import ai_service, employment, file_storage
 
 router = APIRouter(prefix="/employment", tags=["TeducAI Emploi"])
 logger = logging.getLogger(__name__)
+IMAGE_MIME_TYPES = {"image/png", "image/jpeg", "image/webp"}
 
 
 def _now() -> datetime:
@@ -116,6 +118,74 @@ def _cv_response(cv: models.StudentCV) -> dict:
     }
 
 
+def _active_file_response(row: models.SecureFile):
+    if row.storage_backend in {"s3", "minio"}:
+        url = file_storage.signed_download_url(row.storage_backend, row.storage_path, row.content_type, row.original_filename)
+        if url:
+            return RedirectResponse(url)
+    return FileResponse(file_storage.open_stored_file(row.storage_path), media_type=row.content_type)
+
+
+async def _store_employment_image(
+    upload: UploadFile,
+    *,
+    current_user: models.User,
+    db: Session,
+    entity_type: str,
+    entity_id: str,
+    display_name: str,
+    folder: str,
+) -> models.SecureFile:
+    if upload.content_type not in IMAGE_MIME_TYPES:
+        raise HTTPException(status_code=400, detail="Image JPG, PNG ou WebP requise.")
+    metadata = await file_storage.store_upload(
+        upload,
+        current_user.school_id,
+        document_name=display_name,
+        user_id=current_user.id,
+        folder=folder,
+    )
+    db.query(models.SecureFile).filter(
+        models.SecureFile.entity_type == entity_type,
+        models.SecureFile.entity_id == entity_id,
+        models.SecureFile.status == "active",
+    ).update({"status": "deleted", "deleted_at": _now()}, synchronize_session=False)
+    row = models.SecureFile(
+        **metadata,
+        category=entity_type,
+        visibility="public",
+        is_shareable=True,
+        approval_status="approved",
+        approved_by_id=current_user.id,
+        approved_at=_now(),
+        entity_type=entity_type,
+        entity_id=entity_id,
+        school_id=current_user.school_id,
+        uploaded_by_id=current_user.id,
+    )
+    db.add(row)
+    db.flush()
+    return row
+
+
+def _latest_employment_file(db: Session, entity_type: str, entity_id: str) -> models.SecureFile:
+    row = db.query(models.SecureFile).filter(
+        models.SecureFile.entity_type == entity_type,
+        models.SecureFile.entity_id == entity_id,
+        models.SecureFile.status == "active",
+    ).order_by(models.SecureFile.created_at.desc(), models.SecureFile.id.desc()).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Image introuvable.")
+    return row
+
+
+def _job_response(row: models.JobOffer) -> dict:
+    payload = schemas.JobOfferResponse.model_validate(row).model_dump()
+    payload["recruiter_logo_url"] = row.recruiter.logo_url if row.recruiter else None
+    payload["company_logo_url"] = row.recruiter.logo_url if row.recruiter else None
+    return payload
+
+
 @router.get("/sectors")
 def sectors():
     return {"sectors": employment.SECTORS}
@@ -129,7 +199,7 @@ def public_jobs(sector: str | None = None, db: Session = Depends(database.get_db
     query = db.query(models.JobOffer).filter(models.JobOffer.status == "published")
     if sector:
         query = query.filter(models.JobOffer.sector.ilike(f"%{sector}%"))
-    return query.order_by(models.JobOffer.created_at.desc()).limit(100).all()
+    return [_job_response(row) for row in query.order_by(models.JobOffer.created_at.desc()).limit(100).all()]
 
 
 @router.get("/skill-categories")
@@ -188,6 +258,22 @@ def recruiter_lookup_sharecode(payload: schemas.SharecodeLookup, request: Reques
     recruiter.cv_views_used += 1
     db.commit()
     return {**result, "ai_score": 82, "recruiter_views_used": recruiter.cv_views_used}
+
+
+@router.get("/cv/{cv_id}/photo")
+def get_cv_photo(cv_id: int, db: Session = Depends(database.get_db)):
+    cv = db.query(models.StudentCV).filter(models.StudentCV.id == cv_id, models.StudentCV.share_enabled == True).first()  # noqa: E712
+    if not cv:
+        raise HTTPException(status_code=404, detail="Photo introuvable.")
+    return _active_file_response(_latest_employment_file(db, "employment_cv_photo", str(cv.id)))
+
+
+@router.get("/recruiters/{recruiter_id}/logo")
+def get_recruiter_logo(recruiter_id: int, db: Session = Depends(database.get_db)):
+    recruiter = db.query(models.RecruiterProfile).filter(models.RecruiterProfile.id == recruiter_id, models.RecruiterProfile.is_active == True).first()  # noqa: E712
+    if not recruiter:
+        raise HTTPException(status_code=404, detail="Logo introuvable.")
+    return _active_file_response(_latest_employment_file(db, "employment_recruiter_logo", str(recruiter.id)))
 
 
 @router.post("/external-students/register")
@@ -378,6 +464,41 @@ def update_recruiter_profile(payload: schemas.RecruiterProfileUpdate, current_us
     return recruiter_me(current_user, db)
 
 
+@router.post("/recruiter/logo")
+async def upload_recruiter_logo(
+    logo: UploadFile = File(...),
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    recruiter = _recruiter_for_user(db, current_user)
+    row = await _store_employment_image(
+        logo,
+        current_user=current_user,
+        db=db,
+        entity_type="employment_recruiter_logo",
+        entity_id=str(recruiter.id),
+        display_name=f"Logo {recruiter.company_name}",
+        folder="employment/recruiters",
+    )
+    recruiter.logo_url = f"/employment/recruiters/{recruiter.id}/logo"
+    audit.record_audit(db, action="employment.recruiter.logo_updated", current_user=current_user, entity_type="recruiter_profile", entity_id=recruiter.id, details={"file_id": row.id})
+    db.commit()
+    return recruiter_me(current_user, db)
+
+
+@router.delete("/recruiter/logo", status_code=status.HTTP_204_NO_CONTENT)
+def delete_recruiter_logo(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    recruiter = _recruiter_for_user(db, current_user)
+    recruiter.logo_url = None
+    db.query(models.SecureFile).filter(
+        models.SecureFile.entity_type == "employment_recruiter_logo",
+        models.SecureFile.entity_id == str(recruiter.id),
+        models.SecureFile.status == "active",
+    ).update({"status": "deleted", "deleted_at": _now()}, synchronize_session=False)
+    audit.record_audit(db, action="employment.recruiter.logo_deleted", current_user=current_user, entity_type="recruiter_profile", entity_id=recruiter.id)
+    db.commit()
+
+
 @router.post("/recruiter/subscription")
 def update_recruiter_subscription(payload: schemas.RecruiterSubscriptionUpdate, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     recruiter = _recruiter_for_user(db, current_user)
@@ -448,6 +569,42 @@ def update_my_cv(payload: schemas.StudentCVUpdate, current_user: models.User = D
     return _cv_response(cv)
 
 
+@router.post("/me/cv/photo")
+async def upload_my_cv_photo(
+    photo: UploadFile = File(...),
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    cv = _student_cv_for_user(db, current_user)
+    row = await _store_employment_image(
+        photo,
+        current_user=current_user,
+        db=db,
+        entity_type="employment_cv_photo",
+        entity_id=str(cv.id),
+        display_name=f"Photo CV {cv.sharecode}",
+        folder="employment/cv",
+    )
+    cv.cv_photo_url = f"/employment/cv/{cv.id}/photo"
+    audit.record_audit(db, action="employment.cv.photo_updated", current_user=current_user, entity_type="student_cv", entity_id=cv.id, details={"file_id": row.id})
+    db.commit()
+    db.refresh(cv)
+    return _cv_response(cv)
+
+
+@router.delete("/me/cv/photo", status_code=status.HTTP_204_NO_CONTENT)
+def delete_my_cv_photo(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    cv = _student_cv_for_user(db, current_user)
+    cv.cv_photo_url = None
+    db.query(models.SecureFile).filter(
+        models.SecureFile.entity_type == "employment_cv_photo",
+        models.SecureFile.entity_id == str(cv.id),
+        models.SecureFile.status == "active",
+    ).update({"status": "deleted", "deleted_at": _now()}, synchronize_session=False)
+    audit.record_audit(db, action="employment.cv.photo_deleted", current_user=current_user, entity_type="student_cv", entity_id=cv.id)
+    db.commit()
+
+
 @router.post("/me/cv/regenerate-sharecode")
 def regenerate_sharecode(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     cv = _student_cv_for_user(db, current_user)
@@ -491,7 +648,7 @@ def delete_work_history(item_id: int, current_user: models.User = Depends(securi
 @router.get("/recruiter/jobs", response_model=list[schemas.JobOfferResponse])
 def recruiter_jobs(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     recruiter = _recruiter_for_user(db, current_user)
-    return db.query(models.JobOffer).filter(models.JobOffer.recruiter_id == recruiter.id).order_by(models.JobOffer.created_at.desc()).all()
+    return [_job_response(row) for row in db.query(models.JobOffer).filter(models.JobOffer.recruiter_id == recruiter.id).order_by(models.JobOffer.created_at.desc()).all()]
 
 
 @router.post("/recruiter/jobs", response_model=schemas.JobOfferResponse)
@@ -512,7 +669,7 @@ def create_job(payload: schemas.JobOfferCreate, current_user: models.User = Depe
     audit.record_audit(db, action="employment.job_offer.created", current_user=current_user, entity_type="job_offer", entity_id=row.id)
     db.commit()
     db.refresh(row)
-    return row
+    return _job_response(row)
 
 
 @router.put("/recruiter/jobs/{job_id}", response_model=schemas.JobOfferResponse)
@@ -528,7 +685,7 @@ def update_job(job_id: int, payload: schemas.JobOfferUpdate, current_user: model
     audit.record_audit(db, action="employment.job_offer.updated", current_user=current_user, entity_type="job_offer", entity_id=row.id, details={"fields": sorted(updates.keys())})
     db.commit()
     db.refresh(row)
-    return row
+    return _job_response(row)
 
 
 @router.delete("/recruiter/jobs/{job_id}")
@@ -581,7 +738,7 @@ def my_applications(current_user: models.User = Depends(security.get_current_use
 def my_recommended_jobs(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     cv = _student_cv_for_user(db, current_user)
     return [
-        {"job": schemas.JobOfferResponse.model_validate(item["job"]).model_dump(), "score": item["score"], "details": item["details"]}
+        {"job": _job_response(item["job"]), "score": item["score"], "details": item["details"]}
         for item in employment.recommended_jobs(db, cv, limit=20)
     ]
 

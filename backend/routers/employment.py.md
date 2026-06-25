@@ -18,6 +18,7 @@
 - Public sharecode lookup must not reveal private school, finance, payment, AI credit, family, or internal disciplinary data.
 - Public profile/search endpoints must honor an authenticated pending recruiter's payment restriction when a bearer token is present.
 - Authenticated student endpoints may create or update only the connected user's CV.
+- Student CV photos and recruiter logos are uploaded as JPG, PNG, or WebP files through SecureFile-backed endpoints, then exposed through public read routes only for share-enabled CVs or active recruiters.
 - Recruiter endpoints must stay limited to the connected recruiter's profile, offers, applications, and interviews.
 - Recruiter registration logs sanitized payloads, validation milestones, database row creation, side-effect failures, and stack traces on failure; passwords must never be logged.
 - Recruiter registration must return JSON `HTTPException` details for validation, integrity, and server failures instead of plain-text Uvicorn 500 responses.
@@ -26,6 +27,7 @@
 - Recruiters with `payment_status != confirmed` may read their dashboard profile and own offer list, but premium actions such as creating/updating/deleting offers, viewing CV/profile search results, viewing applications, or creating interviews must return a clean 402 payment-required message.
 - Super Admin employment endpoints must require `UserRole.SUPER_ADMIN` and expose operational summaries without bypassing recruiter/student ownership rules on mutating endpoints.
 - Job publication computes deterministic candidate match scores, stores an offer summary, and creates employment notifications for the recruiter and top matching students.
+- Job offer API responses include recruiter/company logo URLs so public listings, recommendations, and recruiter-owned offer lists can render the company brand consistently.
 - Keep audit events for CV creation/update, sharecode regeneration, job offer changes, applications, and interview invitations.
 
 ## Verification

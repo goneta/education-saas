@@ -11,6 +11,7 @@
 - Defines Pydantic API contracts for school settings, cash fee payments, AI providers, wallets, targeted credit packs, manual cash/free credit validation, school allocations, platform payments, and school payments.
 - AI provider contracts include account labels and available provider credits; platform monitoring contracts expose provider totals, sold/allocated credits, remaining platform credits, wallet balances, threshold settings, and low-credit alert state.
 - AI credit purchase contracts carry target context, provider, optional Mobile Money network, redirect URLs, manual-validation notes, checkout URL, and provider status.
+- Employment job offer responses expose optional recruiter/company logo URLs returned by the employment router.
 - Defines persistent subscription-change/response contracts and exposes managed-user phone/deletion state.
 - User, student, and teacher responses expose the optional protected profile-photo endpoint.
 - Context contracts cover active assignment/year changes, school-model activation, non-destructive deactivation, AI enablement, and model-level limits.

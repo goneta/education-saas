@@ -112,7 +112,7 @@ export default async function Home({
                 TeducAI – La Plateforme Intelligente de Gestion des
                 Établissements d’Enseignement et de Formation
               </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-[#475569] dark:text-[#c7d0da]">
+              <p className="mt-6 max-w-2xl text-lg leading-8 text-[#475569] dark:text-[#e5edf7]">
                 Automatisez la gestion administrative, académique et financière
                 de votre établissement grâce à l’Intelligence Artificielle.
               </p>
@@ -188,7 +188,7 @@ export default async function Home({
             {institutions.map((item) => (
               <span
                 key={item}
-                className="rounded-full border border-[#CBD5E1] bg-[#F8FAFC] px-4 py-2 text-sm font-medium text-[#334155] dark:border-[#3b4248] dark:bg-[#252b30] dark:text-[#dce3eb]"
+                className="rounded-full border border-[#CBD5E1] bg-[#F8FAFC] px-4 py-2 text-sm font-medium text-[#334155] dark:border-[#56616a] dark:bg-[#252b30] dark:text-white"
               >
                 {item}
               </span>
@@ -216,7 +216,7 @@ export default async function Home({
                       <Icon className="h-5 w-5" />
                     </div>
                     <h3 className="mt-5 text-xl font-semibold text-[#0F172A] dark:text-white">{feature.title}</h3>
-                    <p className="mt-3 text-sm leading-6 text-[#475569] dark:text-[#c7d0da]">{feature.text}</p>
+                    <p className="mt-3 text-sm leading-6 text-[#475569] dark:text-[#e5edf7]">{feature.text}</p>
                     <p className="mt-4 flex gap-2 text-sm font-medium text-[#0F766E] dark:text-white">
                       <CheckCircle2 className="mt-0.5 h-4 w-4" />
                       {feature.benefit}
@@ -236,7 +236,7 @@ export default async function Home({
                 <div key={highlight.title} className="border-l-4 border-[#0F766E] pl-5">
                   <FeatureIcon className="h-7 w-7 text-[#0F766E]" />
                   <h3 className="mt-4 text-xl font-semibold">{highlight.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#475569] dark:text-[#c7d0da]">{highlight.text}</p>
+                  <p className="mt-2 text-sm leading-6 text-[#475569] dark:text-[#e5edf7]">{highlight.text}</p>
                 </div>
               )
             })}

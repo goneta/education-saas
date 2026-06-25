@@ -20,7 +20,7 @@
 - Account labels must use the `account` translation namespace.
 - Preserve independent sidebar scrolling and dark-mode readability.
 - The active route uses the same dark surface as the hover state and keeps icons/text high contrast.
-- Sidebar entries are filtered by account type: recruiters see recruiter workspace links, external students see CV workspace links, school users do not see recruiter-only dashboards, and the Admin Emploi entry is visible only to `super_admin`.
+- Sidebar entries are filtered by account type: recruiters see recruiter workspace links, external students see CV workspace links, school users do not see recruiter-only dashboards, non-student school roles do not see the student Emploi dashboard link, and the Admin Emploi entry is visible only to `super_admin`.
 
 ## Verification
 

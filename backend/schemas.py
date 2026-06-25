@@ -1063,6 +1063,8 @@ class JobOfferUpdate(BaseModel):
 class JobOfferResponse(JobOfferCreate):
     id: int
     recruiter_id: int
+    recruiter_logo_url: Optional[str] = None
+    company_logo_url: Optional[str] = None
     ai_match_summary: Optional[Dict[str, Any]] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

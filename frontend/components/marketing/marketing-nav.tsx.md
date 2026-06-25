@@ -18,6 +18,7 @@
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
 - Public navigation, session-aware actions, and mobile controls remain readable in both light and dark themes.
+- Dark mode uses a solid dark top bar, white menu text, and the inherited white TeducAI logo treatment.
 - The authenticated Dashboard action must use role-aware routing instead of always linking to the school dashboard.
 
 ## Verification

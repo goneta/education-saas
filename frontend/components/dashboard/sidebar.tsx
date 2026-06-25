@@ -268,6 +268,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                             }
                             if (item.href.includes("/dashboard/emploi-recruteur")) return false
                             if (item.href.includes("/dashboard/emploi-admin") && user?.role !== "super_admin") return false
+                            if (item.href.endsWith("/dashboard/emploi")) return user?.role === "student"
                             return true
                         })
                         if (!items.length) return null

@@ -1,11 +1,13 @@
 "use client"
 
-import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react"
+import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react"
+import { useParams, useRouter } from "next/navigation"
 import { Bot, BriefcaseBusiness, Camera, Copy, RefreshCw, Save, Sparkles } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { API_BASE_URL } from "@/lib/config"
 import { useAuth } from "@/contexts/auth-context"
+import { normalizeLocale } from "@/lib/i18n"
 
 type WorkHistory = {
   id: number
@@ -31,6 +33,7 @@ type RecommendedJob = {
     salary_min?: number
     salary_max?: number
     currency?: string
+    company_logo_url?: string
   }
 }
 
@@ -41,14 +44,14 @@ type CV = {
   sectors?: string[]
   skills?: string[]
   languages?: string[]
-  photo_url?: string
+  cv_photo_url?: string
   desired_location?: string
   portfolio_url?: string
   looking_for_job: boolean
   privacy_settings?: Record<string, boolean>
-  detailed_skills?: Array<{ category: string; name: string; level: string; years: number; certificate?: string }>
-  academic_credentials?: Array<{ school: string; degree: string; field: string; start_year?: string; end_year?: string }>
-  certificates?: Array<{ name: string; issuer: string; year?: string; url?: string }>
+  detailed_skills?: Array<{ category: string; name: string; level: string; years: number; certificate?: string; description?: string }>
+  academic_credentials?: Array<{ school: string; degree: string; field: string; start_year?: string; end_year?: string; country?: string; city?: string; graduation_date?: string; grade?: string; description?: string }>
+  certificates?: Array<{ name: string; issuer: string; year?: string; url?: string; country?: string; issue_date?: string; expiration_date?: string; credential_id?: string; verification_url?: string; pdf_url?: string }>
   total_experience_years?: number
   work_history?: WorkHistory[]
 }
@@ -57,12 +60,18 @@ const skillTemplate = { category: "Technique", name: "", level: "intermediaire",
 
 export default function EmploymentDashboardPage() {
   const { token } = useAuth()
+  const router = useRouter()
+  const params = useParams()
+  const locale = normalizeLocale(params.locale as string)
   const [cv, setCv] = useState<CV | null>(null)
   const [status, setStatus] = useState("")
   const [recommendations, setRecommendations] = useState<RecommendedJob[]>([])
   const [agentPrompt, setAgentPrompt] = useState("Analyse mon profil et propose trois offres compatibles.")
   const [agentResult, setAgentResult] = useState("")
   const [credits, setCredits] = useState(250)
+  const [photoPreview, setPhotoPreview] = useState("")
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const photoInputRef = useRef<HTMLInputElement>(null)
   const [work, setWork] = useState({
     company: "",
     position: "",
@@ -85,26 +94,43 @@ export default function EmploymentDashboardPage() {
 
   useEffect(load, [headers])
 
-  const save = async (event: FormEvent) => {
-    event.preventDefault()
+  const validateCv = (candidate: CV) => {
+    for (const skill of candidate.detailed_skills || []) {
+      if (!skill.name?.trim()) return "Chaque competence detaillee doit avoir un nom."
+    }
+    for (const credential of candidate.academic_credentials || []) {
+      if (!credential.school?.trim() || !credential.degree?.trim()) return "Chaque parcours academique doit inclure une ecole et un diplome."
+    }
+    for (const certificate of candidate.certificates || []) {
+      if (!certificate.name?.trim() || !certificate.issuer?.trim()) return "Chaque certificat doit inclure un nom et un organisme emetteur."
+    }
+    return ""
+  }
+
+  const saveCv = async (candidate: CV) => {
     if (!cv || !headers) return
+    const validationMessage = validateCv(candidate)
+    if (validationMessage) {
+      setStatus(validationMessage)
+      return
+    }
     const response = await fetch(`${API_BASE_URL}/employment/me/cv`, {
       method: "PUT",
       headers,
       body: JSON.stringify({
-        professional_title: cv.professional_title,
-        summary: cv.summary,
-        sectors: cv.sectors || [],
-        skills: cv.skills || [],
-        languages: cv.languages || [],
-        photo_url: cv.photo_url,
-        portfolio_url: cv.portfolio_url,
-        desired_location: cv.desired_location,
-        detailed_skills: cv.detailed_skills || [],
-        academic_credentials: cv.academic_credentials || [],
-        certificates: cv.certificates || [],
-        looking_for_job: cv.looking_for_job,
-        privacy_settings: cv.privacy_settings || {},
+        professional_title: candidate.professional_title,
+        summary: candidate.summary,
+        sectors: candidate.sectors || [],
+        skills: candidate.skills || [],
+        languages: candidate.languages || [],
+        cv_photo_url: candidate.cv_photo_url,
+        portfolio_url: candidate.portfolio_url,
+        desired_location: candidate.desired_location,
+        detailed_skills: candidate.detailed_skills || [],
+        academic_credentials: candidate.academic_credentials || [],
+        certificates: candidate.certificates || [],
+        looking_for_job: candidate.looking_for_job,
+        privacy_settings: candidate.privacy_settings || {},
       }),
     })
     setStatus(response.ok ? "CV enregistre et recommandations recalculees." : "Enregistrement impossible.")
@@ -112,6 +138,12 @@ export default function EmploymentDashboardPage() {
       setCv(await response.json())
       load()
     }
+  }
+
+  const save = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!cv) return
+    await saveCv(cv)
   }
 
   const addWork = async () => {
@@ -142,10 +174,49 @@ export default function EmploymentDashboardPage() {
   }
 
   const buyCredits = async () => {
+    router.push(`/${locale}/dashboard/checkout?purchase=ai-credits&scope=user&credits=${credits}&return=emploi`)
+  }
+
+  const uploadPhoto = async (file: File) => {
     if (!headers) return
-    const response = await fetch(`${API_BASE_URL}/employment/me/ai-credits`, { method: "POST", headers, body: JSON.stringify({ credits, payment_provider: "manual" }) })
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setStatus("Format non accepte. Utilisez une image JPG, PNG ou WebP.")
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setStatus("Image trop lourde. La limite est de 5 Mo.")
+      return
+    }
+    setPhotoUploading(true)
+    const previewUrl = URL.createObjectURL(file)
+    setPhotoPreview(previewUrl)
+    const formData = new FormData()
+    formData.append("photo", file)
+    const response = await fetch(`${API_BASE_URL}/employment/me/cv/photo`, {
+      method: "POST",
+      headers: { Authorization: headers.Authorization },
+      body: formData,
+    })
     const data = await response.json().catch(() => null)
-    setStatus(response.ok ? `Demande de ${data?.credits_requested || credits} credits IA enregistree.` : data?.detail || "Achat de credits impossible.")
+    setPhotoUploading(false)
+    if (!response.ok) {
+      setStatus(data?.detail || "Televersement de la photo impossible.")
+      return
+    }
+    setCv(data)
+    setStatus("Photo CV enregistree.")
+  }
+
+  const deletePhoto = async () => {
+    if (!headers || !cv) return
+    const response = await fetch(`${API_BASE_URL}/employment/me/cv/photo`, { method: "DELETE", headers: { Authorization: headers.Authorization } })
+    if (!response.ok) {
+      setStatus("Suppression de la photo impossible.")
+      return
+    }
+    setPhotoPreview("")
+    setCv({ ...cv, cv_photo_url: "" })
+    setStatus("Photo CV supprimee.")
   }
 
   const runAgent = async () => {
@@ -181,12 +252,20 @@ export default function EmploymentDashboardPage() {
         <Panel title="Photo et sharecode">
           <div className="grid gap-4 sm:grid-cols-[120px_1fr]">
             <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-xl border bg-[#F8FAFC] dark:border-[#56616a] dark:bg-[#1f2427]">
-              {cv.photo_url ? <img src={cv.photo_url} alt="Photo CV" className="h-full w-full object-cover" /> : <Camera className="h-8 w-8 text-[#0F766E]" />}
+              {photoPreview || cv.cv_photo_url ? <img src={assetUrl(photoPreview || cv.cv_photo_url)} alt="Photo CV" className="h-full w-full object-cover" /> : <Camera className="h-8 w-8 text-[#0F766E]" />}
             </div>
             <div className="grid gap-3">
-              <Field label="Photo URL ou image compressee" value={cv.photo_url || ""} onChange={value => setCv({ ...cv, photo_url: value })} />
+              <label className="grid gap-1 text-sm font-medium text-[#111827] dark:text-white">
+                Photo JPG, PNG ou WebP
+                <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={event => {
+                  const file = event.target.files?.[0]
+                  if (file) void uploadPhoto(file)
+                  event.currentTarget.value = ""
+                }} />
+                <Button type="button" variant="outline" onClick={() => photoInputRef.current?.click()} disabled={photoUploading}>{photoUploading ? "Televersement..." : "Choisir une photo"}</Button>
+              </label>
               <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" onClick={() => setCv({ ...cv, photo_url: "" })}>Supprimer</Button>
+                <Button type="button" variant="outline" onClick={deletePhoto}>Supprimer</Button>
                 <div className="rounded-full border px-4 py-2 text-sm font-semibold dark:border-[#56616a]">{cv.sharecode}</div>
               </div>
             </div>
@@ -233,8 +312,9 @@ export default function EmploymentDashboardPage() {
             add={() => setCv({ ...cv, detailed_skills: [...(cv.detailed_skills || []), skillTemplate] })}
             render={(item, index) => (
               <div className="grid gap-2 rounded-lg border p-3 dark:border-[#56616a]">
-                {(["category", "name", "level", "certificate"] as const).map(key => <input key={key} value={String(item[key] || "")} placeholder={key} onChange={event => updateArray(cv, setCv, "detailed_skills", index, { ...item, [key]: event.target.value })} className="min-h-10 rounded-lg border px-3 dark:border-[#56616a] dark:bg-[#1f2427]" />)}
+                {(["category", "name", "level", "certificate", "description"] as const).map(key => <input key={key} value={String(item[key] || "")} placeholder={key} onChange={event => updateArray(cv, setCv, "detailed_skills", index, { ...item, [key]: event.target.value })} className="min-h-10 rounded-lg border px-3 dark:border-[#56616a] dark:bg-[#1f2427]" />)}
                 <input type="number" value={item.years || 0} onChange={event => updateArray(cv, setCv, "detailed_skills", index, { ...item, years: Number(event.target.value) })} className="min-h-10 rounded-lg border px-3 dark:border-[#56616a] dark:bg-[#1f2427]" />
+                <ItemActions onSave={() => saveCv(cv)} onDelete={() => removeArrayItem(cv, setCv, saveCv, "detailed_skills", index)} />
               </div>
             )}
           />
@@ -245,7 +325,8 @@ export default function EmploymentDashboardPage() {
             add={() => setCv({ ...cv, academic_credentials: [...(cv.academic_credentials || []), { school: "", degree: "", field: "" }] })}
             render={(item, index) => (
               <div className="grid gap-2 rounded-lg border p-3 dark:border-[#56616a]">
-                {(["school", "degree", "field", "start_year", "end_year"] as const).map(key => <input key={key} value={String(item[key] || "")} placeholder={key} onChange={event => updateArray(cv, setCv, "academic_credentials", index, { ...item, [key]: event.target.value })} className="min-h-10 rounded-lg border px-3 dark:border-[#56616a] dark:bg-[#1f2427]" />)}
+                {(["school", "degree", "field", "country", "city", "start_year", "end_year", "graduation_date", "grade", "description"] as const).map(key => <input key={key} value={String(item[key] || "")} placeholder={key} onChange={event => updateArray(cv, setCv, "academic_credentials", index, { ...item, [key]: event.target.value })} className="min-h-10 rounded-lg border px-3 dark:border-[#56616a] dark:bg-[#1f2427]" />)}
+                <ItemActions onSave={() => saveCv(cv)} onDelete={() => removeArrayItem(cv, setCv, saveCv, "academic_credentials", index)} />
               </div>
             )}
           />
@@ -256,7 +337,8 @@ export default function EmploymentDashboardPage() {
             add={() => setCv({ ...cv, certificates: [...(cv.certificates || []), { name: "", issuer: "" }] })}
             render={(item, index) => (
               <div className="grid gap-2 rounded-lg border p-3 dark:border-[#56616a]">
-                {(["name", "issuer", "year", "url"] as const).map(key => <input key={key} value={String(item[key] || "")} placeholder={key} onChange={event => updateArray(cv, setCv, "certificates", index, { ...item, [key]: event.target.value })} className="min-h-10 rounded-lg border px-3 dark:border-[#56616a] dark:bg-[#1f2427]" />)}
+                {(["name", "issuer", "country", "year", "issue_date", "expiration_date", "credential_id", "url", "verification_url", "pdf_url"] as const).map(key => <input key={key} value={String(item[key] || "")} placeholder={key} onChange={event => updateArray(cv, setCv, "certificates", index, { ...item, [key]: event.target.value })} className="min-h-10 rounded-lg border px-3 dark:border-[#56616a] dark:bg-[#1f2427]" />)}
+                <ItemActions onSave={() => saveCv(cv)} onDelete={() => removeArrayItem(cv, setCv, saveCv, "certificates", index)} />
               </div>
             )}
           />
@@ -287,7 +369,7 @@ export default function EmploymentDashboardPage() {
               <div key={job.id} className="rounded-lg border p-4 dark:border-[#56616a]">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="font-semibold">{job.title}</p>
+                    <p className="flex items-center gap-2 font-semibold">{job.company_logo_url && <img src={assetUrl(job.company_logo_url)} alt="" className="h-8 w-8 rounded-lg object-cover" />}{job.title}</p>
                     <p className="text-sm text-[#64748B] dark:text-[#c7d0da]">{job.company} - {job.sector}</p>
                   </div>
                   <strong className="rounded-full bg-[#ECFDF5] px-3 py-1 text-sm text-[#047857]">{score}%</strong>
@@ -310,10 +392,28 @@ function csv(value: string) {
   return value.split(",").map(item => item.trim()).filter(Boolean)
 }
 
+function assetUrl(path?: string) {
+  if (!path) return ""
+  if (path.startsWith("blob:") || path.startsWith("http") || path.startsWith("data:")) return path
+  return `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`
+}
+
 function updateArray<K extends "detailed_skills" | "academic_credentials" | "certificates">(cv: CV, setCv: (cv: CV) => void, key: K, index: number, item: NonNullable<CV[K]>[number]) {
   const next = [...((cv[key] || []) as NonNullable<CV[K]>)]
   next[index] = item as never
   setCv({ ...cv, [key]: next })
+}
+
+function removeArrayItem<K extends "detailed_skills" | "academic_credentials" | "certificates">(cv: CV, setCv: (cv: CV) => void, saveCv: (candidate: CV) => Promise<void>, key: K, index: number) {
+  const nextItems = [...((cv[key] || []) as NonNullable<CV[K]>)]
+  nextItems.splice(index, 1)
+  const nextCv = { ...cv, [key]: nextItems }
+  setCv(nextCv)
+  void saveCv(nextCv)
+}
+
+function ItemActions({ onSave, onDelete }: { onSave: () => void; onDelete: () => void }) {
+  return <div className="flex flex-wrap gap-2"><Button type="button" className="bg-black text-white" onClick={onSave}>Enregistrer</Button><Button type="button" variant="outline" onClick={onDelete}>Supprimer</Button></div>
 }
 
 function Field({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (value: string) => void; type?: string }) {
@@ -338,5 +438,5 @@ function Repeater<T>({ items, add, render }: { items: T[]; add: () => void; rend
 }
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
-  return <section className="rounded-lg border bg-white p-5 dark:border-[#3b4248] dark:bg-[#252b30]"><h2 className="mb-4 text-lg font-semibold">{title}</h2>{children}</section>
+  return <section data-teducai-collapsible="false" className="rounded-lg border bg-white p-5 dark:border-[#3b4248] dark:bg-[#252b30]"><h2 className="mb-4 text-lg font-semibold">{title}</h2>{children}</section>
 }

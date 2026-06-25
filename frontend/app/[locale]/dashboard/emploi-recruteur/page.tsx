@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useEffect, useMemo, useState } from "react"
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Bot, BriefcaseBusiness, Building2, CreditCard, ImageUp, Plus, Search, Sparkles } from "lucide-react"
 
@@ -68,6 +68,9 @@ export default function RecruiterDashboardPage() {
   const [agentResult, setAgentResult] = useState("")
   const [subscription, setSubscription] = useState({ plan: "job_posts", duration_months: 1, auto_renew: false, payment_provider: "manual" })
   const [creditPurchase, setCreditPurchase] = useState({ credits: 500, payment_provider: "manual" })
+  const [logoPreview, setLogoPreview] = useState("")
+  const [logoUploading, setLogoUploading] = useState(false)
+  const logoInputRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
     title: "",
     company: "",
@@ -140,11 +143,48 @@ export default function RecruiterDashboardPage() {
   }
 
   const buyCredits = async () => {
+    router.push(`/${locale}/dashboard/checkout?purchase=ai-credits&scope=user&credits=${creditPurchase.credits}&return=emploi-recruteur`)
+  }
+
+  const uploadLogo = async (file: File) => {
     if (!headers) return
-    const response = await fetch(`${API_BASE_URL}/employment/recruiter/ai-credits`, { method: "POST", headers, body: JSON.stringify(creditPurchase) })
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setStatus("Format non accepte. Utilisez une image JPG, PNG ou WebP.")
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setStatus("Image trop lourde. La limite est de 5 Mo.")
+      return
+    }
+    setLogoUploading(true)
+    setLogoPreview(URL.createObjectURL(file))
+    const formData = new FormData()
+    formData.append("logo", file)
+    const response = await fetch(`${API_BASE_URL}/employment/recruiter/logo`, {
+      method: "POST",
+      headers: { Authorization: headers.Authorization },
+      body: formData,
+    })
     const data = await response.json().catch(() => null)
-    setStatus(response.ok ? `Credits IA demandes: ${data?.credits_requested || creditPurchase.credits}` : data?.detail || "Achat impossible.")
-    if (response.ok) load()
+    setLogoUploading(false)
+    if (!response.ok) {
+      setStatus(data?.detail || "Televersement du logo impossible.")
+      return
+    }
+    setProfile(data)
+    setStatus("Logo entreprise enregistre.")
+  }
+
+  const deleteLogo = async () => {
+    if (!headers || !profile) return
+    const response = await fetch(`${API_BASE_URL}/employment/recruiter/logo`, { method: "DELETE", headers: { Authorization: headers.Authorization } })
+    if (!response.ok) {
+      setStatus("Suppression du logo impossible.")
+      return
+    }
+    setLogoPreview("")
+    setProfile({ ...profile, logo_url: "" })
+    setStatus("Logo entreprise supprime.")
   }
 
   const createJob = async (event: FormEvent) => {
@@ -232,12 +272,20 @@ export default function RecruiterDashboardPage() {
           <h2 className="flex items-center gap-2 text-lg font-semibold"><ImageUp className="h-5 w-5" /> Logo et entreprise</h2>
           <div className="mt-4 grid gap-3 md:grid-cols-[120px_1fr]">
             <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-xl border bg-[#F8FAFC] dark:border-[#56616a] dark:bg-[#1f2427]">
-              {profile?.logo_url ? <img src={profile.logo_url} alt="Logo entreprise" className="h-full w-full object-cover" /> : <Building2 className="h-8 w-8 text-[#0F766E]" />}
+              {logoPreview || profile?.logo_url ? <img src={assetUrl(logoPreview || profile?.logo_url)} alt="Logo entreprise" className="h-full w-full object-cover" /> : <Building2 className="h-8 w-8 text-[#0F766E]" />}
             </div>
             <div className="grid gap-3">
-              <Field label="Logo URL ou data image compressee" value={profile?.logo_url || ""} onChange={value => setProfile(previous => previous ? { ...previous, logo_url: value } : previous)} />
+              <label className="grid gap-1 text-sm font-medium text-[#111827] dark:text-white">
+                Logo JPG, PNG ou WebP
+                <input ref={logoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={event => {
+                  const file = event.target.files?.[0]
+                  if (file) void uploadLogo(file)
+                  event.currentTarget.value = ""
+                }} />
+                <Button type="button" variant="outline" onClick={() => logoInputRef.current?.click()} disabled={logoUploading}>{logoUploading ? "Televersement..." : "Choisir un logo"}</Button>
+              </label>
               <div className="flex gap-2">
-                <Button type="button" variant="outline" onClick={() => setProfile(previous => previous ? { ...previous, logo_url: "" } : previous)}>Supprimer</Button>
+                <Button type="button" variant="outline" onClick={deleteLogo}>Supprimer</Button>
                 <Button type="submit" className="bg-black text-white">Enregistrer</Button>
               </div>
             </div>
@@ -363,6 +411,12 @@ export default function RecruiterDashboardPage() {
 
 function csv(value: string) {
   return value.split(",").map(item => item.trim()).filter(Boolean)
+}
+
+function assetUrl(path?: string) {
+  if (!path) return ""
+  if (path.startsWith("blob:") || path.startsWith("http") || path.startsWith("data:")) return path
+  return `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`
 }
 
 function Field({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (value: string) => void; type?: string }) {

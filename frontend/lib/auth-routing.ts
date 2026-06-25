@@ -48,6 +48,7 @@ export function canAccessDashboardPath(user: AuthUser | null | undefined, pathna
   if (accountType === "external_student") {
     return (relativePath.startsWith("/dashboard/emploi") && !relativePath.startsWith("/dashboard/emploi-recruteur")) || relativePath.startsWith("/dashboard/account") || relativePath.startsWith("/dashboard/help")
   }
+  if (relativePath.startsWith("/dashboard/emploi-admin")) return accountType === "super_admin"
   if (relativePath.startsWith("/dashboard/emploi-recruteur")) return false
   if (relativePath.startsWith("/dashboard/emploi") && accountType !== "student") return false
   return true

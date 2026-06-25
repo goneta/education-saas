@@ -7,6 +7,7 @@
 ## Purpose
 
 - Public TeducAI Emploi page with sharecode lookup, sector-based public CV search, published job offers, and links to external student and recruiter registration.
+- Published job offers render recruiter/company logo URLs when the backend provides them.
 
 ## DOX Scope
 
