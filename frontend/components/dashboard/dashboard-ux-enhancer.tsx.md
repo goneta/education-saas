@@ -28,6 +28,8 @@
 - Shared promise-based confirmations are rendered here for dashboard modules and bulk deletion.
 - Every enhanced table receives a reusable dark-compatible toolbar for global search, column sorting, page size/pagination, reset, and persisted Table/Card view.
 - Placeholder, loading, and empty-state rows are excluded from result counts, selection controls, and standardized row actions.
+- Help modals and drawers must load the standalone `/{locale}/help` route so dashboard sidebar, top bar, and AI agent panels are not embedded inside the help window.
+- Contextual help routing maps Employment dashboards to the Employment help section.
 
 ## Verification
 

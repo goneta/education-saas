@@ -343,6 +343,29 @@ const HELP_SECTIONS: HelpSection[] = [
         result: "Le document est stocke dans l'espace de l'etablissement, les partages sont traces, les destinataires recoivent l'acces autorise et chaque consultation ou telechargement sensible est journalise.",
     },
     {
+        id: "employment",
+        title: "Module Emploi",
+        icon: BriefcaseBusiness,
+        purpose: "Gerer les CV intelligents, ShareCodes, inscriptions recruteurs, offres d'emploi, matching IA, candidatures, paiements recruteurs et credits IA.",
+        steps: [
+            "Les etudiants mettent a jour leur CV, leurs competences, parcours academique, certificats, experiences et preferences de confidentialite.",
+            "Le ShareCode permet a un recruteur autorise de consulter uniquement les informations rendues publiques par l'etudiant.",
+            "Les recruteurs peuvent acceder au dashboard meme si le paiement est en attente, mais les actions premium restent bloquees jusqu'au paiement.",
+            "Pour publier une offre, renseignez titre, entreprise, secteur, salaire, competences, langues, date limite et description.",
+            "Le matching IA compare les offres aux CV publics autorises et propose les meilleurs candidats selon competences, secteur, experience et langues.",
+            "Les achats de credits IA passent par le checkout TeducAI afin que paiement, facture, notification et solde soient synchronises.",
+            "Le Super Admin Emploi surveille les recruteurs, CV, offres, candidatures, paiements en attente et notifications du module.",
+        ],
+        fields: [
+            { name: "ShareCode", type: "Texte unique", expected: "Code CV etudiant, par exemple STU2024001-KC.", validation: "Doit exister, etre actif et respecter les permissions de confidentialite." },
+            { name: "Statut paiement recruteur", type: "Etat", expected: "pending ou confirmed.", validation: "pending bloque les actions premium mais laisse le dashboard consultable." },
+            { name: "Offre d'emploi", type: "Formulaire", expected: "Titre, secteur, contrat, competences, langues, salaire et date limite.", validation: "Les champs numeriques sont normalises avant creation." },
+            { name: "Credits IA", type: "Pack payant", expected: "Nom du pack, nombre de credits, prix, devise et description.", validation: "Les credits sont ajoutes uniquement apres confirmation du paiement." },
+            { name: "Logo recruteur", type: "Image", expected: "JPG, PNG ou WebP.", validation: "Le fichier est stocke et rendu public seulement pour les offres et profils autorises." },
+        ],
+        result: "Le module Emploi garde les profils et recruteurs separes, applique les restrictions de paiement, calcule les statistiques depuis la base et journalise les actions sensibles.",
+    },
+    {
         id: "internships",
         title: "Gestion des stages en entreprise",
         icon: BriefcaseBusiness,
@@ -437,7 +460,7 @@ const HELP_SECTIONS: HelpSection[] = [
     },
 ]
 
-export default function HelpPage() {
+export function HelpContent({ embedded = false }: { embedded?: boolean }) {
     const searchParams = useSearchParams()
     const [query, setQuery] = useState("")
     const [activeId, setActiveId] = useState(HELP_SECTIONS[0].id)
@@ -468,7 +491,7 @@ export default function HelpPage() {
     const activeSection = filteredSections.find(section => section.id === activeId) || filteredSections[0] || HELP_SECTIONS[0]
 
     return (
-        <div className="space-y-6">
+        <div className={embedded ? "space-y-6 p-4 sm:p-6" : "space-y-6"}>
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <h1 className="apple-page-title">Centre d&apos;aide TeducAI</h1>
@@ -548,6 +571,10 @@ export default function HelpPage() {
             </div>
         </div>
     )
+}
+
+export default function HelpPage() {
+    return <HelpContent />
 }
 
 function HelpSectionCard({ section }: { section: HelpSection }) {

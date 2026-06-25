@@ -8,6 +8,7 @@
 
 - React/Next.js TypeScript component or page file. It participates in Next.js App Router routing.
 - Provides the dashboard help center, including AI cash/free validation, school credit allocation and revocation, provider fallback, wallet limits, separated payments, mobile UX, documents, internships, settings, finance, and core workflows.
+- Exports `HelpContent` so standalone help routes, dashboard page mode, modal mode, and drawer mode share the same contextual sections.
 
 ## DOX Scope
 
@@ -18,6 +19,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- Include a dedicated Employment help section for student CVs, ShareCodes, recruiters, payment restrictions, offers, matching, and AI credits.
 
 ## Verification
 

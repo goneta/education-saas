@@ -73,6 +73,16 @@ const modules = [
 
 const academicYears = ["2024-2025", "2025-2026", "2026-2027"]
 
+const platformModules = [
+    { label: "Comptes utilisateurs", href: "/dashboard/settings", description: "Activation, suspension, roles, permissions, reset d'acces et activite." },
+    { label: "Abonnements", href: "/dashboard/settings", description: "Plans TeducAI, abonnements recruteurs, abonnements etablissements et statuts." },
+    { label: "Credits IA", href: "/dashboard/ai-credits", description: "Packs, prix, achats, consommations, ajustements et portefeuilles." },
+    { label: "Fournisseurs IA", href: "/dashboard/ai-command-center", description: "OpenAI, Anthropic, Gemini, Mistral, DeepSeek, Grok, OpenRouter et priorites." },
+    { label: "Site TeducAI", href: "/", description: "Pages publiques, hero, FAQ, temoignages, tarifs, partenaires, SEO et footer." },
+    { label: "Apparence", href: "/dashboard/settings", description: "Themes, couleurs, logos, favicon, dark mode et parametres globaux." },
+    { label: "Permissions", href: "/dashboard/settings", description: "Roles, acces par module, matrices de permissions et utilisateurs affectes." },
+]
+
 export default function DashboardPage() {
     const { token, user } = useAuth()
     const params = useParams()
@@ -271,6 +281,16 @@ function SuperAdminControlCenter({ token, locale }: { token: string | null; loca
                                     {[<Plus key="plus" />, <Pencil key="edit" />, <Trash2 key="trash" />, <ArchiveRestore key="restore" />, <Upload key="upload" />, <Download key="download" />][index]}
                                     {action}
                                 </button>
+                            ))}
+                        </div>
+                    </Panel>
+                    <Panel title="Administration plateforme TeducAI">
+                        <div className="grid gap-2">
+                            {platformModules.map(item => (
+                                <Link key={item.label} href={`/${locale}${item.href}`} className="rounded-lg border p-3 text-sm transition hover:border-black dark:border-[#56616a] dark:hover:border-white">
+                                    <strong>{item.label}</strong>
+                                    <span className="mt-1 block text-[#64748B] dark:text-[#dce3eb]">{item.description}</span>
+                                </Link>
                             ))}
                         </div>
                     </Panel>

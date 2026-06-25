@@ -1,11 +1,13 @@
 "use client"
 
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react"
+import { useParams } from "next/navigation"
 import { Bell, BriefcaseBusiness, Building2, GraduationCap, Send, Users } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { API_BASE_URL } from "@/lib/config"
 import { useAuth } from "@/contexts/auth-context"
+import { normalizeLocale } from "@/lib/i18n"
 
 type Overview = {
   stats: {
@@ -31,6 +33,8 @@ const emptyOverview: Overview = {
 
 export default function EmploymentAdminPage() {
   const { token, user } = useAuth()
+  const params = useParams()
+  const locale = normalizeLocale(params.locale as string)
   const [overview, setOverview] = useState<Overview>(emptyOverview)
   const [status, setStatus] = useState("")
   const [notification, setNotification] = useState({ audience: "all", title: "", message: "" })
@@ -77,7 +81,7 @@ export default function EmploymentAdminPage() {
         <Stat icon={<GraduationCap />} label="Etudiants CV" value={overview.stats.students} />
         <Stat icon={<Building2 />} label="Recruteurs" value={overview.stats.recruiters} />
         <Stat icon={<BriefcaseBusiness />} label="Offres actives" value={overview.stats.active_jobs} />
-        <Stat icon={<Users />} label="Paiements pending" value={overview.stats.pending_recruiters} />
+        <Stat icon={<Users />} label={locale === "en" ? "Pending Payments" : "Paiements en attente"} value={overview.stats.pending_recruiters} />
         <Stat icon={<Bell />} label="Candidatures" value={overview.stats.applications} />
       </section>
 

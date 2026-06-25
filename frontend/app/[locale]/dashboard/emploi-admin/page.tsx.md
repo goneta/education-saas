@@ -17,6 +17,8 @@
 
 - The page is visible only to `super_admin` users in the dashboard UI and must rely on backend Super Admin enforcement for data access.
 - Mutating controls should use the `/employment/admin/*` APIs and must not bypass recruiter or student ownership checks in regular employment endpoints.
+- Statistic labels must be locale-aware; French uses `Paiements en attente`, English uses `Pending Payments`.
+- The page consumes live overview counts from `/employment/admin/overview`, including zero values for missing jobs, applications, or pending payments.
 - Keep cards, forms, and lists dark-mode readable and mobile-safe.
 
 ## Verification

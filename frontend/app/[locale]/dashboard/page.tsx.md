@@ -16,6 +16,7 @@
 ## Maintenance Notes
 
 - Super Admin mode loads authorized schools and audit logs from system APIs, exposes `Catalogue Global` and `Gestion par établissement` tabs, and provides module links for each major sidebar rubric.
+- Super Admin mode also exposes platform administration links for users, subscriptions, AI credits, AI providers, public site management, appearance, and permissions.
 - School management actions may create a new establishment or toggle active/suspended status through existing Super Admin-protected system endpoints.
 - The management context includes rubric, school, academic year, model, country, city, and status filters; deeper CRUD stays owned by the linked domain pages and backend RBAC.
 

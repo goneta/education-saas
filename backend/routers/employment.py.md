@@ -26,6 +26,7 @@
 - Core recruiter account/profile creation must not fail solely because payment or audit side-effect rows fail; those failures are logged after the core account is committed.
 - Recruiters with `payment_status != confirmed` may read their dashboard profile and own offer list, but premium actions such as creating/updating/deleting offers, viewing CV/profile search results, viewing applications, or creating interviews must return a clean 402 payment-required message.
 - Super Admin employment endpoints must require `UserRole.SUPER_ADMIN` and expose operational summaries without bypassing recruiter/student ownership rules on mutating endpoints.
+- Super Admin employment overview stats expose frontend-consumed keys (`students`, `recruiters`, `active_jobs`, `pending_recruiters`, `applications`) and legacy aliases where useful; counts must come from live database queries.
 - Job publication computes deterministic candidate match scores, stores an offer summary, and creates employment notifications for the recruiter and top matching students.
 - Job offer API responses include recruiter/company logo URLs so public listings, recommendations, and recruiter-owned offer lists can render the company brand consistently.
 - Keep audit events for CV creation/update, sharecode regeneration, job offer changes, applications, and interview invitations.

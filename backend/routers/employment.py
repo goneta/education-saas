@@ -803,16 +803,24 @@ def employment_admin_overview(current_user: models.User = Depends(security.get_c
     if current_user.role != models.UserRole.SUPER_ADMIN:
         raise HTTPException(status_code=403, detail="Super Admin requis.")
     total_revenue = db.query(func.coalesce(func.sum(models.PlatformPayment.amount), 0)).filter(models.PlatformPayment.payment_type.ilike("employment%")).scalar() or 0
+    students_count = db.query(models.StudentCV).count()
+    recruiters_count = db.query(models.RecruiterProfile).count()
+    active_jobs_count = db.query(models.JobOffer).filter(models.JobOffer.status == "published").count()
+    pending_recruiters_count = db.query(models.RecruiterProfile).filter(models.RecruiterProfile.payment_status == "pending").count()
+    applications_count = db.query(models.JobApplication).count()
     recruiters = db.query(models.RecruiterProfile).order_by(models.RecruiterProfile.created_at.desc()).limit(50).all()
     jobs = db.query(models.JobOffer).order_by(models.JobOffer.created_at.desc()).limit(50).all()
     notifications = db.query(models.EmploymentNotification).order_by(models.EmploymentNotification.created_at.desc()).limit(50).all()
     return {
         "stats": {
-            "recruiters": db.query(models.RecruiterProfile).count(),
+            "students": students_count,
+            "recruiters": recruiters_count,
+            "active_jobs": active_jobs_count,
+            "pending_recruiters": pending_recruiters_count,
+            "applications": applications_count,
             "active_students": db.query(models.StudentCV).filter(models.StudentCV.looking_for_job == True).count(),  # noqa: E712
-            "published_jobs": db.query(models.JobOffer).filter(models.JobOffer.status == "published").count(),
+            "published_jobs": active_jobs_count,
             "expired_jobs": db.query(models.JobOffer).filter(models.JobOffer.status == "expired").count(),
-            "applications": db.query(models.JobApplication).count(),
             "subscription_revenue": float(total_revenue),
             "ai_credit_revenue": float(total_revenue),
         },
@@ -837,6 +845,7 @@ def employment_admin_overview(current_user: models.User = Depends(security.get_c
                 "sector": row.sector,
                 "status": row.status,
                 "applications": len(row.applications),
+                "applications_count": len(row.applications),
             }
             for row in jobs
         ],

@@ -28,6 +28,9 @@ const ICONS: Record<string, string> = {
 }
 
 const MODULE_BY_PATH: Array<[RegExp, string, string]> = [
+    [/emploi-recruteur/, "employment", "employment"],
+    [/emploi-admin/, "employment", "employment"],
+    [/dashboard\/emploi/, "employment", "employment"],
     [/ai-command-center/, "ai_automation", "ai_first_erp"],
     [/ai-credits/, "ai_automation", "ai_credits"],
     [/students/, "students", "students"],
@@ -743,10 +746,11 @@ export function DashboardUxEnhancer() {
     }, [])
 
     const helpUrl = `/${locale}/dashboard/help?section=${helpSection}`
+    const embeddedHelpUrl = `/${locale}/help?section=${helpSection}`
     const openHelp = () => {
         const mode = (localStorage.getItem("teducai_help_mode") as HelpMode) || helpMode
         if (mode === "page") window.location.href = helpUrl
-        else setHelpFrame(helpUrl)
+        else setHelpFrame(embeddedHelpUrl)
     }
 
     const bulkRows = () => Array.from(document.querySelectorAll<HTMLInputElement>("main [data-teducai-row-select]:checked")).map(input => input.closest("tr")).filter(Boolean) as HTMLTableRowElement[]
@@ -869,8 +873,8 @@ export function DashboardUxEnhancer() {
                 </div>
             )}
             {helpFrame && (
-                <div className={helpMode === "drawer" ? "fixed inset-y-0 right-0 z-[1500] w-full max-w-xl bg-white shadow-2xl" : "fixed inset-0 z-[1500] flex items-center justify-center bg-black/30 p-4"}>
-                    <div className={helpMode === "drawer" ? "flex h-full flex-col" : "flex h-[86vh] w-full max-w-5xl flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl"}>
+                <div className={helpMode === "drawer" ? "fixed inset-y-0 right-0 z-[1500] w-full max-w-xl bg-white shadow-2xl dark:bg-[#111827]" : "fixed inset-0 z-[1500] flex items-center justify-center bg-black/45 p-4"}>
+                    <div className={helpMode === "drawer" ? "flex h-full flex-col" : "flex h-[86vh] w-full max-w-5xl flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl dark:bg-[#111827]"}>
                         <div className="flex items-center justify-between border-b px-4 py-3">
                             <p className="font-semibold">Aide TeducAI</p>
                             <button onClick={() => setHelpFrame(null)} className="rounded-full p-2 hover:bg-[#F5F5F7]"><X className="h-5 w-5" /></button>
