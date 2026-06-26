@@ -59,7 +59,7 @@ function shortDate(daysFromToday = 0): string {
 }
 
 async function bootstrapSchoolAndLogin(request: APIRequestContext, suffix: string): Promise<AuthContext> {
-  const email = process.env.E2E_ADMIN_EMAIL || `admin.${suffix}@teducai.test`;
+  const email = process.env.E2E_ADMIN_EMAIL || `admin.${suffix}@example.com`;
   const password = process.env.E2E_ADMIN_PASSWORD || 'Admin123!Secure';
 
   if (!process.env.E2E_ADMIN_EMAIL) {
@@ -105,7 +105,7 @@ async function createCoreAcademicData(request: APIRequestContext, suffix: string
     await request.post(`${API_URL}/teachers/`, {
       headers: auth.headers,
       data: {
-        email: `teacher.${suffix}@teducai.test`,
+        email: `teacher.${suffix}@example.com`,
         full_name: `Teacher ${suffix}`,
         password: 'Teacher123!Secure',
         role: 'teacher',
@@ -176,7 +176,7 @@ async function createCoreAcademicData(request: APIRequestContext, suffix: string
     await request.post(`${API_URL}/students/`, {
       headers: auth.headers,
       data: {
-        email: `student.${suffix}@teducai.test`,
+        email: `student.${suffix}@example.com`,
         full_name: `Student ${suffix}`,
         password: 'Student123!Secure',
         role: 'student',
@@ -187,7 +187,7 @@ async function createCoreAcademicData(request: APIRequestContext, suffix: string
           student_address: 'Student E2E address',
           parent_name: 'Parent E2E',
           parent_phone: '+10000000002',
-          parent_email: `parent.${suffix}@teducai.test`,
+          parent_email: `parent.${suffix}@example.com`,
           parent_address: 'Parent E2E address',
           current_class_id: classRoom.id,
         },
