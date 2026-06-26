@@ -7,6 +7,12 @@ from ..services import automation, employment, school_context, student_lifecycle
 
 router = APIRouter(prefix="/students", tags=["Students"])
 
+
+def _raise_student_not_found_for_forbidden(exc: HTTPException) -> None:
+    if exc.status_code == status.HTTP_403_FORBIDDEN:
+        raise HTTPException(status_code=404, detail="Student not found") from exc
+    raise exc
+
 @router.post("", response_model=schemas.StudentResponse)
 @router.post("/", response_model=schemas.StudentResponse, include_in_schema=False)
 def register_student(
@@ -242,11 +248,14 @@ def get_student(
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
     global_profile = student_lifecycle.ensure_global_profile(db, student.student_profile)
-    student_lifecycle.ensure_student_context_access(
-        db,
-        current_user=current_user,
-        global_profile_id=global_profile.id,
-    )
+    try:
+        student_lifecycle.ensure_student_context_access(
+            db,
+            current_user=current_user,
+            global_profile_id=global_profile.id,
+        )
+    except HTTPException as exc:
+        _raise_student_not_found_for_forbidden(exc)
     db.commit()
         
     return student

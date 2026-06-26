@@ -201,6 +201,7 @@ def create_fee(
     if active_context.school_id != school_id:
         raise HTTPException(status_code=403, detail="Le contexte actif ne correspond pas a cet etablissement.")
 
+    student_enrollment_id = None
     if fee.student_id:
         student = db.query(models.StudentProfile).filter(
             (models.StudentProfile.id == fee.student_id) |
@@ -218,7 +219,7 @@ def create_fee(
         )
         if not enrollment:
             raise HTTPException(status_code=403, detail="L'eleve n'a pas d'inscription active dans ce contexte.")
-        fee.student_enrollment_id = enrollment.id
+        student_enrollment_id = enrollment.id
         student_lifecycle.ensure_academic_year_is_editable(
             db,
             current_user=current_user,
@@ -231,6 +232,7 @@ def create_fee(
 
     fee_data = fee.model_dump(exclude={"school_id"})
     fee_data["due_date"] = fee_data["due_date"] or datetime.utcnow()
+    fee_data["student_enrollment_id"] = student_enrollment_id
     new_fee = models.Fee(
         **fee_data,
         school_id=school_id,
