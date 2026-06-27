@@ -292,7 +292,22 @@ def _dedupe_role_rows(roles: List[models.RoleDefinition], school_id: Optional[in
     return sorted(selected.values(), key=lambda row: ((row.category or ""), row.name.lower(), row.key))
 
 
+PRIVILEGED_ROLE_KEYS = {
+    models.UserRole.SUPER_ADMIN.value,
+    models.UserRole.SCHOOL_ADMIN.value,
+    models.UserRole.ADMIN.value,
+}
+
+
 def _assign_user_roles(db: Session, user: models.User, role_keys: List[str], current_user: models.User) -> None:
+    # Only the platform Super Admin may grant privileged role keys; a school
+    # admin cannot escalate a user (or themselves) to admin/super-admin-level
+    # permissions through role assignment. The user's own primary role is added
+    # below and is not subject to this check.
+    if current_user.role != models.UserRole.SUPER_ADMIN:
+        escalating = sorted(PRIVILEGED_ROLE_KEYS.intersection(role_keys))
+        if escalating:
+            raise HTTPException(status_code=403, detail={"forbidden_roles": escalating})
     scoped_role_keys = sorted(set(role_keys + [user.role.value]))
     existing = {
         row.role_key: row
@@ -1046,7 +1061,7 @@ def create_user_admin(
         raise HTTPException(status_code=400, detail="School context is required")
     if db.query(models.User).filter(models.User.email == payload.email).first():
         raise HTTPException(status_code=400, detail="Email already exists")
-    if payload.role in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN] and current_user.role != models.UserRole.SUPER_ADMIN:
+    if payload.role in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN, models.UserRole.ADMIN] and current_user.role != models.UserRole.SUPER_ADMIN:
         raise HTTPException(status_code=403, detail="Only super admin can create admin accounts")
     user = models.User(
         email=payload.email,
@@ -1092,7 +1107,7 @@ def update_user_admin(
     if payload.phone_number is not None:
         user.phone_number = payload.phone_number
     if payload.role is not None:
-        if payload.role in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN] and current_user.role != models.UserRole.SUPER_ADMIN:
+        if payload.role in [models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN, models.UserRole.ADMIN] and current_user.role != models.UserRole.SUPER_ADMIN:
             raise HTTPException(status_code=403, detail="Only super admin can assign admin roles")
         user.role = payload.role
         if payload.role == models.UserRole.SUPER_ADMIN:
