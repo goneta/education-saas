@@ -1492,6 +1492,25 @@ class TimetableSimulateRequest(BaseModel):
     scenario: str  # teacher_absent | extra_working_day
     params: Dict[str, Any] = {}
 
+
+class TeacherAbsenceCreate(BaseModel):
+    teacher_id: int
+    start_date: datetime
+    end_date: Optional[datetime] = None
+    reason: Optional[str] = None
+
+
+class TeacherAbsenceResponse(TeacherAbsenceCreate):
+    id: int
+    school_id: int
+    status: str
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SubstitutionApply(BaseModel):
+    timetable_id: int
+    substitute_teacher_id: int
+
 # Grade & Assessment Schemas
 
 class AssessmentBase(BaseModel):

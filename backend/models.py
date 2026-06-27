@@ -960,6 +960,7 @@ class Timetable(Base):
     end_time = Column(Time, nullable=False)
     room = Column(String, nullable=True)
     room_id = Column(Integer, ForeignKey("rooms.id"), nullable=True, index=True)
+    delivery_mode = Column(String, nullable=False, default="in_person")  # in_person | remote | hybrid
     duration_minutes = Column(Integer, nullable=True)
     is_locked = Column(Boolean, default=False, nullable=False)
     lock_scope = Column(String, nullable=True)
@@ -1112,6 +1113,23 @@ class SchoolHoliday(Base):
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
     date = Column(DateTime, nullable=False, index=True)
     name = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class TeacherAbsence(Base):
+    """A recorded teacher absence over a date range, used to propose substitutes
+    and trigger dynamic replanning."""
+
+    __tablename__ = "teacher_absences"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    teacher_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    start_date = Column(DateTime, nullable=False, index=True)
+    end_date = Column(DateTime, nullable=True)
+    reason = Column(String, nullable=True)
+    status = Column(String, nullable=False, default="open")  # open | covered | closed
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 

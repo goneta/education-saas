@@ -16,6 +16,7 @@
 - `TimetableConstraintRule` stores admin-configurable scheduling constraints (rule_type + JSON parameters + severity, scoped by school/model) so no pedagogical rule is hard-coded; it is interpreted by `services/timetable_constraints.py`.
 - `Campus`/`Building`/`Room`/`RoomEquipment` model schedulable facilities (multi-campus, room type/capacity/equipment); `Timetable.room_id` links a course to a `Room` (the legacy `room` string is kept for back-compat).
 - `TimetableConfig` (working days + course/break/lunch slots), `SchoolHoliday` (non-working dates), and `SubjectRequirement` (weekly volume per subject/class/level) make the scheduling grid configurable; generation reads them via `services/timetable_config.py` instead of hard-coded days/slots.
+- `TeacherAbsence` records absences for substitution/replanning; `Timetable.delivery_mode` supports hybrid courses (in_person/remote/hybrid).
 
 ## DOX Scope
 

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from sqlalchemy.orm import Session
 from typing import Any, Dict, List, Optional
 from .. import audit, models, pdf, schemas, security, database, tenancy
-from ..services import school_context, timetable_constraints, timetable_config, timetable_optimizer, timetable_simulation
+from ..services import school_context, timetable_constraints, timetable_config, timetable_optimizer, timetable_simulation, timetable_substitution
 
 router = APIRouter(prefix="/education", tags=["Education"])
 
@@ -1201,3 +1201,60 @@ def simulate_timetable_scenario(
     if result.get("error"):
         raise HTTPException(status_code=400, detail=result["error"])
     return result
+
+
+# ---------------------------------------------------------------------------
+# Absences, substitutions and dynamic replanning
+# ---------------------------------------------------------------------------
+
+@router.get("/timetables/absences", response_model=List[schemas.TeacherAbsenceResponse])
+def list_absences(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db), school_id: Optional[int] = None):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    return db.query(models.TeacherAbsence).filter(models.TeacherAbsence.school_id == resolved).order_by(models.TeacherAbsence.start_date.desc()).all()
+
+
+@router.post("/timetables/absences", response_model=schemas.TeacherAbsenceResponse)
+def create_absence(payload: schemas.TeacherAbsenceCreate, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db), school_id: Optional[int] = None):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    if not db.query(models.User.id).filter(models.User.id == payload.teacher_id, models.User.school_id == resolved).first():
+        raise HTTPException(status_code=404, detail="Teacher not found")
+    row = models.TeacherAbsence(school_id=resolved, created_by_id=current_user.id, **payload.model_dump())
+    db.add(row)
+    audit.record_audit(db, action="timetable.absence.created", current_user=current_user, entity_type="teacher_absence", details={"teacher_id": payload.teacher_id})
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.get("/timetables/substitutions")
+def get_substitutions(teacher_id: int, day: str, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db), school_id: Optional[int] = None):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    return {"proposals": timetable_substitution.propose_substitutions(db, resolved, teacher_id, day)}
+
+
+@router.post("/timetables/substitutions/apply", response_model=schemas.TimetableResponse)
+def apply_substitution(payload: schemas.SubstitutionApply, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db), school_id: Optional[int] = None):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    entry = _scope_query(db, resolved).filter(models.Timetable.id == payload.timetable_id).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Timetable entry not found")
+    if not db.query(models.User.id).filter(models.User.id == payload.substitute_teacher_id, models.User.school_id == resolved).first():
+        raise HTTPException(status_code=404, detail="Substitute teacher not found")
+    # The substitute must be free at that day/slot.
+    clash = _scope_query(db, resolved).filter(
+        models.Timetable.id != entry.id,
+        models.Timetable.teacher_id == payload.substitute_teacher_id,
+        models.Timetable.day_of_week == entry.day_of_week,
+    ).all()
+    for other in clash:
+        if _overlap(entry.start_time, entry.end_time, other.start_time, other.end_time):
+            raise HTTPException(status_code=409, detail="Substitute is already booked on this slot")
+    entry.teacher_id = payload.substitute_teacher_id
+    audit.record_audit(db, action="timetable.substitution.applied", current_user=current_user, entity_type="timetable", entity_id=entry.id, details={"substitute_teacher_id": payload.substitute_teacher_id})
+    db.commit()
+    db.refresh(entry)
+    return entry
