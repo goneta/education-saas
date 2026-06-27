@@ -6,6 +6,41 @@ from ..services import automation, school_context, student_lifecycle
 
 router = APIRouter(prefix="/grades", tags=["Grades & Evaluations"])
 
+
+def _is_super_admin(user: models.User) -> bool:
+    return user.role == models.UserRole.SUPER_ADMIN
+
+
+def _assessment_in_school(db: Session, assessment_id: int, current_user: models.User):
+    """Fetch an assessment scoped to the caller's school (via its class).
+
+    Returns None for cross-tenant access so callers raise 404."""
+    query = db.query(models.Assessment).join(
+        models.Class, models.Assessment.class_id == models.Class.id
+    ).filter(models.Assessment.id == assessment_id)
+    if not _is_super_admin(current_user) and current_user.school_id:
+        query = query.filter(models.Class.school_id == current_user.school_id)
+    return query.first()
+
+
+def _assert_class_in_school(db: Session, class_id: int, current_user: models.User) -> models.Class:
+    cls = db.query(models.Class).filter(models.Class.id == class_id).first()
+    if not cls or (not _is_super_admin(current_user) and current_user.school_id and cls.school_id != current_user.school_id):
+        raise HTTPException(status_code=404, detail="Class not found")
+    return cls
+
+
+def _ensure_year_editable(db: Session, current_user: models.User) -> None:
+    active_context = school_context.resolve_context(db, current_user)
+    student_lifecycle.ensure_academic_year_is_editable(
+        db,
+        current_user=current_user,
+        school_id=active_context.school_id,
+        academic_year_id=active_context.academic_year_id,
+        school_model_assignment_id=active_context.school_model_assignment_id,
+        resource_type="grade",
+    )
+
 # ---------------------------------------------------------
 # Assessments Endpoints
 # ---------------------------------------------------------
@@ -19,11 +54,11 @@ def create_assessment(
     # Only Teachers and Admins can create assessments
     if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN, models.UserRole.TEACHER]:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
-    # Verify Class and Subject exist and belong to school (if scoped)
-    # Simplified check:
-    # If teacher, ideally verify they teach this class/subject
-    
+
+    # The class is the tenant anchor: it must belong to the caller's school.
+    _assert_class_in_school(db, assessment_in.class_id, current_user)
+    _ensure_year_editable(db, current_user)
+
     new_assessment = models.Assessment(**assessment_in.model_dump())
     db.add(new_assessment)
     db.commit()
@@ -62,25 +97,11 @@ def get_assessment(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    assessment = db.query(models.Assessment).filter(models.Assessment.id == assessment_id).first()
+    # Reads stay allowed on closed years (historical data remains consultable);
+    # only tenant scoping is enforced here.
+    assessment = _assessment_in_school(db, assessment_id, current_user)
     if not assessment:
         raise HTTPException(status_code=404, detail="Assessment not found")
-    active_context = school_context.resolve_context(db, current_user)
-    student_lifecycle.ensure_academic_year_is_editable(
-        db,
-        current_user=current_user,
-        school_id=active_context.school_id,
-        academic_year_id=active_context.academic_year_id,
-        school_model_assignment_id=active_context.school_model_assignment_id,
-        resource_type="grade",
-    )
-        
-    # Security check: Ensure assessment belongs to user's school
-    # (Assuming assessment -> class -> school relationship)
-    if current_user.school_id:
-        # Check via join if strict scoping needed, or rely on ID obscurity + auth
-        pass 
-        
     return assessment
 
 @router.put("/assessments/{assessment_id}", response_model=schemas.AssessmentResponse)
@@ -93,9 +114,13 @@ def update_assessment(
     if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN, models.UserRole.TEACHER]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    assessment = db.query(models.Assessment).filter(models.Assessment.id == assessment_id).first()
+    assessment = _assessment_in_school(db, assessment_id, current_user)
     if not assessment:
         raise HTTPException(status_code=404, detail="Assessment not found")
+    _ensure_year_editable(db, current_user)
+    # If the class is being reassigned, the new class must also be in the school.
+    if assessment_in.class_id != assessment.class_id:
+        _assert_class_in_school(db, assessment_in.class_id, current_user)
 
     # Update fields
     for key, value in assessment_in.model_dump().items():
@@ -114,9 +139,10 @@ def delete_assessment(
     if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN, models.UserRole.TEACHER]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    assessment = db.query(models.Assessment).filter(models.Assessment.id == assessment_id).first()
+    assessment = _assessment_in_school(db, assessment_id, current_user)
     if not assessment:
         raise HTTPException(status_code=404, detail="Assessment not found")
+    _ensure_year_editable(db, current_user)
 
     db.delete(assessment)
     db.commit()
@@ -134,7 +160,7 @@ def enter_grades_bulk(
     if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN, models.UserRole.TEACHER]:
         raise HTTPException(status_code=403, detail="Not authorized")
         
-    assessment = db.query(models.Assessment).filter(models.Assessment.id == bulk_in.assessment_id).first()
+    assessment = _assessment_in_school(db, bulk_in.assessment_id, current_user)
     if not assessment:
         raise HTTPException(status_code=404, detail="Assessment not found")
     active_context = school_context.resolve_context(db, current_user)
@@ -194,11 +220,11 @@ def get_assessment_grades(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    # Determine authorization (Teacher of class or Admin)
-    assessment = db.query(models.Assessment).filter(models.Assessment.id == assessment_id).first()
+    # Tenant scoping: only assessments in the caller's school are reachable.
+    assessment = _assessment_in_school(db, assessment_id, current_user)
     if not assessment:
          raise HTTPException(status_code=404, detail="Assessment not found")
-         
+
     grades = db.query(models.Grade).filter(models.Grade.assessment_id == assessment_id).all()
     return grades
 

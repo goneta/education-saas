@@ -30,6 +30,7 @@
 - Student lifecycle routes own global profile search, enrollment history, concurrent enrollment checks, transfers, year closure, edit grants, and permission-aware import/export.
 - Student collection queries must derive visibility from active enrollments rather than only the legacy `users.school_id`.
 - Public Site CMS content (`/site/content`) is read without authentication and written only by the Super Admin; writes ignore unknown sections, deep-merge over saved values, and are audited.
+- Assessment routes must scope by the owning class's school (cross-school read/update/delete → 404) and enforce academic-year editability on mutations, while keeping reads available on closed years.
 
 # Verification
 
