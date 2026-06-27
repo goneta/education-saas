@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from sqlalchemy.orm import Session
 from typing import Any, Dict, List, Optional
 from .. import audit, models, pdf, schemas, security, database, tenancy
-from ..services import school_context, timetable_constraints, timetable_config
+from ..services import school_context, timetable_constraints, timetable_config, timetable_optimizer
 
 router = APIRouter(prefix="/education", tags=["Education"])
 
@@ -1088,3 +1088,81 @@ def delete_subject_requirement(requirement_id: int, current_user: models.User = 
         raise HTTPException(status_code=404, detail="Requirement not found")
     db.delete(row)
     db.commit()
+
+
+# ---------------------------------------------------------------------------
+# Optimiser: several scored candidate timetables + commit a chosen one
+# ---------------------------------------------------------------------------
+
+def _serialize_candidate(candidate) -> Dict[str, Any]:
+    return {
+        "seed": candidate.seed,
+        "score": candidate.score,
+        "breakdown": candidate.breakdown,
+        "unplaced": candidate.unplaced,
+        "placements": [
+            {
+                "class_id": p.class_id,
+                "subject_id": p.subject_id,
+                "teacher_id": p.teacher_id,
+                "day": p.day,
+                "start": p.start.isoformat(),
+                "end": p.end.isoformat(),
+            }
+            for p in candidate.placements
+        ],
+    }
+
+
+@router.post("/timetables/optimize")
+def optimize_timetables(
+    payload: schemas.TimetableOptimizeRequest,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+    school_id: Optional[int] = None,
+):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    candidates = timetable_optimizer.generate_candidates(db, resolved, candidate_count=payload.candidate_count)
+    return {"candidates": [_serialize_candidate(c) for c in candidates]}
+
+
+@router.post("/timetables/optimize/commit")
+def commit_optimized_timetable(
+    payload: schemas.TimetableOptimizeCommit,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+    school_id: Optional[int] = None,
+):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    candidates = timetable_optimizer.generate_candidates(db, resolved, candidate_count=payload.candidate_count)
+    chosen = next((c for c in candidates if c.seed == payload.seed), None)
+    if not chosen:
+        raise HTTPException(status_code=404, detail="Candidate not found for the given seed")
+    # Clear existing draft entries (respecting locks) before persisting the choice.
+    query = _scope_query(db, resolved)
+    if payload.preserve_locks:
+        query = query.filter(models.Timetable.is_locked == False)  # noqa: E712
+    deleted = 0
+    for row in query.all():
+        db.delete(row)
+        deleted += 1
+    db.flush()
+    batch = f"OPT-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6]}"
+    created = 0
+    for placement in chosen.placements:
+        db.add(models.Timetable(
+            day_of_week=models.DayOfWeek(placement.day),
+            start_time=placement.start,
+            end_time=placement.end,
+            class_id=placement.class_id,
+            subject_id=placement.subject_id,
+            teacher_id=placement.teacher_id,
+            status="draft",
+            generation_batch=batch,
+        ))
+        created += 1
+    audit.record_audit(db, action="timetable.optimized_committed", current_user=current_user, entity_type="timetable", details={"batch": batch, "seed": chosen.seed, "score": chosen.score, "created": created, "deleted": deleted})
+    db.commit()
+    return {"batch": batch, "seed": chosen.seed, "score": chosen.score, "created": created, "deleted": deleted}

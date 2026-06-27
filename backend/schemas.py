@@ -1477,6 +1477,16 @@ class SubjectRequirementResponse(SubjectRequirementCreate):
     school_id: int
     model_config = ConfigDict(from_attributes=True)
 
+
+class TimetableOptimizeRequest(BaseModel):
+    candidate_count: int = 3
+
+
+class TimetableOptimizeCommit(BaseModel):
+    seed: int
+    candidate_count: int = 3
+    preserve_locks: bool = True
+
 # Grade & Assessment Schemas
 
 class AssessmentBase(BaseModel):
