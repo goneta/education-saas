@@ -1,4 +1,5 @@
 venv/
+.venv/
 __pycache__/
 *.pyc
 .env
@@ -14,6 +15,8 @@ playwright-report/
 test-results/
 *.db
 *.sqlite3
+frontend/build*.log
+frontend/tsc_errors.log
 
 # User requested exclusions
 folderexample/

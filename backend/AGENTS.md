@@ -39,7 +39,8 @@
 # Verification
 
 - Targeted syntax check: `python -m py_compile backend\\models.py backend\\schemas.py backend\\main.py`.
-- Backend tests: `python -m pytest backend`.
+- Before running tests, ensure the local SQLite database matches the migration head: `python -m alembic upgrade head`. Tests use the real app/database wiring (no isolated test DB), so a stale or missing local `education_saas.db` causes widespread, misleading failures (e.g. `no such column`) unrelated to the code under test.
+- Backend tests: `python -m pytest backend`. Note `test_auth.py` requires a separately running live server on `localhost:8000` and is not a self-contained pytest case; the rest use `TestClient` directly against the app.
 - Import smoke check: `python -c "import backend.main as m; print(m.app.title)"`.
 
 # Child DOX Index
