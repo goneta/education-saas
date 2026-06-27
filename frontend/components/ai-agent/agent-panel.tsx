@@ -7,6 +7,7 @@ import { useLayout } from "@/context/layout-context"
 import { useState, useRef, useEffect } from "react"
 import { API_BASE_URL } from "@/lib/config"
 import { formatPreviewContent } from "@/lib/ai-preview"
+import { revealProgressively } from "@/lib/progressive-reveal"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/auth-context"
 
@@ -26,6 +27,9 @@ export function AgentPanel() {
         { role: 'agent', content: t("agentGreeting") }
     ])
     const scrollRef = useRef<HTMLDivElement>(null)
+    const revealCancelRef = useRef<(() => void) | null>(null)
+
+    useEffect(() => () => revealCancelRef.current?.(), [])
 
     useEffect(() => {
         // Auto scroll to bottom
@@ -78,8 +82,14 @@ export function AgentPanel() {
 
             if (data.type === 'content') {
                 setMessages(prev => [...prev, { role: 'agent', content: data.message }])
-                setPreviewContent(formatPreviewContent(data.data ?? data.message))
+                // Open the preview immediately, then reveal the content progressively.
+                revealCancelRef.current?.()
+                setPreviewContent("")
                 setViewMode("preview")
+                revealCancelRef.current = revealProgressively(
+                    formatPreviewContent(data.data ?? data.message),
+                    setPreviewContent,
+                )
             } else {
                 setMessages(prev => [...prev, { role: 'agent', content: data.message }])
             }

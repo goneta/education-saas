@@ -7,6 +7,7 @@
 ## Purpose
 
 - Dashboard AI Agent panel for chat requests, provider-backed responses, and automatic Preview mode switching when content or structured data is returned.
+- Content responses open the preview immediately and reveal progressively via `revealProgressively`; the in-flight reveal is cancelled on unmount and when a new message arrives.
 
 ## DOX Scope
 

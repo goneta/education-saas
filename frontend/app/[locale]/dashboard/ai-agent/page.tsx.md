@@ -7,6 +7,7 @@
 ## Purpose
 
 - Mobile dashboard Agent IA route with chat, local Preview view, shared desktop Preview synchronization, print/download actions, and structured AI output normalization.
+- Content responses open the preview immediately and reveal progressively via `revealProgressively` (updating both the local and shared desktop preview); the reveal is cancelled on unmount and when a new message arrives.
 
 ## DOX Scope
 

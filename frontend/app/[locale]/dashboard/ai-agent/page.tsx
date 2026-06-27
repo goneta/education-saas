@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl"
 import { ArrowLeft, Download, FileImage, Mic, Paperclip, Printer, RefreshCw, RotateCcw, Send, Share2 } from "lucide-react"
 import { API_BASE_URL } from "@/lib/config"
 import { formatPreviewContent } from "@/lib/ai-preview"
+import { revealProgressively } from "@/lib/progressive-reveal"
 import { useAuth } from "@/contexts/auth-context"
 import { useLayout } from "@/context/layout-context"
 
@@ -41,6 +42,9 @@ export default function MobileAIAgentPage() {
     const chatRef = useRef<HTMLDivElement | null>(null)
     const fileRef = useRef<HTMLInputElement | null>(null)
     const imageRef = useRef<HTMLInputElement | null>(null)
+    const revealCancelRef = useRef<(() => void) | null>(null)
+
+    useEffect(() => () => revealCancelRef.current?.(), [])
 
     useEffect(() => {
         chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" })
@@ -74,10 +78,16 @@ export default function MobileAIAgentPage() {
             const output = formatPreviewContent(data?.data ?? data?.message)
             setMessages(previous => [...previous, { role: "agent", content: message }])
             if (output) {
-                setPreview(output)
-                setDesktopPreview(output)
+                // Open the preview immediately, then reveal the content progressively.
+                revealCancelRef.current?.()
+                setPreview("")
+                setDesktopPreview("")
                 setViewMode("preview")
                 setShowPreview(true)
+                revealCancelRef.current = revealProgressively(output, partial => {
+                    setPreview(partial)
+                    setDesktopPreview(partial)
+                })
             }
         } catch (error) {
             setMessages(previous => [...previous, { role: "agent", content: error instanceof Error ? error.message : t("agentCommunicationError") }])
