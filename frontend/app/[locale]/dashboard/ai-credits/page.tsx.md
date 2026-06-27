@@ -22,6 +22,7 @@
 - Cash/free purchases create pending manual-validation payments; Stripe, Djamo, and CinetPay follow returned checkout URLs. Super Admin can validate eligible pending payments from the platform-payment list.
 - Credit allocation revocation uses the shared TeducAI confirmation dialog.
 - Super Admin monitoring cards display configured provider credits, purchased/allocated credits, remaining platform credits, wallet balances, and a configurable low-credit threshold.
+- Provider monitoring offers an API sync ("Synchroniser via API" globally, per-provider "Synchroniser (API)") for providers whose API exposes a balance (flagged by `balance_api_supported`), alongside the manual entry path for those that do not; the summary message reports how many were synced vs left on a manual value.
 
 ## Verification
 

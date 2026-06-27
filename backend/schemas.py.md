@@ -8,6 +8,7 @@
 
 - Python source file used by the backend, migrations, scripts, tests, or utilities.
 - Exposes API schemas for schools, users, AI billing, and other modules, including username, system-account flags, account type, and dashboard destination hints in user responses.
+- `AIProviderResponse` includes `balance_api_supported`, indicating whether the provider's balance can be auto-synced from its API.
 - Defines Pydantic API contracts for school settings, cash fee payments, AI providers, wallets, targeted credit packs, manual cash/free credit validation, school allocations, platform payments, and school payments.
 - AI provider contracts include account labels and available provider credits; platform monitoring contracts expose provider totals, sold/allocated credits, remaining platform credits, wallet balances, threshold settings, and low-credit alert state.
 - AI credit purchase contracts carry target context, provider, optional Mobile Money network, redirect URLs, manual-validation notes, checkout URL, and provider status.

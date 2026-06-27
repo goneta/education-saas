@@ -7,7 +7,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .. import audit, crypto_utils, database, models, rbac, schemas, security
-from ..services import ai_credits, payment_gateway, school_context as context_service
+from ..services import ai_credits, ai_credit_sync, payment_gateway, school_context as context_service
 
 
 router = APIRouter(tags=["AI Credits & Payments"])
@@ -40,6 +40,7 @@ def _provider_response(row: models.AIProvider) -> dict:
         "cost_per_1k_output_tokens": row.cost_per_1k_output_tokens,
         "currency": row.currency,
         "has_api_key": bool(row.api_key_encrypted),
+        "balance_api_supported": ai_credit_sync.balance_api_supported(row.provider_type),
         "created_at": row.created_at,
         "updated_at": row.updated_at,
     }
@@ -241,6 +242,45 @@ def update_platform_ai_monitoring_settings(
     )
     db.commit()
     return platform_ai_monitoring(current_user, db)
+
+
+@router.post("/platform/ai/sync-credits")
+def sync_all_provider_credits(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    """Fetch provider balances from official APIs where supported (e.g. OpenRouter).
+
+    Unsupported providers keep their manually-entered value and are reported as
+    such, so the Super Admin sees exactly which providers can self-update.
+    """
+    _super_admin(current_user)
+    providers = db.query(models.AIProvider).order_by(models.AIProvider.priority.asc()).all()
+    results = []
+    synced = 0
+    for provider in providers:
+        result = ai_credit_sync.sync_provider_credits(provider)
+        ai_credit_sync.apply_sync_result(provider, result)
+        if result.get("status") == "synced":
+            synced += 1
+        results.append(result)
+    audit.record_audit(db, action="platform.ai_credits.synced", current_user=current_user, entity_type="ai_provider", entity_id="all", details={"synced": synced, "total": len(providers)})
+    db.commit()
+    return {"synced": synced, "total": len(providers), "results": results}
+
+
+@router.post("/platform/ai/providers/{provider_id}/sync-credits", response_model=schemas.AIProviderResponse)
+def sync_provider_credits_endpoint(provider_id: int, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    _super_admin(current_user)
+    provider = db.query(models.AIProvider).filter(models.AIProvider.id == provider_id).first()
+    if not provider:
+        raise HTTPException(status_code=404, detail="Provider not found")
+    result = ai_credit_sync.sync_provider_credits(provider)
+    ai_credit_sync.apply_sync_result(provider, result)
+    if result.get("status") not in {"synced", "unsupported"}:
+        # Surface auth/key/network problems to the caller while keeping the row intact.
+        raise HTTPException(status_code=502, detail=result.get("detail") or "Synchronisation impossible.")
+    audit.record_audit(db, action="platform.ai_provider.synced", current_user=current_user, entity_type="ai_provider", entity_id=provider.id, details={"status": result.get("status")})
+    db.commit()
+    db.refresh(provider)
+    return _provider_response(provider)
 
 
 @router.get("/platform/ai/credit-packs", response_model=list[schemas.AICreditPackResponse])

@@ -23,6 +23,7 @@
 - School-targeted purchases require `ai_credits:create`; manual payment validation is Super Admin only and applies credits idempotently.
 - Successful subscription webhooks activate the matching school subscription and update the school's current billing period.
 - Platform AI monitoring sums provider credits, sold/allocated platform credits, wallet balances, and stores the Super Admin low-credit threshold.
+- `POST /platform/ai/sync-credits` and `POST /platform/ai/providers/{id}/sync-credits` (Super Admin only) fetch provider balances through `ai_credit_sync` where the provider API supports it (OpenRouter); unsupported providers keep their manual value and are reported as such. Each provider response carries `balance_api_supported`.
 
 ## Verification
 

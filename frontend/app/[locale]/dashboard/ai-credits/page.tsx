@@ -102,6 +102,7 @@ interface AIProvider {
     is_active: boolean
     priority: number
     has_api_key?: boolean
+    balance_api_supported?: boolean
 }
 
 interface AnalyticsSummary {
@@ -550,6 +551,32 @@ export default function AICreditsPage() {
         if (response.ok) void load()
     }
 
+    const autoSyncProvider = async (provider: AIProvider) => {
+        if (!token) return
+        const response = await fetch(`${API_BASE_URL}/platform/ai/providers/${provider.id}/sync-credits`, {
+            method: "POST",
+            headers,
+        })
+        const data = await response.json().catch(() => null)
+        setMessage(response.ok ? `Solde ${provider.name} synchronise via API.` : data?.detail || "Synchronisation API impossible.")
+        if (response.ok) void load()
+    }
+
+    const autoSyncAll = async () => {
+        if (!token) return
+        setLoading(true)
+        try {
+            const response = await fetch(`${API_BASE_URL}/platform/ai/sync-credits`, { method: "POST", headers })
+            const data = await response.json().catch(() => null)
+            if (!response.ok) { setMessage(data?.detail || "Synchronisation impossible."); return }
+            const unsupported = (data?.results || []).filter((r: { status: string }) => r.status === "unsupported").length
+            setMessage(`${data.synced}/${data.total} fournisseur(s) synchronise(s) via API. ${unsupported} sans API de solde (valeur manuelle conservee).`)
+            void load()
+        } finally {
+            setLoading(false)
+        }
+    }
+
     const validateManualPayment = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         if (!token) return
@@ -689,6 +716,10 @@ export default function AICreditsPage() {
                             Credits IA restants sous le seuil configure.
                         </div>
                     )}
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-xs text-[#6B7280] dark:text-[#c7d0da]">La synchronisation API met a jour le solde des fournisseurs qui l&apos;exposent (ex: OpenRouter). Les autres conservent la valeur saisie manuellement.</p>
+                        <button type="button" onClick={() => void autoSyncAll()} disabled={loading} className="rounded-full bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-white dark:text-black">Synchroniser via API</button>
+                    </div>
                     <div className="grid gap-3 md:grid-cols-4">
                         <Metric label="Credits providers" value={monitoring.total_provider_credits} />
                         <Metric label="Credits achetes/alloues" value={monitoring.total_credits_purchased} />
@@ -707,7 +738,15 @@ export default function AICreditsPage() {
                                 </div>
                                 <p className="mt-4 text-2xl font-semibold text-[#111827] dark:text-white">{provider.available_credits.toLocaleString("fr-FR")}</p>
                                 <p className="text-xs text-[#6B7280] dark:text-[#c7d0da]">Derniere synchro: {provider.credits_last_synced_at || "Non renseignee"}</p>
-                                <button type="button" onClick={() => void syncProviderCredits(provider)} className="mt-3 rounded-full border border-[#D1D5DB] px-3 py-2 text-sm hover:bg-[#F5F5F7] dark:border-[#56616a] dark:hover:bg-[#2a3035]">Mettre a jour</button>
+                                <p className="mt-1 text-xs font-medium" style={{ color: provider.balance_api_supported ? "#0F766E" : "#92400E" }}>
+                                    {provider.balance_api_supported ? "Solde via API disponible" : "Solde manuel (API non disponible)"}
+                                </p>
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    {provider.balance_api_supported && (
+                                        <button type="button" onClick={() => void autoSyncProvider(provider)} className="rounded-full bg-[#0F766E] px-3 py-2 text-sm text-white hover:bg-[#115E59]">Synchroniser (API)</button>
+                                    )}
+                                    <button type="button" onClick={() => void syncProviderCredits(provider)} className="rounded-full border border-[#D1D5DB] px-3 py-2 text-sm hover:bg-[#F5F5F7] dark:border-[#56616a] dark:hover:bg-[#2a3035]">Saisie manuelle</button>
+                                </div>
                             </div>
                         ))}
                     </div>

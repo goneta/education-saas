@@ -218,6 +218,7 @@ class AIProviderResponse(BaseModel):
     cost_per_1k_output_tokens: float
     currency: str
     has_api_key: bool = False
+    balance_api_supported: bool = False
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

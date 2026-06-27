@@ -11,6 +11,7 @@
 - Services that handle secrets must encrypt, mask, or avoid returning them.
 - Services that mutate finance, AI credits, files, notifications, or tenant data must be deterministic and auditable through their callers.
 - Provider integrations should tolerate missing credentials and report actionable failures.
+- AI provider credit balances may only be auto-fetched where the provider API exposes them (e.g. OpenRouter); other providers keep a manually-entered value, and `ai_credit_sync` must report `unsupported`/`no_key`/`error` rather than raising or fabricating a balance.
 - Checkout provider integrations must never mark payments successful before an authenticated provider webhook confirms the transaction.
 - Payment adapters must normalize provider-specific currency rules, including zero-decimal XOF/FCFA amounts.
 
