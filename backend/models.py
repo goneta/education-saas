@@ -1079,6 +1079,59 @@ class RoomEquipment(Base):
     room = relationship("Room", back_populates="equipment")
 
 
+class TimetableConfig(Base):
+    """Configurable scheduling grid for a school/model: which days are worked
+    and the ordered slots (course / break / lunch). Replaces hard-coded days and
+    time slots in timetable generation. One active config per school/model.
+
+    slots: [{"start": "08:00", "end": "10:00", "kind": "course"},
+            {"start": "10:00", "end": "10:15", "kind": "break"},
+            {"start": "12:15", "end": "14:00", "kind": "lunch"}, ...]
+    """
+
+    __tablename__ = "timetable_configs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
+    working_days = Column(JSON, nullable=False, default=list)  # ["monday", ...]
+    slots = Column(JSON, nullable=False, default=list)
+    is_active = Column(Boolean, nullable=False, default=True, index=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class SchoolHoliday(Base):
+    """A non-working day (public holiday or school closure) excluded from
+    generation. Country-specific calendars are expressed as a set of these."""
+
+    __tablename__ = "school_holidays"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    date = Column(DateTime, nullable=False, index=True)
+    name = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class SubjectRequirement(Base):
+    """Weekly teaching volume for a subject, per class (preferred) or per level.
+    Drives how many sessions generation places for each subject."""
+
+    __tablename__ = "subject_requirements"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
+    subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=False, index=True)
+    class_id = Column(Integer, ForeignKey("classes.id"), nullable=True, index=True)
+    level = Column(String, nullable=True)
+    weekly_sessions = Column(Integer, nullable=False, default=1)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
 class ReferenceData(Base):
     __tablename__ = "reference_data"
     

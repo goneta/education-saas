@@ -1427,6 +1427,56 @@ class RoomResponse(BaseModel):
     equipment: List[RoomEquipmentItem] = []
     model_config = ConfigDict(from_attributes=True)
 
+
+# Timetable grid configuration
+
+class TimetableSlot(BaseModel):
+    start: str
+    end: str
+    kind: str = "course"  # course | break | lunch
+
+
+class TimetableConfigUpsert(BaseModel):
+    working_days: List[str] = ["monday", "tuesday", "wednesday", "thursday", "friday"]
+    slots: List[TimetableSlot] = []
+    school_model_assignment_id: Optional[int] = None
+    is_active: bool = True
+
+
+class TimetableConfigResponse(BaseModel):
+    id: int
+    school_id: int
+    school_model_assignment_id: Optional[int] = None
+    working_days: List[str] = []
+    slots: List[Dict[str, Any]] = []
+    is_active: bool
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SchoolHolidayCreate(BaseModel):
+    date: datetime
+    name: Optional[str] = None
+
+
+class SchoolHolidayResponse(SchoolHolidayCreate):
+    id: int
+    school_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SubjectRequirementCreate(BaseModel):
+    subject_id: int
+    class_id: Optional[int] = None
+    level: Optional[str] = None
+    weekly_sessions: int = 1
+    school_model_assignment_id: Optional[int] = None
+
+
+class SubjectRequirementResponse(SubjectRequirementCreate):
+    id: int
+    school_id: int
+    model_config = ConfigDict(from_attributes=True)
+
 # Grade & Assessment Schemas
 
 class AssessmentBase(BaseModel):

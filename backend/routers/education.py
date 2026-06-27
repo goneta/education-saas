@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from sqlalchemy.orm import Session
 from typing import Any, Dict, List, Optional
 from .. import audit, models, pdf, schemas, security, database, tenancy
-from ..services import school_context, timetable_constraints
+from ..services import school_context, timetable_constraints, timetable_config
 
 router = APIRouter(prefix="/education", tags=["Education"])
 
@@ -707,46 +707,55 @@ def generate_timetables(
         models.User.school_id == school_id,
         models.User.role.in_([models.UserRole.TEACHER, models.UserRole.TRAINER, models.UserRole.INSTRUCTOR]),
     ).order_by(models.User.id).all()
-    days = [models.DayOfWeek.MONDAY, models.DayOfWeek.TUESDAY, models.DayOfWeek.WEDNESDAY, models.DayOfWeek.THURSDAY, models.DayOfWeek.FRIDAY]
-    slots = [(time(8, 0), time(10, 0)), (time(10, 15), time(12, 15)), (time(14, 0), time(16, 0))]
+    # Configurable grid: working days and course slots come from TimetableConfig
+    # (or defaults), never hard-coded.
+    working_days, course_slots = timetable_config.effective_grid(db, school_id)
+    days = [models.DayOfWeek(day) for day in working_days if day in models.DayOfWeek._value2member_map_]
+    slots = course_slots
     rooms = payload.constraints.get("rooms") or ["Salle 1", "Salle 2", "Salle 3", "Laboratoire 1", "Atelier 1"]
     batch = f"TT-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6]}"
     created: List[int] = []
     skipped: List[Dict[str, Any]] = []
     cursor = 0
+    if not days or not slots:
+        db.commit()
+        return {"batch": batch, "created": 0, "deleted": deleted, "skipped": [{"reason": "Aucune grille horaire configurée."}], "mode": payload.mode}
     for cls in classes:
         for subject_index, subject in enumerate(subjects[: min(len(subjects), 12)]):
-            placed = False
-            attempts = 0
-            while attempts < len(days) * len(slots):
-                day = days[(cursor + attempts) % len(days)]
-                start, end = slots[((cursor + attempts) // len(days)) % len(slots)]
-                teacher = teachers[(subject_index + attempts) % len(teachers)] if teachers else None
-                room = rooms[(cls.id + subject_index + attempts) % len(rooms)]
-                candidate = models.Timetable(
-                    day_of_week=day,
-                    start_time=start,
-                    end_time=end,
-                    room=room,
-                    class_id=cls.id,
-                    subject_id=subject.id,
-                    teacher_id=teacher.id if teacher else cls.main_teacher_id,
-                    status="draft",
-                    generation_batch=batch,
-                    constraints_snapshot=payload.constraints,
-                )
-                conflicts = _detect_timetable_conflicts(db, school_id, candidate, constraints=payload.constraints)
-                if not any(item.get("severity") == "blocking" for item in conflicts):
-                    _apply_conflicts(candidate, conflicts)
-                    db.add(candidate)
-                    db.flush()
-                    created.append(candidate.id)
-                    cursor += 1
-                    placed = True
-                    break
-                attempts += 1
-            if not placed:
-                skipped.append({"class_id": cls.id, "subject_id": subject.id, "reason": "Aucun créneau sans conflit trouvé."})
+            # Configurable weekly volume per subject (per class, then level, then 1).
+            sessions = timetable_config.weekly_sessions_for(db, school_id, subject.id, cls.id, cls.level, default=1)
+            for _ in range(sessions):
+                placed = False
+                attempts = 0
+                while attempts < len(days) * len(slots):
+                    day = days[(cursor + attempts) % len(days)]
+                    start, end = slots[((cursor + attempts) // len(days)) % len(slots)]
+                    teacher = teachers[(subject_index + attempts) % len(teachers)] if teachers else None
+                    room = rooms[(cls.id + subject_index + attempts) % len(rooms)]
+                    candidate = models.Timetable(
+                        day_of_week=day,
+                        start_time=start,
+                        end_time=end,
+                        room=room,
+                        class_id=cls.id,
+                        subject_id=subject.id,
+                        teacher_id=teacher.id if teacher else cls.main_teacher_id,
+                        status="draft",
+                        generation_batch=batch,
+                        constraints_snapshot=payload.constraints,
+                    )
+                    conflicts = _detect_timetable_conflicts(db, school_id, candidate, constraints=payload.constraints)
+                    if not any(item.get("severity") == "blocking" for item in conflicts):
+                        _apply_conflicts(candidate, conflicts)
+                        db.add(candidate)
+                        db.flush()
+                        created.append(candidate.id)
+                        cursor += 1
+                        placed = True
+                        break
+                    attempts += 1
+                if not placed:
+                    skipped.append({"class_id": cls.id, "subject_id": subject.id, "reason": "Aucun créneau sans conflit trouvé."})
     db.commit()
     audit.record_audit(db, action="timetable.generated", current_user=current_user, entity_type="timetable", details={"batch": batch, "created": len(created), "deleted": deleted, "skipped": skipped})
     return {"batch": batch, "created": len(created), "deleted": deleted, "skipped": skipped, "mode": payload.mode}
@@ -977,4 +986,105 @@ def delete_constraint_rule(
     row = _constraint_rule_or_404(db, rule_id, resolved)
     db.delete(row)
     audit.record_audit(db, action="timetable.constraint_rule.deleted", current_user=current_user, entity_type="timetable_constraint_rule", entity_id=rule_id)
+    db.commit()
+
+
+# ---------------------------------------------------------------------------
+# Configurable timetable grid: config (days/slots), holidays, subject volume
+# ---------------------------------------------------------------------------
+
+@router.get("/timetables/config", response_model=schemas.TimetableConfigResponse)
+def get_timetable_config(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db), school_id: Optional[int] = None):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    row = timetable_config.active_config(db, resolved)
+    if row:
+        return row
+    # Return the effective defaults (not yet persisted) so the UI can show them.
+    return schemas.TimetableConfigResponse(
+        id=0, school_id=resolved, school_model_assignment_id=None,
+        working_days=timetable_config.DEFAULT_WORKING_DAYS, slots=timetable_config.DEFAULT_SLOTS, is_active=True,
+    )
+
+
+@router.put("/timetables/config", response_model=schemas.TimetableConfigResponse)
+def upsert_timetable_config(payload: schemas.TimetableConfigUpsert, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db), school_id: Optional[int] = None):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    row = db.query(models.TimetableConfig).filter(
+        models.TimetableConfig.school_id == resolved,
+        models.TimetableConfig.school_model_assignment_id == payload.school_model_assignment_id,
+    ).first()
+    slots = [slot.model_dump() for slot in payload.slots]
+    if not row:
+        row = models.TimetableConfig(school_id=resolved, school_model_assignment_id=payload.school_model_assignment_id, created_by_id=current_user.id)
+        db.add(row)
+    row.working_days = [day.lower() for day in payload.working_days]
+    row.slots = slots
+    row.is_active = payload.is_active
+    audit.record_audit(db, action="timetable.config.updated", current_user=current_user, entity_type="timetable_config")
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.get("/timetables/holidays", response_model=List[schemas.SchoolHolidayResponse])
+def list_holidays(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db), school_id: Optional[int] = None):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    return db.query(models.SchoolHoliday).filter(models.SchoolHoliday.school_id == resolved).order_by(models.SchoolHoliday.date).all()
+
+
+@router.post("/timetables/holidays", response_model=schemas.SchoolHolidayResponse)
+def create_holiday(payload: schemas.SchoolHolidayCreate, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db), school_id: Optional[int] = None):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    row = models.SchoolHoliday(school_id=resolved, date=payload.date, name=payload.name)
+    db.add(row)
+    audit.record_audit(db, action="timetable.holiday.created", current_user=current_user, entity_type="school_holiday")
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.delete("/timetables/holidays/{holiday_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_holiday(holiday_id: int, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db), school_id: Optional[int] = None):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    row = db.query(models.SchoolHoliday).filter(models.SchoolHoliday.id == holiday_id, models.SchoolHoliday.school_id == resolved).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Holiday not found")
+    db.delete(row)
+    db.commit()
+
+
+@router.get("/timetables/subject-requirements", response_model=List[schemas.SubjectRequirementResponse])
+def list_subject_requirements(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db), school_id: Optional[int] = None):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    return db.query(models.SubjectRequirement).filter(models.SubjectRequirement.school_id == resolved).order_by(models.SubjectRequirement.subject_id).all()
+
+
+@router.post("/timetables/subject-requirements", response_model=schemas.SubjectRequirementResponse)
+def create_subject_requirement(payload: schemas.SubjectRequirementCreate, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db), school_id: Optional[int] = None):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    if not db.query(models.Subject.id).filter(models.Subject.id == payload.subject_id, models.Subject.school_id == resolved).first():
+        raise HTTPException(status_code=404, detail="Subject not found")
+    row = models.SubjectRequirement(school_id=resolved, **payload.model_dump())
+    db.add(row)
+    audit.record_audit(db, action="timetable.subject_requirement.created", current_user=current_user, entity_type="subject_requirement")
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.delete("/timetables/subject-requirements/{requirement_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_subject_requirement(requirement_id: int, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db), school_id: Optional[int] = None):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    row = db.query(models.SubjectRequirement).filter(models.SubjectRequirement.id == requirement_id, models.SubjectRequirement.school_id == resolved).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Requirement not found")
+    db.delete(row)
     db.commit()
