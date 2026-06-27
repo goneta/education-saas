@@ -18,6 +18,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- Data-table/list sections are laid out one per row (full width), not two-up, so tables and their action icons have room across desktop/tablet/mobile.
 - Pack buttons open a localized payment dialog carrying pack, target wallet, amount, currency, and provider context.
 - Cash/free purchases create pending manual-validation payments; Stripe, Djamo, and CinetPay follow returned checkout URLs. Super Admin can validate eligible pending payments from the platform-payment list.
 - Credit allocation revocation uses the shared TeducAI confirmation dialog.

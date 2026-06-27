@@ -134,7 +134,7 @@ export default function PortalPage() {
                 </CardContent></Card>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4">
                 <Card><CardHeader><CardTitle>Assignments</CardTitle></CardHeader><CardContent className="space-y-4">
                     {assignments.map(assignment => <div key={assignment.id} className="border-b pb-4 last:border-0">
                         <div className="flex justify-between gap-3"><div><p className="font-medium">{assignment.title}</p><p className="text-sm text-[#6B7280]">{assignment.due_date ? new Date(assignment.due_date).toLocaleDateString() : "No due date"}</p></div></div>

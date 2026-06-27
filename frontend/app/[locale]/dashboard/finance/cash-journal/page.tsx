@@ -69,7 +69,7 @@ export default function CashJournalPage() {
                 <Card className="lg:col-span-2"><CardContent className="pt-6"><div className="grid gap-3 md:grid-cols-[1fr_auto]"><ExplainedField label="Caisse comptée" help="Montant réellement compté physiquement en fin de journée. Il sert au rapprochement avec le total système."><input type="number" placeholder="Montant compté" value={counted} onChange={(e) => setCounted(e.target.value)} className="apple-input" /></ExplainedField><Button onClick={closeDay}>{tx(locale, "submitClosure")}</Button></div>{message && <p className="mt-2 text-sm text-[#6B7280]">{message}</p>}</CardContent></Card>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4">
                 <Breakdown title={tx(locale, "byFeeType")} rows={journal?.by_category || {}} />
                 <Breakdown title={tx(locale, "byOperator")} rows={journal?.by_operator || {}} />
             </div>

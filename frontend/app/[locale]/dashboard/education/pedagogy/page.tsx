@@ -109,7 +109,7 @@ export default function PedagogyPage() {
                 </CardContent></Card>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4">
                 <ListCard title="Assignments" rows={assignments.map(a => [a.title, `Class #${a.class_id}`, a.status])} />
                 <ListCard title="Course Materials" rows={materials.map(m => [m.title, `Class #${m.class_id}`, m.content_url || "-"])} />
             </div>

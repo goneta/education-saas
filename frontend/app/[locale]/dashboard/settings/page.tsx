@@ -1326,7 +1326,7 @@ function SubscriptionManagement({
                     ))}
                 </div>
 
-                <div className="grid gap-4 lg:grid-cols-2">
+                <div className="grid gap-4">
                     <div className="rounded-[22px] border border-[#E5E7EB] bg-white p-4 dark:border-[#3b4248] dark:bg-[#171b1f]">
                         <div className="flex items-center justify-between gap-3">
                             <div>

@@ -17,6 +17,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- Breakdown tables (by class / by fee type) are laid out one per row (full width), not two-up, for readability across desktop/tablet/mobile.
 
 ## Verification
 

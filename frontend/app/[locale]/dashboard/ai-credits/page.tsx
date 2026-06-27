@@ -764,7 +764,7 @@ export default function AICreditsPage() {
                 </CardShell>
             )}
 
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+            <div className="grid gap-6">
                 <CardShell title="Acheter des credits IA" subtitle="Ces paiements sont des paiements plateforme TeducAI, encaisses par Thunderfam selon la region.">
                     <div className="grid gap-3 md:grid-cols-2">
                         {packs.map(pack => (
@@ -812,7 +812,7 @@ export default function AICreditsPage() {
                 </CardShell>
             </div>
 
-            <div className="grid gap-6 xl:grid-cols-2">
+            <div className="grid gap-6">
                 <CardShell title="Historique credits utilisateur">
                     <Table headers={["Date", "Type", "Credits", "Avant", "Après"]} rows={myTransactions.map(item => [item.created_at, item.transaction_type, item.credits_amount, item.balance_before, item.balance_after])} />
                 </CardShell>
@@ -859,7 +859,7 @@ export default function AICreditsPage() {
             </div>
 
             {isSuperAdmin && (
-                <div className="grid gap-6 xl:grid-cols-2">
+                <div className="grid gap-6">
                     <CardShell title="Providers IA plateforme" subtitle="Configuration reservee au Super Administrateur TeducAI. Les cles API ne sont jamais exposees aux ecoles.">
                         <form onSubmit={createProvider} className="mb-5 grid gap-3">
                             <input className="apple-input" placeholder="Nom provider" value={providerForm.name} onChange={event => setProviderForm({ ...providerForm, name: event.target.value })} required title="Nom provider: nom interne du fournisseur IA gere par TeducAI." />

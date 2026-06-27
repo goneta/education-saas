@@ -521,7 +521,7 @@ export default function InternshipsPage() {
                 </CardContent>
             </Card>
 
-            <div className="grid gap-4 xl:grid-cols-2">
+            <div className="grid gap-4">
                 <Card className="rounded-[28px] border-[#E5E7EB] bg-white shadow-sm">
                     <CardHeader><CardTitle className="flex items-center gap-2 text-xl"><ClipboardCheck className="h-5 w-5" />Suivi quotidien entreprise</CardTitle></CardHeader>
                     <CardContent>
@@ -556,7 +556,7 @@ export default function InternshipsPage() {
                 </Card>
             </div>
 
-            <div className="grid gap-4 xl:grid-cols-2">
+            <div className="grid gap-4">
                 <Card className="rounded-[28px] border-[#E5E7EB] bg-white shadow-sm">
                     <CardHeader><CardTitle className="flex items-center gap-2 text-xl"><Users className="h-5 w-5" />Evaluation du stage</CardTitle></CardHeader>
                     <CardContent>

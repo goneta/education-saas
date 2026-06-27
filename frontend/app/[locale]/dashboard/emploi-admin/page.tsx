@@ -85,7 +85,7 @@ export default function EmploymentAdminPage() {
         <Stat icon={<Bell />} label="Candidatures" value={overview.stats.applications} />
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+      <section className="grid gap-4">
         <Panel title="Recruteurs">
           <div className="grid gap-2">
             {overview.recruiters.map(item => (
@@ -108,7 +108,7 @@ export default function EmploymentAdminPage() {
         </Panel>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1fr_0.9fr]">
+      <section className="grid gap-4">
         <Panel title="Etudiants et CV">
           <div className="grid gap-2">
             {overview.students.map(item => (

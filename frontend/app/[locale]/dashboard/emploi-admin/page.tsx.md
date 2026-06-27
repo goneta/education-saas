@@ -20,6 +20,7 @@
 - Statistic labels must be locale-aware; French uses `Paiements en attente`, English uses `Pending Payments`.
 - The page consumes live overview counts from `/employment/admin/overview`, including zero values for missing jobs, applications, or pending payments.
 - Keep cards, forms, and lists dark-mode readable and mobile-safe.
+- The list panels (recruiters, jobs, students, notifications) are laid out one per row (full width), not two-up, for readability across breakpoints. The KPI stat cards stay in their multi-column grid.
 
 ## Verification
 

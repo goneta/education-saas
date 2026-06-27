@@ -17,6 +17,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- Endpoint list cards are laid out one per row (full width), not two-up, so each table has room for its columns and action icons across breakpoints.
 - Enterprise record deletion uses the shared TeducAI confirmation dialog.
 
 ## Verification

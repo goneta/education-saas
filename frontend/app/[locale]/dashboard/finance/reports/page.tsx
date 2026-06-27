@@ -65,7 +65,7 @@ export default function FinanceReportsPage() {
                 <Metric title={tx(locale, "remaining")} value={report?.total_remaining || 0} tone="red" />
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4">
                 <Breakdown title={tx(locale, "byClass")} rows={report?.payments_by_class || {}} />
                 <Breakdown title={tx(locale, "byFeeType")} rows={report?.payments_by_category || {}} />
             </div>

@@ -101,7 +101,7 @@ export default function EnterprisePage() {
                 </CardContent>
             </Card>
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4">
                 {config.endpoints.map(endpoint => <ListCard key={endpoint} title={endpoint} displayTitle={labelForEndpoint(endpoint, locale)} rows={rows[endpoint] || []} locale={locale} />)}
             </div>
         </div>
