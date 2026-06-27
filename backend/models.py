@@ -959,6 +959,7 @@ class Timetable(Base):
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
     room = Column(String, nullable=True)
+    room_id = Column(Integer, ForeignKey("rooms.id"), nullable=True, index=True)
     duration_minutes = Column(Integer, nullable=True)
     is_locked = Column(Boolean, default=False, nullable=False)
     lock_scope = Column(String, nullable=True)
@@ -1011,6 +1012,71 @@ class TimetableConstraintRule(Base):
     created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class Campus(Base):
+    """A physical site of a school (multi-campus support for scheduling)."""
+
+    __tablename__ = "campuses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    address = Column(String, nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class Building(Base):
+    __tablename__ = "buildings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    campus_id = Column(Integer, ForeignKey("campuses.id"), nullable=True, index=True)
+    name = Column(String, nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    campus = relationship("Campus")
+
+
+class Room(Base):
+    """A schedulable space: classroom, laboratory, workshop, gym, computer room…
+
+    `room_type` lets constraints reserve labs/workshops for certain subjects;
+    `capacity` and `equipment` feed later optimisation phases.
+    """
+
+    __tablename__ = "rooms"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    building_id = Column(Integer, ForeignKey("buildings.id"), nullable=True, index=True)
+    name = Column(String, nullable=False)
+    room_type = Column(String, nullable=False, default="classroom")
+    capacity = Column(Integer, nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    building = relationship("Building")
+    equipment = relationship("RoomEquipment", back_populates="room", cascade="all, delete-orphan")
+
+
+class RoomEquipment(Base):
+    """Pedagogical equipment available in a room (computers, interactive board,
+    lab benches, sports gear…)."""
+
+    __tablename__ = "room_equipment"
+
+    id = Column(Integer, primary_key=True, index=True)
+    room_id = Column(Integer, ForeignKey("rooms.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    quantity = Column(Integer, nullable=False, default=1)
+
+    room = relationship("Room", back_populates="equipment")
 
 
 class ReferenceData(Base):

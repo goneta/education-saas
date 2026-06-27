@@ -9,6 +9,7 @@
 - Python source file used by the backend, migrations, scripts, tests, or utilities.
 - Creates the FastAPI app, middleware stack, health/readiness/metrics endpoints, and registers all routers including bootstrap, multi-school context, student lifecycle, TeducAI Emploi, and the public Site CMS.
 - A best-effort startup hook auto-registers AI providers from `.env.production` keys via `ai_provider_bootstrap`; failures never block boot.
+- Registers the `/facilities` router (campuses, buildings, rooms, equipment) for the timetable engine.
 
 ## DOX Scope
 

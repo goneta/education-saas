@@ -14,6 +14,7 @@
 - `SiteContent` is a singleton JSON document holding the editable public marketing-site content (hero, partners, FAQ, testimonials, pricing, SEO, footer) managed by the Super Admin; the public site falls back to code-level defaults when it is empty.
 - `TeacherProfile` is the single global teacher identity (unique per user); `TeacherAssignment` records each school/model a teacher is actively engaged at, so one teacher can teach concurrently at several schools (mirrors `StudentEnrollment` for learners).
 - `TimetableConstraintRule` stores admin-configurable scheduling constraints (rule_type + JSON parameters + severity, scoped by school/model) so no pedagogical rule is hard-coded; it is interpreted by `services/timetable_constraints.py`.
+- `Campus`/`Building`/`Room`/`RoomEquipment` model schedulable facilities (multi-campus, room type/capacity/equipment); `Timetable.room_id` links a course to a `Room` (the legacy `room` string is kept for back-compat).
 
 ## DOX Scope
 

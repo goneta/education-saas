@@ -1364,6 +1364,69 @@ class TimetableConstraintRuleResponse(TimetableConstraintRuleBase):
     school_id: Optional[int] = None
     model_config = ConfigDict(from_attributes=True)
 
+
+# Facilities (campus / buildings / rooms / equipment)
+
+class CampusCreate(BaseModel):
+    name: str
+    address: Optional[str] = None
+    is_active: bool = True
+
+
+class CampusResponse(CampusCreate):
+    id: int
+    school_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class BuildingCreate(BaseModel):
+    name: str
+    campus_id: Optional[int] = None
+    is_active: bool = True
+
+
+class BuildingResponse(BuildingCreate):
+    id: int
+    school_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RoomEquipmentItem(BaseModel):
+    id: Optional[int] = None
+    name: str
+    quantity: int = 1
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RoomCreate(BaseModel):
+    name: str
+    building_id: Optional[int] = None
+    room_type: str = "classroom"
+    capacity: Optional[int] = None
+    is_active: bool = True
+    equipment: List[RoomEquipmentItem] = []
+
+
+class RoomUpdate(BaseModel):
+    name: Optional[str] = None
+    building_id: Optional[int] = None
+    room_type: Optional[str] = None
+    capacity: Optional[int] = None
+    is_active: Optional[bool] = None
+    equipment: Optional[List[RoomEquipmentItem]] = None
+
+
+class RoomResponse(BaseModel):
+    id: int
+    school_id: int
+    building_id: Optional[int] = None
+    name: str
+    room_type: str
+    capacity: Optional[int] = None
+    is_active: bool
+    equipment: List[RoomEquipmentItem] = []
+    model_config = ConfigDict(from_attributes=True)
+
 # Grade & Assessment Schemas
 
 class AssessmentBase(BaseModel):
