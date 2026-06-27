@@ -2,9 +2,8 @@ import os
 import time
 from collections import defaultdict, deque
 
-from fastapi import HTTPException
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import JSONResponse, Response
 
 
 RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60"))
@@ -42,7 +41,9 @@ def _client_key(request: Request) -> str:
 async def rate_limit_middleware(request: Request, call_next):
     content_length = request.headers.get("content-length")
     if content_length and int(content_length) > MAX_REQUEST_BODY_BYTES:
-        raise HTTPException(status_code=413, detail="Request body too large")
+        # Return (not raise) inside HTTP middleware: raising HTTPException here
+        # breaks the BaseHTTPMiddleware chain (anyio EndOfStream) under load.
+        return JSONResponse({"detail": "Request body too large"}, status_code=413)
 
     key = _client_key(request)
     max_requests = AUTH_RATE_LIMIT_MAX_REQUESTS if request.url.path.startswith("/auth/") else RATE_LIMIT_MAX_REQUESTS
@@ -53,7 +54,7 @@ async def rate_limit_middleware(request: Request, call_next):
         if count == 1:
             redis_client.expire(redis_key, RATE_LIMIT_WINDOW_SECONDS)
         if count > max_requests:
-            raise HTTPException(status_code=429, detail="Too many requests")
+            return JSONResponse({"detail": "Too many requests"}, status_code=429)
         return await call_next(request)
 
     now = time.monotonic()
@@ -62,7 +63,7 @@ async def rate_limit_middleware(request: Request, call_next):
         bucket.popleft()
 
     if len(bucket) >= max_requests:
-        raise HTTPException(status_code=429, detail="Too many requests")
+        return JSONResponse({"detail": "Too many requests"}, status_code=429)
     bucket.append(now)
     return await call_next(request)
 
