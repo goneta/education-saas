@@ -34,3 +34,7 @@
 # Student lifecycle
 
 The schema catalog includes enrollment, transfer, academic-year closure, temporary historical edit grant, and transactional import payloads. These contracts preserve the existing student API while exposing the global student journey separately.
+
+# Multi-school teaching
+
+`TeacherAssignmentCreate` / `TeacherAssignmentResponse` describe a teacher's engagement at one school/model. They back the multi-school teaching endpoints and do not alter the existing `TeacherResponse` contract.
