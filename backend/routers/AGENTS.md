@@ -29,6 +29,7 @@
 - Context routes own authorized organization/school/model/year selection; model-scoped academic routes must filter and create records against the resolved assignment.
 - Student lifecycle routes own global profile search, enrollment history, concurrent enrollment checks, transfers, year closure, edit grants, and permission-aware import/export.
 - Student collection queries must derive visibility from active enrollments rather than only the legacy `users.school_id`.
+- Public Site CMS content (`/site/content`) is read without authentication and written only by the Super Admin; writes ignore unknown sections, deep-merge over saved values, and are audited.
 
 # Verification
 

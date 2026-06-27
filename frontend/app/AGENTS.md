@@ -12,6 +12,7 @@
 - Dashboard pages must work inside the shared dashboard layout and respect mobile/desktop behavior.
 - Public pages should detect session state where applicable and route authenticated users toward the dashboard.
 - The student lifecycle workspace owns transfer decisions, concurrent enrollment entry, duplicate-safe import preview/commit, and strongly confirmed academic-year closure.
+- The public landing page renders its hero, partners, FAQ, testimonials, and SEO from the Site CMS (`@/lib/site-content`) with built-in fallbacks; the Super Admin edits this content at `/dashboard/site`.
 
 # Work Guidance
 

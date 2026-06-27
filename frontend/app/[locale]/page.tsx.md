@@ -7,6 +7,7 @@
 ## Purpose
 
 - Public localized homepage for the TeducAI marketing site, including hero, feature cards, trust sections, and dashboard preview mockup.
+- Hero copy, CTAs, partner chips, FAQ, testimonials, and SEO metadata are loaded server-side from the Site CMS via `getSiteContent` (`@/lib/site-content`); `generateMetadata` sets title/description from the CMS SEO fields. FAQ and testimonials sections render only when the Super Admin has added entries. Feature cards and trust highlights remain code-defined.
 
 ## DOX Scope
 

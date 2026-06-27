@@ -12,6 +12,7 @@
 - Config helpers must not expose secrets.
 - Localization helpers must preserve French as default and support EN/ES/SW flows.
 - Dashboard modules should call `requestConfirmation` for sensitive/destructive confirmation instead of browser-native prompts.
+- `site-content.ts` reads the public Site CMS server-side via `BACKEND_INTERNAL_URL` and must always return a fully-populated `SiteContent` by merging over `DEFAULT_SITE_CONTENT`.
 
 # Work Guidance
 
