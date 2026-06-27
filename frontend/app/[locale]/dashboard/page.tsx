@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react"
-import { Activity, ArchiveRestore, Building2, Calendar, Download, FileClock, GraduationCap, Layers3, Pencil, Plus, RefreshCw, School, SlidersHorizontal, Trash2, Upload, Users } from "lucide-react"
+import { Activity, ArchiveRestore, Building2, Calendar, Download, FileClock, GraduationCap, Layers3, Pencil, Plus, RefreshCw, School, SlidersHorizontal, Upload, Users } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -47,6 +47,25 @@ type AuditRow = {
     actor_id?: number
 }
 
+type ContextAssignment = {
+    id: number
+    school_id: number
+    display_name?: string
+}
+
+type ContextYear = {
+    id: number
+    school_id: number
+    school_model_assignment_id?: number
+    name: string
+    is_current: boolean
+}
+
+type ContextOptions = {
+    assignments: ContextAssignment[]
+    academic_years: ContextYear[]
+}
+
 const modules = [
     { label: "Élèves", href: "/dashboard/students", catalog: "Modèles de profils, documents d'inscription, règles d'import." },
     { label: "Professeurs", href: "/dashboard/teachers", catalog: "Profils enseignants, contrats types, catégories d'intervention." },
@@ -70,8 +89,6 @@ const modules = [
     { label: "Paramétrage des frais", href: "/dashboard/finance/settings", catalog: "Règles de facturation, devise et taxes." },
     { label: "SMS", href: "/dashboard/finance/sms", catalog: "Modèles SMS, campagnes et seuils d'envoi." },
 ]
-
-const academicYears = ["2024-2025", "2025-2026", "2026-2027"]
 
 const platformModules = [
     { label: "Comptes utilisateurs", href: "/dashboard/settings", description: "Activation, suspension, roles, permissions, reset d'acces et activite." },
@@ -157,17 +174,22 @@ export default function DashboardPage() {
 function SuperAdminControlCenter({ token, locale }: { token: string | null; locale: string }) {
     const [schools, setSchools] = useState<SchoolRow[]>([])
     const [audits, setAudits] = useState<AuditRow[]>([])
+    const [options, setOptions] = useState<ContextOptions>({ assignments: [], academic_years: [] })
     const [tab, setTab] = useState<"catalog" | "school">("catalog")
     const [openPanels, setOpenPanels] = useState<Set<string>>(() => new Set(["catalog-global"]))
     const [moduleLabel, setModuleLabel] = useState(modules[0].label)
     const [selectedSchoolId, setSelectedSchoolId] = useState<number | "">("")
-    const [filters, setFilters] = useState({ model: "", country: "", city: "", status: "all", year: "2025-2026" })
+    const [selectedYearId, setSelectedYearId] = useState<number | "">("")
+    const [filters, setFilters] = useState({ model: "", country: "", city: "", status: "all" })
     const [schoolForm, setSchoolForm] = useState({ name: "", domain_prefix: "", school_type: "general", country_code: "CI", address: "", email: "" })
     const [status, setStatus] = useState("")
+    const [activating, setActivating] = useState(false)
     const headers = useMemo(() => token ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` } : null, [token])
 
     const selectedModule = modules.find(item => item.label === moduleLabel) || modules[0]
     const selectedSchool = schools.find(school => school.id === Number(selectedSchoolId))
+    const schoolYears = options.academic_years.filter(year => !selectedSchoolId || year.school_id === Number(selectedSchoolId))
+    const selectedYear = options.academic_years.find(year => year.id === Number(selectedYearId))
     const filteredSchools = schools.filter(school => {
         if (filters.status === "active" && !school.is_active) return false
         if (filters.status === "inactive" && school.is_active) return false
@@ -208,9 +230,49 @@ function SuperAdminControlCenter({ token, locale }: { token: string | null; loca
             .then(response => response.ok ? response.json() : [])
             .then(data => setAudits(Array.isArray(data) ? data : []))
             .catch(() => setAudits([]))
+        fetch(`${API_BASE_URL}/context/options`, { headers })
+            .then(response => response.ok ? response.json() : null)
+            .then(data => setOptions({
+                assignments: Array.isArray(data?.assignments) ? data.assignments : [],
+                academic_years: Array.isArray(data?.academic_years) ? data.academic_years : [],
+            }))
+            .catch(() => setOptions({ assignments: [], academic_years: [] }))
     }
 
     useEffect(load, [headers])
+
+    const activateContext = async () => {
+        if (!headers || !selectedSchoolId) {
+            setStatus("Sélectionnez un établissement avant d'activer le contexte.")
+            return
+        }
+        // Resolve the school model assignment to scope the dashboard to this establishment.
+        const assignmentId = selectedYear?.school_model_assignment_id
+            ?? options.assignments.find(item => item.school_id === Number(selectedSchoolId))?.id
+        if (!assignmentId) {
+            setStatus("Aucun modèle d'établissement actif n'est configuré pour cet établissement.")
+            return
+        }
+        setActivating(true)
+        try {
+            const response = await fetch(`${API_BASE_URL}/context/active`, {
+                method: "PUT",
+                headers,
+                body: JSON.stringify({
+                    school_model_assignment_id: assignmentId,
+                    academic_year_id: selectedYearId ? Number(selectedYearId) : null,
+                }),
+            })
+            const payload = await response.json().catch(() => null)
+            if (!response.ok) {
+                setStatus(payload?.detail || "Activation du contexte impossible.")
+                return
+            }
+            setStatus(`Contexte actif: ${selectedSchool?.name || "établissement"}${selectedYear ? ` - ${selectedYear.name}` : ""}. Vous gérez désormais cet établissement comme son administrateur.`)
+        } finally {
+            setActivating(false)
+        }
+    }
 
     const createSchool = async (event: FormEvent) => {
         event.preventDefault()
@@ -266,14 +328,15 @@ function SuperAdminControlCenter({ token, locale }: { token: string | null; loca
                     </select>
                 </Control>
                 <Control label="Établissement">
-                    <select value={selectedSchoolId} onChange={event => setSelectedSchoolId(event.target.value ? Number(event.target.value) : "")} className="admin-select">
+                    <select value={selectedSchoolId} onChange={event => { setSelectedSchoolId(event.target.value ? Number(event.target.value) : ""); setSelectedYearId("") }} className="admin-select">
                         <option value="">Tous les établissements</option>
                         {filteredSchools.map(school => <option key={school.id} value={school.id}>{school.name}</option>)}
                     </select>
                 </Control>
                 <Control label="Année académique">
-                    <select value={filters.year} onChange={event => setFilters({ ...filters, year: event.target.value })} className="admin-select">
-                        {academicYears.map(year => <option key={year} value={year}>{year}</option>)}
+                    <select value={selectedYearId} onChange={event => setSelectedYearId(event.target.value ? Number(event.target.value) : "")} className="admin-select">
+                        <option value="">{schoolYears.length ? "Sélectionner une année" : "Aucune année disponible"}</option>
+                        {schoolYears.map(year => <option key={year.id} value={year.id}>{year.name}{year.is_current ? " (en cours)" : ""}</option>)}
                     </select>
                 </Control>
                 <Control label="Pays">
@@ -288,9 +351,12 @@ function SuperAdminControlCenter({ token, locale }: { token: string | null; loca
                 </Control>
             </section>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
                 <TabButton active={tab === "catalog"} onClick={() => setTab("catalog")}>Catalogue Global</TabButton>
                 <TabButton active={tab === "school"} onClick={() => setTab("school")}>Gestion par établissement</TabButton>
+                <Button type="button" className="bg-black text-white dark:bg-white dark:text-black" disabled={!selectedSchoolId || activating} onClick={activateContext}>
+                    <Building2 className="h-4 w-4" /> {activating ? "Activation..." : "Activer ce contexte"}
+                </Button>
             </div>
 
             {tab === "catalog" ? (
@@ -299,10 +365,10 @@ function SuperAdminControlCenter({ token, locale }: { token: string | null; loca
                         <p className="text-sm leading-6 text-[#64748B] dark:text-[#dce3eb]">{selectedModule.catalog}</p>
                         <div className="mt-4 grid gap-2 sm:grid-cols-2">
                             {["Créer", "Modifier", "Archiver", "Restaurer", "Importer", "Exporter"].map((action, index) => (
-                                <button key={action} type="button" className="flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm font-semibold dark:border-[#56616a]">
-                                    {[<Plus key="plus" />, <Pencil key="edit" />, <Trash2 key="trash" />, <ArchiveRestore key="restore" />, <Upload key="upload" />, <Download key="download" />][index]}
+                                <Link key={action} href={`/${locale}${selectedModule.href}`} className="flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm font-semibold transition hover:border-black dark:border-[#56616a] dark:hover:border-white">
+                                    {[<Plus key="plus" className="h-4 w-4" />, <Pencil key="edit" className="h-4 w-4" />, <ArchiveRestore key="archive" className="h-4 w-4" />, <ArchiveRestore key="restore" className="h-4 w-4" />, <Upload key="upload" className="h-4 w-4" />, <Download key="download" className="h-4 w-4" />][index]}
                                     {action}
-                                </button>
+                                </Link>
                             ))}
                         </div>
                     </Panel>
@@ -357,7 +423,7 @@ function SuperAdminControlCenter({ token, locale }: { token: string | null; loca
                         </div>
                     </Panel>
                     <Panel title={`Gestion ${selectedModule.label} par établissement`} open={openPanels.has("school-rubric-management")} onToggle={() => togglePanel("school-rubric-management")}>
-                        <p className="text-sm leading-6 text-[#64748B] dark:text-[#dce3eb]">Contexte actif: {selectedSchool?.name || "Tous les établissements"} - {filters.year}. Les actions ci-dessous ouvrent la rubrique existante avec le contexte sélectionné comme repère opérationnel.</p>
+                        <p className="text-sm leading-6 text-[#64748B] dark:text-[#dce3eb]">Contexte actif: {selectedSchool?.name || "Tous les établissements"}{selectedYear ? ` - ${selectedYear.name}` : ""}. Cliquez sur «&nbsp;Activer ce contexte&nbsp;» pour gérer cet établissement avec les droits de son administrateur, puis ouvrez les rubriques ci-dessous.</p>
                         <div className="mt-4 grid gap-2 sm:grid-cols-2">
                             {["Créer", "Modifier", "Supprimer", "Importer", "Exporter", "Archiver", "Historique"].map(action => (
                                 <Link key={action} href={`/${locale}${selectedModule.href}`} className="flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm font-semibold dark:border-[#56616a]">
