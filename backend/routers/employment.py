@@ -12,7 +12,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session, selectinload
 
 from .. import audit, database, models, schemas, security
-from ..services import ai_service, employment, file_storage
+from ..services import ai_credits, ai_service, employment, file_storage
 
 router = APIRouter(prefix="/employment", tags=["TeducAI Emploi"])
 logger = logging.getLogger(__name__)
@@ -785,8 +785,26 @@ def recruiter_job_matches(job_id: int, current_user: models.User = Depends(secur
 
 @router.post("/agent")
 def employment_agent(payload: schemas.EmploymentAgentRequest, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    # Like the dashboard chat, the employment agent consumes AI credits: the
+    # balance is checked before generation (no charge if insufficient) and usage
+    # is recorded against the caller's wallet afterwards.
+    ai_credits.ensure_credits(db, current_user, ai_credits.estimate_credits(payload.prompt))
     context = {"role": current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role), "module": "teducai_emploi", "mode": payload.mode}
     response = ai_service.ai_service.generate_response_from_config(payload.prompt, context, db)
+    provider = db.query(models.AIProvider).filter(models.AIProvider.id == response.get("provider_id")).first() if response.get("provider_id") else None
+    ai_credits.record_usage(
+        db,
+        current_user,
+        payload.prompt,
+        str(response.get("data") or response.get("message") or ""),
+        "employment_agent",
+        "chat_response",
+        provider=provider,
+        model_name=response.get("model_name"),
+        prompt_tokens=response.get("prompt_tokens"),
+        completion_tokens=response.get("completion_tokens"),
+    )
+    db.commit()
     return {
         "type": "content",
         "message": response.get("message"),

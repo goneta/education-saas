@@ -21,6 +21,7 @@
 - Student CV photos and recruiter logos are uploaded as JPG, PNG, or WebP files through SecureFile-backed endpoints, then exposed through public read routes only for share-enabled CVs or active recruiters.
 - Recruiter endpoints must stay limited to the connected recruiter's profile, offers, applications, and interviews.
 - Recruiter registration logs sanitized payloads, validation milestones, database row creation, side-effect failures, and stack traces on failure; passwords must never be logged.
+- The `/agent` endpoint consumes AI credits like the dashboard chat: it checks the caller's balance before generation (no charge if insufficient) and records usage (`module_name="employment_agent"`) against the caller's wallet afterwards.
 - Recruiter registration must return JSON `HTTPException` details for validation, integrity, and server failures instead of plain-text Uvicorn 500 responses.
 - New recruiter users use `UserRole.RECRUITER` only when the PostgreSQL enum contains the SQLAlchemy-stored `RECRUITER` label; `RecruiterProfile` remains authoritative and keeps older/fallback `staff` rows routable as recruiters.
 - Core recruiter account/profile creation must not fail solely because payment or audit side-effect rows fail; those failures are logged after the core account is committed.

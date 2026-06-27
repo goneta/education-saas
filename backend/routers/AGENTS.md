@@ -31,6 +31,7 @@
 - Student collection queries must derive visibility from active enrollments rather than only the legacy `users.school_id`.
 - Public Site CMS content (`/site/content`) is read without authentication and written only by the Super Admin; writes ignore unknown sections, deep-merge over saved values, and are audited.
 - Assessment routes must scope by the owning class's school (cross-school read/update/delete → 404) and enforce academic-year editability on mutations, while keeping reads available on closed years.
+- Every endpoint that calls a real AI provider must gate on the caller's AI credits before generation and record usage against the caller's wallet afterwards (chat, AI command-center, and employment agent all do); never expose unmetered provider access.
 
 # Verification
 
