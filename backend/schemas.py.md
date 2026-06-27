@@ -13,7 +13,7 @@
 - `TimetableConstraintRule*` schemas describe the configurable scheduling rules (rule_type, JSON parameters, severity, scope); the router validates `rule_type` against the engine's supported list.
 - `Campus*`/`Building*`/`Room*`/`RoomEquipmentItem` schemas back the facilities API; room create/update embed the equipment list (replaced wholesale on update).
 - `TimetableConfig*`/`TimetableSlot`/`SchoolHoliday*`/`SubjectRequirement*` schemas back the configurable scheduling grid (days/slots, holidays, weekly volume).
-- `TimetableOptimizeRequest`/`TimetableOptimizeCommit` back the optimiser preview/commit endpoints.
+- `TimetableOptimizeRequest`/`TimetableOptimizeCommit` back the optimiser preview/commit endpoints; `TimetableSimulateRequest` backs the what-if simulation endpoint.
 - Defines Pydantic API contracts for school settings, cash fee payments, AI providers, wallets, targeted credit packs, manual cash/free credit validation, school allocations, platform payments, and school payments.
 - AI provider contracts include account labels and available provider credits; platform monitoring contracts expose provider totals, sold/allocated credits, remaining platform credits, wallet balances, threshold settings, and low-credit alert state.
 - AI credit purchase contracts carry target context, provider, optional Mobile Money network, redirect URLs, manual-validation notes, checkout URL, and provider status.

@@ -1487,6 +1487,11 @@ class TimetableOptimizeCommit(BaseModel):
     candidate_count: int = 3
     preserve_locks: bool = True
 
+
+class TimetableSimulateRequest(BaseModel):
+    scenario: str  # teacher_absent | extra_working_day
+    params: Dict[str, Any] = {}
+
 # Grade & Assessment Schemas
 
 class AssessmentBase(BaseModel):

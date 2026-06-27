@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from sqlalchemy.orm import Session
 from typing import Any, Dict, List, Optional
 from .. import audit, models, pdf, schemas, security, database, tenancy
-from ..services import school_context, timetable_constraints, timetable_config, timetable_optimizer
+from ..services import school_context, timetable_constraints, timetable_config, timetable_optimizer, timetable_simulation
 
 router = APIRouter(prefix="/education", tags=["Education"])
 
@@ -1166,3 +1166,38 @@ def commit_optimized_timetable(
     audit.record_audit(db, action="timetable.optimized_committed", current_user=current_user, entity_type="timetable", details={"batch": batch, "seed": chosen.seed, "score": chosen.score, "created": created, "deleted": deleted})
     db.commit()
     return {"batch": batch, "seed": chosen.seed, "score": chosen.score, "created": created, "deleted": deleted}
+
+
+# ---------------------------------------------------------------------------
+# Explainable AI + what-if simulation
+# ---------------------------------------------------------------------------
+
+@router.post("/timetables/explain")
+def explain_best_timetable(
+    payload: schemas.TimetableOptimizeRequest,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+    school_id: Optional[int] = None,
+):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    candidates = timetable_optimizer.generate_candidates(db, resolved, candidate_count=payload.candidate_count)
+    if not candidates:
+        return {"explanation": ["Aucune grille horaire configurée."], "score": 0}
+    best = candidates[0]
+    return {"seed": best.seed, "score": best.score, "breakdown": best.breakdown, "explanation": timetable_simulation.explain_candidate(best)}
+
+
+@router.post("/timetables/simulate")
+def simulate_timetable_scenario(
+    payload: schemas.TimetableSimulateRequest,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+    school_id: Optional[int] = None,
+):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    result = timetable_simulation.simulate(db, resolved, payload.scenario, payload.params)
+    if result.get("error"):
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result

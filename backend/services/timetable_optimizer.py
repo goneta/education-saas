@@ -168,9 +168,25 @@ def _build_candidate(db, school_id, classes, subjects, teachers, days, slots, ru
     )
 
 
-def generate_candidates(db: Session, school_id: int, *, candidate_count: int = 3, subject_limit: int = 12) -> list[Candidate]:
-    """Return up to `candidate_count` scored candidate timetables, best first."""
+def generate_candidates(
+    db: Session,
+    school_id: int,
+    *,
+    candidate_count: int = 3,
+    subject_limit: int = 12,
+    exclude_teacher_ids: Optional[set[int]] = None,
+    extra_days: Optional[list[str]] = None,
+) -> list[Candidate]:
+    """Return up to `candidate_count` scored candidate timetables, best first.
+
+    `exclude_teacher_ids` / `extra_days` let the simulation service explore
+    "what if" scenarios (teacher absent, extra working day) without persisting.
+    """
     days, slots = timetable_config.effective_grid(db, school_id)
+    for day in (extra_days or []):
+        day = str(day).lower()
+        if day not in days and day in models.DayOfWeek._value2member_map_:
+            days = days + [day]
     if not days or not slots:
         return []
     classes = db.query(models.Class).filter(models.Class.school_id == school_id).order_by(models.Class.level, models.Class.name).all()
@@ -179,6 +195,8 @@ def generate_candidates(db: Session, school_id: int, *, candidate_count: int = 3
         models.User.school_id == school_id,
         models.User.role.in_([models.UserRole.TEACHER, models.UserRole.TRAINER, models.UserRole.INSTRUCTOR]),
     ).order_by(models.User.id).all()
+    if exclude_teacher_ids:
+        teachers = [t for t in teachers if t.id not in exclude_teacher_ids]
     rules = _rules_by_type(db, school_id)
     candidates = [
         _build_candidate(db, school_id, classes, subjects, teachers, days, slots, rules, seed)
