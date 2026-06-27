@@ -10,6 +10,7 @@
 
 - Scripts must not embed real secrets.
 - Backup and restore scripts must clearly report target database, output paths, and failures.
+- Scheduled maintenance jobs (e.g. `sync_ai_credits`) must be idempotent, audit their run, and reuse the corresponding service logic rather than duplicating it.
 
 # Work Guidance
 
