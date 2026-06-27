@@ -17,7 +17,7 @@
 ## Maintenance Notes
 
 - OpenAI, Anthropic, Google Gemini, xAI (Grok) and Manus do not expose a remaining-credit balance via their standard API keys, so their figure stays a manually-entered value; this is an API limitation, not a bug.
-- Provider keys are read from the encrypted DB record first; when absent, a conventional `<PROVIDER>_API_KEY` env var (loaded from `.env.production`) is used as a fallback. Keys are never logged or returned.
+- Provider keys are read from the encrypted DB record first; when absent, the provider's `.env.production` key is resolved through `ai_provider_bootstrap.env_api_key_for` (single source of truth for env key names/aliases). Keys are never logged or returned.
 - Network/auth failures are caught and returned as a status, never raised to the caller of `sync_provider_credits`.
 
 ## Verification

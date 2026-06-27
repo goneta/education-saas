@@ -104,10 +104,15 @@ class AIService:
         return fallback
 
     def _call_configured_provider(self, message: str, user_context: Dict[str, Any], provider: models.AIProvider) -> AIResponse:
+        from .ai_provider_bootstrap import env_api_key_for
+
         provider_type = (provider.provider_type or "").lower()
         api_key = crypto_utils.decrypt_secret(provider.api_key_encrypted) if provider.api_key_encrypted else None
         if not api_key:
-            raise RuntimeError("missing encrypted API key")
+            # Fall back to the provider's .env.production key when no DB key is stored.
+            api_key = env_api_key_for(provider_type)
+        if not api_key:
+            raise RuntimeError("missing API key (DB and environment)")
         if not OpenAI:
             raise RuntimeError("openai package unavailable")
         if provider_type not in {"openai", "openrouter", "grok", "custom", "manus", "claude", "anthropic", "gemini"}:

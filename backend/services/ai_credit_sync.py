@@ -12,27 +12,15 @@ has no stored key this module falls back to a conventional environment variable.
 """
 
 import logging
-import os
 from datetime import datetime
 from typing import Optional
 
 import httpx
 
 from .. import crypto_utils, models
+from .ai_provider_bootstrap import env_api_key_for
 
 logger = logging.getLogger(__name__)
-
-# Conventional env var per provider type, used only when no DB key is stored.
-ENV_KEY_BY_TYPE = {
-    "openai": "OPENAI_API_KEY",
-    "openrouter": "OPENROUTER_API_KEY",
-    "anthropic": "ANTHROPIC_API_KEY",
-    "claude": "ANTHROPIC_API_KEY",
-    "gemini": "GEMINI_API_KEY",
-    "grok": "XAI_API_KEY",
-    "xai": "XAI_API_KEY",
-    "manus": "MANUS_API_KEY",
-}
 
 # Provider types whose public API returns a usable remaining-balance figure.
 BALANCE_API_SUPPORTED = {"openrouter"}
@@ -47,8 +35,7 @@ def resolve_api_key(provider: models.AIProvider) -> Optional[str]:
         key = crypto_utils.decrypt_secret(provider.api_key_encrypted)
         if key:
             return key
-    env_var = ENV_KEY_BY_TYPE.get((provider.provider_type or "").lower())
-    return os.getenv(env_var) if env_var else None
+    return env_api_key_for(provider.provider_type)
 
 
 def sync_provider_credits(provider: models.AIProvider) -> dict:

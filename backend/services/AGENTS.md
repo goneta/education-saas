@@ -12,6 +12,7 @@
 - Services that mutate finance, AI credits, files, notifications, or tenant data must be deterministic and auditable through their callers.
 - Provider integrations should tolerate missing credentials and report actionable failures.
 - AI provider credit balances may only be auto-fetched where the provider API exposes them (e.g. OpenRouter); other providers keep a manually-entered value, and `ai_credit_sync` must report `unsupported`/`no_key`/`error` rather than raising or fabricating a balance.
+- AI providers are auto-registered from `.env.production` keys by `ai_provider_bootstrap` (env-seeded rows tagged `account_label="env"`, refreshed on boot, never clobbering UI-created rows); `env_api_key_for` is the single source of truth for env key names and aliases used by the chat and sync paths.
 - Checkout provider integrations must never mark payments successful before an authenticated provider webhook confirms the transaction.
 - Payment adapters must normalize provider-specific currency rules, including zero-decimal XOF/FCFA amounts.
 

@@ -63,6 +63,22 @@ app.include_router(student_lifecycle.router)
 app.include_router(employment.router)
 app.include_router(site.router)
 
+
+@app.on_event("startup")
+def bootstrap_env_ai_providers() -> None:
+    """Register AI providers from .env.production keys so they drive chat/sync.
+
+    Best-effort: never block app startup if the table or DB is not ready."""
+    from .services import ai_provider_bootstrap
+    db = SessionLocal()
+    try:
+        ai_provider_bootstrap.bootstrap_providers_from_env(db)
+    except Exception:  # pragma: no cover - startup must not crash on bootstrap
+        db.rollback()
+    finally:
+        db.close()
+
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to TeducAI API"}
