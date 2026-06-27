@@ -19,6 +19,7 @@
 - Keep the source file and this document in the same directory.
 - Fee and fee-schedule creation/listing are scoped to the validated active school-model assignment.
 - `_recalculate_fee_status` uses `automation.is_overdue` rather than comparing `fee.due_date` directly against `datetime.now()`, so a timezone-aware due date never raises a naive/aware comparison error when a fee is updated or paid.
+- `/payments` and `/reports` accept active-context scoping by school-model assignment and academic year: explicit query params win, otherwise the `X-School-Model-Assignment-ID` / `X-Academic-Year-ID` headers (injected globally by the frontend) are honoured. Scoping only narrows within the already school-scoped result set; with neither present, reports stay school-wide (backward compatible).
 
 ## Verification
 

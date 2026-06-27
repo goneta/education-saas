@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 from typing import List, Optional
@@ -340,6 +340,10 @@ def list_payments(
     operator_id: Optional[int] = None,
     class_id: Optional[int] = None,
     fee_category: Optional[str] = None,
+    school_model_assignment_id: Optional[int] = None,
+    academic_year_id: Optional[int] = None,
+    x_school_model_assignment_id: Optional[int] = Header(default=None, alias="X-School-Model-Assignment-ID"),
+    x_academic_year_id: Optional[int] = Header(default=None, alias="X-Academic-Year-ID"),
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
@@ -357,6 +361,16 @@ def list_payments(
         query = query.filter(models.Payment.payment_date <= end)
     if operator_id:
         query = query.filter(models.Payment.recorded_by_id == operator_id)
+    # Active-context scoping: explicit query params win, otherwise fall back to the
+    # active context headers the frontend injects globally. The query is already
+    # school-scoped, so narrowing by these values can only restrict within the
+    # caller's own school. Absent both, behaviour stays school-wide (backward compatible).
+    model_assignment = school_model_assignment_id or x_school_model_assignment_id
+    year = academic_year_id or x_academic_year_id
+    if model_assignment:
+        query = query.filter(models.Fee.school_model_assignment_id == model_assignment)
+    if year:
+        query = query.filter(models.Fee.academic_year_id == year)
     if fee_category:
         query = query.filter(models.Fee.category == fee_category)
     if class_id:
@@ -448,11 +462,17 @@ def finance_reports(
     class_id: Optional[int] = None,
     fee_category: Optional[str] = None,
     operator_id: Optional[int] = None,
+    school_model_assignment_id: Optional[int] = None,
+    academic_year_id: Optional[int] = None,
+    x_school_model_assignment_id: Optional[int] = Header(default=None, alias="X-School-Model-Assignment-ID"),
+    x_academic_year_id: Optional[int] = Header(default=None, alias="X-Academic-Year-ID"),
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
     rbac.require_permission(current_user, "finance:read", db)
-    payments = list_payments(start_date, end_date, operator_id, class_id, fee_category, db, current_user)
+    model_assignment = school_model_assignment_id or x_school_model_assignment_id
+    year = academic_year_id or x_academic_year_id
+    payments = list_payments(start_date, end_date, operator_id, class_id, fee_category, model_assignment, year, None, None, db, current_user)
     fee_query = db.query(models.Fee).options(
         selectinload(models.Fee.payments),
         selectinload(models.Fee.student).selectinload(models.StudentProfile.user),
@@ -460,6 +480,11 @@ def finance_reports(
         selectinload(models.Fee.class_),
     )
     fee_query = _apply_school_scope(fee_query, models.Fee, current_user)
+    # Active-context scoping (model assignment / academic year); see list_payments.
+    if model_assignment:
+        fee_query = fee_query.filter(models.Fee.school_model_assignment_id == model_assignment)
+    if year:
+        fee_query = fee_query.filter(models.Fee.academic_year_id == year)
     if fee_category:
         fee_query = fee_query.filter(models.Fee.category == fee_category)
     if class_id:
