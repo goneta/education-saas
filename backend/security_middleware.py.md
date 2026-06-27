@@ -8,6 +8,7 @@
 
 - Python source file used by the backend, migrations, scripts, tests, or utilities.
 - HTTP middleware for security headers and rate limiting (per-IP+path window, Redis or in-memory). Rate-limit/body-size rejections `return` a `JSONResponse` (413/429) and must never `raise HTTPException`: raising inside a `BaseHTTPMiddleware` breaks the middleware chain (anyio EndOfStream) under load.
+- Rate limiting is enabled only in production (`APP_ENV=production`) or when `RATE_LIMIT_ENABLED=true`; the per-process in-memory limiter is not meaningful in dev/test and is skipped there. Body-size enforcement always applies.
 
 ## DOX Scope
 

@@ -6,6 +6,9 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 
+# Rate limiting is a production concern (the in-memory limiter is per-process and
+# not meaningful in dev/test). Enabled in production, or when explicitly forced.
+RATE_LIMIT_ENABLED = os.getenv("RATE_LIMIT_ENABLED", "").lower() == "true" or os.getenv("APP_ENV") == "production"
 RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60"))
 RATE_LIMIT_MAX_REQUESTS = int(os.getenv("RATE_LIMIT_MAX_REQUESTS", "120"))
 AUTH_RATE_LIMIT_MAX_REQUESTS = int(os.getenv("AUTH_RATE_LIMIT_MAX_REQUESTS", "60"))
@@ -44,6 +47,9 @@ async def rate_limit_middleware(request: Request, call_next):
         # Return (not raise) inside HTTP middleware: raising HTTPException here
         # breaks the BaseHTTPMiddleware chain (anyio EndOfStream) under load.
         return JSONResponse({"detail": "Request body too large"}, status_code=413)
+
+    if not RATE_LIMIT_ENABLED:
+        return await call_next(request)
 
     key = _client_key(request)
     max_requests = AUTH_RATE_LIMIT_MAX_REQUESTS if request.url.path.startswith("/auth/") else RATE_LIMIT_MAX_REQUESTS
