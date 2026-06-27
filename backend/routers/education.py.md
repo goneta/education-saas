@@ -23,7 +23,8 @@
 - Generation reads the configurable grid (working days + course slots) and per-subject weekly volume via `services/timetable_config.py` instead of hard-coded days/slots; `/timetables/config` (get/upsert), `/timetables/holidays` and `/timetables/subject-requirements` manage these (timetable-admin gated, tenant-scoped). Break/lunch slots are excluded from scheduling.
 - `/timetables/optimize` returns several scored candidate timetables (via `services/timetable_optimizer.py`) without persisting; `/timetables/optimize/commit` regenerates by seed and persists the chosen candidate as a new draft batch (respecting locks). Both are timetable-admin gated and tenant-scoped.
 - `/timetables/explain` returns plain-language reasons for the best candidate's score (explainable AI); `/timetables/simulate` runs what-if scenarios (`teacher_absent`, `extra_working_day`) via `services/timetable_simulation.py` and reports the impact vs baseline.
-- `/timetables/absences` records teacher absences; `/timetables/substitutions` proposes available substitutes (via `services/timetable_substitution.py`) and `/timetables/substitutions/apply` reassigns a course's teacher after re-checking the slot is free. All admin-gated + tenant-scoped.
+- `/timetables/absences` records teacher absences; `/timetables/substitutions` proposes available substitutes (via `services/timetable_substitution.py`) and `/timetables/substitutions/apply` reassigns a course's teacher after re-checking the slot is free, then notifies the substitute + class. All admin-gated + tenant-scoped.
+- Integration: `/timetables/teacher-load` aggregates per-teacher weekly sessions/minutes/hours from the timetable (HR/payroll). Attendance already links to timetable entries; substitutions emit timetable notifications.
 - Class, subject, and academic-year collections are filtered by the validated active school-model assignment.
 - System-default class and subject names are protected and those rows cannot be deleted.
 

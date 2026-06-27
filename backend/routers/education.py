@@ -1254,7 +1254,34 @@ def apply_substitution(payload: schemas.SubstitutionApply, current_user: models.
         if _overlap(entry.start_time, entry.end_time, other.start_time, other.end_time):
             raise HTTPException(status_code=409, detail="Substitute is already booked on this slot")
     entry.teacher_id = payload.substitute_teacher_id
+    db.flush()
+    # Integration: notify the substitute teacher and the class.
+    _record_timetable_notification(db, resolved, current_user, entry, "timetable.substituted", "Un remplacement a été affecté à un cours de votre emploi du temps.")
     audit.record_audit(db, action="timetable.substitution.applied", current_user=current_user, entity_type="timetable", entity_id=entry.id, details={"substitute_teacher_id": payload.substitute_teacher_id})
     db.commit()
     db.refresh(entry)
     return entry
+
+
+@router.get("/timetables/teacher-load")
+def teacher_load(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db), school_id: Optional[int] = None):
+    """Per-teacher weekly scheduled load (sessions + minutes) from the timetable.
+
+    Integration point for HR/payroll: hours actually scheduled per teacher.
+    """
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    rows = _scope_query(db, resolved).filter(models.Timetable.teacher_id != None).all()  # noqa: E711
+    load: Dict[int, Dict[str, Any]] = {}
+    for row in rows:
+        bucket = load.setdefault(row.teacher_id, {"teacher_id": row.teacher_id, "sessions": 0, "minutes": 0})
+        bucket["sessions"] += 1
+        bucket["minutes"] += _duration(row.start_time, row.end_time)
+    teachers = {t.id: t.full_name for t in db.query(models.User).filter(models.User.id.in_(load.keys() or [-1])).all()}
+    result = []
+    for teacher_id, bucket in load.items():
+        bucket["full_name"] = teachers.get(teacher_id)
+        bucket["hours"] = round(bucket["minutes"] / 60, 2)
+        result.append(bucket)
+    result.sort(key=lambda b: b["minutes"], reverse=True)
+    return {"teacher_load": result}
