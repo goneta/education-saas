@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from sqlalchemy.orm import Session
 from typing import Any, Dict, List, Optional
 from .. import audit, models, pdf, schemas, security, database, tenancy
-from ..services import school_context
+from ..services import school_context, timetable_constraints
 
 router = APIRouter(prefix="/education", tags=["Education"])
 
@@ -139,6 +139,10 @@ def _detect_timetable_conflicts(
             if entry.subject_id in pair and any(subject in pair for subject in same_day_subjects):
                 conflicts.append({"type": "pedagogical_incompatibility", "severity": "warning", "message": "Deux matières déclarées incompatibles sont planifiées le même jour.", "suggestions": ["Déplacer l'une des matières sur un autre jour."]})
                 break
+
+    # Admin-configurable rules from the database (no hard-coded pedagogy).
+    for violation in timetable_constraints.evaluate(db, school_id, entry, exclude_id=exclude_id):
+        conflicts.append({**violation, "suggestions": ["Ajuster le créneau pour respecter la règle configurée."]})
     return conflicts
 
 
@@ -870,4 +874,107 @@ def delete_timetable_entry(
     _record_timetable_notification(db, school_id, current_user, entry, "timetable.deleted", "Un cours a été supprimé de votre emploi du temps.")
     audit.record_audit(db, action="timetable.entry.deleted", current_user=current_user, entity_type="timetable", entity_id=entry.id)
     db.delete(entry)
+    db.commit()
+
+
+# ---------------------------------------------------------------------------
+# Configurable timetable constraint rules (admin-managed, no hard-coded pedagogy)
+# ---------------------------------------------------------------------------
+
+def _constraint_rule_or_404(db: Session, rule_id: int, school_id: int) -> models.TimetableConstraintRule:
+    row = db.query(models.TimetableConstraintRule).filter(
+        models.TimetableConstraintRule.id == rule_id,
+        models.TimetableConstraintRule.school_id == school_id,
+    ).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Constraint rule not found")
+    return row
+
+
+@router.get("/timetables/constraint-rule-types")
+def timetable_constraint_rule_types(current_user: models.User = Depends(security.get_current_user)):
+    _require_timetable_admin(current_user)
+    return {"rule_types": timetable_constraints.SUPPORTED_RULE_TYPES}
+
+
+@router.get("/timetables/constraint-rules", response_model=List[schemas.TimetableConstraintRuleResponse])
+def list_constraint_rules(
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+    school_id: Optional[int] = None,
+):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    return db.query(models.TimetableConstraintRule).filter(
+        models.TimetableConstraintRule.school_id == resolved,
+    ).order_by(models.TimetableConstraintRule.rule_type, models.TimetableConstraintRule.id).all()
+
+
+@router.post("/timetables/constraint-rules", response_model=schemas.TimetableConstraintRuleResponse)
+def create_constraint_rule(
+    payload: schemas.TimetableConstraintRuleCreate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+    school_id: Optional[int] = None,
+):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    if payload.rule_type not in timetable_constraints.SUPPORTED_RULE_TYPES:
+        raise HTTPException(status_code=400, detail={"unsupported_rule_type": payload.rule_type, "supported": timetable_constraints.SUPPORTED_RULE_TYPES})
+    if payload.severity not in {"blocking", "warning"}:
+        raise HTTPException(status_code=400, detail="severity must be 'blocking' or 'warning'")
+    row = models.TimetableConstraintRule(
+        school_id=resolved,
+        school_model_assignment_id=payload.school_model_assignment_id,
+        rule_type=payload.rule_type,
+        name=payload.name,
+        parameters=payload.parameters or {},
+        severity=payload.severity,
+        is_active=payload.is_active,
+        created_by_id=current_user.id,
+    )
+    db.add(row)
+    db.flush()
+    audit.record_audit(db, action="timetable.constraint_rule.created", current_user=current_user, entity_type="timetable_constraint_rule", entity_id=row.id, details={"rule_type": row.rule_type})
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.put("/timetables/constraint-rules/{rule_id}", response_model=schemas.TimetableConstraintRuleResponse)
+def update_constraint_rule(
+    rule_id: int,
+    payload: schemas.TimetableConstraintRuleUpdate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+    school_id: Optional[int] = None,
+):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    row = _constraint_rule_or_404(db, rule_id, resolved)
+    updates = payload.model_dump(exclude_unset=True)
+    if "rule_type" in updates and updates["rule_type"] not in timetable_constraints.SUPPORTED_RULE_TYPES:
+        raise HTTPException(status_code=400, detail={"unsupported_rule_type": updates["rule_type"], "supported": timetable_constraints.SUPPORTED_RULE_TYPES})
+    if "severity" in updates and updates["severity"] not in {"blocking", "warning"}:
+        raise HTTPException(status_code=400, detail="severity must be 'blocking' or 'warning'")
+    for key, value in updates.items():
+        setattr(row, key, value)
+    audit.record_audit(db, action="timetable.constraint_rule.updated", current_user=current_user, entity_type="timetable_constraint_rule", entity_id=row.id, details={"fields": sorted(updates.keys())})
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.delete("/timetables/constraint-rules/{rule_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_constraint_rule(
+    rule_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+    school_id: Optional[int] = None,
+):
+    _require_timetable_admin(current_user)
+    resolved = _resolve_school(current_user, school_id, db)
+    row = _constraint_rule_or_404(db, rule_id, resolved)
+    db.delete(row)
+    audit.record_audit(db, action="timetable.constraint_rule.deleted", current_user=current_user, entity_type="timetable_constraint_rule", entity_id=rule_id)
     db.commit()

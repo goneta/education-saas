@@ -1333,7 +1333,35 @@ class TimetableResponse(TimetableBase):
     conflict_status: str = "clear"
     conflict_details: Optional[List[Dict[str, Any]]] = None
     published_at: Optional[datetime] = None
-    
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TimetableConstraintRuleBase(BaseModel):
+    rule_type: str
+    name: Optional[str] = None
+    parameters: Dict[str, Any] = {}
+    severity: str = "warning"
+    is_active: bool = True
+    school_model_assignment_id: Optional[int] = None
+
+
+class TimetableConstraintRuleCreate(TimetableConstraintRuleBase):
+    pass
+
+
+class TimetableConstraintRuleUpdate(BaseModel):
+    rule_type: Optional[str] = None
+    name: Optional[str] = None
+    parameters: Optional[Dict[str, Any]] = None
+    severity: Optional[str] = None
+    is_active: Optional[bool] = None
+    school_model_assignment_id: Optional[int] = None
+
+
+class TimetableConstraintRuleResponse(TimetableConstraintRuleBase):
+    id: int
+    school_id: Optional[int] = None
     model_config = ConfigDict(from_attributes=True)
 
 # Grade & Assessment Schemas

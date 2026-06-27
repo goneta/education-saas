@@ -979,6 +979,40 @@ class Timetable(Base):
     teacher_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     teacher = relationship("User", back_populates="timetables")
 
+
+class TimetableConstraintRule(Base):
+    """Admin-configurable scheduling constraint, stored in the database so no
+    pedagogical rule is hard-coded. Each row declares a `rule_type` and a JSON
+    `parameters` payload interpreted by the constraint engine
+    (`services/timetable_constraints.py`). Rules are scoped to a school (and
+    optionally a school-model assignment) and carry a severity so a violation is
+    either blocking or a soft warning.
+
+    Examples (parameters):
+    - subject_time_window:      {"subject_id": 5, "not_after": "16:00"}
+    - subject_no_consecutive_days: {"subject_id": 5}
+    - subject_after_forbidden:  {"subject_id": 7, "not_after_subject_id": 9}
+    - teacher_available_days:   {"teacher_id": 12, "days": ["tuesday", "thursday"]}
+    - subject_max_per_day:      {"subject_id": 5, "max": 1}
+    - max_heavy_subjects_per_day: {"max": 2, "min_coefficient": 3}
+    - room_subject_restriction: {"room": "Laboratoire 1", "subject_ids": [5, 6]}
+    """
+
+    __tablename__ = "timetable_constraint_rules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
+    rule_type = Column(String, nullable=False, index=True)
+    name = Column(String, nullable=True)
+    parameters = Column(JSON, nullable=False, default=dict)
+    severity = Column(String, nullable=False, default="warning")  # blocking | warning
+    is_active = Column(Boolean, nullable=False, default=True, index=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
 class ReferenceData(Base):
     __tablename__ = "reference_data"
     
