@@ -146,6 +146,10 @@ def portal_documents(
     current_user: models.User = Depends(security.get_current_user),
 ):
     allowed_student_ids: list[int] = []
+    # Student and parent portals are restricted to their own student set; staff with
+    # files:read see the whole school. For restricted roles an empty set must mean
+    # "no access", never "everything".
+    restricted = True
     if current_user.role in [models.UserRole.STUDENT, models.UserRole.PUPIL] and current_user.student_profile:
         allowed_student_ids = [current_user.student_profile.id]
     elif current_user.role == models.UserRole.PARENT:
@@ -157,10 +161,14 @@ def portal_documents(
         ]
     else:
         rbac.require_permission(current_user, "files:read", db)
+        restricted = False
         if current_user.school_id:
             allowed_student_ids = [
                 row.id for row in db.query(models.StudentProfile).join(models.User).filter(models.User.school_id == current_user.school_id).all()
             ]
+    if restricted and not allowed_student_ids:
+        # Student without a profile or parent with no active links: see nothing.
+        allowed_student_ids = [-1]
     if student_id:
         if allowed_student_ids and student_id not in allowed_student_ids:
             raise HTTPException(status_code=403, detail="Not authorized for this student")
