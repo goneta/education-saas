@@ -795,6 +795,12 @@ class StudentUpdate(BaseModel):
 
 class StudentProfileResponse(StudentProfileBase):
     id: int
+    # Tolerant on read: admission/import-created profiles may lack these until
+    # completed, and a stored malformed parent email must not 500 the roster.
+    # Creation schemas keep these required/validated.
+    date_of_birth: Optional[datetime] = None
+    gender: Optional[str] = None
+    parent_email: Optional[str] = None
     student_formatted_address: Optional[str] = None
     parent_phone_e164: Optional[str] = None
     parent_formatted_address: Optional[str] = None

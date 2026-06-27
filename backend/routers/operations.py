@@ -7,9 +7,28 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from .. import audit, database, models, schemas, security
-from ..services import school_context
+from ..services import school_context, student_lifecycle
 
 router = APIRouter(prefix="/operations", tags=["Institution Operations"])
+
+
+def _active_context_with_year(db: Session, current_user: models.User):
+    """Resolve the active context, ensuring an academic year exists so new
+    students can receive a `StudentEnrollment` (required to appear in rosters)."""
+    context = school_context.resolve_context(db, current_user)
+    if not context.academic_year_id:
+        year = student_lifecycle.ensure_academic_year_for_context(
+            db,
+            school_id=context.school_id,
+            school_model_assignment_id=context.school_model_assignment_id,
+        )
+        context = school_context.resolve_context(
+            db,
+            current_user,
+            school_model_assignment_id=context.school_model_assignment_id,
+            academic_year_id=year.id,
+        )
+    return context
 
 OPERATIONS_ROLES = {
     models.UserRole.SUPER_ADMIN,
@@ -132,7 +151,7 @@ def enroll_admission(application_id: int, payload: schemas.AdmissionEnrollmentCr
     )
     db.add(student_user)
     db.flush()
-    active_context = school_context.resolve_context(db, current_user)
+    active_context = _active_context_with_year(db, current_user)
 
     student = models.StudentProfile(
         user_id=student_user.id,
@@ -149,6 +168,18 @@ def enroll_admission(application_id: int, payload: schemas.AdmissionEnrollmentCr
     )
     db.add(student)
     db.flush()
+
+    # Give the new student a global profile + enrollment so they appear in the
+    # roster like students created through the standard /students path.
+    student_lifecycle.ensure_current_enrollment(
+        db,
+        student_profile=student,
+        current_user=current_user,
+        school_id=school_id,
+        school_model_assignment_id=active_context.school_model_assignment_id,
+        academic_year_id=active_context.academic_year_id,
+        class_id=cls.id if cls else None,
+    )
 
     documents_count = 0
     if payload.create_registration_documents:
@@ -208,6 +239,7 @@ def import_students(
 ):
     _ensure_manager(current_user)
     school_id = _school_id(current_user)
+    active_context = _active_context_with_year(db, current_user)
     rows = _rows_from_upload(file)
     created = 0
     skipped: list[dict] = []
@@ -233,14 +265,26 @@ def import_students(
         )
         db.add(user)
         db.flush()
-        db.add(models.StudentProfile(
+        profile = models.StudentProfile(
             user_id=user.id,
+            school_model_assignment_id=active_context.school_model_assignment_id,
             registration_number=registration_number,
             parent_name=str(row.get("parent_name") or "Parent"),
             parent_phone=str(row.get("parent_phone") or "+2250102030405"),
             gender=str(row.get("gender") or "N/A"),
             status=models.StudentStatus.UNASSIGNED,
-        ))
+        )
+        db.add(profile)
+        db.flush()
+        # Enrollment makes the imported student visible in the roster.
+        student_lifecycle.ensure_current_enrollment(
+            db,
+            student_profile=profile,
+            current_user=current_user,
+            school_id=school_id,
+            school_model_assignment_id=active_context.school_model_assignment_id,
+            academic_year_id=active_context.academic_year_id,
+        )
         created += 1
     db.commit()
     return {"created": created, "skipped": skipped}
