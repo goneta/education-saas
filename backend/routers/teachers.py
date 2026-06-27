@@ -133,6 +133,32 @@ def list_teachers(
     teachers = query.distinct().order_by(models.User.full_name.asc(), models.User.id.asc()).offset(skip).limit(limit).all()
     return teachers
 
+
+@router.get("/lookup")
+def lookup_teacher(
+    email: str,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    """Resolve an existing teacher by email so an admin can add them to their
+    school (multi-school teaching). Returns minimal identity, not full profile."""
+    if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    teacher = db.query(models.User).join(models.TeacherProfile).filter(
+        models.User.email == email.strip().lower()
+    ).first()
+    if not teacher:
+        raise HTTPException(status_code=404, detail="Aucun enseignant trouvé avec cet email.")
+    already_here = teacher_assignments.active_assignment_in_school(
+        db, teacher.id, current_user.school_id
+    ) is not None if current_user.school_id else False
+    return {
+        "id": teacher.id,
+        "full_name": teacher.full_name,
+        "email": teacher.email,
+        "already_in_school": already_here,
+    }
+
 @router.get("/{teacher_id}", response_model=schemas.TeacherResponse)
 def get_teacher(
     teacher_id: int,

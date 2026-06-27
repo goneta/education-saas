@@ -73,6 +73,26 @@ def test_removing_teacher_from_one_school_keeps_the_other():
     assert teacher_id in _teacher_ids(school_c)
 
 
+def test_lookup_resolves_existing_teacher_by_email():
+    school_c = _admin("lookup_c")
+    school_d = _admin("lookup_d")
+    teacher = _register_teacher(school_c)
+    email = client.get(f"/teachers/{teacher['id']}/assignments", headers=school_c).json()  # ensure created
+    assert email  # has at least one assignment
+    teacher_email = None
+    # Re-fetch the teacher email from school C's list.
+    for row in client.get("/teachers", headers=school_c).json():
+        if row["id"] == teacher["id"]:
+            teacher_email = row["email"]
+    res = client.get(f"/teachers/lookup?email={teacher_email}", headers=school_d)
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["id"] == teacher["id"]
+    assert body["already_in_school"] is False
+    # Unknown email returns 404.
+    assert client.get("/teachers/lookup?email=nobody@nowhere.test", headers=school_d).status_code == 404
+
+
 def test_school_cannot_view_teacher_without_an_assignment():
     school_c = _admin("view_c")
     school_d = _admin("view_d")

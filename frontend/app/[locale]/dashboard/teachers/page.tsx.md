@@ -6,7 +6,7 @@
 
 ## Purpose
 
-- Loads and displays the tenant-scoped teacher list and coordinates teacher create, edit, delete, and search actions.
+- Loads and displays the tenant-scoped teacher list and coordinates teacher create, edit, delete, search, and multi-school assignment actions.
 
 ## DOX Scope
 
@@ -19,6 +19,7 @@
 - API failures must be passed to the list component instead of silently rendering an empty result.
 - Normalizes direct-array and wrapped collection responses and bypasses stale browser caches before passing data to the table.
 - Teacher rows refresh after authenticated profile-photo replacement.
+- The "Enseignant existant" panel resolves a teacher by email via `/teachers/lookup`, then attaches them to the active school via `POST /teachers/{id}/assignments` so a teacher can teach at several schools concurrently without creating a duplicate account.
 
 ## Verification
 
