@@ -343,8 +343,16 @@ def revoke_share(share_id: int, current_user: models.User = Depends(security.get
     share = db.query(models.DocumentShare).filter(models.DocumentShare.id == share_id).first()
     if not share:
         raise HTTPException(status_code=404, detail="Share not found")
-    if share.created_by_id != current_user.id and not _is_admin(current_user):
-        raise HTTPException(status_code=403, detail="Not authorized")
+    if share.created_by_id != current_user.id:
+        # Admins may revoke shares only on files within their own school; the
+        # platform Super Admin may revoke any. This prevents one school admin
+        # from disrupting another school's document sharing.
+        file_row = db.query(models.SecureFile).filter(models.SecureFile.id == share.file_id).first()
+        same_school_admin = _is_admin(current_user) and file_row is not None and (
+            current_user.role == models.UserRole.SUPER_ADMIN or file_row.school_id == current_user.school_id
+        )
+        if not same_school_admin:
+            raise HTTPException(status_code=403, detail="Not authorized")
     share.status = "revoked"
     share.revoked_at = datetime.now(timezone.utc)
     db.commit()
