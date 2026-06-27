@@ -18,6 +18,7 @@
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
 - Automated invoices, outstanding balances, and payment cash-journal rows inherit the fee's school-model assignment.
+- `is_overdue(due_date)` is the shared, timezone-safe way to compare a fee/invoice due date against now; it normalizes timezone-aware datetimes (e.g. from an ISO `Z`-suffixed payload) before comparing against the module's naive UTC clock. Other modules (e.g. `backend/routers/finance.py`) should call `automation.is_overdue` instead of comparing `due_date` directly, to avoid `TypeError: can't compare offset-naive and offset-aware datetimes`.
 
 ## Verification
 

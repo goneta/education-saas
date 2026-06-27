@@ -109,7 +109,7 @@ async function createCoreAcademicData(request: APIRequestContext, suffix: string
         full_name: `Teacher ${suffix}`,
         password: 'Teacher123!Secure',
         role: 'teacher',
-        phone_number: '+10000000001',
+        phone_number: '+2250700000001',
         address: 'Teacher E2E address',
         profile: {
           specialization: 'Mathematics',
@@ -186,7 +186,7 @@ async function createCoreAcademicData(request: APIRequestContext, suffix: string
           gender: 'Male',
           student_address: 'Student E2E address',
           parent_name: 'Parent E2E',
-          parent_phone: '+10000000002',
+          parent_phone: '+2250700000002',
           parent_email: `parent.${suffix}@example.com`,
           parent_address: 'Parent E2E address',
           current_class_id: classRoom.id,

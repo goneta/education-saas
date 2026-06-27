@@ -88,6 +88,37 @@ def test_payment_creates_balanced_journal_entry():
     assert balance["total_debit"] == balance["total_credit"] == 1000
 
 
+def test_fee_with_timezone_aware_due_date_does_not_crash():
+    """Regression test: a fee created with a timezone-aware ISO due_date (the
+    format produced by JavaScript's Date.toISOString(), e.g. ending in "Z")
+    must not raise a naive/aware datetime comparison error when the backend
+    computes invoice status and overdue notifications."""
+    headers, _, _ = _admin("tzfee")
+    student = _student(headers)
+
+    future_due = "2099-01-01T00:00:00Z"
+    fee = client.post("/finance/fees", headers=headers, json={
+        "title": "Tuition with aware due date",
+        "amount": 500,
+        "due_date": future_due,
+        "student_id": student["id"],
+    })
+    assert fee.status_code == 200, fee.text
+    assert fee.json()["status"] == "pending"
+
+    past_due = "2000-01-01T00:00:00Z"
+    overdue_fee = client.post("/finance/fees", headers=headers, json={
+        "title": "Overdue tuition with aware due date",
+        "amount": 300,
+        "due_date": past_due,
+        "student_id": student["id"],
+    })
+    assert overdue_fee.status_code == 200, overdue_fee.text
+
+    paid = client.post(f"/finance/fees/{fee.json()['id']}/payments", headers=headers, json={"amount": 100})
+    assert paid.status_code == 200, paid.text
+
+
 def test_lmd_summary_computes_credits_and_gpa():
     headers, _, _ = _admin("lmd")
     student = _student(headers)

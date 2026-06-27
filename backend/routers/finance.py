@@ -109,7 +109,7 @@ def _serialize_fee(fee: models.Fee):
 def _recalculate_fee_status(fee: models.Fee) -> None:
     total_paid = sum(payment.amount for payment in fee.payments)
     if total_paid <= 0:
-        if fee.due_date and fee.due_date < datetime.now():
+        if automation.is_overdue(fee.due_date):
             fee.status = models.FeeStatus.OVERDUE
         else:
             fee.status = models.FeeStatus.PENDING

@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime, time, timezone
 from uuid import uuid4
 
 from sqlalchemy import func
@@ -11,13 +11,32 @@ def _now() -> datetime:
     return datetime.utcnow()
 
 
+def is_overdue(due_date: datetime | None) -> bool:
+    """Safely check whether due_date is in the past, tolerating timezone-aware input.
+
+    Incoming request payloads can carry timezone-aware datetimes (e.g. an
+    ISO string ending in "Z"), while the rest of the backend works with
+    naive UTC datetimes. Normalize before comparing so this never raises
+    TypeError: can't compare offset-naive and offset-aware datetimes.
+    """
+    if not due_date:
+        return False
+    if due_date.tzinfo is not None:
+        due_date = due_date.astimezone(timezone.utc).replace(tzinfo=None)
+    return due_date < _now()
+
+
+def _is_past(due_date: datetime | None) -> bool:
+    return is_overdue(due_date)
+
+
 def _invoice_status(amount_due: float, amount_paid: float, due_date: datetime | None) -> models.StudentInvoiceStatus:
     remaining = max((amount_due or 0) - (amount_paid or 0), 0)
     if remaining <= 0:
         return models.StudentInvoiceStatus.PAID
     if amount_paid and amount_paid > 0:
         return models.StudentInvoiceStatus.PARTIAL
-    if due_date and due_date < _now():
+    if _is_past(due_date):
         return models.StudentInvoiceStatus.OVERDUE
     return models.StudentInvoiceStatus.UNPAID
 
@@ -297,7 +316,7 @@ def refresh_financial_snapshot(db: Session, school_id: int) -> None:
 def automate_fee_change(db: Session, fee: models.Fee, current_user: models.User | None = None) -> None:
     ensure_invoice_for_fee(db, fee, current_user)
     refresh_financial_snapshot(db, fee.school_id)
-    if fee.remaining_balance > 0 and fee.due_date and fee.due_date < _now():
+    if fee.remaining_balance > 0 and _is_past(fee.due_date):
         parent = _parent_link(db, fee.student_id)
         record_notification(
             db,

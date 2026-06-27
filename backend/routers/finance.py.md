@@ -18,6 +18,7 @@
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
 - Fee and fee-schedule creation/listing are scoped to the validated active school-model assignment.
+- `_recalculate_fee_status` uses `automation.is_overdue` rather than comparing `fee.due_date` directly against `datetime.now()`, so a timezone-aware due date never raises a naive/aware comparison error when a fee is updated or paid.
 
 ## Verification
 

@@ -17,6 +17,7 @@
 
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
+- `test_fee_with_timezone_aware_due_date_does_not_crash` guards against a regression where a fee created with a timezone-aware ISO `due_date` (e.g. ending in `Z`, as produced by the frontend) crashed `automate_fee_change` with a naive/aware datetime comparison error.
 
 ## Verification
 
