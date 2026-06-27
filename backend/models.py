@@ -2786,3 +2786,23 @@ class DataRetentionRule(Base):
 
     school = relationship("School")
     created_by = relationship("User")
+
+
+class SiteContent(Base):
+    """Platform-wide CMS content for the public TeducAI site.
+
+    Managed by the Super Admin. A single row (singleton) holds the editable
+    public content as a JSON document: hero, FAQ, testimonials, pricing,
+    partners, SEO and footer. The public site reads it; if absent, code-level
+    defaults are used so the landing page never breaks.
+    """
+
+    __tablename__ = "site_content"
+
+    id = Column(Integer, primary_key=True, index=True)
+    data = Column(JSON, nullable=False, default=dict)
+    updated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    updated_by = relationship("User")

@@ -95,7 +95,7 @@ const platformModules = [
     { label: "Abonnements", href: "/dashboard/settings", description: "Plans TeducAI, abonnements recruteurs, abonnements etablissements et statuts." },
     { label: "Credits IA", href: "/dashboard/ai-credits", description: "Packs, prix, achats, consommations, ajustements et portefeuilles." },
     { label: "Fournisseurs IA", href: "/dashboard/ai-command-center", description: "OpenAI, Anthropic, Gemini, Mistral, DeepSeek, Grok, OpenRouter et priorites." },
-    { label: "Site TeducAI", href: "/", description: "Pages publiques, hero, FAQ, temoignages, tarifs, partenaires, SEO et footer." },
+    { label: "Site TeducAI", href: "/dashboard/site", description: "Pages publiques, hero, FAQ, temoignages, tarifs, partenaires, SEO et footer." },
     { label: "Apparence", href: "/dashboard/settings", description: "Themes, couleurs, logos, favicon, dark mode et parametres globaux." },
     { label: "Permissions", href: "/dashboard/settings", description: "Roles, acces par module, matrices de permissions et utilisateurs affectes." },
 ]

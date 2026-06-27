@@ -14,21 +14,25 @@ import {
   Users,
 } from "lucide-react"
 
+import type { Metadata } from "next"
+
 import { MarketingFooter } from "@/components/marketing/marketing-footer"
 import { MarketingNav } from "@/components/marketing/marketing-nav"
 import { Button } from "@/components/ui/button"
 import { normalizeLocale } from "@/lib/i18n"
+import { getSiteContent } from "@/lib/site-content"
 
-const institutions = [
-  "Écoles primaires",
-  "Collèges et lycées",
-  "Formation professionnelle",
-  "Établissements techniques",
-  "Universités et grandes écoles",
-  "Instituts de recherche",
-  "Formation continue",
-  "Organismes de certification",
-]
+export async function generateMetadata(): Promise<Metadata> {
+  const content = await getSiteContent()
+  return {
+    title: content.seo.meta_title,
+    description: content.seo.meta_description,
+    openGraph: {
+      title: content.seo.meta_title,
+      description: content.seo.meta_description,
+    },
+  }
+}
 
 const features = [
   {
@@ -94,6 +98,8 @@ export default async function Home({
 }) {
   const { locale: rawLocale } = await params
   const locale = normalizeLocale(rawLocale)
+  const content = await getSiteContent()
+  const hero = content.hero
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] dark:bg-[#1f2427] dark:text-[#f4f7fb]">
@@ -106,25 +112,23 @@ export default async function Home({
             <div className="max-w-3xl">
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#99F6E4] bg-white px-4 py-2 text-sm font-semibold text-[#0F766E] shadow-sm dark:border-[#5eead4] dark:bg-[#1f2937] dark:text-white">
                 <ShieldCheck className="h-4 w-4" />
-                SaaS multi-établissements, sécurisé et international
+                {hero.badge}
               </div>
               <h1 className="max-w-4xl text-4xl font-bold leading-tight tracking-normal text-[#0F172A] dark:text-white sm:text-5xl lg:text-6xl">
-                TeducAI – La Plateforme Intelligente de Gestion des
-                Établissements d’Enseignement et de Formation
+                {hero.title}
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-[#475569] dark:text-[#e5edf7]">
-                Automatisez la gestion administrative, académique et financière
-                de votre établissement grâce à l’Intelligence Artificielle.
+                {hero.subtitle}
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="lg" className="bg-[#0F766E] hover:bg-[#115E59]">
-                  <Link href={`/${locale}/contact`}>
-                    Essayer Gratuitement
+                  <Link href={`/${locale}${hero.primary_cta_href}`}>
+                    {hero.primary_cta_label}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="border-[#94A3B8] bg-white dark:border-[#56616a] dark:bg-[#252b30] dark:text-white">
-                  <Link href={`/${locale}/contact`}>Demander une Démonstration</Link>
+                  <Link href={`/${locale}${hero.secondary_cta_href}`}>{hero.secondary_cta_label}</Link>
                 </Button>
               </div>
             </div>
@@ -185,7 +189,7 @@ export default async function Home({
 
         <section className="bg-white py-8 dark:bg-[#202528]">
           <div className="mx-auto flex max-w-7xl flex-wrap gap-3 px-4 sm:px-6 lg:px-8">
-            {institutions.map((item) => (
+            {content.partners.map((item) => (
               <span
                 key={item}
                 className="rounded-full border border-[#CBD5E1] bg-[#F8FAFC] px-4 py-2 text-sm font-medium text-[#334155] dark:border-[#56616a] dark:bg-[#252b30] dark:text-white"
@@ -242,6 +246,46 @@ export default async function Home({
             })}
           </div>
         </section>
+        {content.testimonials.length > 0 && (
+          <section className="bg-[#F1F5F9] py-20 dark:bg-[#111827]">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <h2 className="text-3xl font-bold tracking-normal text-[#0F172A] dark:text-white sm:text-4xl">
+                Ils nous font confiance
+              </h2>
+              <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {content.testimonials.map((item, index) => (
+                  <figure key={index} className="rounded-lg border border-[#DDE5E8] bg-white p-6 shadow-sm dark:border-[#4b5563] dark:bg-[#1f2937]">
+                    <blockquote className="text-sm leading-6 text-[#475569] dark:text-[#e5edf7]">“{item.quote}”</blockquote>
+                    <figcaption className="mt-4 text-sm font-semibold text-[#0F172A] dark:text-white">
+                      {item.author}
+                      {item.role ? <span className="font-normal text-[#0F766E] dark:text-[#5eead4]"> — {item.role}</span> : null}
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {content.faq.length > 0 && (
+          <section id="faq" className="bg-white py-20 dark:bg-[#202528]">
+            <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+              <h2 className="text-3xl font-bold tracking-normal text-[#0F172A] dark:text-white sm:text-4xl">
+                Questions fréquentes
+              </h2>
+              <div className="mt-10 divide-y divide-[#DDE5E8] dark:divide-[#3b4248]">
+                {content.faq.map((item, index) => (
+                  <details key={index} className="group py-5">
+                    <summary className="cursor-pointer list-none text-lg font-semibold text-[#0F172A] dark:text-white">
+                      {item.question}
+                    </summary>
+                    <p className="mt-3 text-sm leading-6 text-[#475569] dark:text-[#e5edf7]">{item.answer}</p>
+                  </details>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
       </main>
 
       <MarketingFooter locale={locale} />
