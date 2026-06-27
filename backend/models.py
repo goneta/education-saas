@@ -847,8 +847,44 @@ class TeacherProfile(Base):
     specialization = Column(String, nullable=True)
     join_date = Column(DateTime, nullable=True)
     bio = Column(Text, nullable=True)
-    
+
     user = relationship("User", back_populates="teacher_profile")
+
+
+class TeacherAssignment(Base):
+    """A teacher's active engagement at one school/model.
+
+    `TeacherProfile` is the single global teacher identity (unique per user);
+    `TeacherAssignment` lets the same teacher teach concurrently at several
+    schools/models, mirroring how `StudentEnrollment` works for learners. A
+    teacher is considered "in" a school when they hold an active assignment
+    there, independent of their primary `User.school_id`.
+    """
+
+    __tablename__ = "teacher_assignments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    school_model_assignment_id = Column(Integer, ForeignKey("school_model_assignments.id"), nullable=True, index=True)
+    employment_type = Column(String, default="full_time", nullable=False)
+    specialization = Column(String, nullable=True)
+    is_primary = Column(Boolean, default=False, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    start_date = Column(DateTime(timezone=True), nullable=True)
+    end_date = Column(DateTime(timezone=True), nullable=True)
+    created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "school_model_assignment_id", name="uq_teacher_assignment_user_model"),
+    )
+
+    user = relationship("User", foreign_keys=[user_id])
+    school = relationship("School")
+    school_model_assignment = relationship("SchoolModelAssignment")
+
 
 class AcademicYear(Base):
     __tablename__ = "academic_years"

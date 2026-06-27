@@ -1164,6 +1164,24 @@ class TeacherResponse(UserResponse):
     formatted_address: Optional[str] = None
     teacher_profile: Optional[TeacherProfileResponse] = None
 
+
+class TeacherAssignmentCreate(BaseModel):
+    employment_type: str = "full_time"
+    specialization: Optional[str] = None
+
+
+class TeacherAssignmentResponse(BaseModel):
+    id: int
+    user_id: int
+    school_id: int
+    school_name: Optional[str] = None
+    school_model_assignment_id: Optional[int] = None
+    employment_type: str
+    specialization: Optional[str] = None
+    is_primary: bool
+    is_active: bool
+    model_config = ConfigDict(from_attributes=True)
+
 # Academic Year & Term Schemas
 
 class TermBase(BaseModel):

@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, selectinload
 from typing import List
+from datetime import datetime
+
 from .. import localization, models, rbac, schemas, security, database, tenancy
-from ..services import school_context
+from ..services import school_context, teacher_assignments
 
 router = APIRouter(prefix="/teachers", tags=["Teachers"])
 
@@ -43,6 +45,14 @@ def register_teacher(
                 role=models.UserRole.TEACHER.value,
                 transfer_reason=teacher_in.transfer_reason,
             )
+            teacher_assignments.ensure_assignment(
+                db,
+                user_id=existing_person.id,
+                school_id=school_id,
+                school_model_assignment_id=active_context.school_model_assignment_id,
+                specialization=teacher_in.profile.specialization,
+                created_by_user_id=current_user.id,
+            )
             db.commit()
             db.refresh(existing_person)
             return existing_person
@@ -72,12 +82,21 @@ def register_teacher(
             bio=teacher_in.profile.bio
         )
         db.add(new_profile)
+        db.flush()
         tenancy.create_or_transfer_school_membership(
             db,
             user=new_user,
             school_id=school_id,
             role=models.UserRole.TEACHER.value,
             transfer_reason=teacher_in.transfer_reason,
+        )
+        teacher_assignments.ensure_assignment(
+            db,
+            user_id=new_user.id,
+            school_id=school_id,
+            school_model_assignment_id=active_context.school_model_assignment_id,
+            specialization=teacher_in.profile.specialization,
+            created_by_user_id=current_user.id,
         )
         db.commit()
         db.refresh(new_user)
@@ -100,14 +119,18 @@ def list_teachers(
     db: Session = Depends(database.get_db)
 ):
     rbac.require_permission(current_user, "teachers:view", db)
-    # The profile is the durable source of truth. Teaching staff can have a
-    # primary role such as EDUCATOR, TRAINER or INSTRUCTOR.
-    query = db.query(models.User).options(selectinload(models.User.teacher_profile)).join(models.TeacherProfile)
-    query = tenancy.apply_user_school_filter(query, current_user, school_id)
+    # Teachers are listed by active teaching assignment, so a teacher engaged at
+    # several schools appears in each school's list (not only their primary one).
     active_context = school_context.resolve_context(db, current_user)
-    query = query.filter(models.TeacherProfile.school_model_assignment_id == active_context.school_model_assignment_id)
-        
-    teachers = query.order_by(models.User.full_name.asc(), models.User.id.asc()).offset(skip).limit(limit).all()
+    query = db.query(models.User).options(selectinload(models.User.teacher_profile)).join(
+        models.TeacherAssignment, models.TeacherAssignment.user_id == models.User.id
+    ).filter(
+        models.TeacherAssignment.is_active == True,  # noqa: E712
+        models.TeacherAssignment.school_model_assignment_id == active_context.school_model_assignment_id,
+    )
+    if school_id and current_user.role == models.UserRole.SUPER_ADMIN:
+        query = query.filter(models.TeacherAssignment.school_id == school_id)
+    teachers = query.distinct().order_by(models.User.full_name.asc(), models.User.id.asc()).offset(skip).limit(limit).all()
     return teachers
 
 @router.get("/{teacher_id}", response_model=schemas.TeacherResponse)
@@ -116,14 +139,12 @@ def get_teacher(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
+    rbac.require_permission(current_user, "teachers:view", db)
     teacher = db.query(models.User).join(models.TeacherProfile).filter(
         models.User.id == teacher_id,
-    )
-    teacher = tenancy.apply_user_school_filter(teacher, current_user).first()
-    
-    if not teacher:
+    ).first()
+    if not teacher or not teacher_assignments.teacher_accessible(db, teacher_id, current_user):
         raise HTTPException(status_code=404, detail="Teacher not found")
-        
     return teacher
 
 @router.put("/{teacher_id}", response_model=schemas.TeacherResponse)
@@ -139,10 +160,8 @@ def update_teacher(
 
     teacher = db.query(models.User).filter(
         models.User.id == teacher_id,
-    )
-    teacher = tenancy.apply_user_school_filter(teacher, current_user).first()
-    
-    if not teacher:
+    ).first()
+    if not teacher or not teacher_assignments.teacher_accessible(db, teacher_id, current_user):
         raise HTTPException(status_code=404, detail="Teacher not found")
 
     # Update User Fields
@@ -208,18 +227,137 @@ def delete_teacher(
 
     teacher = db.query(models.User).filter(
         models.User.id == teacher_id,
-    )
-    teacher = tenancy.apply_user_school_filter(teacher, current_user).first()
-
-    if not teacher:
+    ).first()
+    if not teacher or not teacher_assignments.teacher_accessible(db, teacher_id, current_user):
         raise HTTPException(status_code=404, detail="Teacher not found")
 
     try:
+        # Multi-school aware: a school admin removing a teacher only ends that
+        # school's assignment when the teacher still teaches elsewhere. The
+        # global profile/user is deleted only when this was their last school.
+        caller_school_id = teacher.school_id if current_user.role == models.UserRole.SUPER_ADMIN else current_user.school_id
+        active = db.query(models.TeacherAssignment).filter(
+            models.TeacherAssignment.user_id == teacher_id,
+            models.TeacherAssignment.is_active == True,  # noqa: E712
+        ).all()
+        others = [a for a in active if a.school_id != caller_school_id]
+        if current_user.role != models.UserRole.SUPER_ADMIN and others:
+            for assignment in active:
+                if assignment.school_id == caller_school_id:
+                    assignment.is_active = False
+                    assignment.end_date = datetime.utcnow()
+            membership = db.query(models.SchoolMembership).filter(
+                models.SchoolMembership.user_id == teacher_id,
+                models.SchoolMembership.school_id == caller_school_id,
+                models.SchoolMembership.is_active == True,  # noqa: E712
+            ).first()
+            if membership:
+                membership.is_active = False
+                membership.membership_status = "ended"
+            db.commit()
+            return
+        db.query(models.TeacherAssignment).filter(models.TeacherAssignment.user_id == teacher_id).delete()
         if teacher.teacher_profile:
             db.delete(teacher.teacher_profile)
-            
         db.delete(teacher)
         db.commit()
-    except Exception as e:
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception:
         db.rollback()
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+def _assignment_payload(db: Session, row: models.TeacherAssignment) -> dict:
+    school = db.query(models.School).filter(models.School.id == row.school_id).first()
+    return {
+        "id": row.id,
+        "user_id": row.user_id,
+        "school_id": row.school_id,
+        "school_name": school.name if school else None,
+        "school_model_assignment_id": row.school_model_assignment_id,
+        "employment_type": row.employment_type,
+        "specialization": row.specialization,
+        "is_primary": row.is_primary,
+        "is_active": row.is_active,
+    }
+
+
+@router.get("/{teacher_user_id}/assignments", response_model=List[schemas.TeacherAssignmentResponse])
+def list_teacher_assignments(
+    teacher_user_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    rbac.require_permission(current_user, "teachers:view", db)
+    if not teacher_assignments.teacher_accessible(db, teacher_user_id, current_user):
+        raise HTTPException(status_code=404, detail="Teacher not found")
+    rows = db.query(models.TeacherAssignment).filter(
+        models.TeacherAssignment.user_id == teacher_user_id
+    ).order_by(models.TeacherAssignment.is_active.desc(), models.TeacherAssignment.id).all()
+    return [_assignment_payload(db, row) for row in rows]
+
+
+@router.post("/{teacher_user_id}/assignments", response_model=schemas.TeacherAssignmentResponse)
+def add_teacher_assignment(
+    teacher_user_id: int,
+    payload: schemas.TeacherAssignmentCreate,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    """Attach an existing teacher to the caller's active school/model context,
+    additively — the teacher keeps their other schools' assignments."""
+    if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
+        raise HTTPException(status_code=403, detail="Not authorized to assign teachers")
+    teacher = db.query(models.User).join(models.TeacherProfile).filter(models.User.id == teacher_user_id).first()
+    if not teacher:
+        raise HTTPException(status_code=404, detail="Teacher not found")
+    active_context = school_context.resolve_context(db, current_user)
+    # Additive membership: unlike a transfer, adding a second school must not end
+    # the teacher's membership at their other schools.
+    existing_membership = db.query(models.SchoolMembership).filter(
+        models.SchoolMembership.user_id == teacher_user_id,
+        models.SchoolMembership.school_id == active_context.school_id,
+        models.SchoolMembership.role == models.UserRole.TEACHER.value,
+        models.SchoolMembership.is_active == True,  # noqa: E712
+    ).first()
+    if not existing_membership:
+        db.add(models.SchoolMembership(
+            user_id=teacher_user_id,
+            school_id=active_context.school_id,
+            role=models.UserRole.TEACHER.value,
+            is_active=True,
+            membership_status="active",
+        ))
+    assignment = teacher_assignments.ensure_assignment(
+        db,
+        user_id=teacher_user_id,
+        school_id=active_context.school_id,
+        school_model_assignment_id=active_context.school_model_assignment_id,
+        specialization=payload.specialization,
+        employment_type=payload.employment_type,
+        created_by_user_id=current_user.id,
+    )
+    db.commit()
+    db.refresh(assignment)
+    return _assignment_payload(db, assignment)
+
+
+@router.delete("/assignments/{assignment_id}", status_code=status.HTTP_204_NO_CONTENT)
+def end_teacher_assignment(
+    assignment_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    """End a teacher's engagement at one school without touching the others."""
+    if current_user.role not in [models.UserRole.SCHOOL_ADMIN, models.UserRole.SUPER_ADMIN]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    assignment = db.query(models.TeacherAssignment).filter(models.TeacherAssignment.id == assignment_id).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    if current_user.role != models.UserRole.SUPER_ADMIN and assignment.school_id != current_user.school_id:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    assignment.is_active = False
+    assignment.end_date = datetime.utcnow()
+    db.commit()

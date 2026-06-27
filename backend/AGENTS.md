@@ -28,6 +28,7 @@
 - Closed or archived academic years are read-only at the backend. Historical writes require Super Admin access or a scoped, time-limited, audited `HistoricalDataEditGrant`.
 - Cross-school transfers may expose approved historical academic data but must never expose another school's finance.
 - The public marketing site is content-managed: `SiteContent` is a Super Admin-owned singleton with public read and Super Admin-only writes, and the site must keep rendering from code-level defaults when no content is saved.
+- A teacher has one durable `TeacherProfile`; school/model engagement is represented by `TeacherAssignment`, so teacher visibility and access derive from active assignments (a teacher may teach at several schools at once), not solely from the primary `users.school_id`.
 
 # Work Guidance
 
