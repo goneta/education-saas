@@ -193,6 +193,29 @@ def test_boarding_emits_notification_and_route_notify():
     assert db.query(models.NotificationHistory).filter(models.NotificationHistory.event_type == "transport.route_notice").count() == 1
 
 
+def test_transport_billing_generates_finance_fees_idempotently():
+    db = _session()
+    school, admin = _school_user(db)
+    paid_route = transport.create_route(transport.schemas.TransportRouteCreate(name="Paid", monthly_fee=5000), db=db, current_user=admin)
+    free_route = transport.create_route(transport.schemas.TransportRouteCreate(name="Free", monthly_fee=0), db=db, current_user=admin)
+    billed = _student_in(db, school)
+    unbilled = _student_in(db, school)
+    transport.create_assignment(transport.schemas.TransportAssignmentCreate(route_id=paid_route.id, student_id=billed.id), db=db, current_user=admin)
+    transport.create_assignment(transport.schemas.TransportAssignmentCreate(route_id=free_route.id, student_id=unbilled.id), db=db, current_user=admin)
+
+    first = transport.generate_transport_fees(period="2026-09", db=db, current_user=admin)
+    assert first["generated"] == 1 and first["skipped"] == 1  # free route skipped
+
+    fee = db.query(models.Fee).filter(models.Fee.category == "transport").one()
+    assert fee.amount == 5000 and fee.student_id == billed.id and fee.school_id == school.id
+    assert fee.status == models.FeeStatus.PENDING
+
+    # Re-running the same period does not duplicate the fee.
+    second = transport.generate_transport_fees(period="2026-09", db=db, current_user=admin)
+    assert second["generated"] == 0
+    assert db.query(models.Fee).filter(models.Fee.category == "transport").count() == 1
+
+
 def test_tenant_isolation_on_list():
     db = _session()
     school_a, admin_a = _school_user(db)

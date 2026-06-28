@@ -11,3 +11,4 @@
 ## Maintenance Notes
 
 - The student option value must be `student.student_profile.id` (the assignment's `student_id`), not the user id. The backend rejects students from another school (404).
+- A "Générer les frais" action calls `/transport/billing/generate?period=YYYY-MM` to create transport Fee rows in Finance for active assignments.

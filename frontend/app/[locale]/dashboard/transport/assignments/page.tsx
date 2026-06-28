@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Wallet } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
@@ -75,6 +75,17 @@ export default function TransportAssignmentsPage() {
         if (response.ok) void load()
     }
 
+    const generateBilling = async () => {
+        if (!headers) return
+        const period = window.prompt("Générer les frais de transport pour la période (AAAA-MM) :", "2026-09")
+        if (!period) return
+        const response = await fetch(`${API_BASE_URL}/transport/billing/generate?period=${encodeURIComponent(period)}`, { method: "POST", headers })
+        if (response.ok) {
+            const data = await response.json()
+            window.alert(`Frais générés : ${data.generated} · ignorés : ${data.skipped}. Retrouvez-les dans Finance › Frais (catégorie « transport »).`)
+        }
+    }
+
     const studentName = (id: number) => students.find(s => s.profileId === id)?.name || `#${id}`
     const routeName = (id: number) => routes.find(r => r.id === id)?.name || `#${id}`
 
@@ -88,9 +99,12 @@ export default function TransportAssignmentsPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold text-[#111827] dark:text-white">Affectations élèves</h1>
-                <p className="mt-1 text-sm text-[#6B7280] dark:text-[#c7d0da]">Affectez chaque élève à un trajet — relié directement aux dossiers élèves (source unique de données).</p>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h1 className="text-2xl font-bold text-[#111827] dark:text-white">Affectations élèves</h1>
+                    <p className="mt-1 text-sm text-[#6B7280] dark:text-[#c7d0da]">Affectez chaque élève à un trajet — relié directement aux dossiers élèves (source unique de données).</p>
+                </div>
+                <Button variant="outline" onClick={generateBilling} className="gap-2"><Wallet className="h-4 w-4" /> Générer les frais</Button>
             </div>
 
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">

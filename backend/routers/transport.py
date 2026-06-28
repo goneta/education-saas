@@ -518,6 +518,55 @@ def create_fuel_log(payload: schemas.TransportFuelLogCreate, db: Session = Depen
 
 
 # --------------------------------------------------------------------------- #
+# Finance integration — transport fees become Fee rows
+# --------------------------------------------------------------------------- #
+@router.post("/billing/generate")
+def generate_transport_fees(period: str, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    """Generate transport `Fee` rows (category "transport") for every active
+    assignment whose route carries a monthly fee, for the given period (e.g.
+    "2026-09"). Idempotent: a student already billed for the same route+period is
+    skipped, so re-running is safe. This makes transport part of the single
+    Finance ledger (invoices, balances) rather than a parallel system."""
+    _ensure_manager(current_user)
+    school_id = _school_id(current_user)
+    routes = {route.id: route for route in db.query(models.TransportRoute).filter(models.TransportRoute.school_id == school_id).all()}
+    assignments = db.query(models.TransportAssignment).filter(
+        models.TransportAssignment.school_id == school_id,
+        models.TransportAssignment.is_active == True,  # noqa: E712
+    ).all()
+    generated = 0
+    skipped = 0
+    for assignment in assignments:
+        route = routes.get(assignment.route_id)
+        if not route or not route.monthly_fee:
+            skipped += 1
+            continue
+        title = f"Transport {route.name} — {period}"
+        exists = db.query(models.Fee.id).filter(
+            models.Fee.school_id == school_id,
+            models.Fee.student_id == assignment.student_id,
+            models.Fee.category == "transport",
+            models.Fee.title == title,
+        ).first()
+        if exists:
+            skipped += 1
+            continue
+        db.add(models.Fee(
+            title=title,
+            amount=route.monthly_fee,
+            description=f"Frais de transport · {period}",
+            category="transport",
+            status=models.FeeStatus.PENDING,
+            student_id=assignment.student_id,
+            school_id=school_id,
+            is_required=True,
+        ))
+        generated += 1
+    db.commit()
+    return {"period": period, "generated": generated, "skipped": skipped}
+
+
+# --------------------------------------------------------------------------- #
 # Dashboard / KPIs
 # --------------------------------------------------------------------------- #
 @router.get("/dashboard")
