@@ -36,32 +36,6 @@ export default function TeachersPage() {
     const [assignBusy, setAssignBusy] = useState(false)
     const [assignMessage, setAssignMessage] = useState<string | null>(null)
 
-    const assignExistingTeacher = useCallback(async () => {
-        if (!token || !assignEmail.trim()) return
-        setAssignBusy(true)
-        setAssignMessage(null)
-        try {
-            const lookup = await fetch(`${API_BASE_URL}/teachers/lookup?email=${encodeURIComponent(assignEmail.trim())}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
-            const found = await lookup.json().catch(() => null)
-            if (!lookup.ok) { setAssignMessage(found?.detail || "Enseignant introuvable."); return }
-            if (found.already_in_school) { setAssignMessage(`${found.full_name} enseigne déjà dans cet établissement.`); return }
-            const assign = await fetch(`${API_BASE_URL}/teachers/${found.id}/assignments`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                body: JSON.stringify({}),
-            })
-            const payload = await assign.json().catch(() => null)
-            if (!assign.ok) { setAssignMessage(payload?.detail || "Affectation impossible."); return }
-            setAssignMessage(`${found.full_name} a été affecté(e) à cet établissement.`)
-            setAssignEmail("")
-            void fetchTeachers()
-        } finally {
-            setAssignBusy(false)
-        }
-    }, [token, assignEmail, fetchTeachers])
-
     const fetchTeachers = useCallback(async () => {
         if (!token) {
             setError("Vous devez être connecté pour consulter les professeurs.")
@@ -90,6 +64,32 @@ export default function TeachersPage() {
             setIsLoading(false)
         }
     }, [token])
+
+    const assignExistingTeacher = useCallback(async () => {
+        if (!token || !assignEmail.trim()) return
+        setAssignBusy(true)
+        setAssignMessage(null)
+        try {
+            const lookup = await fetch(`${API_BASE_URL}/teachers/lookup?email=${encodeURIComponent(assignEmail.trim())}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+            const found = await lookup.json().catch(() => null)
+            if (!lookup.ok) { setAssignMessage(found?.detail || "Enseignant introuvable."); return }
+            if (found.already_in_school) { setAssignMessage(`${found.full_name} enseigne déjà dans cet établissement.`); return }
+            const assign = await fetch(`${API_BASE_URL}/teachers/${found.id}/assignments`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body: JSON.stringify({}),
+            })
+            const payload = await assign.json().catch(() => null)
+            if (!assign.ok) { setAssignMessage(payload?.detail || "Affectation impossible."); return }
+            setAssignMessage(`${found.full_name} a été affecté(e) à cet établissement.`)
+            setAssignEmail("")
+            void fetchTeachers()
+        } finally {
+            setAssignBusy(false)
+        }
+    }, [token, assignEmail, fetchTeachers])
 
     useEffect(() => {
         void fetchTeachers()
