@@ -62,7 +62,10 @@
     "vehicles": "Veh\u00edculos",
     "routes": "Rutas",
     "transportAssignments": "Asignaciones de alumnos",
-    "stops": "Paradas de bus"
+    "stops": "Paradas de bus",
+    "tracking": "Rastreo GPS",
+    "boarding": "Embarque",
+    "fleetOps": "Mantenimiento y combustible"
   },
   "layout": {
     "previewTitle": "Vista previa del contenido generado por IA",

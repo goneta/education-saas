@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { Bus, Users, Route as RouteIcon, Gauge, Wallet, Wrench, MapPin } from "lucide-react"
+import { Bus, Users, Route as RouteIcon, Gauge, Wallet, Wrench, MapPin, ShieldAlert, Fuel } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
@@ -18,11 +18,15 @@ interface TransportDashboard {
     monthly_transport_revenue: number
     active_routes: number
     vehicles_in_maintenance: number
+    fuel_cost_total: number
+    open_incidents: number
+    boardings_today: number
 }
 
 const EMPTY: TransportDashboard = {
     vehicles: 0, drivers: 0, routes: 0, bus_stops: 0, students_transported: 0, fleet_capacity: 0,
     occupancy_rate: 0, monthly_transport_revenue: 0, active_routes: 0, vehicles_in_maintenance: 0,
+    fuel_cost_total: 0, open_incidents: 0, boardings_today: 0,
 }
 
 export default function TransportDashboardPage() {
@@ -47,6 +51,9 @@ export default function TransportDashboardPage() {
         { label: "Recettes transport / mois", value: `${data.monthly_transport_revenue.toLocaleString()} FCFA`, icon: Wallet },
         { label: "Capacité de la flotte", value: data.fleet_capacity, icon: Bus },
         { label: "En maintenance", value: data.vehicles_in_maintenance, icon: Wrench },
+        { label: "Embarquements aujourd'hui", value: data.boardings_today, icon: Users },
+        { label: "Incidents ouverts", value: data.open_incidents, icon: ShieldAlert },
+        { label: "Coût carburant", value: `${data.fuel_cost_total.toLocaleString()} FCFA`, icon: Fuel },
     ]
 
     return (

@@ -62,7 +62,10 @@
     "vehicles": "Vehicles",
     "routes": "Routes",
     "transportAssignments": "Student assignments",
-    "stops": "Bus stops"
+    "stops": "Bus stops",
+    "tracking": "GPS tracking",
+    "boarding": "Boarding",
+    "fleetOps": "Maintenance & fuel"
   },
   "layout": {
     "previewTitle": "AI Generated Content Preview",

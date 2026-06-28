@@ -12,7 +12,8 @@ notification fan-out described in the Smart Transport architecture build on top
 of this foundation; see `AGENTS.md` in this folder for the roadmap.
 """
 
-from typing import List
+from datetime import datetime, timezone
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -275,6 +276,165 @@ def delete_assignment(assignment_id: int, db: Session = Depends(database.get_db)
     return {"status": "deleted"}
 
 
+def _student_in_school(db: Session, student_id: int, school_id: int) -> models.StudentProfile:
+    student = db.query(models.StudentProfile).filter(models.StudentProfile.id == student_id).first()
+    student_user = db.query(models.User).filter(models.User.id == student.user_id).first() if student else None
+    if not student or not student_user or student_user.school_id != school_id:
+        raise HTTPException(status_code=404, detail="Élève introuvable dans cet établissement")
+    return student
+
+
+# --------------------------------------------------------------------------- #
+# GPS tracking (REST data layer for the GPS service)
+# --------------------------------------------------------------------------- #
+@router.post("/positions", response_model=schemas.TransportPositionResponse)
+def ingest_position(payload: schemas.TransportPositionCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manager(current_user)
+    school_id = _school_id(current_user)
+    _scoped(db, models.TransportVehicle, payload.vehicle_id, school_id)
+    row = models.TransportVehiclePosition(**payload.model_dump(), school_id=school_id)
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.get("/positions/latest", response_model=List[schemas.TransportPositionResponse])
+def latest_positions(db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    """Most recent GPS sample per vehicle for the tenant (newest first)."""
+    rows = (
+        db.query(models.TransportVehiclePosition)
+        .filter(models.TransportVehiclePosition.school_id == _school_id(current_user))
+        .order_by(models.TransportVehiclePosition.recorded_at.desc(), models.TransportVehiclePosition.id.desc())
+        .all()
+    )
+    seen: set[int] = set()
+    latest = []
+    for row in rows:
+        if row.vehicle_id in seen:
+            continue
+        seen.add(row.vehicle_id)
+        latest.append(row)
+    return latest
+
+
+# --------------------------------------------------------------------------- #
+# Boarding attendance
+# --------------------------------------------------------------------------- #
+@router.get("/boarding", response_model=List[schemas.TransportBoardingResponse])
+def list_boarding(direction: Optional[str] = None, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    query = db.query(models.TransportBoardingEvent).filter(models.TransportBoardingEvent.school_id == _school_id(current_user))
+    if direction:
+        query = query.filter(models.TransportBoardingEvent.direction == direction)
+    return query.order_by(models.TransportBoardingEvent.recorded_at.desc()).all()
+
+
+@router.post("/boarding", response_model=schemas.TransportBoardingResponse)
+def record_boarding(payload: schemas.TransportBoardingCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manager(current_user)
+    school_id = _school_id(current_user)
+    _student_in_school(db, payload.student_id, school_id)
+    if payload.route_id:
+        _scoped(db, models.TransportRoute, payload.route_id, school_id)
+    row = models.TransportBoardingEvent(**payload.model_dump(), school_id=school_id)
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.get("/safety/alerts")
+def safety_alerts(db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    """AI safety monitoring (heuristic v1): students with an active transport
+    assignment who have no 'boarded' morning event recorded today. The richer
+    cross-check against school attendance is a roadmap layer."""
+    school_id = _school_id(current_user)
+    start_of_day = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    assignments = db.query(models.TransportAssignment).filter(
+        models.TransportAssignment.school_id == school_id,
+        models.TransportAssignment.is_active == True,  # noqa: E712
+    ).all()
+    boarded_today = {
+        event.student_id
+        for event in db.query(models.TransportBoardingEvent).filter(
+            models.TransportBoardingEvent.school_id == school_id,
+            models.TransportBoardingEvent.direction == "morning",
+            models.TransportBoardingEvent.event_type == "boarded",
+            models.TransportBoardingEvent.recorded_at >= start_of_day,
+        ).all()
+    }
+    missing = []
+    for assignment in assignments:
+        if assignment.student_id in boarded_today:
+            continue
+        student = db.query(models.StudentProfile).filter(models.StudentProfile.id == assignment.student_id).first()
+        student_user = db.query(models.User).filter(models.User.id == student.user_id).first() if student else None
+        missing.append({
+            "student_id": assignment.student_id,
+            "student_name": student_user.full_name if student_user else f"#{assignment.student_id}",
+            "route_id": assignment.route_id,
+            "alert": "not_boarded_morning",
+        })
+    return {"date": start_of_day.date().isoformat(), "not_boarded": missing, "count": len(missing)}
+
+
+# --------------------------------------------------------------------------- #
+# Incidents
+# --------------------------------------------------------------------------- #
+@router.get("/incidents", response_model=List[schemas.TransportIncidentResponse])
+def list_incidents(db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    return (
+        db.query(models.TransportIncident)
+        .filter(models.TransportIncident.school_id == _school_id(current_user))
+        .order_by(models.TransportIncident.occurred_at.desc())
+        .all()
+    )
+
+
+@router.post("/incidents", response_model=schemas.TransportIncidentResponse)
+def create_incident(payload: schemas.TransportIncidentCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manager(current_user)
+    row = models.TransportIncident(**payload.model_dump(), school_id=_school_id(current_user))
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.delete("/incidents/{incident_id}")
+def delete_incident(incident_id: int, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manager(current_user)
+    row = _scoped(db, models.TransportIncident, incident_id, _school_id(current_user))
+    db.delete(row)
+    db.commit()
+    return {"status": "deleted"}
+
+
+# --------------------------------------------------------------------------- #
+# Fuel logs
+# --------------------------------------------------------------------------- #
+@router.get("/fuel-logs", response_model=List[schemas.TransportFuelLogResponse])
+def list_fuel_logs(db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    return (
+        db.query(models.TransportFuelLog)
+        .filter(models.TransportFuelLog.school_id == _school_id(current_user))
+        .order_by(models.TransportFuelLog.logged_at.desc())
+        .all()
+    )
+
+
+@router.post("/fuel-logs", response_model=schemas.TransportFuelLogResponse)
+def create_fuel_log(payload: schemas.TransportFuelLogCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manager(current_user)
+    school_id = _school_id(current_user)
+    _scoped(db, models.TransportVehicle, payload.vehicle_id, school_id)
+    row = models.TransportFuelLog(**payload.model_dump(), school_id=school_id)
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
 # --------------------------------------------------------------------------- #
 # Dashboard / KPIs
 # --------------------------------------------------------------------------- #
@@ -297,6 +457,19 @@ def dashboard(db: Session = Depends(database.get_db), current_user: models.User 
         if route.id == assignment.route_id
     )
     stops = db.query(models.TransportStop).filter(models.TransportStop.school_id == school_id).count()
+    fuel_cost = sum(
+        log.cost or 0
+        for log in db.query(models.TransportFuelLog).filter(models.TransportFuelLog.school_id == school_id).all()
+    )
+    open_incidents = db.query(models.TransportIncident).filter(
+        models.TransportIncident.school_id == school_id,
+        models.TransportIncident.status == "open",
+    ).count()
+    start_of_day = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    boardings_today = db.query(models.TransportBoardingEvent).filter(
+        models.TransportBoardingEvent.school_id == school_id,
+        models.TransportBoardingEvent.recorded_at >= start_of_day,
+    ).count()
     return {
         "vehicles": len(vehicles),
         "drivers": len(drivers),
@@ -308,4 +481,7 @@ def dashboard(db: Session = Depends(database.get_db), current_user: models.User 
         "monthly_transport_revenue": monthly_revenue,
         "active_routes": sum(1 for route in routes if route.is_active),
         "vehicles_in_maintenance": sum(1 for vehicle in vehicles if vehicle.status == "maintenance"),
+        "fuel_cost_total": fuel_cost,
+        "open_incidents": open_incidents,
+        "boardings_today": boardings_today,
     }

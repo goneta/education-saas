@@ -1757,6 +1757,83 @@ class TransportStop(Base):
     school = relationship("School")
 
 
+class TransportVehiclePosition(Base):
+    """Smart Transport — a GPS position sample for a vehicle. This is the REST
+    data layer of the GPS service; a device/simulator or an MQTT→HTTP bridge
+    POSTs samples, and clients poll the latest position per vehicle. Real-time
+    push (WebSocket) is a roadmap layer on top of this table."""
+    __tablename__ = "transport_vehicle_positions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    vehicle_id = Column(Integer, ForeignKey("transport_vehicles.id"), nullable=False, index=True)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    speed_kmh = Column(Float, nullable=True)
+    heading = Column(Float, nullable=True)
+    recorded_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+
+    vehicle = relationship("TransportVehicle")
+    school = relationship("School")
+
+
+class TransportBoardingEvent(Base):
+    """Smart Transport — boarding attendance: a student boarding or alighting a
+    bus, captured manually or by QR/RFID/face. Feeds the school-attendance
+    cross-check (boarded the bus but never entered school, and vice-versa)."""
+    __tablename__ = "transport_boarding_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False, index=True)
+    route_id = Column(Integer, ForeignKey("transport_routes.id"), nullable=True)
+    stop_id = Column(Integer, ForeignKey("transport_stops.id"), nullable=True)
+    direction = Column(String, default="morning")  # morning | afternoon
+    event_type = Column(String, default="boarded")  # boarded | dropped
+    method = Column(String, default="manual")  # manual | qr | rfid | face
+    recorded_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+
+    student = relationship("StudentProfile")
+    route = relationship("TransportRoute")
+    school = relationship("School")
+
+
+class TransportIncident(Base):
+    """Smart Transport — a safety/operational incident (breakdown, accident,
+    delay, behavior) for analytics and safety monitoring."""
+    __tablename__ = "transport_incidents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    vehicle_id = Column(Integer, ForeignKey("transport_vehicles.id"), nullable=True)
+    route_id = Column(Integer, ForeignKey("transport_routes.id"), nullable=True)
+    incident_type = Column(String, default="other")  # breakdown | accident | delay | behavior | other
+    severity = Column(String, default="low")  # low | medium | high
+    description = Column(Text, nullable=True)
+    status = Column(String, default="open")  # open | resolved
+    occurred_at = Column(DateTime(timezone=True), server_default=func.now())
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+
+    vehicle = relationship("TransportVehicle")
+    route = relationship("TransportRoute")
+    school = relationship("School")
+
+
+class TransportFuelLog(Base):
+    """Smart Transport — a refuelling / fuel-cost record for fleet analytics."""
+    __tablename__ = "transport_fuel_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    vehicle_id = Column(Integer, ForeignKey("transport_vehicles.id"), nullable=False, index=True)
+    liters = Column(Float, default=0)
+    cost = Column(Float, default=0)
+    odometer = Column(Float, nullable=True)
+    logged_at = Column(DateTime(timezone=True), server_default=func.now())
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+
+    vehicle = relationship("TransportVehicle")
+    school = relationship("School")
+
+
 class CanteenMealPlan(Base):
     __tablename__ = "canteen_meal_plans"
 

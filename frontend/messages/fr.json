@@ -62,7 +62,10 @@
     "vehicles": "V\u00e9hicules",
     "routes": "Trajets",
     "transportAssignments": "Affectations \u00e9l\u00e8ves",
-    "stops": "Arr\u00eats de bus"
+    "stops": "Arr\u00eats de bus",
+    "tracking": "Suivi GPS",
+    "boarding": "Embarquement",
+    "fleetOps": "Maintenance & carburant"
   },
   "layout": {
     "previewTitle": "Apercu du contenu genere par l'IA",

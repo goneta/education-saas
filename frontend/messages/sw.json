@@ -62,7 +62,10 @@
     "vehicles": "Magari",
     "routes": "Njia",
     "transportAssignments": "Mgawo wa wanafunzi",
-    "stops": "Vituo vya basi"
+    "stops": "Vituo vya basi",
+    "tracking": "Ufuatiliaji GPS",
+    "boarding": "Kupanda",
+    "fleetOps": "Matengenezo na mafuta"
   },
   "layout": {
     "previewTitle": "Hakiki ya maudhui yaliyotengenezwa na AI",

@@ -2455,6 +2455,71 @@ class TransportStopResponse(TransportStopCreate):
     model_config = ConfigDict(from_attributes=True)
 
 
+class TransportPositionCreate(BaseModel):
+    vehicle_id: int
+    latitude: float
+    longitude: float
+    speed_kmh: Optional[float] = None
+    heading: Optional[float] = None
+
+
+class TransportPositionResponse(TransportPositionCreate):
+    id: int
+    recorded_at: Optional[datetime] = None
+    school_id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TransportBoardingCreate(BaseModel):
+    student_id: int
+    route_id: Optional[int] = None
+    stop_id: Optional[int] = None
+    direction: str = "morning"
+    event_type: str = "boarded"
+    method: str = "manual"
+
+
+class TransportBoardingResponse(TransportBoardingCreate):
+    id: int
+    recorded_at: Optional[datetime] = None
+    school_id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TransportIncidentCreate(BaseModel):
+    vehicle_id: Optional[int] = None
+    route_id: Optional[int] = None
+    incident_type: str = "other"
+    severity: str = "low"
+    description: Optional[str] = None
+    status: str = "open"
+
+
+class TransportIncidentResponse(TransportIncidentCreate):
+    id: int
+    occurred_at: Optional[datetime] = None
+    school_id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TransportFuelLogCreate(BaseModel):
+    vehicle_id: int
+    liters: float = 0
+    cost: float = 0
+    odometer: Optional[float] = None
+
+
+class TransportFuelLogResponse(TransportFuelLogCreate):
+    id: int
+    logged_at: Optional[datetime] = None
+    school_id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class CanteenMealPlanCreate(BaseModel):
     name: str
     day_of_week: Optional[str] = None

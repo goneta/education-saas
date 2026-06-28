@@ -45,3 +45,4 @@ Grades, attendance, assignment submissions, internships, fees, invoices, registr
 `StudentCV` belongs to either a `StudentGlobalProfile` or an external employment-only user. Public recruiter access goes through `sharecode`, `share_enabled`, privacy settings, payment restrictions, and access logs. Recruiter data lives in `RecruiterProfile`; offers, applications, notifications, matching summaries, subscriptions, company logo metadata, and interviews are scoped to that recruiter profile.
 - Smart Transport master data: `TransportDriver`, `TransportVehicle`, and `TransportRoute.driver_id/vehicle_id/capacity` links (single source of truth for the `/transport` module).
 - `TransportStop`: first-class bus stops (route_id, sequence, lat/lng, geofence radius, ETA) replacing the legacy `TransportRoute.stops` JSON.
+- GPS/ops layer: `TransportVehiclePosition` (GPS samples), `TransportBoardingEvent` (boarding attendance), `TransportIncident`, `TransportFuelLog`.

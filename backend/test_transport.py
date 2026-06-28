@@ -117,6 +117,55 @@ def test_non_manager_cannot_write():
         assert getattr(exc, "status_code", None) == 403
 
 
+def _student_in(db, school):
+    u = models.User(email=f"s_{uuid.uuid4().hex[:6]}@t.local", hashed_password="x", full_name="S", role=models.UserRole.STUDENT, school_id=school.id, is_active=True)
+    db.add(u)
+    db.flush()
+    p = models.StudentProfile(user_id=u.id, registration_number=f"R{uuid.uuid4().hex[:4]}")
+    db.add(p)
+    db.commit()
+    return p
+
+
+def test_gps_latest_position_per_vehicle():
+    db = _session()
+    school, admin = _school_user(db)
+    v1 = transport.create_vehicle(transport.schemas.TransportVehicleCreate(name="V1"), db=db, current_user=admin)
+    v2 = transport.create_vehicle(transport.schemas.TransportVehicleCreate(name="V2"), db=db, current_user=admin)
+    transport.ingest_position(transport.schemas.TransportPositionCreate(vehicle_id=v1.id, latitude=1, longitude=1), db=db, current_user=admin)
+    transport.ingest_position(transport.schemas.TransportPositionCreate(vehicle_id=v1.id, latitude=2, longitude=2), db=db, current_user=admin)
+    transport.ingest_position(transport.schemas.TransportPositionCreate(vehicle_id=v2.id, latitude=9, longitude=9), db=db, current_user=admin)
+    latest = transport.latest_positions(db=db, current_user=admin)
+    assert len(latest) == 2  # one per vehicle
+    by_vehicle = {p.vehicle_id: p for p in latest}
+    assert by_vehicle[v1.id].latitude == 2  # most recent sample wins
+
+
+def test_boarding_and_safety_alert():
+    db = _session()
+    school, admin = _school_user(db)
+    route = transport.create_route(transport.schemas.TransportRouteCreate(name="R"), db=db, current_user=admin)
+    boarded = _student_in(db, school)
+    not_boarded = _student_in(db, school)
+    for profile in (boarded, not_boarded):
+        transport.create_assignment(transport.schemas.TransportAssignmentCreate(route_id=route.id, student_id=profile.id), db=db, current_user=admin)
+    transport.record_boarding(transport.schemas.TransportBoardingCreate(student_id=boarded.id, route_id=route.id), db=db, current_user=admin)
+    alerts = transport.safety_alerts(db=db, current_user=admin)
+    flagged = {entry["student_id"] for entry in alerts["not_boarded"]}
+    assert not_boarded.id in flagged and boarded.id not in flagged
+
+
+def test_incidents_and_fuel_feed_dashboard():
+    db = _session()
+    school, admin = _school_user(db)
+    vehicle = transport.create_vehicle(transport.schemas.TransportVehicleCreate(name="Bus", capacity=40), db=db, current_user=admin)
+    transport.create_incident(transport.schemas.TransportIncidentCreate(incident_type="breakdown", severity="high"), db=db, current_user=admin)
+    transport.create_fuel_log(transport.schemas.TransportFuelLogCreate(vehicle_id=vehicle.id, liters=50, cost=40000), db=db, current_user=admin)
+    board = transport.dashboard(db=db, current_user=admin)
+    assert board["open_incidents"] == 1
+    assert board["fuel_cost_total"] == 40000
+
+
 def test_tenant_isolation_on_list():
     db = _session()
     school_a, admin_a = _school_user(db)

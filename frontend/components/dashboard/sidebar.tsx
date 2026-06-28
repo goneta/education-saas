@@ -39,6 +39,9 @@ import {
     Route as RouteIcon,
     MapPin,
     UserCog,
+    Navigation,
+    ScanLine,
+    Wrench,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -146,6 +149,9 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/transport/routes`, label: t("routes"), icon: RouteIcon },
                 { href: `/${locale}/dashboard/transport/stops`, label: t("stops"), icon: MapPin },
                 { href: `/${locale}/dashboard/transport/assignments`, label: t("transportAssignments"), icon: Truck },
+                { href: `/${locale}/dashboard/transport/tracking`, label: t("tracking"), icon: Navigation },
+                { href: `/${locale}/dashboard/transport/boarding`, label: t("boarding"), icon: ScanLine },
+                { href: `/${locale}/dashboard/transport/fleet-ops`, label: t("fleetOps"), icon: Wrench },
             ]
         },
         {
