@@ -25,3 +25,4 @@
 - `python -m py_compile backend/routers/transport.py`
 - `python -m pytest backend/test_transport.py`
 - GPS positions (`/positions`, `/positions/latest`), boarding attendance (`/boarding`) + safety alerts (`/safety/alerts`, students not boarded this morning), incidents and fuel-logs CRUD; dashboard extended with fuel cost, open incidents and boardings today.
+- AI route optimizer (`/routes/{id}/optimize`) via `ai_service` (local fallback when no provider); route-wide notifications (`/routes/{id}/notify`) and a per-boarding parent notification via the platform `NotificationHistory` (`automation.record_notification`).

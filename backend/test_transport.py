@@ -166,6 +166,33 @@ def test_incidents_and_fuel_feed_dashboard():
     assert board["fuel_cost_total"] == 40000
 
 
+def test_route_optimizer_returns_advice():
+    db = _session()
+    school, admin = _school_user(db)
+    route = transport.create_route(transport.schemas.TransportRouteCreate(name="Opt"), db=db, current_user=admin)
+    transport.create_stop(transport.schemas.TransportStopCreate(route_id=route.id, name="A", sequence=1), db=db, current_user=admin)
+    transport.create_stop(transport.schemas.TransportStopCreate(route_id=route.id, name="B", sequence=2), db=db, current_user=admin)
+    result = transport.optimize_route(route.id, db=db, current_user=admin)
+    assert result["route_id"] == route.id
+    assert len(result["current_stops"]) == 2
+    assert result["advice"]  # local fallback still returns a message
+
+
+def test_boarding_emits_notification_and_route_notify():
+    db = _session()
+    school, admin = _school_user(db)
+    route = transport.create_route(transport.schemas.TransportRouteCreate(name="N"), db=db, current_user=admin)
+    profile = _student_in(db, school)
+    transport.create_assignment(transport.schemas.TransportAssignmentCreate(route_id=route.id, student_id=profile.id), db=db, current_user=admin)
+    transport.record_boarding(transport.schemas.TransportBoardingCreate(student_id=profile.id, route_id=route.id), db=db, current_user=admin)
+    boarding_notifs = db.query(models.NotificationHistory).filter(models.NotificationHistory.event_type == "transport.boarding").all()
+    assert len(boarding_notifs) == 1 and boarding_notifs[0].student_id == profile.id
+    # Route-wide notify reaches each assigned student.
+    out = transport.notify_route(route.id, subject="Retard", message="Bus en retard de 10 min", db=db, current_user=admin)
+    assert out["notified"] == 1
+    assert db.query(models.NotificationHistory).filter(models.NotificationHistory.event_type == "transport.route_notice").count() == 1
+
+
 def test_tenant_isolation_on_list():
     db = _session()
     school_a, admin_a = _school_user(db)

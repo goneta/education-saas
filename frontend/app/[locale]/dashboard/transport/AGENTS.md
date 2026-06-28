@@ -26,6 +26,7 @@ Smart Transport never duplicates core platform data; it consumes it:
 - Frontend module pages (this folder), each using the shared universal
   `TableFilter`. Sidebar "Smart Transport" section; transport removed from the
   Operations page. Route is school-context-guarded (`CONTEXT_REQUIRED_SEGMENTS`).
+- **AI route optimizer** (`/transport/routes/{id}/optimize` via ai_service) and **transport notifications** (per-boarding parent notice + route-wide `/notify`) on the platform NotificationHistory. Multi-channel fan-out (SMS/WhatsApp push) and a real route-reorder algorithm remain roadmap.
 - **GPS tracking (REST layer)**, **boarding attendance** + heuristic **AI safety alerts**, **incidents** and **fuel logs**, with extended dashboard KPIs (migration `20260628_0037`, pages: tracking, boarding, fleet-ops). Real-time WebSocket push and the boarded-bus-vs-school-attendance cross-check remain roadmap.
 - **Bus stops** as first-class GPS entities (`TransportStop`: lat/lng, geofence
   radius, sequence, scheduled-arrival ETA), migration `20260628_0036`, `/transport/stops`

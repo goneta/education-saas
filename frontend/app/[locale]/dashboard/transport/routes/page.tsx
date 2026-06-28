@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Sparkles, Bell } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
@@ -65,6 +65,36 @@ export default function TransportRoutesPage() {
         if (response.ok) void load()
     }
 
+    const [advice, setAdvice] = useState<{ name: string; text: string } | null>(null)
+    const [busyId, setBusyId] = useState<number | null>(null)
+
+    const optimize = async (route: Route) => {
+        if (!headers) return
+        setBusyId(route.id)
+        setAdvice(null)
+        try {
+            const response = await fetch(`${API_BASE_URL}/transport/routes/${route.id}/optimize`, { method: "POST", headers })
+            if (response.ok) {
+                const data = await response.json()
+                setAdvice({ name: route.name, text: data.advice || data.details || "Aucune recommandation." })
+            }
+        } finally {
+            setBusyId(null)
+        }
+    }
+
+    const notify = async (route: Route) => {
+        if (!headers) return
+        const message = window.prompt(`Notifier les familles du trajet « ${route.name} » :`, "Bus en retard de 10 minutes.")
+        if (!message) return
+        const url = `${API_BASE_URL}/transport/routes/${route.id}/notify?subject=${encodeURIComponent("Transport")}&message=${encodeURIComponent(message)}`
+        const response = await fetch(url, { method: "POST", headers })
+        if (response.ok) {
+            const data = await response.json()
+            window.alert(`Notification envoyée à ${data.notified} élève(s).`)
+        }
+    }
+
     const driverName = (id?: number | null) => drivers.find(d => d.id === id)?.full_name || "-"
     const vehicleName = (id?: number | null) => vehicles.find(v => v.id === id)?.name || "-"
 
@@ -101,6 +131,13 @@ export default function TransportRoutesPage() {
                 </CardContent>
             </Card>
 
+            {advice && (
+                <Card className="rounded-xl border border-[#CCFBF1] bg-[#F0FDFA] shadow-sm dark:border-[#134E4A] dark:bg-[#0f1f1d]">
+                    <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Sparkles className="h-4 w-4 text-[#0F766E]" /> Optimisation IA — {advice.name}</CardTitle></CardHeader>
+                    <CardContent><p className="whitespace-pre-wrap text-sm text-[#134E4A] dark:text-[#5eead4]">{advice.text}</p></CardContent>
+                </Card>
+            )}
+
             <div className="max-w-2xl"><TableFilter {...filter.controls} /></div>
 
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
@@ -121,7 +158,13 @@ export default function TransportRoutesPage() {
                                     <td className="px-3 py-2">{driverName(route.driver_id)}</td>
                                     <td className="px-3 py-2">{vehicleName(route.vehicle_id)}</td>
                                     <td className="px-3 py-2">{(route.monthly_fee || 0).toLocaleString()} FCFA</td>
-                                    <td className="px-3 py-2 text-right"><Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-50" onClick={() => remove(route.id)}><Trash2 className="h-4 w-4" /></Button></td>
+                                    <td className="px-3 py-2 text-right">
+                                        <div className="flex justify-end gap-1">
+                                            <Button variant="ghost" size="sm" disabled={busyId === route.id} onClick={() => optimize(route)} title="Optimiser (IA)"><Sparkles className="h-4 w-4 text-[#0F766E]" /></Button>
+                                            <Button variant="ghost" size="sm" onClick={() => notify(route)} title="Notifier les familles"><Bell className="h-4 w-4" /></Button>
+                                            <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-50" onClick={() => remove(route.id)}><Trash2 className="h-4 w-4" /></Button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

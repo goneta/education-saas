@@ -19,6 +19,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from .. import database, models, schemas, security
+from ..services import automation
+from ..services.ai_service import ai_service
 
 router = APIRouter(prefix="/transport", tags=["Smart Transport"])
 
@@ -192,6 +194,70 @@ def delete_route(route_id: int, db: Session = Depends(database.get_db), current_
     return {"status": "deleted"}
 
 
+@router.post("/routes/{route_id}/optimize")
+def optimize_route(route_id: int, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    """AI route optimizer: ask the configured AI provider to propose an improved
+    stop order and recommendations from the route's current stops. Degrades to the
+    local fallback when no provider is configured."""
+    _ensure_manager(current_user)
+    school_id = _school_id(current_user)
+    route = _scoped(db, models.TransportRoute, route_id, school_id)
+    stops = (
+        db.query(models.TransportStop)
+        .filter(models.TransportStop.route_id == route_id, models.TransportStop.school_id == school_id)
+        .order_by(models.TransportStop.sequence.asc())
+        .all()
+    )
+    stop_lines = [
+        f"{stop.sequence}. {stop.name}"
+        + (f" ({stop.latitude},{stop.longitude})" if stop.latitude is not None and stop.longitude is not None else "")
+        + (f" ETA {stop.scheduled_arrival}" if stop.scheduled_arrival else "")
+        for stop in stops
+    ]
+    prompt = (
+        f"You are an AI school-bus route optimizer. Route '{route.name}' has these stops in current order:\n"
+        + ("\n".join(stop_lines) if stop_lines else "(no stops defined yet)")
+        + "\nPropose an improved stop order that reduces distance and travel time, and give 2-3 concrete, "
+        "actionable recommendations (fuel, traffic windows, safety). Keep it short."
+    )
+    result = ai_service.generate_response_from_config(prompt, {"module": "transport_route_optimizer", "route_id": route_id}, db)
+    return {
+        "route_id": route_id,
+        "current_stops": stop_lines,
+        "advice": result.get("message"),
+        "details": result.get("data"),
+        "provider_model": result.get("model_name"),
+    }
+
+
+@router.post("/routes/{route_id}/notify")
+def notify_route(route_id: int, subject: str = "Transport", message: str = "", db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    """Fan a transport notification (delay, route change, emergency) out to every
+    student assigned to the route, via the platform NotificationHistory."""
+    _ensure_manager(current_user)
+    school_id = _school_id(current_user)
+    route = _scoped(db, models.TransportRoute, route_id, school_id)
+    assignments = db.query(models.TransportAssignment).filter(
+        models.TransportAssignment.route_id == route_id,
+        models.TransportAssignment.school_id == school_id,
+        models.TransportAssignment.is_active == True,  # noqa: E712
+    ).all()
+    for assignment in assignments:
+        automation.record_notification(
+            db,
+            event_type="transport.route_notice",
+            subject=subject,
+            message=message or f"Information transport — {route.name}",
+            school_id=school_id,
+            student_id=assignment.student_id,
+            source_type="transport_route",
+            source_id=route_id,
+            current_user=current_user,
+        )
+    db.commit()
+    return {"route_id": route_id, "notified": len(assignments)}
+
+
 # --------------------------------------------------------------------------- #
 # Bus stops (first-class GPS entities on a route)
 # --------------------------------------------------------------------------- #
@@ -333,11 +399,27 @@ def list_boarding(direction: Optional[str] = None, db: Session = Depends(databas
 def record_boarding(payload: schemas.TransportBoardingCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
     _ensure_manager(current_user)
     school_id = _school_id(current_user)
-    _student_in_school(db, payload.student_id, school_id)
+    student = _student_in_school(db, payload.student_id, school_id)
     if payload.route_id:
         _scoped(db, models.TransportRoute, payload.route_id, school_id)
     row = models.TransportBoardingEvent(**payload.model_dump(), school_id=school_id)
     db.add(row)
+    db.flush()
+    # Notify the parent: child boarded / was dropped off.
+    student_user = db.query(models.User).filter(models.User.id == student.user_id).first()
+    student_name = student_user.full_name if student_user else "L'élève"
+    verb = "est monté(e) dans le bus" if payload.event_type == "boarded" else "est descendu(e) du bus"
+    automation.record_notification(
+        db,
+        event_type="transport.boarding",
+        subject="Transport scolaire",
+        message=f"{student_name} {verb}.",
+        school_id=school_id,
+        student_id=payload.student_id,
+        source_type="transport_boarding",
+        source_id=row.id,
+        current_user=current_user,
+    )
     db.commit()
     db.refresh(row)
     return row
