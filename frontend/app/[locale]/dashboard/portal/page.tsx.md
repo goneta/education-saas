@@ -19,6 +19,8 @@
 - Keep the source file and this document in the same directory.
 - The Assignments / Course Materials list cards are laid out one per row (full width), not two-up, for readability across breakpoints.
 
+- The documents, invoices, notifications card lists and the requests table use the shared universal `TableFilter` / `useTableFilter` (column selector + debounced accent/case-insensitive search, persisted per `storageKey`); the server-side document-type select is kept alongside it.
+
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change

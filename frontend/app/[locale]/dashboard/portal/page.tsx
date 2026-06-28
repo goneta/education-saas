@@ -1,8 +1,9 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
@@ -87,6 +88,34 @@ export default function PortalPage() {
 
     useEffect(() => { void load() }, [load])
 
+    const docColumns = useMemo<FilterColumn<PortalDocument>[]>(() => [
+        { key: "title", label: "Titre", accessor: doc => doc.title },
+        { key: "type", label: "Type", accessor: doc => doc.document_type },
+        { key: "reference", label: "Référence", accessor: doc => doc.reference },
+    ], [])
+    const docFilter = useTableFilter(portalDocs, docColumns, { storageKey: "portal-docs" })
+
+    const invoiceColumns = useMemo<FilterColumn<PortalInvoice>[]>(() => [
+        { key: "title", label: "Titre", accessor: invoice => invoice.title },
+        { key: "number", label: "Numéro", accessor: invoice => invoice.invoice_number },
+        { key: "status", label: "Statut", accessor: invoice => invoice.status },
+    ], [])
+    const invoiceFilter = useTableFilter(portalInvoices, invoiceColumns, { storageKey: "portal-invoices" })
+
+    const notificationColumns = useMemo<FilterColumn<PortalNotification>[]>(() => [
+        { key: "subject", label: "Sujet", accessor: notification => notification.subject || notification.event_type },
+        { key: "message", label: "Message", accessor: notification => notification.message },
+        { key: "channel", label: "Canal", accessor: notification => notification.channel },
+    ], [])
+    const notificationFilter = useTableFilter(portalNotifications, notificationColumns, { storageKey: "portal-notifications" })
+
+    const requestColumns = useMemo<FilterColumn<RequestRow>[]>(() => [
+        { key: "type", label: "Type", accessor: request => request.request_type },
+        { key: "status", label: "Statut", accessor: request => request.status },
+        { key: "details", label: "Détails", accessor: request => request.details },
+    ], [])
+    const requestFilter = useTableFilter(requests, requestColumns, { storageKey: "portal-requests" })
+
     return (
         <div className="space-y-6">
             <div>
@@ -114,18 +143,21 @@ export default function PortalPage() {
                         <option value="report_card">Bulletins</option>
                         <option value="invoice">Factures</option>
                     </select>
-                    {portalDocs.map(doc => <div key={doc.id} className="rounded-md border p-3 text-sm"><div className="flex items-start justify-between gap-3"><div><p className="font-medium">{doc.title}</p><p className="text-[#6B7280]">{doc.document_type} • {doc.reference || "-"}</p><p className="text-xs text-[#6B7280]">{new Date(doc.generated_at).toLocaleString()}</p></div>{doc.download_url && <a className="text-[#0F766E] font-medium" href={`${API_BASE_URL}${doc.download_url}`} target="_blank">Télécharger</a>}</div></div>)}
-                    {!portalDocs.length && <p className="text-sm text-[#6B7280]">Aucun document disponible.</p>}
+                    <TableFilter {...docFilter.controls} />
+                    {docFilter.filtered.map(doc => <div key={doc.id} className="rounded-md border p-3 text-sm"><div className="flex items-start justify-between gap-3"><div><p className="font-medium">{doc.title}</p><p className="text-[#6B7280]">{doc.document_type} • {doc.reference || "-"}</p><p className="text-xs text-[#6B7280]">{new Date(doc.generated_at).toLocaleString()}</p></div>{doc.download_url && <a className="text-[#0F766E] font-medium" href={`${API_BASE_URL}${doc.download_url}`} target="_blank">Télécharger</a>}</div></div>)}
+                    {!docFilter.filtered.length && <p className="text-sm text-[#6B7280]">Aucun document disponible.</p>}
                 </CardContent></Card>
 
                 <Card><CardHeader><CardTitle>Factures et soldes</CardTitle></CardHeader><CardContent className="space-y-3">
-                    {portalInvoices.map(invoice => <div key={invoice.id} className="rounded-md border p-3 text-sm"><p className="font-medium">{invoice.title}</p><p className="text-[#6B7280]">{invoice.invoice_number} • {invoice.status}</p><p className="mt-1">Payé: {invoice.amount_paid.toLocaleString()} / Dû: {invoice.amount_due.toLocaleString()}</p><p className="font-semibold text-[#0F766E]">Solde: {invoice.remaining_balance.toLocaleString()}</p></div>)}
-                    {!portalInvoices.length && <p className="text-sm text-[#6B7280]">Aucune facture disponible.</p>}
+                    <TableFilter {...invoiceFilter.controls} />
+                    {invoiceFilter.filtered.map(invoice => <div key={invoice.id} className="rounded-md border p-3 text-sm"><p className="font-medium">{invoice.title}</p><p className="text-[#6B7280]">{invoice.invoice_number} • {invoice.status}</p><p className="mt-1">Payé: {invoice.amount_paid.toLocaleString()} / Dû: {invoice.amount_due.toLocaleString()}</p><p className="font-semibold text-[#0F766E]">Solde: {invoice.remaining_balance.toLocaleString()}</p></div>)}
+                    {!invoiceFilter.filtered.length && <p className="text-sm text-[#6B7280]">Aucune facture disponible.</p>}
                 </CardContent></Card>
 
                 <Card><CardHeader><CardTitle>Notifications</CardTitle></CardHeader><CardContent className="space-y-3">
-                    {portalNotifications.map(notification => <div key={notification.id} className="rounded-md border p-3 text-sm"><p className="font-medium">{notification.subject || notification.event_type}</p><p className="text-[#6B7280]">{notification.channel} • {new Date(notification.created_at).toLocaleString()}</p><p className="mt-1">{notification.message}</p></div>)}
-                    {!portalNotifications.length && <p className="text-sm text-[#6B7280]">Aucune notification enregistrée.</p>}
+                    <TableFilter {...notificationFilter.controls} />
+                    {notificationFilter.filtered.map(notification => <div key={notification.id} className="rounded-md border p-3 text-sm"><p className="font-medium">{notification.subject || notification.event_type}</p><p className="text-[#6B7280]">{notification.channel} • {new Date(notification.created_at).toLocaleString()}</p><p className="mt-1">{notification.message}</p></div>)}
+                    {!notificationFilter.filtered.length && <p className="text-sm text-[#6B7280]">Aucune notification enregistrée.</p>}
                 </CardContent></Card>
 
                 <Card><CardHeader><CardTitle>Stages en entreprise</CardTitle></CardHeader><CardContent className="space-y-3">
@@ -159,7 +191,8 @@ export default function PortalPage() {
                     <input placeholder="Details" value={requestForm.details} onChange={(e) => setRequestForm({ ...requestForm, details: e.target.value })} className="md:col-span-2 border rounded-md px-3 py-2 text-sm" />
                     <Button onClick={createRequest}>Create Request</Button>
                 </div>
-                <table className="w-full text-sm"><thead><tr className="border-b"><th className="py-2 text-left">Type</th><th className="py-2 text-left">Status</th><th className="py-2 text-left">Details</th><th className="py-2 text-left">Response</th></tr></thead><tbody>{requests.map(r => <tr key={r.id} className="border-b last:border-0"><td className="py-2">{r.request_type}</td><td className="py-2">{r.status}</td><td className="py-2">{r.details || "-"}</td><td className="py-2">{r.response || "-"}</td></tr>)}</tbody></table>
+                <TableFilter {...requestFilter.controls} />
+                <table className="w-full text-sm"><thead><tr className="border-b"><th className="py-2 text-left">Type</th><th className="py-2 text-left">Status</th><th className="py-2 text-left">Details</th><th className="py-2 text-left">Response</th></tr></thead><tbody>{requestFilter.filtered.map(r => <tr key={r.id} className="border-b last:border-0"><td className="py-2">{r.request_type}</td><td className="py-2">{r.status}</td><td className="py-2">{r.details || "-"}</td><td className="py-2">{r.response || "-"}</td></tr>)}</tbody></table>
             </CardContent></Card>
         </div>
     )

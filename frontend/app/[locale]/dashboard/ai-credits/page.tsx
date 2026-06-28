@@ -7,6 +7,7 @@ import { API_BASE_URL } from "@/lib/config"
 import { useAuth } from "@/contexts/auth-context"
 import { normalizeLocale } from "@/lib/i18n"
 import { requestConfirmation } from "@/lib/confirmation"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface AIWallet {
@@ -814,10 +815,10 @@ export default function AICreditsPage() {
 
             <div className="grid gap-6">
                 <CardShell title="Historique credits utilisateur">
-                    <Table headers={["Date", "Type", "Credits", "Avant", "Après"]} rows={myTransactions.map(item => [item.created_at, item.transaction_type, item.credits_amount, item.balance_before, item.balance_after])} />
+                    <Table headers={["Date", "Type", "Credits", "Avant", "Après"]} rows={myTransactions.map(item => [item.created_at, item.transaction_type, item.credits_amount, item.balance_before, item.balance_after])} storageKey="ai-credits-my-transactions" />
                 </CardShell>
                 <CardShell title="Usage IA utilisateur">
-                    <Table headers={["Date", "Module", "Action", "Modele", "Credits", "Statut"]} rows={myUsage.map(item => [item.created_at, item.module_name || "-", item.action_type || "-", item.model_name || "-", item.credits_charged, item.status])} />
+                    <Table headers={["Date", "Module", "Action", "Modele", "Credits", "Statut"]} rows={myUsage.map(item => [item.created_at, item.module_name || "-", item.action_type || "-", item.model_name || "-", item.credits_charged, item.status])} storageKey="ai-credits-my-usage" />
                 </CardShell>
                 {canManageSchool && (
                     <>
@@ -849,10 +850,10 @@ export default function AICreditsPage() {
                             </div>
                         </CardShell>
                         <CardShell title="Transactions credits ecole">
-                            <Table headers={["Date", "Type", "Credits", "Avant", "Après"]} rows={schoolTransactions.map(item => [item.created_at, item.transaction_type, item.credits_amount, item.balance_before, item.balance_after])} />
+                            <Table headers={["Date", "Type", "Credits", "Avant", "Après"]} rows={schoolTransactions.map(item => [item.created_at, item.transaction_type, item.credits_amount, item.balance_before, item.balance_after])} storageKey="ai-credits-school-transactions" />
                         </CardShell>
                         <CardShell title="Paiements scolaires separes">
-                            <Table headers={["Date", "Type", "Reference", "Montant", "Statut"]} rows={schoolPayments.map(item => [item.created_at, item.payment_type, item.reference, money(item.amount, item.currency), item.status])} />
+                            <Table headers={["Date", "Type", "Reference", "Montant", "Statut"]} rows={schoolPayments.map(item => [item.created_at, item.payment_type, item.reference, money(item.amount, item.currency), item.status])} storageKey="ai-credits-school-payments" />
                         </CardShell>
                     </>
                 )}
@@ -879,7 +880,7 @@ export default function AICreditsPage() {
                             </div>
                             <button className="inline-flex w-fit items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-black/90"><BadgeCheck className="h-4 w-4" /> Creer provider</button>
                         </form>
-                        <Table headers={["Nom", "Type", "Modele", "Statut"]} rows={providers.map(item => [item.name, item.provider_type, item.default_model || "-", item.is_active ? "active" : "inactive"])} />
+                        <Table headers={["Nom", "Type", "Modele", "Statut"]} rows={providers.map(item => [item.name, item.provider_type, item.default_model || "-", item.is_active ? "active" : "inactive"])} storageKey="ai-credits-providers" />
                     </CardShell>
                     <CardShell title="Créer un pack de crédits IA" subtitle="Définissez les packs vendus par pays, devise et région.">
                         <form onSubmit={createPack} className="grid gap-3">
@@ -967,7 +968,7 @@ export default function AICreditsPage() {
                                 </div>
                             ))}
                         </div>
-                        <Table headers={["Date", "Type", "Reference", "Montant", "Beneficiaire", "Statut"]} rows={platformPayments.map(item => [item.created_at, item.payment_type, item.reference, money(item.amount, item.currency), item.beneficiary_entity, item.status])} />
+                        <Table headers={["Date", "Type", "Reference", "Montant", "Beneficiaire", "Statut"]} rows={platformPayments.map(item => [item.created_at, item.payment_type, item.reference, money(item.amount, item.currency), item.beneficiary_entity, item.status])} storageKey="ai-credits-platform-payments" />
                         {analytics && (
                             <div className="mt-5 rounded-[22px] bg-[#F5F5F7] p-4 text-sm">
                                 <p className="font-semibold text-[#111827]">Analytics IA plateforme</p>
@@ -1035,29 +1036,44 @@ export default function AICreditsPage() {
     )
 }
 
-function Table({ headers, rows }: { headers: string[]; rows: Array<Array<string | number>> }) {
+type LedgerRow = Array<string | number>
+
+function Table({ headers, rows, storageKey }: { headers: string[]; rows: LedgerRow[]; storageKey?: string }) {
+    // Build the column selector dynamically from the ledger's headers.
+    const filterColumns = useMemo<FilterColumn<LedgerRow>[]>(
+        () => headers.map((header, index) => ({ key: String(index), label: header, accessor: row => row[index] })),
+        [headers],
+    )
+    const filter = useTableFilter(rows, filterColumns, { storageKey })
+    const visibleRows = filter.filtered.slice(0, 20)
+
     return (
-        <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-                <thead>
-                    <tr className="border-b border-[#E5E7EB] text-[#6B7280]">
-                        {headers.map(header => <th key={header} className="px-3 py-2 font-medium">{header}</th>)}
-                    </tr>
-                </thead>
-                <tbody>
-                    {rows.length === 0 ? (
-                        <tr><td colSpan={headers.length} className="px-3 py-6 text-center text-[#6B7280]">Aucune donnee disponible.</td></tr>
-                    ) : rows.slice(0, 20).map((row, index) => (
-                        <tr key={index} className="border-b border-[#F0F1F3]">
-                            {row.map((cell, cellIndex) => (
-                                <td key={`${index}-${cellIndex}`} className="px-3 py-2 text-[#111827]">
-                                    {String(cell).length > 28 ? `${String(cell).slice(0, 28)}...` : cell}
-                                </td>
-                            ))}
+        <div className="space-y-3">
+            <div className="max-w-2xl">
+                <TableFilter {...filter.controls} />
+            </div>
+            <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                    <thead>
+                        <tr className="border-b border-[#E5E7EB] text-[#6B7280]">
+                            {headers.map(header => <th key={header} className="px-3 py-2 font-medium">{header}</th>)}
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {visibleRows.length === 0 ? (
+                            <tr><td colSpan={headers.length} className="px-3 py-6 text-center text-[#6B7280]">Aucune donnee disponible.</td></tr>
+                        ) : visibleRows.map((row, index) => (
+                            <tr key={index} className="border-b border-[#F0F1F3]">
+                                {row.map((cell, cellIndex) => (
+                                    <td key={`${index}-${cellIndex}`} className="px-3 py-2 text-[#111827]">
+                                        {String(cell).length > 28 ? `${String(cell).slice(0, 28)}...` : cell}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     )
 }
