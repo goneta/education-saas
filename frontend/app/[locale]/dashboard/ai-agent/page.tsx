@@ -10,7 +10,7 @@ import { revealProgressively } from "@/lib/progressive-reveal"
 import { useAuth } from "@/contexts/auth-context"
 import { useLayout } from "@/context/layout-context"
 
-type ChatMessage = { role: "user" | "agent"; content: string }
+type ChatMessage = { role: "user" | "agent"; content: string; agent?: string | null; handoff?: string | null }
 
 async function readChatError(response: Response) {
     const payload = await response.json().catch(() => null)
@@ -76,7 +76,7 @@ export default function MobileAIAgentPage() {
             const data = await response.json().catch(() => null)
             const message = data?.message || "Résultat généré."
             const output = formatPreviewContent(data?.data ?? data?.message)
-            setMessages(previous => [...previous, { role: "agent", content: message }])
+            setMessages(previous => [...previous, { role: "agent", content: message, agent: data?.agent, handoff: data?.handoff }])
             if (output) {
                 // Open the preview immediately, then reveal the content progressively.
                 revealCancelRef.current?.()
@@ -121,8 +121,16 @@ export default function MobileAIAgentPage() {
                         {messages.map((message, index) => (
                             <div key={index} className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                                 {message.role === "agent" && <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black text-xs font-semibold text-white">AI</span>}
-                                <div className={`max-w-[82%] rounded-[22px] px-4 py-3 text-sm leading-6 ${message.role === "user" ? "bg-black text-white" : "bg-[#F1F2F4] text-[#111827]"}`}>
-                                    {message.content}
+                                <div className="flex max-w-[82%] flex-col gap-1">
+                                    {message.role === "agent" && message.agent && (
+                                        <span className="inline-flex w-fit items-center rounded-full bg-[#CCFBF1] px-2 py-0.5 text-[10px] font-semibold text-[#0F766E]">{message.agent}</span>
+                                    )}
+                                    <div className={`rounded-[22px] px-4 py-3 text-sm leading-6 ${message.role === "user" ? "bg-black text-white" : "bg-[#F1F2F4] text-[#111827]"}`}>
+                                        {message.content}
+                                    </div>
+                                    {message.role === "agent" && message.handoff && (
+                                        <span className="text-[10px] italic text-[#6B7280]">↪ {message.handoff}</span>
+                                    )}
                                 </div>
                             </div>
                         ))}

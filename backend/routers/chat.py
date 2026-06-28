@@ -20,6 +20,8 @@ class ChatResponse(BaseModel):
     type: str # 'chat' or 'content'
     message: str
     data: Optional[Any] = None
+    agent: Optional[str] = None   # name of the specialized agent that handled the request
+    handoff: Optional[str] = None  # note when the request was routed to another agent
 
 AI_REFUSAL = (
     "Je ne peux pas effectuer cette action, car votre rôle actuel ne dispose pas des autorisations nécessaires "
@@ -115,11 +117,13 @@ async def chat_with_ai(
         # the model its domain persona (within the same RBAC context).
         routing = ai_agents.select_agent(request_body.message, current_user, db)
         agent = routing["agent"]
-        context["active_agent"] = agent.name
+        agent_name = agent.name
+        handoff_note = routing["handoff"]
+        context["active_agent"] = agent_name
         context["agent_domain"] = agent.domain
         context["agent_instructions"] = agent.system_prompt()
-        if routing["handoff"]:
-            context["handoff"] = routing["handoff"]
+        if handoff_note:
+            context["handoff"] = handoff_note
         required_permissions = _required_permissions_for_message(request_body.message)
         denied_permissions = [permission for permission in required_permissions if not rbac.has_permission(current_user, permission, db)]
         if denied_permissions or _is_cross_scope_request(request_body.message, current_user):
@@ -138,7 +142,7 @@ async def chat_with_ai(
                 },
             )
             db.commit()
-            return {"type": "chat", "message": AI_REFUSAL, "data": None}
+            return {"type": "chat", "message": AI_REFUSAL, "data": None, "agent": agent_name, "handoff": handoff_note}
 
         audit.record_audit(
             db,
@@ -182,6 +186,8 @@ async def chat_with_ai(
                     "data": automation_result.data,
                     "recommendations": automation_result.recommendations,
                 },
+                "agent": agent_name,
+                "handoff": handoff_note,
             }
         response = ai_service.generate_response_from_config(request_body.message, context, db)
         provider = db.query(models.AIProvider).filter(models.AIProvider.id == response.get("provider_id")).first() if response.get("provider_id") else None
@@ -203,9 +209,11 @@ async def chat_with_ai(
             current_user=current_user,
             entity_type="ai_agent",
             entity_id=str(current_user.id),
-            details={"response_type": response["type"], "result": "executed"},
+            details={"response_type": response["type"], "result": "executed", "agent": agent_name},
         )
         db.commit()
+        response["agent"] = agent_name
+        response["handoff"] = handoff_note
         return response
     except HTTPException as exc:
         if exc.status_code in {402, 429}:

@@ -23,7 +23,7 @@ export function AgentPanel() {
     const { token, user } = useAuth()
     const t = useTranslations("layout")
     const [inputValue, setInputValue] = useState("")
-    const [messages, setMessages] = useState<{ role: 'user' | 'agent', content: string }[]>([
+    const [messages, setMessages] = useState<{ role: 'user' | 'agent', content: string, agent?: string | null, handoff?: string | null }[]>([
         { role: 'agent', content: t("agentGreeting") }
     ])
     const scrollRef = useRef<HTMLDivElement>(null)
@@ -81,7 +81,7 @@ export function AgentPanel() {
             setAgentAction(null)
 
             if (data.type === 'content') {
-                setMessages(prev => [...prev, { role: 'agent', content: data.message }])
+                setMessages(prev => [...prev, { role: 'agent', content: data.message, agent: data.agent, handoff: data.handoff }])
                 // Open the preview immediately, then reveal the content progressively.
                 revealCancelRef.current?.()
                 setPreviewContent("")
@@ -91,7 +91,7 @@ export function AgentPanel() {
                     setPreviewContent,
                 )
             } else {
-                setMessages(prev => [...prev, { role: 'agent', content: data.message }])
+                setMessages(prev => [...prev, { role: 'agent', content: data.message, agent: data.agent, handoff: data.handoff }])
             }
 
         } catch (error: unknown) {
@@ -156,10 +156,20 @@ export function AgentPanel() {
                                     }`}>
                                     {msg.role === 'agent' ? 'AI' : t("agentYou")}
                                 </div>
-                                <div className={`max-w-[82%] whitespace-pre-wrap rounded-[18px] p-3 text-sm ${msg.role === "agent"
-                                    ? "bg-[#EDEFF2] text-[#111827] dark:bg-[#30373d] dark:text-[#f4f7fb]"
-                                    : "bg-black text-white dark:bg-[#4a535b] dark:text-white"}`}>
-                                    {msg.content}
+                                <div className="flex max-w-[82%] flex-col gap-1">
+                                    {msg.role === "agent" && msg.agent && (
+                                        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[#CCFBF1] px-2 py-0.5 text-[10px] font-semibold text-[#0F766E] dark:bg-[#134E4A] dark:text-[#5eead4]">
+                                            {msg.agent}
+                                        </span>
+                                    )}
+                                    <div className={`whitespace-pre-wrap rounded-[18px] p-3 text-sm ${msg.role === "agent"
+                                        ? "bg-[#EDEFF2] text-[#111827] dark:bg-[#30373d] dark:text-[#f4f7fb]"
+                                        : "bg-black text-white dark:bg-[#4a535b] dark:text-white"}`}>
+                                        {msg.content}
+                                    </div>
+                                    {msg.role === "agent" && msg.handoff && (
+                                        <span className="text-[10px] italic text-[#6B7280] dark:text-[#c7d0da]">↪ {msg.handoff}</span>
+                                    )}
                                 </div>
                             </div>
                         ))}

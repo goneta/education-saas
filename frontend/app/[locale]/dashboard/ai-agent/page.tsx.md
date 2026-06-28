@@ -17,6 +17,7 @@
 ## Maintenance Notes
 
 - Use `formatPreviewContent` before rendering backend `data` so structured lists, tables, and analytics objects are readable in Preview mode.
+- Agent messages render the specialized agent name (`data.agent`) as a badge and the handoff note (`data.handoff`) below the bubble, surfacing multi-agent routing; both are optional.
 - Backend chat errors must be displayed as clean user-facing messages from `detail`, not raw JSON or HTTP status wrappers.
 - Keep the source file and this document in the same directory.
 
