@@ -19,6 +19,7 @@
 - Keep the source file and this document in the same directory.
 - Generated E2E account emails use `example.com` so strict backend email validation accepts them.
 - Teacher and parent phone fixtures use Cote d'Ivoire-compliant numbers (`+225` country code, 10 national digits) because a school's `country_code` defaults to `CI` unless set otherwise, and backend phone validation enforces the active country's prefix and digit length.
+- The UI login step matches the submit button by its i18n label tolerantly (`/^Log\s?in$/i`), not the card title "Login"; keep this in sync if the `auth.submit` translation changes.
 
 ## Verification
 

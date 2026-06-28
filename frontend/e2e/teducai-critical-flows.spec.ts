@@ -383,7 +383,9 @@ async function loginThroughUi(page: Page, auth: AuthContext) {
   await page.goto(`/${LOCALE}/login`);
   await page.getByLabel('Email').fill(auth.email);
   await page.getByLabel('Password').fill(auth.password);
-  await page.getByRole('button', { name: /^Login$/ }).click();
+  // The submit button uses the i18n label (e.g. "Log in"); match it tolerantly
+  // and scope to the login form to avoid the nav's auth links.
+  await page.getByRole('button', { name: /^Log\s?in$/i }).click();
   await expect(page).toHaveURL(new RegExp(`/${LOCALE}/dashboard`));
   await expect.poll(async () => page.evaluate(() => localStorage.getItem('access_token'))).toBeTruthy();
 }
