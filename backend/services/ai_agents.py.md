@@ -17,7 +17,7 @@
 
 - This registry is the source of truth for chat agent routing; the automation action catalogue in `routers/ai_automation.py` covers the command-center side. Keep `AGENTS` at 41 unique keys.
 - Every agent's `system_prompt()` prepends `SECURITY_PREAMBLE` (auth/session/tenant, RBAC/ABAC, zero trust, prompt-injection resistance, masking, GDPR, handoff). Do not remove the preamble when adding agents.
-- `select_agent` scores by keyword hits, defaults to the coordinator on no match, and reports `authorized` (RBAC) + `refusal` so callers can deny unauthorized requests; it never raises.
+- `select_agent` is LLM-first: it calls `ai_service.route_to_agent` (lazy import, no cycle) to pick an agent, then falls back to deterministic keyword scoring and finally the coordinator. The result includes `method` ("llm" or "keyword"). A `classifier` callable can be injected for tests. It reports `authorized` (RBAC) + `refusal` so callers can deny unauthorized requests, and never raises (a failing/absent provider degrades to keyword routing).
 - Routing is advisory: the chat endpoint still enforces per-request permission checks and tenant scoping independently.
 
 ## Verification

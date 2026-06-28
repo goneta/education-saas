@@ -261,4 +261,5 @@ def route_request(
         "candidates": routing["candidates"],
         "handoff": routing["handoff"],
         "refusal": routing["refusal"],
+        "method": routing["method"],
     }

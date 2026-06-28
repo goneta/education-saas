@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import re
-from typing import Any, Dict, Literal, Optional, TypedDict
+from typing import Any, Dict, List, Literal, Optional, TypedDict
 
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
@@ -124,6 +124,75 @@ class AIService:
             client_kwargs["base_url"] = provider.base_url
         client = OpenAI(**client_kwargs)
         return self._call_openai_client(client, provider.default_model or self.model, message, user_context, suppress_errors=False)
+
+    def _iter_clients(self, db: Session):
+        """Yield (client, model) for active configured providers (priority order),
+        then the env fallback client. Used by lightweight LLM calls (e.g. routing)
+        that don't need the full chat pipeline. Yields nothing when no provider is
+        usable, so callers degrade gracefully."""
+        from .ai_provider_bootstrap import env_api_key_for
+
+        if OpenAI:
+            providers = (
+                db.query(models.AIProvider)
+                .filter(models.AIProvider.is_active == True)  # noqa: E712
+                .order_by(models.AIProvider.priority.asc())
+                .all()
+            )
+            for provider in providers:
+                try:
+                    provider_type = (provider.provider_type or "").lower()
+                    api_key = crypto_utils.decrypt_secret(provider.api_key_encrypted) if provider.api_key_encrypted else None
+                    if not api_key:
+                        api_key = env_api_key_for(provider_type)
+                    if not api_key:
+                        continue
+                    if provider_type in {"claude", "anthropic", "gemini", "manus"} and not provider.base_url:
+                        continue
+                    client_kwargs: Dict[str, Any] = {"api_key": api_key}
+                    if provider.base_url:
+                        client_kwargs["base_url"] = provider.base_url
+                    yield OpenAI(**client_kwargs), provider.default_model or self.model
+                except Exception:  # pragma: no cover - provider construction failure
+                    continue
+        if self.client:
+            yield self.client, self.model
+
+    def route_to_agent(self, message: str, agent_options: List[Dict[str, str]], db: Session) -> Optional[str]:
+        """LLM router: pick the single best agent key for a message.
+
+        Returns a validated key, or None when no provider is configured or the
+        model fails / returns an unknown key — callers then fall back to keyword
+        routing. Cheap, deterministic prompt; no chat history or RBAC payload.
+        """
+        if not message or not agent_options:
+            return None
+        allowed = {opt["key"] for opt in agent_options}
+        system = (
+            "You route requests in the TeducAI multi-agent system. Given a user "
+            "message and a list of agents (key + domain), choose the single most "
+            'appropriate agent. Reply ONLY with JSON: {"agent_key": "<one of the '
+            'provided keys>"}. If none clearly fits, use "coordinator".'
+        )
+        payload = json.dumps({"message": message[:2000], "agents": agent_options}, ensure_ascii=False)
+        for client, model in self._iter_clients(db):
+            try:
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": payload},
+                    ],
+                    response_format={"type": "json_object"},
+                )
+                content = response.choices[0].message.content or "{}"
+                key = (self._parse_json_response(content).get("agent_key") or "").strip()
+                if key in allowed:
+                    return key
+            except Exception as exc:  # pragma: no cover - external service failure path
+                logger.warning("agent router call failed: %s", exc)
+                continue
+        return None
 
     def _call_openai(self, message: str, user_context: Dict[str, Any]) -> AIResponse:
         return self._call_openai_client(self.client, self.model, message, user_context)

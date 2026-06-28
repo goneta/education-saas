@@ -68,3 +68,41 @@ def test_accessible_agents_filters_by_permission():
     student = _user(db, models.UserRole.STUDENT)
     assert len(ai_agents.accessible_agents(admin, db)) == 41  # wildcard
     assert len(ai_agents.accessible_agents(student, db)) < 41
+
+
+def test_llm_router_overrides_keyword_when_provider_available():
+    db = _session()
+    admin = _user(db, models.UserRole.SUPER_ADMIN)
+    # The message has no library keywords, but the injected LLM router picks it.
+    routing = ai_agents.select_agent(
+        "Recommande quelque chose à lire pour un élève curieux",
+        admin, db,
+        classifier=lambda message, options: "library_manager",
+    )
+    assert routing["agent"].key == "library_manager"
+    assert routing["method"] == "llm"
+    assert routing["handoff"]
+
+
+def test_llm_router_invalid_key_falls_back_to_keyword():
+    db = _session()
+    admin = _user(db, models.UserRole.SUPER_ADMIN)
+    routing = ai_agents.select_agent(
+        "Quels sont les frais impayés ?",
+        admin, db,
+        classifier=lambda message, options: "not_a_real_agent",
+    )
+    assert routing["agent"].key == "finance_officer"
+    assert routing["method"] == "keyword"
+
+
+def test_llm_router_failure_does_not_break_routing():
+    db = _session()
+    admin = _user(db, models.UserRole.SUPER_ADMIN)
+
+    def boom(message, options):
+        raise RuntimeError("provider down")
+
+    routing = ai_agents.select_agent("Optimise l'emploi du temps", admin, db, classifier=boom)
+    assert routing["agent"].key == "timetable_optimizer"
+    assert routing["method"] == "keyword"

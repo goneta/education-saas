@@ -245,11 +245,23 @@ def _score(agent: Agent, message_lower: str) -> int:
     return sum(1 for keyword in agent.keywords if keyword in message_lower)
 
 
-def select_agent(message: str, user: models.User, db: Session) -> dict:
+def _llm_classify(message: str, options: list[dict], db: Session) -> Optional[str]:
+    """Default LLM classifier: delegate to the configured provider via ai_service.
+    Imported lazily to avoid an import cycle (ai_service has no agent dependency)."""
+    from .ai_service import ai_service
+
+    return ai_service.route_to_agent(message, options, db)
+
+
+def select_agent(message: str, user: models.User, db: Session, classifier=None) -> dict:
     """Route a request to the most qualified agent.
 
-    Returns the best-matching agent, whether the user is authorized for it, the
-    top candidates, and a handoff note. The coordinator is the safe default.
+    LLM-first: an LLM router picks the agent from the full roster; if no provider
+    is configured or it returns nothing usable, fall back to deterministic keyword
+    scoring, and finally to the coordinator. ``classifier`` (``(message, options)
+    -> key | None``) can be injected for tests. Returns the agent, authorization,
+    candidate keys, a handoff note, a refusal sentence when unauthorized, and the
+    routing ``method`` used.
     """
     lower = (message or "").lower()
     scored = sorted(
@@ -257,13 +269,27 @@ def select_agent(message: str, user: models.User, db: Session) -> dict:
         key=lambda pair: pair[0],
         reverse=True,
     )
-    best_score, best = scored[0]
-    if best_score == 0:
-        best = COORDINATOR
+    options = [{"key": agent.key, "domain": agent.domain} for agent in AGENTS]
+
+    llm_key = None
+    try:
+        llm_key = classifier(message, options) if classifier is not None else _llm_classify(message, options, db)
+    except Exception:  # pragma: no cover - router must never break the chat
+        llm_key = None
+
+    if llm_key and llm_key in AGENTS_BY_KEY:
+        best = AGENTS_BY_KEY[llm_key]
+        method = "llm"
+    else:
+        best_score, best = scored[0]
+        if best_score == 0:
+            best = COORDINATOR
+        method = "keyword"
+
     authorized = rbac.has_permission(user, best.permission, db)
     candidates = [agent.key for score, agent in scored if score > 0][:3]
     handoff = None
-    if best.key != COORDINATOR.key and best_score > 0:
+    if best.key != COORDINATOR.key:
         handoff = f"Cette demande relève de l'agent « {best.name} » ({best.domain})."
     return {
         "agent": best,
@@ -271,4 +297,5 @@ def select_agent(message: str, user: models.User, db: Session) -> dict:
         "candidates": candidates or [COORDINATOR.key],
         "handoff": handoff,
         "refusal": None if authorized else REFUSAL,
+        "method": method,
     }

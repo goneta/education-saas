@@ -13,7 +13,7 @@
 - Provider integrations should tolerate missing credentials and report actionable failures.
 - AI provider credit balances may only be auto-fetched where the provider API exposes them (e.g. OpenRouter); other providers keep a manually-entered value, and `ai_credit_sync` must report `unsupported`/`no_key`/`error` rather than raising or fabricating a balance.
 - AI providers are auto-registered from `.env.production` keys by `ai_provider_bootstrap` (env-seeded rows tagged `account_label="env"`, refreshed on boot, never clobbering UI-created rows); `env_api_key_for` is the single source of truth for env key names and aliases used by the chat and sync paths.
-- The TeducAI multi-agent roster lives in `ai_agents.py` (41 agents, source of truth for chat routing). Every agent prompt must embed the shared `SECURITY_PREAMBLE`; `select_agent` must stay permission-aware and side-effect free, and routing must never replace the per-request RBAC/tenant enforcement in the chat router.
+- The TeducAI multi-agent roster lives in `ai_agents.py` (41 agents, source of truth for chat routing). Every agent prompt must embed the shared `SECURITY_PREAMBLE`; `select_agent` must stay permission-aware and side-effect free, and routing must never replace the per-request RBAC/tenant enforcement in the chat router. Routing is LLM-first (`ai_service.route_to_agent`) with deterministic keyword fallback and a coordinator default; it must always degrade gracefully when no provider is configured (never raise).
 - Checkout provider integrations must never mark payments successful before an authenticated provider webhook confirms the transaction.
 - Payment adapters must normalize provider-specific currency rules, including zero-decimal XOF/FCFA amounts.
 
