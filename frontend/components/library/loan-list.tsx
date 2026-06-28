@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Search, CheckCircle } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { Plus, CheckCircle } from "lucide-react"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 import { IssueLoanModal, type LibraryBook } from "./issue-loan-modal"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
@@ -31,7 +31,6 @@ import { Badge } from "@/components/ui/badge"
 
 export function LoanList({ loans, onRefresh, books = [] }: LoanListProps) {
     const { token } = useAuth()
-    const [searchQuery, setSearchQuery] = useState("")
     const [showIssueModal, setShowIssueModal] = useState(false)
     const [processingId, setProcessingId] = useState<number | null>(null)
 
@@ -54,24 +53,21 @@ export function LoanList({ loans, onRefresh, books = [] }: LoanListProps) {
         }
     }
 
-    const filteredLoans = loans.filter((loan) =>
-        loan.book_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        loan.user_full_name.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    const filterColumns = useMemo<FilterColumn<Loan>[]>(() => [
+        { key: "book", label: "Book", accessor: loan => loan.book_title },
+        { key: "borrower", label: "Borrower", accessor: loan => loan.user_full_name },
+        { key: "status", label: "Status", accessor: loan => loan.status },
+    ], [])
+    const filter = useTableFilter(loans, filterColumns, { storageKey: "library-loans" })
+    const filteredLoans = filter.filtered
 
     return (
         <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-[#111827]">Loan History</CardTitle>
                 <div className="flex gap-2">
-                    <div className="relative w-64">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Search loans..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-8"
-                        />
+                    <div className="w-80">
+                        <TableFilter {...filter.controls} />
                     </div>
                     <Button onClick={() => setShowIssueModal(true)} className="bg-black text-white hover:bg-black/90">
                         <Plus className="mr-2 h-4 w-4" /> Issue Book

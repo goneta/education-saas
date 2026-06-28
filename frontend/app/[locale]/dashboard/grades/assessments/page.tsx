@@ -1,15 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 import { requestConfirmation } from "@/lib/confirmation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Plus, Pencil, Trash2, Search, ClipboardList } from "lucide-react"
+import { Plus, Pencil, Trash2, ClipboardList } from "lucide-react"
 import { useRouter, useParams } from "next/navigation"
 
 interface Assessment {
@@ -49,7 +50,6 @@ export default function AssessmentsPage() {
     const [subjects, setSubjects] = useState<Subject[]>([])
     const [terms, setTerms] = useState<Term[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const [searchQuery, setSearchQuery] = useState("")
     const [filterClassId, setFilterClassId] = useState("")
     const [showModal, setShowModal] = useState(false)
     const [editingAssessment, setEditingAssessment] = useState<Assessment | null>(null)
@@ -198,9 +198,13 @@ export default function AssessmentsPage() {
     const getSubjectName = (id: number) => subjects.find(s => s.id === id)?.name || "—"
     const getTermName = (id: number) => terms.find(t => t.id === id)?.name || "—"
 
-    const filtered = assessments.filter(a =>
-        a.title.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    const filterColumns = useMemo<FilterColumn<Assessment>[]>(() => [
+        { key: "title", label: "Title", accessor: assessment => assessment.title },
+        { key: "class", label: "Class", accessor: assessment => classes.find(c => c.id === assessment.class_id)?.name },
+        { key: "subject", label: "Subject", accessor: assessment => subjects.find(s => s.id === assessment.subject_id)?.name },
+    ], [classes, subjects])
+    const filter = useTableFilter(assessments, filterColumns, { storageKey: "assessments" })
+    const filtered = filter.filtered
 
     return (
         <div className="space-y-6">
@@ -216,15 +220,8 @@ export default function AssessmentsPage() {
             </div>
 
             <div className="flex flex-wrap gap-4">
-                <div className="relative flex-1 min-w-[200px] max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280]" />
-                    <input
-                        type="search"
-                        placeholder="Search assessments..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-[#E5E7EB] rounded-lg bg-white text-[#111827] placeholder:text-[#6B7280] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    />
+                <div className="flex-1 min-w-[200px] max-w-xl">
+                    <TableFilter {...filter.controls} />
                 </div>
                 <select
                     value={filterClassId}
@@ -245,7 +242,7 @@ export default function AssessmentsPage() {
                         <div className="text-center py-12 text-[#6B7280]">Loading assessments...</div>
                     ) : filtered.length === 0 ? (
                         <div className="text-center py-12 text-[#6B7280]">
-                            {searchQuery ? `No assessments found matching "${searchQuery}"` : "No assessments yet. Create your first assessment!"}
+                            {filter.controls.query ? `No assessments found matching "${filter.controls.query}"` : "No assessments yet. Create your first assessment!"}
                         </div>
                     ) : (
                         <div className="overflow-x-auto">

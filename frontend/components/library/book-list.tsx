@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Search, Edit } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { Plus, Edit } from "lucide-react"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 import { AddBookModal } from "./add-book-modal"
 
 interface Book {
@@ -24,28 +24,24 @@ interface BookListProps {
 }
 
 export function BookList({ books, onRefresh }: BookListProps) {
-    const [searchQuery, setSearchQuery] = useState("")
     const [showAddModal, setShowAddModal] = useState(false)
 
-    const filteredBooks = books.filter(book =>
-        book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (book.isbn && book.isbn.includes(searchQuery))
-    )
+    const filterColumns = useMemo<FilterColumn<Book>[]>(() => [
+        { key: "title", label: "Title", accessor: book => book.title },
+        { key: "author", label: "Author", accessor: book => book.author },
+        { key: "isbn", label: "ISBN", accessor: book => book.isbn },
+        { key: "category", label: "Category", accessor: book => book.category },
+    ], [])
+    const filter = useTableFilter(books, filterColumns, { storageKey: "library-books" })
+    const filteredBooks = filter.filtered
 
     return (
         <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-[#111827]">Book Inventory</CardTitle>
                 <div className="flex gap-2">
-                    <div className="relative w-64">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Search books..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-8"
-                        />
+                    <div className="w-80">
+                        <TableFilter {...filter.controls} />
                     </div>
                     <Button onClick={() => setShowAddModal(true)} className="bg-black text-white hover:bg-black/90">
                         <Plus className="mr-2 h-4 w-4" /> Add Book

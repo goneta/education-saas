@@ -20,6 +20,8 @@
 - Normalizes direct-array and wrapped collection responses, bypasses stale browser caches, and keeps the primary student list visible instead of allowing global auto-collapse.
 - Student rows expose authenticated profile-photo display/upload and refresh the persisted list after replacement.
 
+- Search uses the shared universal `TableFilter` / `useTableFilter` (column selector + debounced accent/case-insensitive search-as-you-type, persisted per `storageKey`); reuse it on collection pages instead of bespoke search inputs.
+
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change

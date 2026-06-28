@@ -18,6 +18,8 @@
 - Update this sibling documentation when the source file's purpose, public contract, side effects, inputs, outputs, permissions, or verification expectations change.
 - Keep the source file and this document in the same directory.
 
+- The list search uses the shared universal `TableFilter` / `useTableFilter` (column selector + debounced accent/case-insensitive search), so library lists behave like every other collection in the app.
+
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint components/<path>"; npm run build for shared/layout changes

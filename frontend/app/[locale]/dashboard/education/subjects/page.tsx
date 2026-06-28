@@ -1,15 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 import { requestConfirmation } from "@/lib/confirmation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Plus, Pencil, Trash2, Search } from "lucide-react"
+import { Plus, Pencil, Trash2 } from "lucide-react"
 
 interface Subject {
     id: number
@@ -23,7 +24,6 @@ export default function SubjectsPage() {
     const { token } = useAuth()
     const [subjects, setSubjects] = useState<Subject[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const [searchQuery, setSearchQuery] = useState("")
     const [showModal, setShowModal] = useState(false)
     const [editingSubject, setEditingSubject] = useState<Subject | null>(null)
     const [formData, setFormData] = useState({ name: "", description: "", coefficient: "1" })
@@ -118,10 +118,12 @@ export default function SubjectsPage() {
         }
     }
 
-    const filtered = subjects.filter(s =>
-        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (s.description || "").toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    const filterColumns = useMemo<FilterColumn<Subject>[]>(() => [
+        { key: "name", label: "Nom", accessor: subject => subject.name },
+        { key: "description", label: "Description", accessor: subject => subject.description },
+    ], [])
+    const filter = useTableFilter(subjects, filterColumns, { storageKey: "subjects" })
+    const filtered = filter.filtered
 
     return (
         <div className="space-y-6">
@@ -136,15 +138,8 @@ export default function SubjectsPage() {
                 </Button>
             </div>
 
-            <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280]" />
-                <input
-                    type="search"
-                    placeholder="Rechercher une matière..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-[#E5E7EB] rounded-lg bg-white text-[#111827] placeholder:text-[#6B7280] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
+            <div className="max-w-2xl">
+                <TableFilter {...filter.controls} />
             </div>
 
             <Card data-teducai-collapsible="false" className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
@@ -156,7 +151,7 @@ export default function SubjectsPage() {
                         <div className="text-center py-12 text-[#6B7280]">Chargement des matières...</div>
                     ) : filtered.length === 0 ? (
                         <div className="text-center py-12 text-[#6B7280]">
-                            {searchQuery ? `Aucune matière ne correspond à « ${searchQuery} ».` : "Aucune matière enregistrée. Ajoutez votre première matière."}
+                            {filter.controls.query ? `Aucune matière ne correspond à « ${filter.controls.query} ».` : "Aucune matière enregistrée. Ajoutez votre première matière."}
                         </div>
                     ) : (
                         <div className="overflow-x-auto">

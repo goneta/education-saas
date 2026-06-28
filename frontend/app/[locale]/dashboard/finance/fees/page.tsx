@@ -1,15 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 import { requestConfirmation } from "@/lib/confirmation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Plus, Pencil, Trash2, Search, CreditCard } from "lucide-react"
+import { Plus, Pencil, Trash2, CreditCard } from "lucide-react"
 import { ExplainedField } from "@/components/ui/explained-field"
 import { normalizeLocale } from "@/lib/i18n"
 import { tx } from "@/lib/product-copy"
@@ -45,7 +46,6 @@ export default function FeesPage() {
     const [fees, setFees] = useState<Fee[]>([])
     const [students, setStudents] = useState<Student[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const [searchQuery, setSearchQuery] = useState("")
     const [filterStatus, setFilterStatus] = useState("")
     const [showModal, setShowModal] = useState(false)
     const [showPaymentModal, setShowPaymentModal] = useState(false)
@@ -226,10 +226,11 @@ export default function FeesPage() {
         return students.find(s => s.id === id)?.full_name || `Student #${id}`
     }
 
-    const filtered = fees.filter(f =>
-        f.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        getStudentName(f.student_id).toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    const filterColumns = useMemo<FilterColumn<Fee>[]>(() => [
+        { key: "title", label: "Intitulé", accessor: fee => fee.title },
+        { key: "student", label: "Élève", accessor: fee => students.find(s => s.id === fee.student_id)?.full_name },
+    ], [students])
+    const filter = useTableFilter(fees, filterColumns, { storageKey: "fees" })
 
     return (
         <div className="space-y-6">
@@ -245,15 +246,8 @@ export default function FeesPage() {
             </div>
 
             <div className="flex flex-wrap gap-4">
-                <div className="relative flex-1 min-w-[200px] max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280]" />
-                    <input
-                        type="search"
-                        placeholder="Rechercher un frais..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-[#E5E7EB] rounded-lg bg-white text-[#111827] placeholder:text-[#6B7280] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    />
+                <div className="flex-1 min-w-[200px] max-w-xl">
+                    <TableFilter {...filter.controls} />
                 </div>
                 <select
                     value={filterStatus}
@@ -270,14 +264,14 @@ export default function FeesPage() {
 
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-[#111827]">Liste des frais ({filtered.length})</CardTitle>
+                    <CardTitle className="text-[#111827]">Liste des frais ({filter.filtered.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
                         <div className="text-center py-12 text-[#6B7280]">Chargement des frais...</div>
-                    ) : filtered.length === 0 ? (
+                    ) : filter.filtered.length === 0 ? (
                         <div className="text-center py-12 text-[#6B7280]">
-                            {searchQuery ? `Aucun frais ne correspond a "${searchQuery}"` : "Aucun frais pour le moment. Ajoutez votre premier frais."}
+                            {filter.controls.query ? `Aucun frais ne correspond a "${filter.controls.query}"` : "Aucun frais pour le moment. Ajoutez votre premier frais."}
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
@@ -293,7 +287,7 @@ export default function FeesPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filtered.map((fee) => (
+                                    {filter.filtered.map((fee) => (
                                         <tr key={fee.id} className="border-b border-[#E5E7EB] last:border-0 hover:bg-[#F6F7F9] transition-colors">
                                             <td className="py-3 px-4 text-sm font-medium text-[#111827]">{fee.title}</td>
                                             <td className="py-3 px-4 text-sm text-[#6B7280]">{getStudentName(fee.student_id)}</td>

@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Search } from "lucide-react"
 
 interface Student {
     id: number
@@ -44,7 +44,6 @@ export default function GradeReportsPage() {
     const [terms, setTerms] = useState<Term[]>([])
     const [selectedStudentId, setSelectedStudentId] = useState("")
     const [selectedTermId, setSelectedTermId] = useState("")
-    const [searchQuery, setSearchQuery] = useState("")
     const [report, setReport] = useState<ReportCard | null>(null)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -92,10 +91,12 @@ export default function GradeReportsPage() {
         }
     }
 
-    const filteredStudents = students.filter(s =>
-        s.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.student_profile?.registration_number?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    const filterColumns = useMemo<FilterColumn<Student>[]>(() => [
+        { key: "name", label: "Name", accessor: s => s.full_name },
+        { key: "registration", label: "Matricule", accessor: s => s.student_profile?.registration_number },
+    ], [])
+    const studentFilter = useTableFilter(students, filterColumns, { storageKey: "report-students" })
+    const filteredStudents = studentFilter.filtered
 
     const selectedStudent = students.find(s => s.id.toString() === selectedStudentId)
     const selectedTerm = terms.find(t => t.id.toString() === selectedTermId)
@@ -123,16 +124,7 @@ export default function GradeReportsPage() {
                         <div className="space-y-2">
                             <Label>Student *</Label>
                             <div className="space-y-2">
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280]" />
-                                    <input
-                                        type="search"
-                                        placeholder="Search students..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2 border border-[#E5E7EB] rounded-lg bg-white text-[#111827] placeholder:text-[#6B7280] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-                                    />
-                                </div>
+                                <TableFilter {...studentFilter.controls} />
                                 <select
                                     value={selectedStudentId}
                                     onChange={(e) => setSelectedStudentId(e.target.value)}

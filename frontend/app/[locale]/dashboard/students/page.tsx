@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Eye, Plus, Route, Search } from "lucide-react"
+import { Eye, Plus, Route } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { AddStudentModal } from "@/components/students/add-student-modal"
@@ -50,7 +51,6 @@ export default function StudentsPage() {
     const params = useParams()
     const router = useRouter()
     const locale = params.locale as string
-    const [searchQuery, setSearchQuery] = useState("")
     const [showAddModal, setShowAddModal] = useState(false)
     const [showEditModal, setShowEditModal] = useState(false)
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -92,15 +92,12 @@ export default function StudentsPage() {
         void fetchStudents()
     }, [fetchStudents])
 
-    const filteredStudents = useMemo(() => {
-        const query = searchQuery.trim().toLowerCase()
-        if (!query) return students
-        return students.filter(student =>
-            student.full_name.toLowerCase().includes(query) ||
-            student.email.toLowerCase().includes(query) ||
-            (student.student_profile?.registration_number || "").toLowerCase().includes(query)
-        )
-    }, [searchQuery, students])
+    const filterColumns = useMemo<FilterColumn<Student>[]>(() => [
+        { key: "name", label: "Nom", accessor: student => student.full_name },
+        { key: "email", label: "Email", accessor: student => student.email },
+        { key: "registration", label: "Matricule", accessor: student => student.student_profile?.registration_number },
+    ], [])
+    const filter = useTableFilter(students, filterColumns, { storageKey: "students" })
 
     const openStudent = (studentId: number) => router.push(`/${locale}/dashboard/students/${studentId}`)
 
@@ -121,29 +118,22 @@ export default function StudentsPage() {
                 </div>
             </div>
 
-            <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B7280]" />
-                <input
-                    type="search"
-                    placeholder="Rechercher un élève..."
-                    value={searchQuery}
-                    onChange={event => setSearchQuery(event.target.value)}
-                    className="w-full rounded-lg border border-[#E5E7EB] bg-white py-2 pl-10 pr-4 text-[#111827] placeholder:text-[#6B7280] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary dark:border-[#3b4248] dark:bg-[#202528] dark:text-[#f4f7fb]"
-                />
+            <div className="max-w-2xl">
+                <TableFilter {...filter.controls} />
             </div>
 
             {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-800 dark:border-red-900 dark:bg-[#3a2528] dark:text-red-100">{error}</div>}
 
             <Card data-teducai-collapsible="false" className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
                 <CardHeader>
-                    <CardTitle className="text-[#111827]">Liste des élèves ({filteredStudents.length})</CardTitle>
+                    <CardTitle className="text-[#111827]">Liste des élèves ({filter.filtered.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
                         <p className="py-12 text-center text-[#6B7280]">Chargement des élèves...</p>
-                    ) : filteredStudents.length === 0 ? (
+                    ) : filter.filtered.length === 0 ? (
                         <p className="py-12 text-center text-[#6B7280]">
-                            {searchQuery ? `Aucun élève ne correspond à « ${searchQuery} ».` : "Aucun élève trouvé. Ajoutez votre premier élève."}
+                            {filter.controls.query ? `Aucun élève ne correspond à « ${filter.controls.query} ».` : "Aucun élève trouvé. Ajoutez votre premier élève."}
                         </p>
                     ) : (
                         <div className="overflow-x-auto">
@@ -156,7 +146,7 @@ export default function StudentsPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredStudents.map(student => (
+                                    {filter.filtered.map(student => (
                                         <tr key={student.id} onClick={() => openStudent(student.id)} className="cursor-pointer border-b border-[#E5E7EB] transition-colors last:border-0 hover:bg-[#F6F7F9]">
                                             <td className="px-4 py-3 text-sm font-medium text-[#111827] dark:text-[#f4f7fb]">
                                                 <div className="flex items-center gap-3">

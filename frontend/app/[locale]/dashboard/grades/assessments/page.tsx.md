@@ -19,6 +19,8 @@
 - Keep the source file and this document in the same directory.
 - Assessment deletion uses the shared TeducAI confirmation dialog and preserves backend reference checks.
 
+- Search uses the shared universal `TableFilter` / `useTableFilter` (column selector + debounced accent/case-insensitive search-as-you-type, persisted per `storageKey`); reuse it on collection pages instead of bespoke search inputs.
+
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change

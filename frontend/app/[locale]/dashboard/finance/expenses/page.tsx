@@ -1,15 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 import { requestConfirmation } from "@/lib/confirmation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Plus, Pencil, Trash2, Search } from "lucide-react"
+import { Plus, Pencil, Trash2 } from "lucide-react"
 
 interface Expense {
     id: number
@@ -30,7 +31,6 @@ export default function ExpensesPage() {
     const { token } = useAuth()
     const [expenses, setExpenses] = useState<Expense[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const [searchQuery, setSearchQuery] = useState("")
     const [filterCategory, setFilterCategory] = useState("")
     const [showModal, setShowModal] = useState(false)
     const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
@@ -137,10 +137,12 @@ export default function ExpensesPage() {
         }
     }
 
-    const filtered = expenses.filter(e =>
-        e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        e.category.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    const filterColumns = useMemo<FilterColumn<Expense>[]>(() => [
+        { key: "title", label: "Title", accessor: expense => expense.title },
+        { key: "category", label: "Category", accessor: expense => categoryLabel(expense.category) },
+    ], [])
+    const filter = useTableFilter(expenses, filterColumns, { storageKey: "expenses" })
+    const filtered = filter.filtered
 
     const totalAmount = filtered.reduce((sum, e) => sum + e.amount, 0)
 
@@ -158,15 +160,8 @@ export default function ExpensesPage() {
             </div>
 
             <div className="flex flex-wrap gap-4">
-                <div className="relative flex-1 min-w-[200px] max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280]" />
-                    <input
-                        type="search"
-                        placeholder="Search expenses..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-[#E5E7EB] rounded-lg bg-white text-[#111827] placeholder:text-[#6B7280] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    />
+                <div className="flex-1 min-w-[200px] max-w-xl">
+                    <TableFilter {...filter.controls} />
                 </div>
                 <select
                     value={filterCategory}
@@ -198,7 +193,7 @@ export default function ExpensesPage() {
                         <div className="text-center py-12 text-[#6B7280]">Loading expenses...</div>
                     ) : filtered.length === 0 ? (
                         <div className="text-center py-12 text-[#6B7280]">
-                            {searchQuery ? `No expenses found matching "${searchQuery}"` : "No expenses yet. Add your first expense!"}
+                            {filter.controls.query ? `No expenses found matching "${filter.controls.query}"` : "No expenses yet. Add your first expense!"}
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
