@@ -71,7 +71,15 @@
     "dashboard": "Tableau de bord",
     "preview": "Apercu",
     "previewOutput": "Sortie apercu",
-    "closePreview": "Fermer l'apercu"
+    "closePreview": "Fermer l'apercu",
+    "workingContext": "Contexte de travail",
+    "contextSearchPlaceholder": "Rechercher un \u00e9tablissement...",
+    "contextNoResults": "Aucun \u00e9tablissement correspondant",
+    "academicYear": "Ann\u00e9e acad\u00e9mique",
+    "currentYear": "Ann\u00e9e courante",
+    "contextRequiredTitle": "Contexte de travail requis",
+    "contextRequiredMessage": "Veuillez s\u00e9lectionner un \u00e9tablissement, un mod\u00e8le d'\u00e9tablissement et une ann\u00e9e acad\u00e9mique actifs avant d'acc\u00e9der \u00e0 ce module.",
+    "selectContext": "S\u00e9lectionner le contexte"
   },
   "settings": {
     "activeContext": "Contexte actif",
@@ -136,5 +144,11 @@
     "creating": "Creation de la transaction...",
     "created": "Paiement cree. Vous pouvez suivre son statut dans Factures.",
     "error": "Erreur checkout: {message}"
+  },
+  "filters": {
+    "column": "Colonne",
+    "allColumns": "Toutes les colonnes",
+    "searchPlaceholder": "Filtrer...",
+    "noResults": "Aucun r\u00e9sultat"
   }
 }

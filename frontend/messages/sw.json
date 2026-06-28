@@ -71,7 +71,15 @@
     "dashboard": "Dashibodi",
     "preview": "Hakiki",
     "previewOutput": "Matokeo ya hakiki",
-    "closePreview": "Funga hakiki"
+    "closePreview": "Funga hakiki",
+    "workingContext": "Muktadha wa kazi",
+    "contextSearchPlaceholder": "Tafuta taasisi...",
+    "contextNoResults": "Hakuna taasisi inayolingana",
+    "academicYear": "Mwaka wa masomo",
+    "currentYear": "Mwaka wa sasa",
+    "contextRequiredTitle": "Muktadha wa kazi unahitajika",
+    "contextRequiredMessage": "Tafadhali chagua Taasisi, Muundo wa Taasisi na Mwaka wa Masomo unaotumika kabla ya kufikia moduli hii.",
+    "selectContext": "Chagua muktadha"
   },
   "settings": {
     "activeContext": "Muktadha unaotumika",
@@ -136,5 +144,11 @@
     "creating": "Inaunda muamala...",
     "created": "Malipo yameundwa. Unaweza kufuatilia hali yake kwenye Ankara.",
     "error": "Hitilafu ya malipo: {message}"
+  },
+  "filters": {
+    "column": "Safu",
+    "allColumns": "Safu zote",
+    "searchPlaceholder": "Chuja...",
+    "noResults": "Hakuna matokeo"
   }
 }

@@ -21,6 +21,32 @@ import { LanguageSwitcher } from "@/components/layout/language-switcher"
 import { API_BASE_URL } from "@/lib/config"
 import { useAuth } from "@/contexts/auth-context"
 import { dashboardPathForUser } from "@/lib/auth-routing"
+import { WorkingContextProvider } from "@/contexts/working-context"
+import { RequireContext } from "@/components/dashboard/require-context"
+
+// School-scoped modules that require an active institution/model/year context.
+// Allowlist (not denylist) so account/settings/site/checkout etc. are never
+// accidentally blocked. Extend this set as other school-scoped modules are added.
+const CONTEXT_REQUIRED_SEGMENTS = new Set([
+    "students", "teachers", "attendance", "grades", "finance",
+    "education", "library", "operations", "documents", "student-lifecycle", "emploi",
+])
+
+function moduleSegment(pathname: string | null): string | null {
+    if (!pathname) return null
+    const parts = pathname.split("/").filter(Boolean) // [locale, "dashboard", segment, ...]
+    const index = parts.indexOf("dashboard")
+    return index >= 0 ? parts[index + 1] ?? null : null
+}
+
+function GuardedModuleContent({ children }: { children: React.ReactNode }) {
+    const pathname = usePathname()
+    const segment = moduleSegment(pathname)
+    if (segment && CONTEXT_REQUIRED_SEGMENTS.has(segment)) {
+        return <RequireContext>{children}</RequireContext>
+    }
+    return <>{children}</>
+}
 
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
     const { isAgentPanelOpen, viewMode, setViewMode, previewContent } = useLayout()
@@ -88,7 +114,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                             <>
                                 <Header isResizablePanel={true} />
                                 <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#F6F7F9] p-4 dark:bg-[#1f2427] md:p-6">
-                                    {children}
+                                    <GuardedModuleContent>{children}</GuardedModuleContent>
                                 </main>
                             </>
                         ) : (
@@ -207,7 +233,7 @@ function MobileDashboardShell({ children }: { children: React.ReactNode }) {
                 "min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-3 pb-24 pt-4",
                 isAgentPage && "p-0 pb-20"
             )}>
-                {children}
+                <GuardedModuleContent>{children}</GuardedModuleContent>
             </main>
 
             <nav className="fixed inset-x-0 bottom-0 z-[75] border-t border-[#E5E7EB] bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1 shadow-[0_-12px_34px_rgba(15,23,42,0.08)] backdrop-blur">
@@ -266,8 +292,10 @@ function MobileDashboardShell({ children }: { children: React.ReactNode }) {
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
     return (
-        <LayoutProvider>
-            <MainLayoutContent>{children}</MainLayoutContent>
-        </LayoutProvider>
+        <WorkingContextProvider>
+            <LayoutProvider>
+                <MainLayoutContent>{children}</MainLayoutContent>
+            </LayoutProvider>
+        </WorkingContextProvider>
     )
 }

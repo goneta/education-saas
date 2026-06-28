@@ -71,7 +71,15 @@
     "dashboard": "Dashboard",
     "preview": "Preview",
     "previewOutput": "Preview Output",
-    "closePreview": "Close Preview"
+    "closePreview": "Close Preview",
+    "workingContext": "Working context",
+    "contextSearchPlaceholder": "Search an institution...",
+    "contextNoResults": "No matching institution",
+    "academicYear": "Academic year",
+    "currentYear": "Current year",
+    "contextRequiredTitle": "Working context required",
+    "contextRequiredMessage": "Please select an active Institution, Institution Model, and Academic Year before accessing this module.",
+    "selectContext": "Select working context"
   },
   "settings": {
     "activeContext": "Active Context",
@@ -136,5 +144,11 @@
     "creating": "Creating transaction...",
     "created": "Payment created. You can follow its status in Invoices.",
     "error": "Checkout error: {message}"
+  },
+  "filters": {
+    "column": "Column",
+    "allColumns": "All columns",
+    "searchPlaceholder": "Filter...",
+    "noResults": "No results"
   }
 }

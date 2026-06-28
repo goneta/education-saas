@@ -71,7 +71,15 @@
     "dashboard": "Panel",
     "preview": "Vista previa",
     "previewOutput": "Salida de vista previa",
-    "closePreview": "Cerrar vista previa"
+    "closePreview": "Cerrar vista previa",
+    "workingContext": "Contexto de trabajo",
+    "contextSearchPlaceholder": "Buscar una instituci\u00f3n...",
+    "contextNoResults": "Ninguna instituci\u00f3n coincide",
+    "academicYear": "A\u00f1o acad\u00e9mico",
+    "currentYear": "A\u00f1o actual",
+    "contextRequiredTitle": "Contexto de trabajo requerido",
+    "contextRequiredMessage": "Seleccione una instituci\u00f3n, un modelo de instituci\u00f3n y un a\u00f1o acad\u00e9mico activos antes de acceder a este m\u00f3dulo.",
+    "selectContext": "Seleccionar contexto"
   },
   "settings": {
     "activeContext": "Contexto activo",
@@ -136,5 +144,11 @@
     "creating": "Creando transaccion...",
     "created": "Pago creado. Puedes seguir su estado en Facturas.",
     "error": "Error de checkout: {message}"
+  },
+  "filters": {
+    "column": "Columna",
+    "allColumns": "Todas las columnas",
+    "searchPlaceholder": "Filtrar...",
+    "noResults": "Sin resultados"
   }
 }

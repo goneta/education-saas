@@ -19,6 +19,7 @@
 - API failures must be passed to the list component instead of silently rendering an empty result.
 - Normalizes direct-array and wrapped collection responses and bypasses stale browser caches before passing data to the table.
 - Teacher rows refresh after authenticated profile-photo replacement.
+- Search uses the shared universal `TableFilter` / `useTableFilter` (column selector + debounced accent/case-insensitive search, persisted per `storageKey: "teachers"`); the page passes `filter.filtered` to the table and an empty `searchQuery`. This is the canonical example of the reusable filter — reuse it on other collection pages rather than re-adding bespoke search inputs.
 - The "Enseignant existant" panel resolves a teacher by email via `/teachers/lookup`, then attaches them to the active school via `POST /teachers/{id}/assignments` so a teacher can teach at several schools concurrently without creating a duplicate account.
 
 ## Verification

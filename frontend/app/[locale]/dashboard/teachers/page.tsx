@@ -1,10 +1,11 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
-import { Plus, Search, UserPlus } from "lucide-react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { Plus, UserPlus } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Button } from "@/components/ui/button"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 import { Input } from "@/components/ui/input"
 import { TeacherListTable, Teacher } from "@/components/teachers/teacher-list-table"
 import { AddTeacherModal } from "@/components/teachers/add-teacher-modal"
@@ -25,7 +26,6 @@ export default function TeachersPage() {
     const { token } = useAuth()
     const [teachers, setTeachers] = useState<Teacher[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const [searchQuery, setSearchQuery] = useState("")
     const [error, setError] = useState<string | null>(null)
     const [showAddModal, setShowAddModal] = useState(false)
     const [showEditModal, setShowEditModal] = useState(false)
@@ -95,6 +95,15 @@ export default function TeachersPage() {
         void fetchTeachers()
     }, [fetchTeachers])
 
+    // Universal table filter: column selector + accent/case-insensitive search.
+    const filterColumns = useMemo<FilterColumn<Teacher>[]>(() => [
+        { key: "name", label: "Nom", accessor: teacher => teacher.full_name },
+        { key: "email", label: "Email", accessor: teacher => teacher.email },
+        { key: "phone", label: "Téléphone", accessor: teacher => teacher.phone_number },
+        { key: "specialization", label: "Spécialité", accessor: teacher => teacher.teacher_profile?.specialization },
+    ], [])
+    const filter = useTableFilter(teachers, filterColumns, { storageKey: "teachers" })
+
     return (
         <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
@@ -130,21 +139,14 @@ export default function TeachersPage() {
                     {assignMessage && <p className="mt-2 text-sm text-[#0F766E] dark:text-[#5eead4]">{assignMessage}</p>}
                 </div>
             )}
-            <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B7280]" />
-                <Input
-                    type="search"
-                    placeholder="Rechercher un professeur..."
-                    value={searchQuery}
-                    onChange={event => setSearchQuery(event.target.value)}
-                    className="w-full rounded-lg border border-[#E5E7EB] bg-white py-2 pl-10 pr-4 text-[#111827] placeholder:text-[#6B7280] dark:border-[#3b4248] dark:bg-[#202528] dark:text-[#f4f7fb]"
-                />
+            <div className="max-w-2xl">
+                <TableFilter {...filter.controls} />
             </div>
             <TeacherListTable
-                teachers={teachers}
+                teachers={filter.filtered}
                 isLoading={isLoading}
                 error={error}
-                searchQuery={searchQuery}
+                searchQuery=""
                 onEdit={teacher => { setSelectedTeacher(teacher); setShowEditModal(true) }}
                 onDelete={id => {
                     const teacher = teachers.find(item => item.id === id)
