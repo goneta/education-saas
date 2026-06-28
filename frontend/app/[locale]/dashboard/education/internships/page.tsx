@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import { API_BASE_URL } from "@/lib/config"
 import { useAuth } from "@/contexts/auth-context"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -340,6 +341,25 @@ export default function InternshipsPage() {
         }
     }
 
+    const internshipColumns = useMemo<FilterColumn<Internship>[]>(() => [
+        { key: "title", label: "Titre", accessor: item => item.title },
+        { key: "company", label: "Entreprise", accessor: item => item.company_name },
+        { key: "level", label: "Niveau", accessor: item => item.academic_level },
+        { key: "service", label: "Service", accessor: item => item.service_department },
+        { key: "supervisor", label: "Superviseur", accessor: item => item.supervisor_name },
+        { key: "status", label: "Statut", accessor: item => item.status },
+    ], [])
+    const internshipFilter = useTableFilter(internships, internshipColumns, { storageKey: "internships" })
+
+    const companyColumns = useMemo<FilterColumn<Company>[]>(() => [
+        { key: "name", label: "Entreprise", accessor: company => company.name },
+        { key: "industry", label: "Secteur", accessor: company => company.industry },
+        { key: "city", label: "Ville", accessor: company => company.city },
+        { key: "country", label: "Pays", accessor: company => company.country },
+        { key: "hr", label: "RH", accessor: company => company.hr_manager_name },
+    ], [])
+    const companyFilter = useTableFilter(companies, companyColumns, { storageKey: "internship-companies" })
+
     return (
         <div className="space-y-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -393,6 +413,9 @@ export default function InternshipsPage() {
                     <CardTitle className="text-xl">Entreprises partenaires</CardTitle>
                 </CardHeader>
                 <CardContent className="overflow-x-auto">
+                    <div className="mb-4 max-w-2xl">
+                        <TableFilter {...companyFilter.controls} />
+                    </div>
                     <table className="w-full min-w-[980px] text-left">
                         <thead>
                             <tr className="border-b text-sm text-[#6B7280]">
@@ -408,7 +431,7 @@ export default function InternshipsPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {companies.map(company => (
+                            {companyFilter.filtered.map(company => (
                                 <tr key={company.id} className="border-b text-sm">
                                     <td className="py-3 font-medium">{company.name}</td>
                                     <td>{company.industry || "-"}</td>
@@ -472,6 +495,9 @@ export default function InternshipsPage() {
                     <CardTitle className="text-xl">Stages</CardTitle>
                 </CardHeader>
                 <CardContent className="overflow-x-auto">
+                    <div className="mb-4 max-w-2xl">
+                        <TableFilter {...internshipFilter.controls} />
+                    </div>
                     <table className="w-full min-w-[1100px] text-left">
                         <thead>
                             <tr className="border-b text-sm text-[#6B7280]">
@@ -489,7 +515,7 @@ export default function InternshipsPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {internships.map(item => (
+                            {internshipFilter.filtered.map(item => (
                                 <tr key={item.id} className="border-b text-sm">
                                     <td className="py-3">{item.id}</td>
                                     <td className="font-medium">{item.title || "-"}</td>

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { requestConfirmation } from "@/lib/confirmation"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ExplainedField, fieldHelp } from "@/components/ui/explained-field"
@@ -190,6 +191,12 @@ function ListCard({ title, displayTitle, rows, locale }: { title: string; displa
     const [editing, setEditing] = useState<EnterpriseRow | null>(null)
     const [jsonValue, setJsonValue] = useState("")
 
+    const filterColumns = useMemo<FilterColumn<EnterpriseRow>[]>(
+        () => keys.map(key => ({ key, label: humanizeKey(key), accessor: row => row[key] as unknown })),
+        [rows], // eslint-disable-line react-hooks/exhaustive-deps -- keys derive from rows
+    )
+    const filter = useTableFilter(rows, filterColumns, { storageKey: `enterprise-${title}` })
+
     const remove = async (id: number) => {
         if (!token || !await requestConfirmation({ title: "Supprimer cet enregistrement", description: "Cette action est irréversible et reste soumise aux règles métier du module.", confirmLabel: "Supprimer définitivement", destructive: true })) return
         const res = await fetch(`${API_BASE_URL}/enterprise/${title}/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
@@ -206,7 +213,7 @@ function ListCard({ title, displayTitle, rows, locale }: { title: string; displa
         if (res.ok) location.reload()
     }
 
-    return <Card><CardHeader><CardTitle>{displayTitle}</CardTitle></CardHeader><CardContent className="space-y-3"><table className="apple-table"><thead><tr>{keys.map(k => <th key={k}>{humanizeKey(k)}</th>)}<th className="text-right">{tx(locale, "actions")}</th></tr></thead><tbody>{rows.map((row, idx) => <tr key={row.id || idx}>{keys.map(k => <td key={k}>{format(row[k])}</td>)}<td className="space-x-2 text-right"><Button size="sm" variant="outline" onClick={() => { setEditing(row); setJsonValue(JSON.stringify(row, null, 2)) }}>{tx(locale, "edit")}</Button><Button size="sm" variant="outline" disabled={typeof row.id !== "number"} onClick={() => typeof row.id === "number" && remove(row.id)}>{tx(locale, "delete")}</Button></td></tr>)}</tbody></table>{editing && <div className="space-y-2"><textarea className="min-h-40 w-full rounded-[18px] border border-[#e0e0e0] p-4 text-xs font-mono" value={jsonValue} onChange={(e) => setJsonValue(e.target.value)} /><div className="flex gap-2"><Button onClick={update}>Enregistrer JSON</Button><Button variant="outline" onClick={() => setEditing(null)}>{tx(locale, "cancel")}</Button></div></div>}</CardContent></Card>
+    return <Card><CardHeader><CardTitle>{displayTitle}</CardTitle></CardHeader><CardContent className="space-y-3"><div className="max-w-2xl"><TableFilter {...filter.controls} /></div><table className="apple-table"><thead><tr>{keys.map(k => <th key={k}>{humanizeKey(k)}</th>)}<th className="text-right">{tx(locale, "actions")}</th></tr></thead><tbody>{filter.filtered.map((row, idx) => <tr key={row.id || idx}>{keys.map(k => <td key={k}>{format(row[k])}</td>)}<td className="space-x-2 text-right"><Button size="sm" variant="outline" onClick={() => { setEditing(row); setJsonValue(JSON.stringify(row, null, 2)) }}>{tx(locale, "edit")}</Button><Button size="sm" variant="outline" disabled={typeof row.id !== "number"} onClick={() => typeof row.id === "number" && remove(row.id)}>{tx(locale, "delete")}</Button></td></tr>)}</tbody></table>{editing && <div className="space-y-2"><textarea className="min-h-40 w-full rounded-[18px] border border-[#e0e0e0] p-4 text-xs font-mono" value={jsonValue} onChange={(e) => setJsonValue(e.target.value)} /><div className="flex gap-2"><Button onClick={update}>Enregistrer JSON</Button><Button variant="outline" onClick={() => setEditing(null)}>{tx(locale, "cancel")}</Button></div></div>}</CardContent></Card>
 }
 
 function format(value: unknown) {

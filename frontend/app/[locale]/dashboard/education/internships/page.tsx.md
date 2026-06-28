@@ -19,6 +19,8 @@
 - Keep the source file and this document in the same directory.
 - Follow-up/logbook and document sections are laid out one per row (full width), not two-up, so their tables and action icons have room across breakpoints.
 
+- Record tables use the shared universal `TableFilter` / `useTableFilter` (column selector + debounced accent/case-insensitive search-as-you-type, persisted per `storageKey`); reuse it for any new collection rather than bespoke search inputs.
+
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change

@@ -20,6 +20,8 @@
 - Endpoint list cards are laid out one per row (full width), not two-up, so each table has room for its columns and action icons across breakpoints.
 - Enterprise record deletion uses the shared TeducAI confirmation dialog.
 
+- Record tables use the shared universal `TableFilter` / `useTableFilter` (column selector + debounced accent/case-insensitive search-as-you-type, persisted per `storageKey`); reuse it for any new collection rather than bespoke search inputs.
+
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change

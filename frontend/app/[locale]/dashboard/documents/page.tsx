@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react"
 import { CheckCircle2, Download, FileText, RefreshCw, Search, Send, ShieldCheck, Trash2, XCircle } from "lucide-react"
 import { API_BASE_URL } from "@/lib/config"
 import { useAuth } from "@/contexts/auth-context"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 
 type SecureFile = {
     id: number
@@ -306,6 +307,14 @@ export default function DocumentsPage({ params: { locale } }: { params: { locale
         )
     }
 
+    const fileFilterColumns = useMemo<FilterColumn<SecureFile>[]>(() => [
+        { key: "name", label: "Nom", accessor: file => file.display_name || file.original_filename },
+        { key: "category", label: "Categorie", accessor: file => file.category },
+        { key: "visibility", label: "Visibilite", accessor: file => file.visibility },
+        { key: "status", label: "Statut", accessor: file => file.approval_status },
+    ], [])
+    const fileFilter = useTableFilter(files, fileFilterColumns, { storageKey: "documents-files" })
+
     return (
         <div className="min-h-full space-y-6 bg-[#F5F5F7] p-6 text-[#111827]">
             <div className="flex flex-wrap items-center justify-between gap-4">
@@ -346,6 +355,9 @@ export default function DocumentsPage({ params: { locale } }: { params: { locale
                     <h2 className="text-xl font-semibold">{copy.documents}</h2>
                     {loading && <span className="text-sm text-[#6B7280]">...</span>}
                 </div>
+                <div className="mt-4 max-w-2xl">
+                    <TableFilter {...fileFilter.controls} />
+                </div>
                 <div className="mt-4 overflow-x-auto">
                     <table className="w-full min-w-[900px] text-left text-sm">
                         <thead>
@@ -360,7 +372,7 @@ export default function DocumentsPage({ params: { locale } }: { params: { locale
                             </tr>
                         </thead>
                         <tbody>
-                            {files.map(file => (
+                            {fileFilter.filtered.map(file => (
                                 <tr key={file.id} className="border-b border-[#F3F4F6]">
                                     <td className="py-3 font-medium">{file.display_name || file.original_filename}</td>
                                     <td className="py-3">{file.category || "-"}</td>

@@ -1,9 +1,10 @@
 "use client"
 
-import { FormEvent, useCallback, useEffect, useState } from "react"
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react"
 import { Archive, ArrowRightLeft, FileUp, LockKeyhole, RefreshCw } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -137,6 +138,13 @@ export default function StudentLifecycleAdministrationPage() {
         } else setMessage("Inscription simultanée créée dans son contexte isolé.")
     }
 
+    const transferColumns = useMemo<FilterColumn<Transfer>[]>(() => [
+        { key: "student", label: "Élève", accessor: transfer => transfer.student_name },
+        { key: "number", label: "Numéro élève", accessor: transfer => transfer.global_student_number },
+        { key: "status", label: "Statut", accessor: transfer => transfer.status },
+    ], [])
+    const transferFilter = useTableFilter(transfers, transferColumns, { storageKey: "transfers" })
+
     return (
         <div className="space-y-6">
             <div>
@@ -184,11 +192,14 @@ export default function StudentLifecycleAdministrationPage() {
                     <Button variant="ghost" size="sm" onClick={() => void loadTransfers()} title="Actualiser"><RefreshCw className="h-4 w-4" /></Button>
                 </CardHeader>
                 <CardContent className="overflow-x-auto">
+                    <div className="mb-4 max-w-2xl">
+                        <TableFilter {...transferFilter.controls} />
+                    </div>
                     <table className="w-full min-w-[760px] text-sm">
                         <thead><tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700 dark:text-slate-300">
                             <th className="p-3">Élève</th><th className="p-3">Source</th><th className="p-3">Destination</th><th className="p-3">Statut</th><th className="p-3">Actions</th>
                         </tr></thead>
-                        <tbody>{transfers.map(transfer => (
+                        <tbody>{transferFilter.filtered.map(transfer => (
                             <tr key={transfer.id} className="border-b border-slate-200 dark:border-slate-700">
                                 <td className="p-3"><strong>{transfer.student_name}</strong><br /><span className="text-xs text-slate-500">{transfer.global_student_number}</span></td>
                                 <td className="p-3">Établissement #{transfer.from_school_id}</td>
@@ -202,7 +213,7 @@ export default function StudentLifecycleAdministrationPage() {
                             </tr>
                         ))}</tbody>
                     </table>
-                    {transfers.length === 0 && <p className="py-8 text-center text-slate-500 dark:text-slate-300">Aucune demande de transfert.</p>}
+                    {transferFilter.filtered.length === 0 && <p className="py-8 text-center text-slate-500 dark:text-slate-300">Aucune demande de transfert.</p>}
                 </CardContent>
             </Card>
 

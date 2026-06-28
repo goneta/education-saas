@@ -1,8 +1,9 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
@@ -74,6 +75,13 @@ export default function OperationsPage() {
     const fields = fieldsFor(active)
     const displayRows = rows[active] || []
 
+    // Column selector is built dynamically from the active section's columns.
+    const filterColumns = useMemo<FilterColumn<OperationRow>[]>(
+        () => columnsFor(active).map(col => ({ key: col, label: humanize(col), accessor: row => formatCell(row, col) })),
+        [active],
+    )
+    const filter = useTableFilter(displayRows, filterColumns, { storageKey: "operations" })
+
     return (
         <div className="space-y-6">
             <div>
@@ -109,6 +117,9 @@ export default function OperationsPage() {
             <Card>
                 <CardHeader><CardTitle>{label(active)} List</CardTitle></CardHeader>
                 <CardContent>
+                    <div className="mb-4 max-w-2xl">
+                        <TableFilter {...filter.controls} />
+                    </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
@@ -118,7 +129,7 @@ export default function OperationsPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {displayRows.map(row => (
+                                {filter.filtered.map(row => (
                                     <tr key={row.id} className="border-b last:border-0">
                                         {columnsFor(active).map(col => <td key={col} className="py-2">{formatCell(row, col)}</td>)}
                                         {active === "admissions" && <td className="py-2 text-right"><Button size="sm" variant="outline" onClick={() => enrollAdmission(row)}>Enroll</Button></td>}
@@ -135,6 +146,10 @@ export default function OperationsPage() {
 
 function label(section: Section) {
     return ({ programs: "Programs", admissions: "Admissions", exams: "Exams", inventory: "Inventory", payroll: "Payroll", transport: "Transport", canteen: "Canteen" })[section]
+}
+
+function humanize(col: string) {
+    return col.replace(/_/g, " ").replace(/^\w/, character => character.toUpperCase())
 }
 
 function fieldsFor(section: Section) {

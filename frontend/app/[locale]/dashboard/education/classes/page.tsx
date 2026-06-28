@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 import { requestConfirmation } from "@/lib/confirmation"
 import { Button } from "@/components/ui/button"
 import {
@@ -177,6 +178,13 @@ export default function ClassesPage() {
         setFormData({ name: "", level: "", main_teacher_id: null })
     }
 
+    const filterColumns = useMemo<FilterColumn<ClassItem>[]>(() => [
+        { key: "name", label: "Nom", accessor: cls => cls.name },
+        { key: "level", label: "Niveau", accessor: cls => cls.level },
+        { key: "teacher", label: "Professeur principal", accessor: cls => teachers.find(t => t.id === cls.main_teacher_id)?.full_name },
+    ], [teachers])
+    const filter = useTableFilter(classes, filterColumns, { storageKey: "classes" })
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -242,6 +250,10 @@ export default function ClassesPage() {
                 </Dialog>
             </div>
 
+            <div className="max-w-2xl">
+                <TableFilter {...filter.controls} />
+            </div>
+
             <div data-teducai-collapsible="false" className="overflow-x-auto rounded-[22px] border border-[#E5E7EB] bg-white dark:border-[#3b4248] dark:bg-[#202528]">
                 <table className="w-full text-sm text-left">
                     <thead className="border-b bg-[#F8FAFC] dark:border-[#3b4248] dark:bg-[#252b30]">
@@ -255,10 +267,10 @@ export default function ClassesPage() {
                     <tbody className="divide-y">
                         {isLoading ? (
                             <tr><td colSpan={4} className="px-6 py-4 text-center">Chargement...</td></tr>
-                        ) : classes.length === 0 ? (
+                        ) : filter.filtered.length === 0 ? (
                             <tr><td colSpan={4} className="px-6 py-4 text-center text-gray-500">Aucune classe trouvée.</td></tr>
                         ) : (
-                            classes.map((cls) => (
+                            filter.filtered.map((cls) => (
                                 <tr key={cls.id} className="border-b border-[#E5E7EB] last:border-0 hover:bg-[#F6F7F9] dark:border-[#343b41] dark:hover:bg-[#2a3035]">
                                     <td className="px-6 py-4 font-medium">{cls.name}</td>
                                     <td className="px-6 py-4">{cls.level}</td>
