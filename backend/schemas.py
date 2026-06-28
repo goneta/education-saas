@@ -2346,10 +2346,77 @@ class TransportRouteCreate(BaseModel):
     driver_phone: Optional[str] = None
     stops: Optional[List[str]] = None
     monthly_fee: float = 0
+    driver_id: Optional[int] = None
+    vehicle_id: Optional[int] = None
+    capacity: Optional[int] = None
     is_active: bool = True
 
 
 class TransportRouteResponse(TransportRouteCreate):
+    id: int
+    school_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TransportDriverCreate(BaseModel):
+    full_name: str
+    phone: Optional[str] = None
+    license_number: Optional[str] = None
+    license_expiry: Optional[datetime] = None
+    employment_status: str = "active"
+    medical_clearance: bool = False
+    notes: Optional[str] = None
+    is_active: bool = True
+
+
+class TransportDriverUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    license_number: Optional[str] = None
+    license_expiry: Optional[datetime] = None
+    employment_status: Optional[str] = None
+    medical_clearance: Optional[bool] = None
+    notes: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class TransportDriverResponse(TransportDriverCreate):
+    id: int
+    school_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TransportVehicleCreate(BaseModel):
+    name: str
+    vehicle_type: str = "bus"
+    registration: Optional[str] = None
+    vin: Optional[str] = None
+    capacity: int = 0
+    insurance_expiry: Optional[datetime] = None
+    mileage: float = 0
+    status: str = "operational"
+    notes: Optional[str] = None
+    is_active: bool = True
+
+
+class TransportVehicleUpdate(BaseModel):
+    name: Optional[str] = None
+    vehicle_type: Optional[str] = None
+    registration: Optional[str] = None
+    vin: Optional[str] = None
+    capacity: Optional[int] = None
+    insurance_expiry: Optional[datetime] = None
+    mileage: Optional[float] = None
+    status: Optional[str] = None
+    notes: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class TransportVehicleResponse(TransportVehicleCreate):
     id: int
     school_id: int
     created_at: datetime

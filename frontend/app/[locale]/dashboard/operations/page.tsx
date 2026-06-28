@@ -7,14 +7,14 @@ import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
-type Section = "programs" | "admissions" | "exams" | "inventory" | "payroll" | "transport" | "canteen"
+type Section = "programs" | "admissions" | "exams" | "inventory" | "payroll" | "canteen"
 type OperationRow = Record<string, unknown> & { id?: number }
 
 export default function OperationsPage() {
     const { token } = useAuth()
     const [active, setActive] = useState<Section>("programs")
     const [rows, setRows] = useState<Record<Section, OperationRow[]>>({
-        programs: [], admissions: [], exams: [], inventory: [], payroll: [], transport: [], canteen: []
+        programs: [], admissions: [], exams: [], inventory: [], payroll: [], canteen: []
     })
     const [form, setForm] = useState<Record<string, string>>({})
 
@@ -26,11 +26,10 @@ export default function OperationsPage() {
             exams: "exams",
             inventory: "inventory",
             payroll: "payroll",
-            transport: "transport",
             canteen: "canteen",
         }
         const loaded: Record<Section, OperationRow[]> = {
-            programs: [], admissions: [], exams: [], inventory: [], payroll: [], transport: [], canteen: []
+            programs: [], admissions: [], exams: [], inventory: [], payroll: [], canteen: []
         }
         for (const key of Object.keys(endpoints) as Section[]) {
             const res = await fetch(`${API_BASE_URL}/operations/${endpoints[key]}`, { headers: { Authorization: `Bearer ${token}` } })
@@ -86,11 +85,11 @@ export default function OperationsPage() {
         <div className="space-y-6">
             <div>
                 <h1 className="text-2xl font-bold text-[#111827]">Institution Operations</h1>
-                <p className="text-sm text-[#6B7280] mt-1">Admissions, programs, exams, inventory, payroll, transport and canteen.</p>
+                <p className="text-sm text-[#6B7280] mt-1">Admissions, programs, exams, inventory, payroll and canteen.</p>
             </div>
 
             <div className="flex flex-wrap gap-2">
-                {(["programs", "admissions", "exams", "inventory", "payroll", "transport", "canteen"] as Section[]).map(section => (
+                {(["programs", "admissions", "exams", "inventory", "payroll", "canteen"] as Section[]).map(section => (
                     <Button key={section} variant={active === section ? "default" : "outline"} onClick={() => { setActive(section); setForm({}) }}>
                         {label(section)}
                     </Button>
@@ -145,7 +144,7 @@ export default function OperationsPage() {
 }
 
 function label(section: Section) {
-    return ({ programs: "Programs", admissions: "Admissions", exams: "Exams", inventory: "Inventory", payroll: "Payroll", transport: "Transport", canteen: "Canteen" })[section]
+    return ({ programs: "Programs", admissions: "Admissions", exams: "Exams", inventory: "Inventory", payroll: "Payroll", canteen: "Canteen" })[section]
 }
 
 function humanize(col: string) {
@@ -159,7 +158,6 @@ function fieldsFor(section: Section) {
         exams: [{ name: "name", label: "Exam name" }, { name: "exam_type", label: "Type" }, { name: "class_id", label: "Class ID", type: "number" }, { name: "program_id", label: "Program ID", type: "number" }, { name: "start_date", label: "Start date", type: "date" }],
         inventory: [{ name: "name", label: "Item name" }, { name: "category", label: "Category" }, { name: "quantity", label: "Quantity", type: "number" }, { name: "minimum_quantity", label: "Minimum", type: "number" }, { name: "location", label: "Location" }],
         payroll: [{ name: "staff_user_id", label: "Staff user ID", type: "number" }, { name: "period", label: "Period" }, { name: "gross_amount", label: "Gross", type: "number" }, { name: "deductions", label: "Deductions", type: "number" }],
-        transport: [{ name: "name", label: "Route name" }, { name: "vehicle_identifier", label: "Vehicle" }, { name: "driver_name", label: "Driver" }, { name: "driver_phone", label: "Phone" }, { name: "monthly_fee", label: "Monthly fee", type: "number" }],
         canteen: [{ name: "name", label: "Plan name" }, { name: "day_of_week", label: "Day" }, { name: "meal_type", label: "Meal type" }, { name: "menu", label: "Menu" }, { name: "price", label: "Price", type: "number" }],
     }
     return map[section]
@@ -172,7 +170,6 @@ function columnsFor(section: Section) {
         exams: ["name", "exam_type", "status", "start_date"],
         inventory: ["name", "category", "quantity", "status"],
         payroll: ["staff_user_id", "period", "net_amount", "status"],
-        transport: ["name", "vehicle_identifier", "driver_name", "monthly_fee"],
         canteen: ["name", "day_of_week", "meal_type", "price"],
     }
     return map[section]

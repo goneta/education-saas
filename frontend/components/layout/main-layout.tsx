@@ -29,7 +29,7 @@ import { RequireContext } from "@/components/dashboard/require-context"
 // accidentally blocked. Extend this set as other school-scoped modules are added.
 const CONTEXT_REQUIRED_SEGMENTS = new Set([
     "students", "teachers", "attendance", "grades", "finance",
-    "education", "library", "operations", "documents", "student-lifecycle", "emploi",
+    "education", "library", "operations", "documents", "student-lifecycle", "emploi", "transport",
 ])
 
 function moduleSegment(pathname: string | null): string | null {

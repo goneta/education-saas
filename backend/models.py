@@ -1668,6 +1668,48 @@ class PayrollRecord(Base):
     created_by = relationship("User", foreign_keys=[created_by_id])
 
 
+class TransportDriver(Base):
+    """Smart Transport — driver master record (single source of truth, shared
+    across routes and assignments). Legacy free-text driver fields on
+    TransportRoute remain for back-compat."""
+    __tablename__ = "transport_drivers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    full_name = Column(String, nullable=False, index=True)
+    phone = Column(String, nullable=True)
+    license_number = Column(String, nullable=True)
+    license_expiry = Column(DateTime, nullable=True)
+    employment_status = Column(String, default="active")  # active | suspended | inactive
+    medical_clearance = Column(Boolean, default=False)
+    notes = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    school = relationship("School")
+
+
+class TransportVehicle(Base):
+    """Smart Transport — fleet vehicle master record (bus, minibus, van, etc.)."""
+    __tablename__ = "transport_vehicles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, index=True)
+    vehicle_type = Column(String, default="bus")  # bus | minibus | van | motorcycle | boat | electric_bus
+    registration = Column(String, nullable=True)
+    vin = Column(String, nullable=True)
+    capacity = Column(Integer, default=0)
+    insurance_expiry = Column(DateTime, nullable=True)
+    mileage = Column(Float, default=0)
+    status = Column(String, default="operational")  # operational | maintenance | retired
+    notes = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    school = relationship("School")
+
+
 class TransportRoute(Base):
     __tablename__ = "transport_routes"
 
@@ -1678,11 +1720,17 @@ class TransportRoute(Base):
     driver_phone = Column(String, nullable=True)
     stops = Column(JSON, nullable=True)
     monthly_fee = Column(Float, default=0)
+    # Normalized links to the Smart Transport master data (nullable for legacy rows).
+    driver_id = Column(Integer, ForeignKey("transport_drivers.id"), nullable=True)
+    vehicle_id = Column(Integer, ForeignKey("transport_vehicles.id"), nullable=True)
+    capacity = Column(Integer, nullable=True)
     is_active = Column(Boolean, default=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     school = relationship("School")
+    driver = relationship("TransportDriver")
+    vehicle = relationship("TransportVehicle")
 
 
 class CanteenMealPlan(Base):

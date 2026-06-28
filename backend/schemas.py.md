@@ -45,3 +45,4 @@ The schema catalog includes enrollment, transfer, academic-year closure, tempora
 # Multi-school teaching
 
 `TeacherAssignmentCreate` / `TeacherAssignmentResponse` describe a teacher's engagement at one school/model. They back the multi-school teaching endpoints and do not alter the existing `TeacherResponse` contract.
+- Smart Transport: `TransportDriver*`, `TransportVehicle*` schemas and `driver_id/vehicle_id/capacity` on `TransportRouteCreate`.

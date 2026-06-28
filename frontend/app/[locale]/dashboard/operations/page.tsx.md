@@ -23,3 +23,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
+- The transport section was removed from this page and promoted to the dedicated Smart Transport module (`/dashboard/transport`).

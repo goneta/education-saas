@@ -55,7 +55,13 @@
     "system": "System",
     "aiCommandCenter": "AI Command Center",
     "aiCredits": "AI Credits & Payments",
-    "settings": "Settings"
+    "settings": "Settings",
+    "smartTransport": "Smart Transport",
+    "transportDashboard": "Transport dashboard",
+    "drivers": "Drivers",
+    "vehicles": "Vehicles",
+    "routes": "Routes",
+    "transportAssignments": "Student assignments"
   },
   "layout": {
     "previewTitle": "AI Generated Content Preview",

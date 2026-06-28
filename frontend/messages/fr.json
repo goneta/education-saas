@@ -55,7 +55,13 @@
     "system": "Systeme",
     "aiCommandCenter": "Centre de commande IA",
     "aiCredits": "Credits IA & paiements",
-    "settings": "Parametres"
+    "settings": "Parametres",
+    "smartTransport": "Smart Transport",
+    "transportDashboard": "Tableau de bord transport",
+    "drivers": "Chauffeurs",
+    "vehicles": "V\u00e9hicules",
+    "routes": "Trajets",
+    "transportAssignments": "Affectations \u00e9l\u00e8ves"
   },
   "layout": {
     "previewTitle": "Apercu du contenu genere par l'IA",

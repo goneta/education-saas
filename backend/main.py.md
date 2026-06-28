@@ -35,3 +35,4 @@ The application registers the `/employment` router for public sharecode/CV disco
 # Site CMS
 
 The application registers the `/site` router for the public marketing-site content (public read, Super Admin write).
+- Registers the `/transport` (Smart Transport) router.

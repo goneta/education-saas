@@ -34,6 +34,10 @@ import {
     Share2,
     ShieldCheck,
     WalletCards,
+    Bus,
+    Truck,
+    Route as RouteIcon,
+    UserCog,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -130,6 +134,16 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/emploi`, label: "Emploi et CV", icon: BriefcaseBusiness },
                 { href: `/${locale}/dashboard/emploi-recruteur`, label: "Espace recruteur", icon: BriefcaseBusiness },
                 { href: `/${locale}/dashboard/emploi-admin`, label: "Admin Emploi", icon: ShieldCheck },
+            ]
+        },
+        {
+            title: t("smartTransport"),
+            items: [
+                { href: `/${locale}/dashboard/transport`, label: t("transportDashboard"), icon: BarChart3 },
+                { href: `/${locale}/dashboard/transport/drivers`, label: t("drivers"), icon: UserCog },
+                { href: `/${locale}/dashboard/transport/vehicles`, label: t("vehicles"), icon: Bus },
+                { href: `/${locale}/dashboard/transport/routes`, label: t("routes"), icon: RouteIcon },
+                { href: `/${locale}/dashboard/transport/assignments`, label: t("transportAssignments"), icon: Truck },
             ]
         },
         {

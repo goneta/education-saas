@@ -25,3 +25,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint components/<path>"; npm run build for shared/layout changes
+- Has a dedicated "Smart Transport" section (Tableau de bord, Chauffeurs, Véhicules, Trajets, Affectations); transport was moved here out of Operations.

@@ -55,7 +55,13 @@
     "system": "Mfumo",
     "aiCommandCenter": "Kituo cha amri cha AI",
     "aiCredits": "Mikopo ya AI na malipo",
-    "settings": "Mipangilio"
+    "settings": "Mipangilio",
+    "smartTransport": "Usafiri Mahiri",
+    "transportDashboard": "Dashibodi ya usafiri",
+    "drivers": "Madereva",
+    "vehicles": "Magari",
+    "routes": "Njia",
+    "transportAssignments": "Mgawo wa wanafunzi"
   },
   "layout": {
     "previewTitle": "Hakiki ya maudhui yaliyotengenezwa na AI",
