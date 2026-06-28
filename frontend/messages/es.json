@@ -61,7 +61,8 @@
     "drivers": "Conductores",
     "vehicles": "Veh\u00edculos",
     "routes": "Rutas",
-    "transportAssignments": "Asignaciones de alumnos"
+    "transportAssignments": "Asignaciones de alumnos",
+    "stops": "Paradas de bus"
   },
   "layout": {
     "previewTitle": "Vista previa del contenido generado por IA",

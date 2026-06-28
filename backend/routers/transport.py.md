@@ -13,6 +13,7 @@
 - Every endpoint is tenant-scoped via `_school_id(current_user)`; reads are open to any authenticated user in the school, writes require a manager role (`MANAGER_ROLES`).
 - Assignments reference real `StudentProfile` records; the student's school is resolved through the linked `User` and must match the caller's tenant (no cross-school leakage).
 - Routes carry `monthly_fee` (flows into Finance) and optional `driver_id`/`vehicle_id` links validated to stay within the tenant.
+- Bus stops (`/transport/stops`) are first-class GPS entities (lat/lng, geofence radius, sequence, ETA) scoped to a route within the tenant; `bus_stops` count is on the dashboard.
 - `TransportRoute` is the same table the legacy `/operations/transport` endpoints used, so transport data is a single source of truth across both.
 
 ## Roadmap (not yet implemented)

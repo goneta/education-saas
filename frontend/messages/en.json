@@ -61,7 +61,8 @@
     "drivers": "Drivers",
     "vehicles": "Vehicles",
     "routes": "Routes",
-    "transportAssignments": "Student assignments"
+    "transportAssignments": "Student assignments",
+    "stops": "Bus stops"
   },
   "layout": {
     "previewTitle": "AI Generated Content Preview",

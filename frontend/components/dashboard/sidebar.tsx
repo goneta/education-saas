@@ -37,6 +37,7 @@ import {
     Bus,
     Truck,
     Route as RouteIcon,
+    MapPin,
     UserCog,
 } from "lucide-react"
 
@@ -143,6 +144,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/transport/drivers`, label: t("drivers"), icon: UserCog },
                 { href: `/${locale}/dashboard/transport/vehicles`, label: t("vehicles"), icon: Bus },
                 { href: `/${locale}/dashboard/transport/routes`, label: t("routes"), icon: RouteIcon },
+                { href: `/${locale}/dashboard/transport/stops`, label: t("stops"), icon: MapPin },
                 { href: `/${locale}/dashboard/transport/assignments`, label: t("transportAssignments"), icon: Truck },
             ]
         },

@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { Bus, Users, Route as RouteIcon, Gauge, Wallet, Wrench } from "lucide-react"
+import { Bus, Users, Route as RouteIcon, Gauge, Wallet, Wrench, MapPin } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
@@ -11,6 +11,7 @@ interface TransportDashboard {
     vehicles: number
     drivers: number
     routes: number
+    bus_stops: number
     students_transported: number
     fleet_capacity: number
     occupancy_rate: number
@@ -20,7 +21,7 @@ interface TransportDashboard {
 }
 
 const EMPTY: TransportDashboard = {
-    vehicles: 0, drivers: 0, routes: 0, students_transported: 0, fleet_capacity: 0,
+    vehicles: 0, drivers: 0, routes: 0, bus_stops: 0, students_transported: 0, fleet_capacity: 0,
     occupancy_rate: 0, monthly_transport_revenue: 0, active_routes: 0, vehicles_in_maintenance: 0,
 }
 
@@ -40,6 +41,7 @@ export default function TransportDashboardPage() {
         { label: "Véhicules", value: data.vehicles, icon: Bus },
         { label: "Chauffeurs", value: data.drivers, icon: Users },
         { label: "Trajets actifs", value: `${data.active_routes}/${data.routes}`, icon: RouteIcon },
+        { label: "Arrêts de bus", value: data.bus_stops, icon: MapPin },
         { label: "Élèves transportés", value: data.students_transported, icon: Users },
         { label: "Taux d'occupation", value: `${data.occupancy_rate}%`, icon: Gauge },
         { label: "Recettes transport / mois", value: `${data.monthly_transport_revenue.toLocaleString()} FCFA`, icon: Wallet },

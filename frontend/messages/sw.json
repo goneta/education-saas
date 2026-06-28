@@ -61,7 +61,8 @@
     "drivers": "Madereva",
     "vehicles": "Magari",
     "routes": "Njia",
-    "transportAssignments": "Mgawo wa wanafunzi"
+    "transportAssignments": "Mgawo wa wanafunzi",
+    "stops": "Vituo vya basi"
   },
   "layout": {
     "previewTitle": "Hakiki ya maudhui yaliyotengenezwa na AI",

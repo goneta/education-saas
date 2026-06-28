@@ -1731,6 +1731,30 @@ class TransportRoute(Base):
     school = relationship("School")
     driver = relationship("TransportDriver")
     vehicle = relationship("TransportVehicle")
+    bus_stops = relationship("TransportStop", back_populates="route", cascade="all, delete-orphan")
+
+
+class TransportStop(Base):
+    """Smart Transport — a first-class bus stop on a route with GPS coordinates,
+    a geofence radius and a scheduled arrival ETA. Replaces the legacy free-text
+    `TransportRoute.stops` JSON list."""
+    __tablename__ = "transport_stops"
+
+    id = Column(Integer, primary_key=True, index=True)
+    route_id = Column(Integer, ForeignKey("transport_routes.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    sequence = Column(Integer, default=0)  # order along the route
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    radius_m = Column(Integer, default=100)  # geofence radius in metres
+    scheduled_arrival = Column(String, nullable=True)  # ETA, e.g. "07:15"
+    address = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    route = relationship("TransportRoute", back_populates="bus_stops")
+    school = relationship("School")
 
 
 class CanteenMealPlan(Base):

@@ -192,6 +192,50 @@ def delete_route(route_id: int, db: Session = Depends(database.get_db), current_
 
 
 # --------------------------------------------------------------------------- #
+# Bus stops (first-class GPS entities on a route)
+# --------------------------------------------------------------------------- #
+@router.get("/stops", response_model=List[schemas.TransportStopResponse])
+def list_stops(route_id: int | None = None, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    query = db.query(models.TransportStop).filter(models.TransportStop.school_id == _school_id(current_user))
+    if route_id is not None:
+        query = query.filter(models.TransportStop.route_id == route_id)
+    return query.order_by(models.TransportStop.route_id.asc(), models.TransportStop.sequence.asc()).all()
+
+
+@router.post("/stops", response_model=schemas.TransportStopResponse)
+def create_stop(payload: schemas.TransportStopCreate, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manager(current_user)
+    school_id = _school_id(current_user)
+    # The stop's route must belong to the caller's tenant.
+    _scoped(db, models.TransportRoute, payload.route_id, school_id)
+    row = models.TransportStop(**payload.model_dump(), school_id=school_id)
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.patch("/stops/{stop_id}", response_model=schemas.TransportStopResponse)
+def update_stop(stop_id: int, payload: schemas.TransportStopUpdate, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manager(current_user)
+    row = _scoped(db, models.TransportStop, stop_id, _school_id(current_user))
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(row, key, value)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.delete("/stops/{stop_id}")
+def delete_stop(stop_id: int, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manager(current_user)
+    row = _scoped(db, models.TransportStop, stop_id, _school_id(current_user))
+    db.delete(row)
+    db.commit()
+    return {"status": "deleted"}
+
+
+# --------------------------------------------------------------------------- #
 # Student assignments (links transport to the Student Information System)
 # --------------------------------------------------------------------------- #
 @router.get("/assignments", response_model=List[schemas.TransportAssignmentResponse])
@@ -252,10 +296,12 @@ def dashboard(db: Session = Depends(database.get_db), current_user: models.User 
         for route in routes
         if route.id == assignment.route_id
     )
+    stops = db.query(models.TransportStop).filter(models.TransportStop.school_id == school_id).count()
     return {
         "vehicles": len(vehicles),
         "drivers": len(drivers),
         "routes": len(routes),
+        "bus_stops": stops,
         "students_transported": transported,
         "fleet_capacity": capacity,
         "occupancy_rate": round((transported / capacity) * 100, 1) if capacity else 0,

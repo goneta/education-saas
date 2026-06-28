@@ -26,13 +26,14 @@ Smart Transport never duplicates core platform data; it consumes it:
 - Frontend module pages (this folder), each using the shared universal
   `TableFilter`. Sidebar "Smart Transport" section; transport removed from the
   Operations page. Route is school-context-guarded (`CONTEXT_REQUIRED_SEGMENTS`).
+- **Bus stops** as first-class GPS entities (`TransportStop`: lat/lng, geofence
+  radius, sequence, scheduled-arrival ETA), migration `20260628_0036`, `/transport/stops`
+  CRUD and a stops page — replacing the legacy `TransportRoute.stops` JSON list.
 
 ## Roadmap (not yet built — intentionally out of scope of the foundation)
 
 The full Smart Transport architecture (≈20 submodules) layers on top:
 
-- **Bus stops** as first-class GPS entities (lat/lng, radius, ETA) — currently
-  stops are a JSON list on the route.
 - **GPS tracking**: device → MQTT → transport service → Redis → WebSocket →
   dashboard/parent app (live position + ETA).
 - **AI route optimizer**: nightly regeneration scored on fuel/distance/traffic/

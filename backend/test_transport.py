@@ -58,6 +58,30 @@ def test_driver_vehicle_route_assignment_flow():
     assert board["monthly_transport_revenue"] == 50
 
 
+def test_bus_stops_crud_and_scoping():
+    db = _session()
+    school, admin = _school_user(db)
+    route = transport.create_route(transport.schemas.TransportRouteCreate(name="Line 1"), db=db, current_user=admin)
+    stop = transport.create_stop(
+        transport.schemas.TransportStopCreate(route_id=route.id, name="Arrêt Mairie", sequence=1, latitude=5.34, longitude=-4.02, scheduled_arrival="07:15"),
+        db=db, current_user=admin,
+    )
+    assert stop.latitude == 5.34 and stop.scheduled_arrival == "07:15"
+    listed = transport.list_stops(route_id=route.id, db=db, current_user=admin)
+    assert len(listed) == 1
+    transport.update_stop(stop.id, transport.schemas.TransportStopUpdate(radius_m=250), db=db, current_user=admin)
+    assert transport.list_stops(route_id=route.id, db=db, current_user=admin)[0].radius_m == 250
+    # Dashboard reflects the stop.
+    assert transport.dashboard(db=db, current_user=admin)["bus_stops"] == 1
+    # Cross-school route rejected.
+    _school_b, admin_b = _school_user(db)
+    try:
+        transport.create_stop(transport.schemas.TransportStopCreate(route_id=route.id, name="X"), db=db, current_user=admin_b)
+        assert False, "stop on another school's route should be rejected"
+    except Exception as exc:
+        assert getattr(exc, "status_code", None) == 404
+
+
 def test_assignment_rejects_cross_school_student():
     db = _session()
     school_a, admin_a = _school_user(db)
