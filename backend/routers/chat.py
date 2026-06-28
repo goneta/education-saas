@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from backend import audit, database, models, rbac, security
 from backend.routers.ai_automation import maybe_run_chat_automation
 from backend.services.ai_service import ai_service
-from backend.services import ai_credits, school_context
+from backend.services import ai_credits, ai_agents, school_context
 
 router = APIRouter(
     prefix="/chat",
@@ -111,6 +111,15 @@ async def chat_with_ai(
 ):
     try:
         context = _ai_scope_for_user(current_user, db)
+        # Multi-agent routing: pick the most qualified specialized agent and give
+        # the model its domain persona (within the same RBAC context).
+        routing = ai_agents.select_agent(request_body.message, current_user, db)
+        agent = routing["agent"]
+        context["active_agent"] = agent.name
+        context["agent_domain"] = agent.domain
+        context["agent_instructions"] = agent.system_prompt()
+        if routing["handoff"]:
+            context["handoff"] = routing["handoff"]
         required_permissions = _required_permissions_for_message(request_body.message)
         denied_permissions = [permission for permission in required_permissions if not rbac.has_permission(current_user, permission, db)]
         if denied_permissions or _is_cross_scope_request(request_body.message, current_user):
@@ -207,3 +216,41 @@ async def chat_with_ai(
     except Exception:
         db.rollback()
         raise HTTPException(status_code=500, detail="AI service failed")
+
+
+@router.get("/agents")
+def list_agents(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    """List the TeducAI multi-agent roster with, for each, whether the current
+    user is authorized to use it (RBAC-aware)."""
+    return {
+        "count": len(ai_agents.AGENTS),
+        "agents": [
+            {
+                "key": agent.key,
+                "name": agent.name,
+                "domain": agent.domain,
+                "permission": agent.permission,
+                "authorized": rbac.has_permission(current_user, agent.permission, db),
+            }
+            for agent in ai_agents.AGENTS
+        ],
+    }
+
+
+@router.post("/route")
+def route_request(
+    request_body: ChatRequest,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    """Return which specialized agent would handle a message (orchestration
+    transparency), whether the user is authorized, and candidate handoffs."""
+    routing = ai_agents.select_agent(request_body.message, current_user, db)
+    agent = routing["agent"]
+    return {
+        "agent": {"key": agent.key, "name": agent.name, "domain": agent.domain},
+        "authorized": routing["authorized"],
+        "candidates": routing["candidates"],
+        "handoff": routing["handoff"],
+        "refusal": routing["refusal"],
+    }
