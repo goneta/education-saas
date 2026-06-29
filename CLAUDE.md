@@ -51,7 +51,7 @@ notifications and master data (zero data duplication).
 ## Recent change log (most recent first)
 
 - **Timetable constraints UI**: surfaced the constraint engine on the timetable page
-  (panel above; no backend change). Now also surfaces explainable-AI (\/explain), scenario
+  (panel above; no backend change). Now also surfaces explainable-AI (/explain), scenario
   simulation (teacher-absent / extra-working-day), energy/travel metrics (derived),
   equipment & rooms, hybrid delivery-mode distribution, and multi-campus panels.
 - **Production 500 fixes**: relaxed `UserResponse.email` and `SchoolResponse.email`
