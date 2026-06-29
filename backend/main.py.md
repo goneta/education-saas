@@ -43,3 +43,4 @@ The application registers the `/site` router for the public marketing-site conte
 - Registers the `/communication` router (announcement center).
 - Registers the `/hr` router (staff leave self-service + approval).
 - Registers the `/analytics` router (CSV export + AI insights).
+- Registers the `/extensibility` router (webhooks + API keys).

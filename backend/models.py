@@ -1118,6 +1118,60 @@ class FeatureFlag(Base):
     __table_args__ = (UniqueConstraint("key", "school_id", name="uq_feature_flag_key_school"),)
 
 
+class WebhookEndpoint(Base):
+    """Extensibility — an outbound webhook a tenant registers to receive platform
+    events. Deliveries are recorded with retry bookkeeping (`WebhookDelivery`)."""
+    __tablename__ = "webhook_endpoints"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    url = Column(String, nullable=False)
+    event_types = Column(JSON, nullable=True)  # list[str]; null/empty = all events
+    secret = Column(String, nullable=True)  # used to sign payloads (HMAC) by the sender
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    school = relationship("School")
+
+
+class WebhookDelivery(Base):
+    """Extensibility — one delivery attempt record for an event→endpoint, with
+    automatic-retry bookkeeping (status, attempts, next_retry_at)."""
+    __tablename__ = "webhook_deliveries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    endpoint_id = Column(Integer, ForeignKey("webhook_endpoints.id"), nullable=False, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    event_type = Column(String, nullable=False, index=True)
+    payload = Column(JSON, nullable=True)
+    status = Column(String, default="pending", index=True)  # pending | delivered | failed
+    attempts = Column(Integer, default=0)
+    max_attempts = Column(Integer, default=5)
+    next_retry_at = Column(DateTime(timezone=True), nullable=True)
+    last_error = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    endpoint = relationship("WebhookEndpoint")
+
+
+class ApiKey(Base):
+    """Extensibility — a tenant API key for programmatic access. Only the hash is
+    stored; the plaintext is returned once at creation."""
+    __tablename__ = "api_keys"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    prefix = Column(String, nullable=False, index=True)  # first chars, shown in UI
+    key_hash = Column(String, nullable=False)  # sha256 of the full key
+    is_active = Column(Boolean, default=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    last_used_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    school = relationship("School")
+
+
 class Announcement(Base):
     """Communication — a school announcement broadcast to an audience, optionally
     scheduled and optionally flagged as an emergency. Delivery to channels (push/

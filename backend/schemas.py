@@ -2653,6 +2653,43 @@ class LeaveDecision(BaseModel):
     status: str  # approved | rejected
 
 
+class WebhookEndpointCreate(BaseModel):
+    url: str
+    event_types: Optional[List[str]] = None
+    secret: Optional[str] = None
+    is_active: bool = True
+
+
+class WebhookEndpointResponse(BaseModel):
+    id: int
+    school_id: int
+    url: str
+    event_types: Optional[List[str]] = None
+    is_active: bool
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ApiKeyCreate(BaseModel):
+    name: str
+
+
+class ApiKeyResponse(BaseModel):
+    id: int
+    school_id: int
+    name: str
+    prefix: str
+    is_active: bool
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ApiKeyCreated(ApiKeyResponse):
+    api_key: str  # plaintext, returned only once at creation
+
+
 class CanteenMealPlanCreate(BaseModel):
     name: str
     day_of_week: Optional[str] = None

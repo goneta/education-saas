@@ -68,6 +68,8 @@ tracked but require the §5 decisions + an environment to claim.
 
 - **Slice 6 — ✅ DONE** (Loop 9 Analytics): `/analytics/export/{dataset}` tenant-scoped CSV + `/analytics/insights` AI narrative over KPIs. 3 new tests. PDF/Excel + predictive analytics remain roadmap.
 
+- **Slice 7 — ✅ DONE** (Loop 10 Extensibility): outbound webhooks (`emit_event` + delivery retry bookkeeping), API keys (hashed, once-shown). Migration 0041. 4 new tests. HTTP sender/retry worker, GraphQL, plugin marketplace, SDK remain roadmap.
+
 ## Recommended FIRST runnable slice
 
 **Slice 0 — Centralized Payment Service: audit & harden** (highest leverage,

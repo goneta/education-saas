@@ -53,3 +53,4 @@ The schema catalog includes enrollment, transfer, academic-year closure, tempora
 - `Guardian*`, `EmergencyContact*`, `MedicalRecord*` schemas (SIS Slice 2).
 - `Announcement*` schemas (Communication Slice 4).
 - `LeaveSelfRequestCreate` + `LeaveDecision` for HR self-service leave (reuses the existing `LeaveRequest`/`LeaveRequestResponse`).
+- `WebhookEndpoint*`, `ApiKey*` schemas (Extensibility Slice 7).
