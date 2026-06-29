@@ -41,3 +41,4 @@ The application registers the `/site` router for the public marketing-site conte
 - Registers the `/sis` Student Information System router (guardians, emergency contacts, medical records).
 - Registers the `/academics` router (automatic GPA).
 - Registers the `/communication` router (announcement center).
+- Registers the `/hr` router (staff leave self-service + approval).

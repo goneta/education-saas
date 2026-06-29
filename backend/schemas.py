@@ -2639,6 +2639,20 @@ class AnnouncementResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class LeaveSelfRequestCreate(BaseModel):
+    """Self-service leave request — staff_user_id is taken from the caller, not
+    the payload (the existing `LeaveRequestCreate` requires an explicit staff id
+    and is used by the admin /enterprise/leaves endpoint)."""
+    leave_type: str = "annual"
+    start_date: datetime
+    end_date: datetime
+    reason: Optional[str] = None
+
+
+class LeaveDecision(BaseModel):
+    status: str  # approved | rejected
+
+
 class CanteenMealPlanCreate(BaseModel):
     name: str
     day_of_week: Optional[str] = None

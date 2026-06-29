@@ -64,6 +64,8 @@ tracked but require the §5 decisions + an environment to claim.
 
 - **Slice 4 — ✅ DONE** (Loop 7 Communication): `Announcement` model (migration 0040) + `/communication` (create/list/publish-with-fan-out, emergency flag). WhatsApp/voice/video adapters NOT READY (provider accounts). 3 new tests.
 
+- **Slice 5 — ✅ DONE** (Loop 8 HR): leave self-service + approval workflow on the EXISTING `LeaveRequest` model (no duplicate table) — `/hr/leave-requests` (own/all scoping) + `/decide` with notification. 3 new tests; 145 backend tests pass. Recruitment/contracts/appraisals/payroll-integration remain.
+
 ## Recommended FIRST runnable slice
 
 **Slice 0 — Centralized Payment Service: audit & harden** (highest leverage,
