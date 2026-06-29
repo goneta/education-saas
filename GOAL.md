@@ -72,6 +72,28 @@ tracked but require the §5 decisions + an environment to claim.
 
 - **Slice 8 — ✅ DONE** (Loop 4 AI Learning): `/ai-learning/generate/{lesson,quiz,exam}` on ai_service (audit-logged, educator-gated). 2 new tests. Image/video/speech analysis + adaptive difficulty remain roadmap.
 
+## Slices complete — buildable scope delivered
+
+Slices 0–8 are done, each tested + committed + pushed (154 backend tests pass):
+0 Payment Service hardening · 1 Core Platform (departments/flags/search) ·
+2 SIS (guardians/emergency/medical) · 3 GPA · 4 Communication (announcements) ·
+5 HR leave approval · 6 Analytics (CSV+AI insights) · 7 Extensibility (webhooks/
+API keys) · 8 AI Learning generators. (Loop 6 Transport was completed earlier.)
+
+### Remaining = NOT READY (need decisions/grants/infra, never faked):
+- Live payment operability (real Stripe/CinetPay/Djamo keys + webhook secrets),
+  Stripe HMAC body signature, Apple/Google Pay.
+- Comms channels: WhatsApp / voice / video provider accounts.
+- Real-time GPS push (MQTT/WebSocket), facial-recognition boarding, ETA models,
+  native parent/driver/student mobile apps.
+- Extensibility runtime: async webhook sender/retry worker, GraphQL, plugin
+  marketplace, SDK.
+- Analytics: PDF/Excel export, predictive/custom dashboards.
+- Infra/non-functional acceptance criteria: Docker/K8s, HA/fault-tolerance,
+  100k-users/300ms load targets, tracing/APM — require an environment + owner.
+
+These are the SPEC §5 decisions; supply credentials/accounts/infra to unblock.
+
 ## Recommended FIRST runnable slice
 
 **Slice 0 — Centralized Payment Service: audit & harden** (highest leverage,
