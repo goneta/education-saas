@@ -60,6 +60,8 @@ tracked but require the §5 decisions + an environment to claim.
 
 - **Slice 2 — ✅ DONE** (Loop 2 SIS gaps): `StudentGuardian`, `StudentEmergencyContact`, `StudentMedicalRecord` (migration 0039), `routers/sis.py` (guardians/emergency CRUD, restricted medical upsert). 4 new tests; 136 backend tests pass.
 
+- **Slice 3 — ✅ DONE** (Loop 3 Academic gap): automatic weighted GPA — `services/academics.py` + `/academics/students/{id}/gpa` (no migration; computes over existing grades). 3 new tests; 139 backend tests pass.
+
 ## Recommended FIRST runnable slice
 
 **Slice 0 — Centralized Payment Service: audit & harden** (highest leverage,

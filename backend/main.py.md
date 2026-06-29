@@ -39,3 +39,4 @@ The application registers the `/site` router for the public marketing-site conte
 - Registers the `/payments` centralized Payment Service router (Slice 0).
 - Registers the `/platform` Core Platform router (departments, feature flags, global search).
 - Registers the `/sis` Student Information System router (guardians, emergency contacts, medical records).
+- Registers the `/academics` router (automatic GPA).
