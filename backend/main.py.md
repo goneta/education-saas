@@ -36,3 +36,4 @@ The application registers the `/employment` router for public sharecode/CV disco
 
 The application registers the `/site` router for the public marketing-site content (public read, Super Admin write).
 - Registers the `/transport` (Smart Transport) router.
+- Registers the `/payments` centralized Payment Service router (Slice 0).

@@ -48,3 +48,4 @@ The schema catalog includes enrollment, transfer, academic-year closure, tempora
 - Smart Transport: `TransportDriver*`, `TransportVehicle*` schemas and `driver_id/vehicle_id/capacity` on `TransportRouteCreate`.
 - `TransportStop*` schemas for bus-stop CRUD.
 - `TransportPosition*`, `TransportBoarding*`, `TransportIncident*`, `TransportFuelLog*` schemas.
+- `SchoolPaymentWebhook` for centralized school-payment confirmation.

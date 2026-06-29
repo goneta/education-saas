@@ -44,6 +44,18 @@ the Global non-negotiables (§4) plus, for any billable feature, the Payment
 acceptance criteria are satisfied and verified. Infra/scale/HA/perf criteria are
 tracked but require the §5 decisions + an environment to claim.
 
+## Progress log
+
+- **Slice 0 — ✅ DONE** (centralized Payment Service hardening): added
+  `services/payment_service.py` (idempotent `apply_school_payment` + per-institution
+  `enabled_providers`) and `routers/payments.py` (`/providers`, signed idempotent
+  `/webhook/{provider}`, manager-gated `/{reference}/verify`, `/{reference}`).
+  School payments now confirm exactly once and update the owning `StudentInvoice`
+  (no double-credit on webhook replay). 6 new tests; 127 backend tests pass.
+  **Still NOT READY (credential-gated):** live provider operability, Stripe HMAC
+  body-signature, Apple/Google Pay device flows — `_verify_signature` is the plug
+  point once real secrets exist.
+
 ## Recommended FIRST runnable slice
 
 **Slice 0 — Centralized Payment Service: audit & harden** (highest leverage,

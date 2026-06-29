@@ -391,6 +391,13 @@ class PlatformPaymentWebhook(BaseModel):
     metadata_json: Optional[Dict[str, Any]] = None
 
 
+class SchoolPaymentWebhook(BaseModel):
+    reference: str
+    status: str
+    provider_reference: Optional[str] = None
+    metadata_json: Optional[Dict[str, Any]] = None
+
+
 class PlatformPaymentResponse(BaseModel):
     id: int
     reference: str
