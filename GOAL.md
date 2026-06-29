@@ -66,6 +66,8 @@ tracked but require the §5 decisions + an environment to claim.
 
 - **Slice 5 — ✅ DONE** (Loop 8 HR): leave self-service + approval workflow on the EXISTING `LeaveRequest` model (no duplicate table) — `/hr/leave-requests` (own/all scoping) + `/decide` with notification. 3 new tests; 145 backend tests pass. Recruitment/contracts/appraisals/payroll-integration remain.
 
+- **Slice 6 — ✅ DONE** (Loop 9 Analytics): `/analytics/export/{dataset}` tenant-scoped CSV + `/analytics/insights` AI narrative over KPIs. 3 new tests. PDF/Excel + predictive analytics remain roadmap.
+
 ## Recommended FIRST runnable slice
 
 **Slice 0 — Centralized Payment Service: audit & harden** (highest leverage,
