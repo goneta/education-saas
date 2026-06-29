@@ -25,3 +25,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
+- `ListCard` filterColumns is derived inline (not `useMemo`): `keys` is recomputed each render from `rows`, so a manual memo can't be preserved by the React Compiler — let it auto-memoize.

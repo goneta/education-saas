@@ -191,9 +191,11 @@ function ListCard({ title, displayTitle, rows, locale }: { title: string; displa
     const [editing, setEditing] = useState<EnterpriseRow | null>(null)
     const [jsonValue, setJsonValue] = useState("")
 
-    const filterColumns = useMemo<FilterColumn<EnterpriseRow>[]>(
-        () => keys.map(key => ({ key, label: humanizeKey(key), accessor: row => row[key] as unknown })),
-        [rows], // eslint-disable-line react-hooks/exhaustive-deps -- keys derive from rows
+    // Derived directly rather than via useMemo: `keys` is recomputed each render
+    // from `rows`, so a manual memo here could not be preserved by the React
+    // Compiler (it auto-memoizes this instead).
+    const filterColumns: FilterColumn<EnterpriseRow>[] = keys.map(
+        key => ({ key, label: humanizeKey(key), accessor: row => row[key] as unknown }),
     )
     const filter = useTableFilter(rows, filterColumns, { storageKey: `enterprise-${title}` })
 
