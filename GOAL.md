@@ -56,6 +56,8 @@ tracked but require the §5 decisions + an environment to claim.
   body-signature, Apple/Google Pay device flows — `_verify_signature` is the plug
   point once real secrets exist.
 
+- **Slice 1 — ✅ DONE** (Loop 1 Core gaps): `Department` + `FeatureFlag` models (migration 0038), `routers/platform.py` (departments CRUD, feature flags with `feature_enabled` fallback helper, tenant-scoped global search). 5 new tests; 132 backend tests pass.
+
 ## Recommended FIRST runnable slice
 
 **Slice 0 — Centralized Payment Service: audit & harden** (highest leverage,

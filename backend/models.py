@@ -1029,6 +1029,40 @@ class Campus(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
+class Department(Base):
+    """Core Platform — an organizational department within a school (optionally a
+    campus), e.g. Sciences, Administration, Transport. First-class so HR, academic
+    and operations modules can group people/resources consistently."""
+    __tablename__ = "departments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    campus_id = Column(Integer, ForeignKey("campuses.id"), nullable=True, index=True)
+    name = Column(String, nullable=False)
+    code = Column(String, nullable=True)
+    head_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    school = relationship("School")
+
+
+class FeatureFlag(Base):
+    """Core Platform — a toggleable capability. A row with `school_id` NULL is the
+    platform default; a row with a `school_id` overrides it for that institution."""
+    __tablename__ = "feature_flags"
+
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String, nullable=False, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    is_enabled = Column(Boolean, nullable=False, default=False)
+    description = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (UniqueConstraint("key", "school_id", name="uq_feature_flag_key_school"),)
+
+
 class Building(Base):
     __tablename__ = "buildings"
 

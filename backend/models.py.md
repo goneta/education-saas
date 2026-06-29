@@ -46,3 +46,4 @@ Grades, attendance, assignment submissions, internships, fees, invoices, registr
 - Smart Transport master data: `TransportDriver`, `TransportVehicle`, and `TransportRoute.driver_id/vehicle_id/capacity` links (single source of truth for the `/transport` module).
 - `TransportStop`: first-class bus stops (route_id, sequence, lat/lng, geofence radius, ETA) replacing the legacy `TransportRoute.stops` JSON.
 - GPS/ops layer: `TransportVehiclePosition` (GPS samples), `TransportBoardingEvent` (boarding attendance), `TransportIncident`, `TransportFuelLog`.
+- Core Platform: `Department` (school/campus org unit) and `FeatureFlag` (per-institution toggle over a NULL-school platform default).

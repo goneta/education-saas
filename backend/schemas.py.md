@@ -49,3 +49,4 @@ The schema catalog includes enrollment, transfer, academic-year closure, tempora
 - `TransportStop*` schemas for bus-stop CRUD.
 - `TransportPosition*`, `TransportBoarding*`, `TransportIncident*`, `TransportFuelLog*` schemas.
 - `SchoolPaymentWebhook` for centralized school-payment confirmation.
+- `Department*` and `FeatureFlag*` schemas (Core Platform Slice 1).

@@ -2527,6 +2527,46 @@ class TransportFuelLogResponse(TransportFuelLogCreate):
     model_config = ConfigDict(from_attributes=True)
 
 
+class DepartmentCreate(BaseModel):
+    name: str
+    code: Optional[str] = None
+    campus_id: Optional[int] = None
+    head_user_id: Optional[int] = None
+    is_active: bool = True
+
+
+class DepartmentUpdate(BaseModel):
+    name: Optional[str] = None
+    code: Optional[str] = None
+    campus_id: Optional[int] = None
+    head_user_id: Optional[int] = None
+    is_active: Optional[bool] = None
+
+
+class DepartmentResponse(DepartmentCreate):
+    id: int
+    school_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FeatureFlagSet(BaseModel):
+    key: str
+    is_enabled: bool
+    description: Optional[str] = None
+
+
+class FeatureFlagResponse(BaseModel):
+    id: int
+    key: str
+    school_id: Optional[int] = None
+    is_enabled: bool
+    description: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class CanteenMealPlanCreate(BaseModel):
     name: str
     day_of_week: Optional[str] = None
