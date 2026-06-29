@@ -8,6 +8,7 @@
 
 - React/Next.js client component that adds reusable dashboard UX behavior after page render.
 - It standardizes table/list row actions, mass actions, mobile table cards, contextual help access, French section-title normalization, and collapsible dashboard sections.
+- Row enhancement (injected leading select cell + trailing action cell) is self-healing and idempotent: React re-renders strip the injected `<td>`s while the static `<thead>` keeps its select `<th>`, shifting rows one column left. Each pass re-adds only MISSING injected cells (guarded by `[data-teducai-select-cell]` / `[data-teducai-action-cell]`); it must NOT early-return on the `teducaiEnhanced` flag, or stripped rows stay permanently misaligned.
 
 ## DOX Scope
 

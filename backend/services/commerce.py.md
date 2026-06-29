@@ -27,3 +27,4 @@
 
 - `python -m py_compile backend\services\commerce.py`
 - Add targeted checkout tests when changing payment behavior.
+- `cart_item_response` normalizes a non-dict `metadata_json` to None (the JSON column can hold legacy non-dict values; the response contract is a dict). Fixes the `/account/cart` 500.

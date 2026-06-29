@@ -25,7 +25,10 @@ def cart_item_response(item: models.CartItem) -> dict:
         "provider_scope": item.provider_scope,
         "source_type": item.source_type,
         "source_id": item.source_id,
-        "metadata_json": item.metadata_json,
+        # Tolerant on read: the JSON column can legitimately hold a non-dict value
+        # (legacy string/list); the response contract is a dict, so normalize a
+        # non-dict back to None rather than 500 the whole cart.
+        "metadata_json": item.metadata_json if isinstance(item.metadata_json, dict) else None,
         "created_at": item.created_at,
         "updated_at": item.updated_at,
         "line_total": item.quantity * item.unit_amount,

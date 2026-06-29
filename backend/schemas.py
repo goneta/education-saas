@@ -121,6 +121,10 @@ class UserCreate(UserBase):
     school_domain_prefix: Optional[str] = None # For joining an existing school
 
 class UserResponse(UserBase):
+    # Tolerant on read: a single user with a stored email that strict EmailStr
+    # rejects (reserved/special domain, legacy malformed value) must not 500 the
+    # whole list/response. Input schemas (UserCreate) keep EmailStr validation.
+    email: Optional[str] = None
     id: int
     is_active: bool
     is_verified: bool = False

@@ -594,7 +594,11 @@ export function DashboardUxEnhancer() {
                     row.dataset.teducaiPlaceholderRow = "true"
                     return
                 }
-                if (row.dataset.teducaiEnhanced === "true") return
+                // Self-healing & idempotent: React re-renders tbody rows (data load,
+                // filter, refresh) and strips the injected select/action cells, while
+                // the static thead keeps its select <th> — that desync shifts every
+                // row one column left. So re-add any MISSING injected cell on each
+                // pass (guarded individually) instead of skipping already-flagged rows.
                 row.dataset.teducaiEnhanced = "true"
                 row.dataset.teducaiRowKey = row.dataset.teducaiRowKey || `${tableIndex}-${rowIndex}-${row.textContent?.slice(0, 24) || rowIndex}`
                 if (!row.querySelector("[data-teducai-select-cell]")) {
@@ -604,22 +608,24 @@ export function DashboardUxEnhancer() {
                     selectCell.innerHTML = '<input type="checkbox" title="Sélectionner cette ligne" data-teducai-row-select class="h-4 w-4 accent-black" />'
                     row.insertBefore(selectCell, row.firstChild)
                 }
-                const cell = document.createElement("td")
-                cell.dataset.teducaiActionCell = "true"
-                cell.className = "px-3 py-2 text-right"
-                const actions = Object.entries(ACTIONS).filter(([key, action]) => {
-                    if (!can(action.permission)) return false
-                    if (key === "edit") return hasExistingAction(row, [/edit/i, /modifier/i])
-                    if (key === "delete") return hasExistingAction(row, [/delete/i, /supprimer/i, /trash/i])
-                    return true
-                })
-                cell.innerHTML = `<div class="inline-flex items-center gap-1 rounded-full bg-white/80 p-1">${actions.map(([key, action]) => {
-                    if (key === "download") {
-                        return `<span class="relative inline-flex"><button type="button" data-teducai-action="${key}" title="${action.title}" class="teducai-row-action">${ICONS[action.icon]}</button><span data-teducai-download-menu class="hidden absolute right-0 top-9 z-[1300] w-32 rounded-2xl border border-[#E5E7EB] bg-white p-1 text-left text-xs shadow-xl"><button data-teducai-export="pdf" class="block w-full rounded-xl px-3 py-2 hover:bg-[#F5F5F7]">PDF</button><button data-teducai-export="csv" class="block w-full rounded-xl px-3 py-2 hover:bg-[#F5F5F7]">CSV</button><button data-teducai-export="xlsx" class="block w-full rounded-xl px-3 py-2 hover:bg-[#F5F5F7]">Excel</button></span></span>`
-                    }
-                    return `<button type="button" data-teducai-action="${key}" title="${action.title}" class="teducai-row-action">${ICONS[action.icon]}</button>`
-                }).join("")}</div>`
-                row.appendChild(cell)
+                if (!row.querySelector("[data-teducai-action-cell]")) {
+                    const cell = document.createElement("td")
+                    cell.dataset.teducaiActionCell = "true"
+                    cell.className = "px-3 py-2 text-right"
+                    const actions = Object.entries(ACTIONS).filter(([key, action]) => {
+                        if (!can(action.permission)) return false
+                        if (key === "edit") return hasExistingAction(row, [/edit/i, /modifier/i])
+                        if (key === "delete") return hasExistingAction(row, [/delete/i, /supprimer/i, /trash/i])
+                        return true
+                    })
+                    cell.innerHTML = `<div class="inline-flex items-center gap-1 rounded-full bg-white/80 p-1">${actions.map(([key, action]) => {
+                        if (key === "download") {
+                            return `<span class="relative inline-flex"><button type="button" data-teducai-action="${key}" title="${action.title}" class="teducai-row-action">${ICONS[action.icon]}</button><span data-teducai-download-menu class="hidden absolute right-0 top-9 z-[1300] w-32 rounded-2xl border border-[#E5E7EB] bg-white p-1 text-left text-xs shadow-xl"><button data-teducai-export="pdf" class="block w-full rounded-xl px-3 py-2 hover:bg-[#F5F5F7]">PDF</button><button data-teducai-export="csv" class="block w-full rounded-xl px-3 py-2 hover:bg-[#F5F5F7]">CSV</button><button data-teducai-export="xlsx" class="block w-full rounded-xl px-3 py-2 hover:bg-[#F5F5F7]">Excel</button></span></span>`
+                        }
+                        return `<button type="button" data-teducai-action="${key}" title="${action.title}" class="teducai-row-action">${ICONS[action.icon]}</button>`
+                    }).join("")}</div>`
+                    row.appendChild(cell)
+                }
                 const labels = tableHeaders(row)
                 Array.from(row.children).forEach((child, childIndex) => {
                     if (child instanceof HTMLTableCellElement && !child.dataset.label) {
