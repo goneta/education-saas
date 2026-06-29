@@ -10,6 +10,7 @@ import { AppleAccordion } from "@/components/ui/apple-accordion"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { TimetableConstraintsPanel } from "@/components/education/timetable-constraints-panel"
 
 interface TimetableEntry {
     id: number
@@ -422,6 +423,8 @@ export default function TimetablePage() {
                     </div>
                 </AppleAccordion>
             )}
+
+            <TimetableConstraintsPanel token={token} subjects={subjects} teachers={teachers} classes={classes} />
 
             <Dialog open={showModal} onOpenChange={setShowModal}>
                 <DialogContent className="sm:max-w-[760px]">
