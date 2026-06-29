@@ -62,6 +62,8 @@ tracked but require the §5 decisions + an environment to claim.
 
 - **Slice 3 — ✅ DONE** (Loop 3 Academic gap): automatic weighted GPA — `services/academics.py` + `/academics/students/{id}/gpa` (no migration; computes over existing grades). 3 new tests; 139 backend tests pass.
 
+- **Slice 4 — ✅ DONE** (Loop 7 Communication): `Announcement` model (migration 0040) + `/communication` (create/list/publish-with-fan-out, emergency flag). WhatsApp/voice/video adapters NOT READY (provider accounts). 3 new tests.
+
 ## Recommended FIRST runnable slice
 
 **Slice 0 — Centralized Payment Service: audit & harden** (highest leverage,

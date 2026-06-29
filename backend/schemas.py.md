@@ -51,3 +51,4 @@ The schema catalog includes enrollment, transfer, academic-year closure, tempora
 - `SchoolPaymentWebhook` for centralized school-payment confirmation.
 - `Department*` and `FeatureFlag*` schemas (Core Platform Slice 1).
 - `Guardian*`, `EmergencyContact*`, `MedicalRecord*` schemas (SIS Slice 2).
+- `Announcement*` schemas (Communication Slice 4).

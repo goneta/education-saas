@@ -48,3 +48,4 @@ Grades, attendance, assignment submissions, internships, fees, invoices, registr
 - GPS/ops layer: `TransportVehiclePosition` (GPS samples), `TransportBoardingEvent` (boarding attendance), `TransportIncident`, `TransportFuelLog`.
 - Core Platform: `Department` (school/campus org unit) and `FeatureFlag` (per-institution toggle over a NULL-school platform default).
 - SIS: `StudentGuardian`, `StudentEmergencyContact`, `StudentMedicalRecord` (multiple guardians + emergency contacts + one medical record per student).
+- Communication: `Announcement` (audience broadcast, scheduled/emergency).

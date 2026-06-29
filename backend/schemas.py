@@ -2614,6 +2614,31 @@ class MedicalRecordResponse(MedicalRecordUpsert):
     model_config = ConfigDict(from_attributes=True)
 
 
+class AnnouncementCreate(BaseModel):
+    title: str
+    body: str
+    audience: str = "all"
+    class_id: Optional[int] = None
+    is_emergency: bool = False
+    scheduled_for: Optional[datetime] = None
+
+
+class AnnouncementResponse(BaseModel):
+    id: int
+    school_id: int
+    title: str
+    body: str
+    audience: str
+    class_id: Optional[int] = None
+    is_emergency: bool
+    status: str
+    scheduled_for: Optional[datetime] = None
+    published_at: Optional[datetime] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class CanteenMealPlanCreate(BaseModel):
     name: str
     day_of_week: Optional[str] = None

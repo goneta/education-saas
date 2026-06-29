@@ -1118,6 +1118,28 @@ class FeatureFlag(Base):
     __table_args__ = (UniqueConstraint("key", "school_id", name="uq_feature_flag_key_school"),)
 
 
+class Announcement(Base):
+    """Communication — a school announcement broadcast to an audience, optionally
+    scheduled and optionally flagged as an emergency. Delivery to channels (push/
+    SMS/email) reuses the existing notification infrastructure."""
+    __tablename__ = "announcements"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    title = Column(String, nullable=False)
+    body = Column(Text, nullable=False)
+    audience = Column(String, default="all")  # all | teachers | parents | students | class
+    class_id = Column(Integer, ForeignKey("classes.id"), nullable=True)
+    is_emergency = Column(Boolean, default=False)
+    status = Column(String, default="draft", index=True)  # draft | scheduled | published
+    scheduled_for = Column(DateTime(timezone=True), nullable=True)
+    published_at = Column(DateTime(timezone=True), nullable=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    school = relationship("School")
+
+
 class Building(Base):
     __tablename__ = "buildings"
 
