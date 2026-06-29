@@ -17,3 +17,4 @@
 
 ## Verification
 - cmd.exe /c "cd frontend&& npx eslint components/education/timetable-constraints-panel.tsx"; npm run build
+- Also exposes: **IA explicable** (`/explain`: score + breakdown + decision bullets), **simulation de scénarios** (`/simulate`: teacher_absent / extra_working_day), **optimisation énergétique & déplacements** (metrics derived client-side from the live timetable rows — rooms used, teacher room-changes), **équipements & salles** (`/facilities/rooms`), **cours hybrides** (delivery_mode distribution), **multi-campus** (`/facilities/campuses`+`/buildings`). Derived metrics are honest read-only proxies; deeper energy/travel geodata optimization stays roadmap.

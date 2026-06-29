@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { CalendarOff, Clock, Cpu, Gauge, Plus, Settings2, ShieldCheck, Sparkles, Trash2 } from "lucide-react"
+import { Building2, CalendarOff, Clock, Cpu, FlaskConical, Gauge, Lightbulb, MonitorSmartphone, PlayCircle, Plus, Route, Settings2, ShieldCheck, Sparkles, Trash2, Zap } from "lucide-react"
 
 import { API_BASE_URL } from "@/lib/config"
 
@@ -28,6 +28,13 @@ interface Holiday { id: number; date: string; name?: string | null }
 interface SubjectRequirement { id: number; subject_id: number; class_id?: number | null; level?: string | null; weekly_sessions: number }
 interface TimetableConfig { working_days: string[]; slots: { start: string; end: string; kind: string }[] }
 interface Candidate { seed: number; score: number; breakdown?: Record<string, unknown>; unplaced?: unknown }
+interface Explanation { seed?: number; score: number; breakdown?: Record<string, unknown>; explanation: string[] }
+interface RoomItem { id: number; name: string; room_type?: string | null; capacity?: number | null; building_id?: number | null }
+interface CampusItem { id: number; name: string; address?: string | null }
+interface BuildingItem { id: number; name: string; campus_id?: number | null }
+// Loose row type for the derived energy/travel/hybrid metrics (delivery_mode is
+// returned by the API even though the page's stricter interface omits it).
+interface TimetableRow { id: number; day_of_week: string; start_time: string; room?: string | null; teacher_id?: number | null; delivery_mode?: string | null }
 
 const DAYS: { value: string; label: string }[] = [
     { value: "monday", label: "Lun" }, { value: "tuesday", label: "Mar" }, { value: "wednesday", label: "Mer" },
@@ -62,6 +69,15 @@ function Section({ icon: Icon, title, subtitle, children }: { icon: typeof Clock
     )
 }
 
+function Metric({ icon: Icon, label, value }: { icon: typeof Clock; label: string; value: string }) {
+    return (
+        <div className="rounded-[16px] border border-[#E5E7EB] bg-[#F8FAFC] p-3 dark:border-[#3b4248] dark:bg-[#252b30]">
+            <span className="flex items-center gap-1 text-xs text-[#6B7280] dark:text-[#c7d0da]"><Icon className="h-3.5 w-3.5" /> {label}</span>
+            <p className="mt-1 text-lg font-semibold text-[#111827] dark:text-white">{value}</p>
+        </div>
+    )
+}
+
 export function TimetableConstraintsPanel({ token, subjects, teachers, classes }: Props) {
     const headers = useMemo(() => token ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` } : undefined, [token])
     const base = `${API_BASE_URL}/education/timetables`
@@ -71,22 +87,36 @@ export function TimetableConstraintsPanel({ token, subjects, teachers, classes }
     const [requirements, setRequirements] = useState<SubjectRequirement[]>([])
     const [config, setConfig] = useState<TimetableConfig>({ working_days: ["monday", "tuesday", "wednesday", "thursday", "friday"], slots: [] })
     const [candidates, setCandidates] = useState<Candidate[]>([])
+    const [explanation, setExplanation] = useState<Explanation | null>(null)
+    const [rooms, setRooms] = useState<RoomItem[]>([])
+    const [campuses, setCampuses] = useState<CampusItem[]>([])
+    const [buildings, setBuildings] = useState<BuildingItem[]>([])
+    const [rows, setRows] = useState<TimetableRow[]>([])
     const [busy, setBusy] = useState<string | null>(null)
     const [message, setMessage] = useState<string | null>(null)
 
     const subjectName = (id?: number | null) => subjects.find(s => s.id === id)?.name || `#${id}`
+    const facilities = `${API_BASE_URL}/facilities`
 
     const load = useCallback(async () => {
         if (!headers) return
-        const [r, h, q, c] = await Promise.all([
+        const [r, h, q, c, rm, cp, bd, tt] = await Promise.all([
             fetch(`${base}/constraint-rules`, { headers }),
             fetch(`${base}/holidays`, { headers }),
             fetch(`${base}/subject-requirements`, { headers }),
             fetch(`${base}/config`, { headers }),
+            fetch(`${facilities}/rooms`, { headers }),
+            fetch(`${facilities}/campuses`, { headers }),
+            fetch(`${facilities}/buildings`, { headers }),
+            fetch(`${base}`, { headers }),
         ])
         if (r.ok) setRules(await r.json())
         if (h.ok) setHolidays(await h.json())
         if (q.ok) setRequirements(await q.json())
+        if (rm.ok) setRooms(await rm.json())
+        if (cp.ok) setCampuses(await cp.json())
+        if (bd.ok) setBuildings(await bd.json())
+        if (tt.ok) setRows(await tt.json())
         if (c.ok) {
             const cfg = await c.json()
             setConfig({ working_days: cfg.working_days?.length ? cfg.working_days : ["monday", "tuesday", "wednesday", "thursday", "friday"], slots: cfg.slots || [] })
@@ -114,6 +144,58 @@ export function TimetableConstraintsPanel({ token, subjects, teachers, classes }
             setMessage(res.ok ? "Emploi du temps optimisé appliqué." : "Application impossible.")
         } finally { setBusy(null) }
     }
+
+    // ----- Explainable AI -----
+    const explain = async () => {
+        if (!headers) return
+        setBusy("explain"); setExplanation(null)
+        try {
+            const res = await fetch(`${base}/explain`, { method: "POST", headers, body: JSON.stringify({ candidate_count: Number(candidateCount) || 3 }) })
+            if (res.ok) setExplanation(await res.json())
+            else setMessage("Explication indisponible.")
+        } finally { setBusy(null) }
+    }
+
+    // ----- Scenario simulation -----
+    const [absentTeacher, setAbsentTeacher] = useState("")
+    const [extraDay, setExtraDay] = useState("saturday")
+    const [simResult, setSimResult] = useState<Record<string, unknown> | null>(null)
+    const simulate = async (scenario: string, params: Record<string, unknown>) => {
+        if (!headers) return
+        setBusy(`sim-${scenario}`); setSimResult(null)
+        try {
+            const res = await fetch(`${base}/simulate`, { method: "POST", headers, body: JSON.stringify({ scenario, params }) })
+            if (res.ok) setSimResult({ scenario, ...(await res.json()) })
+            else setSimResult({ scenario, error: (await res.json().catch(() => ({}))).detail || "Simulation impossible." })
+        } finally { setBusy(null) }
+    }
+
+    // ----- Derived energy / travel / hybrid metrics (from the live timetable) -----
+    const metrics = useMemo(() => {
+        const roomsUsed = new Set(rows.map(r => (r.room || "").trim()).filter(Boolean))
+        // Travel = a teacher moving between different rooms on the same day, sorted by start.
+        const byTeacherDay = new Map<string, TimetableRow[]>()
+        for (const r of rows) {
+            if (!r.teacher_id || !r.room) continue
+            const k = `${r.teacher_id}|${r.day_of_week}`
+            const arr = byTeacherDay.get(k) || []
+            arr.push(r); byTeacherDay.set(k, arr)
+        }
+        let moves = 0
+        byTeacherDay.forEach(list => {
+            const sorted = [...list].sort((a, b) => (a.start_time || "").localeCompare(b.start_time || ""))
+            for (let i = 1; i < sorted.length; i++) if ((sorted[i].room || "") !== (sorted[i - 1].room || "")) moves++
+        })
+        const delivery = { in_person: 0, remote: 0, hybrid: 0, unset: 0 }
+        for (const r of rows) {
+            const m = (r.delivery_mode || "").toLowerCase()
+            if (m === "remote") delivery.remote++
+            else if (m === "hybrid") delivery.hybrid++
+            else if (m === "in_person") delivery.in_person++
+            else delivery.unset++
+        }
+        return { sessions: rows.length, roomsUsed: roomsUsed.size, totalRooms: rooms.length, teacherMoves: moves, delivery }
+    }, [rows, rooms])
 
     // ----- Grid config -----
     const toggleDay = (day: string) => setConfig(c => ({ ...c, working_days: c.working_days.includes(day) ? c.working_days.filter(d => d !== day) : [...c.working_days, day] }))
@@ -308,6 +390,87 @@ export function TimetableConstraintsPanel({ token, subjects, teachers, classes }
                     ))}
                     {rules.length === 0 && <p className="text-xs text-[#9aa3ad]">Aucune règle définie. Le moteur applique déjà les contraintes structurelles ci-dessous.</p>}
                 </div>
+            </Section>
+
+            <Section icon={Lightbulb} title="IA explicable — pourquoi cet emploi du temps ?" subtitle="Le détail du score du meilleur emploi du temps et les décisions prises par l'IA.">
+                <button onClick={explain} disabled={busy === "explain"} className="inline-flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-medium text-white hover:bg-black/90 disabled:opacity-50"><Lightbulb className="h-4 w-4" /> {busy === "explain" ? "Analyse…" : "Expliquer le meilleur emploi du temps"}</button>
+                {explanation && (
+                    <div className="space-y-2">
+                        <p className="text-sm">Score : <strong>{Math.round(explanation.score)}</strong>/100</p>
+                        <ul className="list-inside list-disc space-y-1 text-sm text-[#4B5563] dark:text-[#c7d0da]">{(explanation.explanation || []).map((line, i) => <li key={i}>{line}</li>)}</ul>
+                        {explanation.breakdown && (
+                            <div className="flex flex-wrap gap-2">{Object.entries(explanation.breakdown).map(([k, v]) => <span key={k} className="rounded-full bg-[#eef1f4] px-3 py-1 text-xs dark:bg-[#343b41]">{k}: {String(v)}</span>)}</div>
+                        )}
+                    </div>
+                )}
+            </Section>
+
+            <Section icon={PlayCircle} title="Simulation de scénarios" subtitle="« Que se passe-t-il si… » — testez l'impact avant d'agir, sans modifier l'emploi du temps réel.">
+                <div className="grid gap-3 md:grid-cols-2">
+                    <div className="rounded-xl border border-[#E5E7EB] p-3 dark:border-[#3b4248]">
+                        <p className="mb-2 text-sm font-medium">Un professeur est absent ?</p>
+                        <div className="flex flex-wrap items-end gap-2">
+                            <select value={absentTeacher} onChange={e => setAbsentTeacher(e.target.value)} className="apple-select"><option value="">Enseignant…</option>{teachers.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}</select>
+                            <button onClick={() => absentTeacher && simulate("teacher_absent", { teacher_id: Number(absentTeacher) })} disabled={!absentTeacher || busy === "sim-teacher_absent"} className="rounded-lg bg-black px-3 py-2 text-xs text-white disabled:opacity-50">Simuler</button>
+                        </div>
+                    </div>
+                    <div className="rounded-xl border border-[#E5E7EB] p-3 dark:border-[#3b4248]">
+                        <p className="mb-2 text-sm font-medium">Ouvrir un jour supplémentaire ?</p>
+                        <div className="flex flex-wrap items-end gap-2">
+                            <select value={extraDay} onChange={e => setExtraDay(e.target.value)} className="apple-select">{DAYS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}</select>
+                            <button onClick={() => simulate("extra_working_day", { day: extraDay })} disabled={busy === "sim-extra_working_day"} className="rounded-lg bg-black px-3 py-2 text-xs text-white disabled:opacity-50">Simuler</button>
+                        </div>
+                    </div>
+                </div>
+                {simResult && (
+                    <div className="rounded-xl border border-[#E5E7EB] bg-[#F8FAFC] p-3 text-sm dark:border-[#3b4248] dark:bg-[#252b30]">
+                        {simResult.error ? <p className="text-red-600">{String(simResult.error)}</p> : (
+                            <div className="flex flex-wrap gap-2">{Object.entries(simResult).filter(([k]) => k !== "scenario").map(([k, v]) => <span key={k} className="rounded-full bg-white px-3 py-1 text-xs dark:bg-[#202528]">{k}: {typeof v === "object" ? JSON.stringify(v) : String(v)}</span>)}</div>
+                        )}
+                    </div>
+                )}
+            </Section>
+
+            <Section icon={Zap} title="Optimisation énergétique & déplacements" subtitle="Regrouper les cours et limiter les déplacements des enseignants entre salles/bâtiments.">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <Metric icon={Zap} label="Salles utilisées" value={`${metrics.roomsUsed}/${metrics.totalRooms || "?"}`} />
+                    <Metric icon={Clock} label="Séances planifiées" value={String(metrics.sessions)} />
+                    <Metric icon={Route} label="Changements de salle (prof.)" value={String(metrics.teacherMoves)} />
+                    <Metric icon={Building2} label="Bâtiments" value={String(buildings.length)} />
+                </div>
+                <p className="text-xs text-[#6B7280] dark:text-[#c7d0da]">Mesures dérivées de l'emploi du temps en vigueur : moins de salles occupées = consommation réduite ; moins de changements de salle = moins de déplacements. La génération optimisée cherche à regrouper les cours.</p>
+            </Section>
+
+            <Section icon={FlaskConical} title="Équipements & salles spécialisées" subtitle="Salles, laboratoires et capacités disponibles — réservez un labo à certaines matières via les règles ci-dessus.">
+                {rooms.length === 0 ? <p className="text-xs text-[#9aa3ad]">Aucune salle déclarée. Ajoutez-les dans le module Établissements / Salles.</p> : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm"><thead><tr className="border-b border-[#E5E7EB] text-[#6B7280] dark:border-[#3b4248]"><th className="py-2">Salle</th><th className="py-2">Type</th><th className="py-2">Capacité</th></tr></thead>
+                            <tbody>{rooms.map(r => <tr key={r.id} className="border-b border-[#F0F1F3] dark:border-[#2a3035]"><td className="py-2 font-medium">{r.name}</td><td className="py-2">{r.room_type || "—"}</td><td className="py-2">{r.capacity ?? "—"}</td></tr>)}</tbody>
+                        </table>
+                    </div>
+                )}
+            </Section>
+
+            <Section icon={MonitorSmartphone} title="Cours hybrides (présentiel / distanciel)" subtitle="Répartition des séances par mode de diffusion (défini par cours).">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <Metric icon={MonitorSmartphone} label="Présentiel" value={String(metrics.delivery.in_person)} />
+                    <Metric icon={MonitorSmartphone} label="Distanciel" value={String(metrics.delivery.remote)} />
+                    <Metric icon={MonitorSmartphone} label="Hybride" value={String(metrics.delivery.hybrid)} />
+                    <Metric icon={MonitorSmartphone} label="Non renseigné" value={String(metrics.delivery.unset)} />
+                </div>
+            </Section>
+
+            <Section icon={Building2} title="Multi-campus" subtitle="Campus et bâtiments de l'établissement pris en compte par la planification.">
+                {campuses.length === 0 ? <p className="text-xs text-[#9aa3ad]">Aucun campus déclaré (mono-site). Ajoutez des campus dans le module Établissements.</p> : (
+                    <div className="space-y-2">
+                        {campuses.map(c => (
+                            <div key={c.id} className="rounded-xl border border-[#E5E7EB] p-3 text-sm dark:border-[#3b4248]">
+                                <p className="font-medium">{c.name}{c.address ? ` · ${c.address}` : ""}</p>
+                                <p className="mt-1 text-xs text-[#6B7280] dark:text-[#c7d0da]">{buildings.filter(b => b.campus_id === c.id).map(b => b.name).join(", ") || "Aucun bâtiment"}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </Section>
 
             <Section icon={ShieldCheck} title="Contraintes toujours appliquées" subtitle="Garanties par le moteur à la validation et à la génération — aucune configuration requise.">
