@@ -70,6 +70,8 @@ tracked but require the §5 decisions + an environment to claim.
 
 - **Slice 7 — ✅ DONE** (Loop 10 Extensibility): outbound webhooks (`emit_event` + delivery retry bookkeeping), API keys (hashed, once-shown). Migration 0041. 4 new tests. HTTP sender/retry worker, GraphQL, plugin marketplace, SDK remain roadmap.
 
+- **Slice 8 — ✅ DONE** (Loop 4 AI Learning): `/ai-learning/generate/{lesson,quiz,exam}` on ai_service (audit-logged, educator-gated). 2 new tests. Image/video/speech analysis + adaptive difficulty remain roadmap.
+
 ## Recommended FIRST runnable slice
 
 **Slice 0 — Centralized Payment Service: audit & harden** (highest leverage,
