@@ -97,6 +97,10 @@ class SchoolCreate(SchoolBase):
         return _validate_http_url(value, info.field_name)
 
 class SchoolResponse(SchoolBase):
+    # Tolerant on read: a stored school email that strict EmailStr rejects must
+    # not 500 responses that nest the school (e.g. UserResponse.school, which the
+    # teachers/students lists return). Input schemas keep EmailStr validation.
+    email: Optional[str] = None
     id: int
     organization_id: Optional[int] = None
     is_active: bool

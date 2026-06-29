@@ -381,11 +381,15 @@ async function verifyAiChat(request: APIRequestContext, auth: AuthContext) {
 
 async function loginThroughUi(page: Page, auth: AuthContext) {
   await page.goto(`/${LOCALE}/login`);
-  await page.getByLabel('Email').fill(auth.email);
-  await page.getByLabel('Password').fill(auth.password);
-  // The submit button uses the i18n label (e.g. "Log in"); match it tolerantly
-  // and scope to the login form to avoid the nav's auth links.
-  await page.getByRole('button', { name: /^Log\s?in$/i }).click();
+  // Locate by stable ids / structure instead of the translated submit label
+  // ("Log in" / "Se connecter" / …) — a text-based locator is brittle across
+  // locales and builds. The login form is the one containing the password field;
+  // the email/password inputs have stable ids.
+  const loginForm = page.locator('form:has(#password)');
+  await loginForm.waitFor({ state: 'visible' });
+  await page.locator('#email').fill(auth.email);
+  await page.locator('#password').fill(auth.password);
+  await loginForm.locator('button[type="submit"]').click();
   await expect(page).toHaveURL(new RegExp(`/${LOCALE}/dashboard`));
   await expect.poll(async () => page.evaluate(() => localStorage.getItem('access_token'))).toBeTruthy();
 }

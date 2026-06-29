@@ -24,3 +24,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx playwright test" when environment is available
+- `loginThroughUi` locates the login form by stable ids (`#email`/`#password`) and a structural `button[type="submit"]` scoped to `form:has(#password)` — never by the translated submit label, which is brittle across locales/builds.

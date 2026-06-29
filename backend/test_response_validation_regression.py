@@ -72,6 +72,20 @@ def test_teachers_list_tolerates_reserved_domain_email(client_db):
     assert resp.json()[0]["email"] == "prof@carine.local"
 
 
+def test_teachers_list_tolerates_bad_nested_school_email(client_db):
+    client, db = client_db
+    _org, school, assign, admin = _context(db)
+    # The nested school (UserResponse.school) has an email strict EmailStr rejects.
+    school.email = "contact@carine.local"
+    tu = models.User(email="t@example.com", hashed_password="x", full_name="T", role=models.UserRole.TEACHER, school_id=school.id, is_active=True)
+    db.add(tu); db.flush()
+    db.add(models.TeacherAssignment(user_id=tu.id, school_id=school.id, school_model_assignment_id=assign.id, is_active=True))
+    db.commit()
+    resp = client.get("/teachers", headers=_auth(admin))
+    assert resp.status_code == 200, resp.text
+    assert resp.json()[0]["school"]["email"] == "contact@carine.local"
+
+
 def test_auth_me_tolerates_bad_email(client_db):
     client, db = client_db
     school = models.School(name="S", domain_prefix=f"s{uuid.uuid4().hex[:6]}", school_type=models.SchoolType.GENERAL, is_active=True)

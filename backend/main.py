@@ -1,8 +1,11 @@
+import logging
 import os
 import time
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import ResponseValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy import func, text
 from .audit import audit_mutation_middleware
 from .database import SessionLocal
@@ -12,6 +15,30 @@ from . import models
 from .routers import auth, students, teachers, chat, education, attendance, grades, dashboard, library, finance, system, pedagogy, operations, enterprise, documents, files, internships, ai_automation, ai_billing, bootstrap, account, context, student_lifecycle, employment, site, facilities, transport, payments, platform, sis, academics, communication, hr, analytics, extensibility, ai_learning
 
 app = FastAPI(title="TeducAI API")
+logger = logging.getLogger("teducai")
+
+
+@app.exception_handler(ResponseValidationError)
+async def response_validation_exception_handler(request: Request, exc: ResponseValidationError):
+    """Safety net for response-serialization failures (e.g. a single stored
+    record with a value a strict response field rejects). Instead of an opaque
+    text/plain 500, log the exact failing field(s)/value(s) for diagnosis and
+    return a structured JSON error. Known offenders (email fields) are relaxed at
+    the schema level; this surfaces any remaining one immediately in the logs."""
+    try:
+        errors = exc.errors()
+    except Exception:  # pragma: no cover - defensive
+        errors = [{"msg": str(exc)}]
+    logger.error(
+        "ResponseValidationError on %s %s: %s",
+        request.method,
+        request.url.path,
+        [{"loc": e.get("loc"), "msg": e.get("msg"), "input": str(e.get("input"))[:120]} for e in errors],
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "La réponse du serveur n'a pas pu être sérialisée. L'incident a été journalisé.", "path": request.url.path},
+    )
 START_TIME = time.time()
 
 # Configure CORS

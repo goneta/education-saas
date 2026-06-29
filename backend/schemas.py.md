@@ -55,3 +55,4 @@ The schema catalog includes enrollment, transfer, academic-year closure, tempora
 - `LeaveSelfRequestCreate` + `LeaveDecision` for HR self-service leave (reuses the existing `LeaveRequest`/`LeaveRequestResponse`).
 - `WebhookEndpoint*`, `ApiKey*` schemas (Extensibility Slice 7).
 - `UserResponse.email` is tolerant `Optional[str]` on read (a stored email strict `EmailStr` rejects must not 500 a list/response); `UserBase`/`UserCreate` keep `EmailStr` for input. Fixes the Teachers/`/auth/me` 500.
+- `SchoolResponse.email` is tolerant `Optional[str]` on read (nested in `UserResponse.school`, returned by teachers/students lists); a stored school email strict EmailStr rejects must not 500 the list. Input schemas keep EmailStr.
