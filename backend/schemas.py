@@ -2567,6 +2567,53 @@ class FeatureFlagResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class GuardianCreate(BaseModel):
+    full_name: str
+    relationship_type: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    is_primary: bool = False
+    can_pickup: bool = True
+
+
+class GuardianResponse(GuardianCreate):
+    id: int
+    student_id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class EmergencyContactCreate(BaseModel):
+    full_name: str
+    relationship_type: Optional[str] = None
+    phone: str
+    priority: int = 1
+
+
+class EmergencyContactResponse(EmergencyContactCreate):
+    id: int
+    student_id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class MedicalRecordUpsert(BaseModel):
+    blood_group: Optional[str] = None
+    allergies: Optional[str] = None
+    chronic_conditions: Optional[str] = None
+    medications: Optional[str] = None
+    physician_name: Optional[str] = None
+    physician_phone: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class MedicalRecordResponse(MedicalRecordUpsert):
+    id: int
+    student_id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class CanteenMealPlanCreate(BaseModel):
     name: str
     day_of_week: Optional[str] = None

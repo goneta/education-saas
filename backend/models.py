@@ -410,6 +410,61 @@ class StudentProfile(Base):
     grades = relationship("Grade", back_populates="student")
     education_history = relationship("StudentEducationHistory", back_populates="student", cascade="all, delete-orphan")
     registration_documents = relationship("StudentRegistrationDocument", back_populates="student", cascade="all, delete-orphan")
+    guardians = relationship("StudentGuardian", back_populates="student", cascade="all, delete-orphan")
+    emergency_contacts = relationship("StudentEmergencyContact", back_populates="student", cascade="all, delete-orphan")
+    medical_record = relationship("StudentMedicalRecord", back_populates="student", uselist=False, cascade="all, delete-orphan")
+
+
+class StudentGuardian(Base):
+    """SIS — a guardian linked to a student (supports multiple guardians beyond
+    the single legacy `parent_*` fields on StudentProfile)."""
+    __tablename__ = "student_guardians"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False, index=True)
+    full_name = Column(String, nullable=False)
+    relationship_type = Column(String, nullable=True)  # mother | father | tutor | other
+    phone = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    is_primary = Column(Boolean, default=False)
+    can_pickup = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    student = relationship("StudentProfile", back_populates="guardians")
+
+
+class StudentEmergencyContact(Base):
+    """SIS — an emergency contact for a student, ordered by priority."""
+    __tablename__ = "student_emergency_contacts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False, index=True)
+    full_name = Column(String, nullable=False)
+    relationship_type = Column(String, nullable=True)
+    phone = Column(String, nullable=False)
+    priority = Column(Integer, default=1)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    student = relationship("StudentProfile", back_populates="emergency_contacts")
+
+
+class StudentMedicalRecord(Base):
+    """SIS — one confidential medical record per student (blood group, allergies,
+    chronic conditions, medications, treating physician)."""
+    __tablename__ = "student_medical_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False, unique=True, index=True)
+    blood_group = Column(String, nullable=True)
+    allergies = Column(Text, nullable=True)
+    chronic_conditions = Column(Text, nullable=True)
+    medications = Column(Text, nullable=True)
+    physician_name = Column(String, nullable=True)
+    physician_phone = Column(String, nullable=True)
+    notes = Column(Text, nullable=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    student = relationship("StudentProfile", back_populates="medical_record")
 
 
 class StudentGlobalProfile(Base):

@@ -58,6 +58,8 @@ tracked but require the §5 decisions + an environment to claim.
 
 - **Slice 1 — ✅ DONE** (Loop 1 Core gaps): `Department` + `FeatureFlag` models (migration 0038), `routers/platform.py` (departments CRUD, feature flags with `feature_enabled` fallback helper, tenant-scoped global search). 5 new tests; 132 backend tests pass.
 
+- **Slice 2 — ✅ DONE** (Loop 2 SIS gaps): `StudentGuardian`, `StudentEmergencyContact`, `StudentMedicalRecord` (migration 0039), `routers/sis.py` (guardians/emergency CRUD, restricted medical upsert). 4 new tests; 136 backend tests pass.
+
 ## Recommended FIRST runnable slice
 
 **Slice 0 — Centralized Payment Service: audit & harden** (highest leverage,

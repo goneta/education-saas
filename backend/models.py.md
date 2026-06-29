@@ -47,3 +47,4 @@ Grades, attendance, assignment submissions, internships, fees, invoices, registr
 - `TransportStop`: first-class bus stops (route_id, sequence, lat/lng, geofence radius, ETA) replacing the legacy `TransportRoute.stops` JSON.
 - GPS/ops layer: `TransportVehiclePosition` (GPS samples), `TransportBoardingEvent` (boarding attendance), `TransportIncident`, `TransportFuelLog`.
 - Core Platform: `Department` (school/campus org unit) and `FeatureFlag` (per-institution toggle over a NULL-school platform default).
+- SIS: `StudentGuardian`, `StudentEmergencyContact`, `StudentMedicalRecord` (multiple guardians + emergency contacts + one medical record per student).
