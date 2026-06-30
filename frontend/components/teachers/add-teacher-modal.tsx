@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import {
@@ -23,6 +24,7 @@ interface AddTeacherModalProps {
 }
 
 export function AddTeacherModal({ open, onOpenChange, onSuccess }: AddTeacherModalProps) {
+    const tf = useTranslations("teacherForm")
     const { token } = useAuth()
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -73,7 +75,7 @@ export function AddTeacherModal({ open, onOpenChange, onSuccess }: AddTeacherMod
 
             if (!res.ok) {
                 const err = await res.json()
-                throw new Error(err.detail || "Failed to create teacher")
+                throw new Error(err.detail || tf("createError"))
             }
 
             // Success
@@ -90,7 +92,7 @@ export function AddTeacherModal({ open, onOpenChange, onSuccess }: AddTeacherMod
             onOpenChange(false)
             onSuccess?.()
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An error occurred")
+            setError(err instanceof Error ? err.message : tf("genericError"))
         } finally {
             setIsLoading(false)
         }
@@ -100,10 +102,8 @@ export function AddTeacherModal({ open, onOpenChange, onSuccess }: AddTeacherMod
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>Add New Teacher</DialogTitle>
-                    <DialogDescription>
-                        Register a new teacher in the system.
-                    </DialogDescription>
+                    <DialogTitle>{tf("addTitle")}</DialogTitle>
+                    <DialogDescription>{tf("addDesc")}</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {error && (
@@ -113,74 +113,74 @@ export function AddTeacherModal({ open, onOpenChange, onSuccess }: AddTeacherMod
                     )}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="full_name">Full Name *</Label>
+                            <Label htmlFor="full_name">{tf("fullName")}</Label>
                             <Input
                                 id="full_name"
                                 value={formData.full_name}
                                 onChange={(e) => handleChange("full_name", e.target.value)}
                                 required
-                                placeholder="e.g. John Doe"
+                                placeholder={tf("fullNamePh")}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="email">Email *</Label>
+                            <Label htmlFor="email">{tf("email")}</Label>
                             <Input
                                 id="email"
                                 type="email"
                                 value={formData.email}
                                 onChange={(e) => handleChange("email", e.target.value)}
                                 required
-                                placeholder="e.g. teacher@school.com"
+                                placeholder={tf("emailPh")}
                             />
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="password">Initial Password *</Label>
+                        <Label htmlFor="password">{tf("password")}</Label>
                         <Input
                             id="password"
                             type="password"
                             value={formData.password}
                             onChange={(e) => handleChange("password", e.target.value)}
                             required
-                            placeholder="Min 8 chars"
+                            placeholder={tf("passwordPh")}
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="phone">Phone</Label>
+                            <Label htmlFor="phone">{tf("phone")}</Label>
                             <Input
                                 id="phone"
                                 value={formData.phone_number}
                                 onChange={(e) => handleChange("phone_number", e.target.value)}
-                                placeholder="+1234567890"
+                                placeholder={tf("phonePh")}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="specialization">Specialization</Label>
+                            <Label htmlFor="specialization">{tf("specialization")}</Label>
                             <Input
                                 id="specialization"
                                 value={formData.specialization}
                                 onChange={(e) => handleChange("specialization", e.target.value)}
-                                placeholder="e.g. Mathematics"
+                                placeholder={tf("specializationPh")}
                             />
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="address">Address</Label>
+                        <Label htmlFor="address">{tf("address")}</Label>
                         <Input
                             id="address"
                             value={formData.address}
                             onChange={(e) => handleChange("address", e.target.value)}
-                            placeholder="Full Address"
+                            placeholder={tf("addressPh")}
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="join_date">Join Date</Label>
+                            <Label htmlFor="join_date">{tf("joinDate")}</Label>
                             <Input
                                 id="join_date"
                                 type="date"
@@ -191,21 +191,21 @@ export function AddTeacherModal({ open, onOpenChange, onSuccess }: AddTeacherMod
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="bio">Bio / Notes</Label>
+                        <Label htmlFor="bio">{tf("bio")}</Label>
                         <Textarea
                             id="bio"
                             value={formData.bio}
                             onChange={(e) => handleChange("bio", e.target.value)}
-                            placeholder="Short biography or administrative notes..."
+                            placeholder={tf("bioPh")}
                         />
                     </div>
 
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                            Cancel
+                            {tf("cancel")}
                         </Button>
                         <Button type="submit" disabled={isLoading}>
-                            {isLoading ? "Saving..." : "Save Teacher"}
+                            {isLoading ? tf("saving") : tf("saveTeacher")}
                         </Button>
                     </DialogFooter>
                 </form>

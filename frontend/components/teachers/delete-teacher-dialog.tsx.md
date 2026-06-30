@@ -21,3 +21,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint components/<path>"; npm run build for shared/layout changes
+- i18n: uses the shared `teacherForm` namespace (FR/EN/ES/SW) — labels, placeholders, buttons, validation/error messages.

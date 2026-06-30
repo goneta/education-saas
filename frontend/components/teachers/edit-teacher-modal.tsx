@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import {
@@ -25,6 +26,7 @@ interface EditTeacherModalProps {
 }
 
 export function EditTeacherModal({ open, onOpenChange, teacher, onSuccess }: EditTeacherModalProps) {
+    const tf = useTranslations("teacherForm")
     const { token } = useAuth()
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -88,13 +90,13 @@ export function EditTeacherModal({ open, onOpenChange, teacher, onSuccess }: Edi
 
             if (!res.ok) {
                 const err = await res.json()
-                throw new Error(err.detail || "Failed to update teacher")
+                throw new Error(err.detail || tf("updateError"))
             }
 
             onOpenChange(false)
             onSuccess?.()
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An error occurred")
+            setError(err instanceof Error ? err.message : tf("genericError"))
         } finally {
             setIsLoading(false)
         }
@@ -104,10 +106,8 @@ export function EditTeacherModal({ open, onOpenChange, teacher, onSuccess }: Edi
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>Edit Teacher</DialogTitle>
-                    <DialogDescription>
-                        Update teacher&apos;s personal and professional details.
-                    </DialogDescription>
+                    <DialogTitle>{tf("editTitle")}</DialogTitle>
+                    <DialogDescription>{tf("editDesc")}</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {error && (
@@ -117,7 +117,7 @@ export function EditTeacherModal({ open, onOpenChange, teacher, onSuccess }: Edi
                     )}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="edit_full_name">Full Name *</Label>
+                            <Label htmlFor="edit_full_name">{tf("fullName")}</Label>
                             <Input
                                 id="edit_full_name"
                                 value={formData.full_name}
@@ -126,7 +126,7 @@ export function EditTeacherModal({ open, onOpenChange, teacher, onSuccess }: Edi
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="edit_email">Email *</Label>
+                            <Label htmlFor="edit_email">{tf("email")}</Label>
                             <Input
                                 id="edit_email"
                                 type="email"
@@ -139,7 +139,7 @@ export function EditTeacherModal({ open, onOpenChange, teacher, onSuccess }: Edi
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="edit_phone">Phone</Label>
+                            <Label htmlFor="edit_phone">{tf("phone")}</Label>
                             <Input
                                 id="edit_phone"
                                 value={formData.phone_number}
@@ -147,7 +147,7 @@ export function EditTeacherModal({ open, onOpenChange, teacher, onSuccess }: Edi
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="edit_specialization">Specialization</Label>
+                            <Label htmlFor="edit_specialization">{tf("specialization")}</Label>
                             <Input
                                 id="edit_specialization"
                                 value={formData.specialization}
@@ -157,7 +157,7 @@ export function EditTeacherModal({ open, onOpenChange, teacher, onSuccess }: Edi
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="edit_address">Address</Label>
+                        <Label htmlFor="edit_address">{tf("address")}</Label>
                         <Input
                             id="edit_address"
                             value={formData.address}
@@ -167,7 +167,7 @@ export function EditTeacherModal({ open, onOpenChange, teacher, onSuccess }: Edi
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="edit_join_date">Join Date</Label>
+                            <Label htmlFor="edit_join_date">{tf("joinDate")}</Label>
                             <Input
                                 id="edit_join_date"
                                 type="date"
@@ -178,7 +178,7 @@ export function EditTeacherModal({ open, onOpenChange, teacher, onSuccess }: Edi
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="edit_bio">Bio / Notes</Label>
+                        <Label htmlFor="edit_bio">{tf("bio")}</Label>
                         <Textarea
                             id="edit_bio"
                             value={formData.bio}
@@ -188,10 +188,10 @@ export function EditTeacherModal({ open, onOpenChange, teacher, onSuccess }: Edi
 
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                            Cancel
+                            {tf("cancel")}
                         </Button>
                         <Button type="submit" disabled={isLoading}>
-                            {isLoading ? "Saving..." : "Save Changes"}
+                            {isLoading ? tf("saving") : tf("saveChanges")}
                         </Button>
                     </DialogFooter>
                 </form>

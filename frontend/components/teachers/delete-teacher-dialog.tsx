@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import {
@@ -22,6 +23,7 @@ interface DeleteTeacherDialogProps {
 }
 
 export function DeleteTeacherDialog({ open, onOpenChange, teacher, onSuccess }: DeleteTeacherDialogProps) {
+    const tf = useTranslations("teacherForm")
     const { token } = useAuth()
     const [isDeleting, setIsDeleting] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -42,16 +44,16 @@ export function DeleteTeacherDialog({ open, onOpenChange, teacher, onSuccess }: 
 
             if (!response.ok) {
                 if (response.status === 401) {
-                    throw new Error("Session expired. Please log in again.")
+                    throw new Error(tf("sessionExpired"))
                 }
-                throw new Error("Failed to delete teacher")
+                throw new Error(tf("deleteError"))
             }
 
             // Success
             onOpenChange(false)
             onSuccess?.()
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An error occurred")
+            setError(err instanceof Error ? err.message : tf("genericError"))
         } finally {
             setIsDeleting(false)
         }
@@ -61,10 +63,8 @@ export function DeleteTeacherDialog({ open, onOpenChange, teacher, onSuccess }: 
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Delete Teacher</DialogTitle>
-                    <DialogDescription>
-                        Are you sure you want to delete {teacher?.full_name}? This action cannot be undone.
-                    </DialogDescription>
+                    <DialogTitle>{tf("deleteTitle")}</DialogTitle>
+                    <DialogDescription>{tf("deleteConfirm", { name: teacher?.full_name || "" })}</DialogDescription>
                 </DialogHeader>
 
                 {error && (
@@ -80,7 +80,7 @@ export function DeleteTeacherDialog({ open, onOpenChange, teacher, onSuccess }: 
                         onClick={() => onOpenChange(false)}
                         disabled={isDeleting}
                     >
-                        Cancel
+                        {tf("cancel")}
                     </Button>
                     <Button
                         type="button"
@@ -88,7 +88,7 @@ export function DeleteTeacherDialog({ open, onOpenChange, teacher, onSuccess }: 
                         onClick={handleDelete}
                         disabled={isDeleting}
                     >
-                        {isDeleting ? "Deleting..." : "Delete Teacher"}
+                        {isDeleting ? tf("deleting") : tf("deleteBtn")}
                     </Button>
                 </DialogFooter>
             </DialogContent>
