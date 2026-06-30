@@ -24,3 +24,4 @@
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
 - The transport section was removed from this page and promoted to the dedicated Smart Transport module (`/dashboard/transport`).
+- i18n: localized via tx()/PRODUCT_COPY (FR/EN/ES/SW). Section labels, field placeholders and table columns are routed through key maps (SECTION_KEY / COLUMN_KEY / labelKey); prompts and chrome localized.
