@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 
 interface Staff {
     id: number
@@ -83,6 +84,15 @@ export default function PersonnelPage() {
         if ((await fetch(`${API_BASE_URL}/personnel/${s.id}`, { method: "DELETE", headers })).ok) void load()
     }
 
+    const columns: FilterColumn<Staff>[] = [
+        { key: "full_name", label: t("fullName"), accessor: s => s.full_name },
+        { key: "email", label: t("email"), accessor: s => s.email },
+        { key: "primary_role", label: t("primaryRole"), accessor: s => roleLabel(s.primary_role) },
+        { key: "department", label: t("department"), accessor: s => s.department_name },
+        { key: "job_title", label: t("function"), accessor: s => s.job_title },
+    ]
+    const filter = useTableFilter(staff, columns, { storageKey: "personnel" })
+
     return (
         <div className="space-y-6">
             <div>
@@ -117,10 +127,11 @@ export default function PersonnelPage() {
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
                 <CardHeader><CardTitle className="flex items-center gap-2"><Users className="h-4 w-4" /> {t("title")} ({staff.length})</CardTitle></CardHeader>
                 <CardContent className="overflow-x-auto">
+                    <div className="mb-3"><TableFilter {...filter.controls} /></div>
                     <table className="w-full text-left text-sm">
                         <thead><tr className="border-b border-[#E5E7EB] text-[#6B7280] dark:border-[#3b4248]"><th className="px-3 py-2">{t("fullName")}</th><th className="px-3 py-2">{t("email")}</th><th className="px-3 py-2">{t("primaryRole")}</th><th className="px-3 py-2">{t("department")}</th><th className="px-3 py-2">{t("function")}</th><th className="px-3 py-2">{t("status")}</th><th className="px-3 py-2 text-right">{t("actions")}</th></tr></thead>
                         <tbody>
-                            {staff.length === 0 ? <tr><td colSpan={7} className="px-3 py-6 text-center text-[#6B7280]">{t("empty")}</td></tr> : staff.map(s => (
+                            {filter.filtered.length === 0 ? <tr><td colSpan={7} className="px-3 py-6 text-center text-[#6B7280]">{t("empty")}</td></tr> : filter.filtered.map(s => (
                                 <tr key={s.id} className="border-b border-[#F0F1F3] dark:border-[#2a3035]">
                                     <td className="px-3 py-2 font-medium">{s.full_name}</td>
                                     <td className="px-3 py-2">{s.email}</td>

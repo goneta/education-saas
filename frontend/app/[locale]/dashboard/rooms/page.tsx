@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 
 interface Room { id: number; name: string; room_type: string; capacity?: number | null; building_id?: number | null; is_active: boolean }
 interface Building { id: number; name: string }
@@ -73,6 +74,13 @@ export default function RoomsPage() {
     const buildingName = (id?: number | null) => buildings.find(b => b.id === id)?.name || "—"
     const typeLabel = (rt: string) => ROOM_TYPES.includes(rt) ? t(rt as "classroom") : rt
 
+    const columns: FilterColumn<Room>[] = [
+        { key: "name", label: t("name"), accessor: r => r.name },
+        { key: "building", label: t("building"), accessor: r => buildingName(r.building_id) },
+        { key: "type", label: t("type"), accessor: r => typeLabel(r.room_type) },
+    ]
+    const filter = useTableFilter(rooms, columns, { storageKey: "rooms" })
+
     return (
         <div className="space-y-6">
             <div>
@@ -95,10 +103,11 @@ export default function RoomsPage() {
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
                 <CardHeader><CardTitle className="flex items-center gap-2"><DoorOpen className="h-4 w-4" /> {t("roomsTitle")} ({rooms.length})</CardTitle></CardHeader>
                 <CardContent className="overflow-x-auto">
+                    <div className="mb-3"><TableFilter {...filter.controls} /></div>
                     <table className="w-full text-left text-sm">
                         <thead><tr className="border-b border-[#E5E7EB] text-[#6B7280] dark:border-[#3b4248]"><th className="px-3 py-2">{t("name")}</th><th className="px-3 py-2">{t("building")}</th><th className="px-3 py-2">{t("type")}</th><th className="px-3 py-2">{t("capacity")}</th><th className="px-3 py-2">{t("nbClasses")}</th><th className="px-3 py-2 text-right">{t("actions")}</th></tr></thead>
                         <tbody>
-                            {rooms.length === 0 ? <tr><td colSpan={6} className="px-3 py-6 text-center text-[#6B7280]">{t("empty")}</td></tr> : rooms.map(room => (
+                            {filter.filtered.length === 0 ? <tr><td colSpan={6} className="px-3 py-6 text-center text-[#6B7280]">{t("empty")}</td></tr> : filter.filtered.map(room => (
                                 <tr key={room.id} className="border-b border-[#F0F1F3] dark:border-[#2a3035]">
                                     <td className="px-3 py-2 font-medium">{room.name}</td>
                                     <td className="px-3 py-2">{buildingName(room.building_id)}</td>

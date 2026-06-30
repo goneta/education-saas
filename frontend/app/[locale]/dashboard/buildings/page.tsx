@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 
 interface Building { id: number; name: string; description?: string | null; campus_id?: number | null; is_active: boolean }
 interface Campus { id: number; name: string }
@@ -57,6 +58,13 @@ export default function BuildingsPage() {
     }
     const campusName = (id?: number | null) => campuses.find(c => c.id === id)?.name || t("noCampus")
 
+    const columns: FilterColumn<Building>[] = [
+        { key: "name", label: t("name"), accessor: b => b.name },
+        { key: "description", label: t("description"), accessor: b => b.description },
+        { key: "campus", label: t("campus"), accessor: b => campusName(b.campus_id) },
+    ]
+    const filter = useTableFilter(buildings, columns, { storageKey: "buildings" })
+
     return (
         <div className="space-y-6">
             <div>
@@ -78,10 +86,11 @@ export default function BuildingsPage() {
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
                 <CardHeader><CardTitle className="flex items-center gap-2"><Building2 className="h-4 w-4" /> {t("buildingsTitle")} ({buildings.length})</CardTitle></CardHeader>
                 <CardContent className="overflow-x-auto">
+                    <div className="mb-3"><TableFilter {...filter.controls} /></div>
                     <table className="w-full text-left text-sm">
                         <thead><tr className="border-b border-[#E5E7EB] text-[#6B7280] dark:border-[#3b4248]"><th className="px-3 py-2">{t("name")}</th><th className="px-3 py-2">{t("description")}</th><th className="px-3 py-2">{t("campus")}</th><th className="px-3 py-2">{t("state")}</th><th className="px-3 py-2 text-right">{t("actions")}</th></tr></thead>
                         <tbody>
-                            {buildings.length === 0 ? <tr><td colSpan={5} className="px-3 py-6 text-center text-[#6B7280]">{t("empty")}</td></tr> : buildings.map(b => (
+                            {filter.filtered.length === 0 ? <tr><td colSpan={5} className="px-3 py-6 text-center text-[#6B7280]">{t("empty")}</td></tr> : filter.filtered.map(b => (
                                 <tr key={b.id} className="border-b border-[#F0F1F3] dark:border-[#2a3035]">
                                     <td className="px-3 py-2 font-medium">{b.name}</td>
                                     <td className="px-3 py-2">{b.description || "—"}</td>

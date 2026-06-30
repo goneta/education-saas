@@ -5,3 +5,4 @@
 - Rooms management (#5/#6): create rooms (building+name+capacity+type), list with a **Nb Classes** column, **Voir** modal (classes + level from `/facilities/rooms/{id}/classes`), delete (409 when used in a timetable). i18n via `facilities`.
 ## Maintenance Notes
 - Capacity feeds the timetable class>room capacity guard. Nb Classes is fetched per room.
+- Uses the shared `TableFilter`/`useTableFilter` (storageKey "rooms") for column-scoped, debounced, accent-insensitive search over the list.

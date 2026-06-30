@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 
 interface Level {
     id: number
@@ -63,6 +64,13 @@ export default function SchoolLevelsPage() {
 
     const categoryLabel = (c?: string | null) => c && CATEGORIES.includes(c) ? t(c as "primaire") : (c || "—")
 
+    const columns: FilterColumn<Level>[] = [
+        { key: "code", label: t("code"), accessor: r => r.code },
+        { key: "name", label: t("name"), accessor: r => r.name },
+        { key: "category", label: t("category"), accessor: r => categoryLabel(r.category) },
+    ]
+    const filter = useTableFilter(levels, columns, { storageKey: "levels" })
+
     return (
         <div className="space-y-6">
             <div>
@@ -85,6 +93,7 @@ export default function SchoolLevelsPage() {
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
                 <CardHeader><CardTitle className="flex items-center gap-2"><GraduationCap className="h-4 w-4" /> {t("list")} ({levels.length})</CardTitle></CardHeader>
                 <CardContent className="overflow-x-auto">
+                    <div className="mb-3"><TableFilter {...filter.controls} /></div>
                     <table className="w-full text-left text-sm">
                         <thead>
                             <tr className="border-b border-[#E5E7EB] text-[#6B7280] dark:border-[#3b4248]">
@@ -92,9 +101,9 @@ export default function SchoolLevelsPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {levels.length === 0 ? (
+                            {filter.filtered.length === 0 ? (
                                 <tr><td colSpan={6} className="px-3 py-6 text-center text-[#6B7280]">{t("empty")}</td></tr>
-                            ) : levels.map(level => (
+                            ) : filter.filtered.map(level => (
                                 <tr key={level.id} className="border-b border-[#F0F1F3] dark:border-[#2a3035]">
                                     <td className="px-3 py-2">{level.sort_order}</td>
                                     <td className="px-3 py-2 font-medium">{level.code}</td>
