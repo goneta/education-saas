@@ -27,3 +27,4 @@
 - `cmd.exe /c "cd frontend&& set NODE_OPTIONS=--max-old-space-size=4096&& npm run build"` when help routing or page structure changes.
 - HELP_SECTIONS now documents the new modules (ids `levels`, `facilities`, `personnel`, `payroll`) — purpose, steps, fields, expected result. Deep-linked via `?section=<id>`.
 - HELP_SECTIONS also documents `leave` and `announcements` (#1).
+- i18n (#2): the page chrome (title, subtitle, search, help-mode options, Sections nav, standard-form-cycle, Objectif/Etapes/result labels, field-table headers) uses the help namespace (FR/EN/ES/SW). The per-section HELP_SECTIONS content (purpose/steps/fields) stays French - full content translation is a separate effort.

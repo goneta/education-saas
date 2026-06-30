@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { useSearchParams } from "next/navigation"
 import type { ComponentType } from "react"
 import { BookOpen, BrainCircuit, BriefcaseBusiness, CheckCircle2, CircleHelp, CreditCard, FileText, GraduationCap, MessageSquareText, Search, Settings, Smartphone, Users, Wand2 } from "lucide-react"
@@ -567,6 +568,7 @@ const HELP_SECTIONS: HelpSection[] = [
 ]
 
 export function HelpContent({ embedded = false }: { embedded?: boolean }) {
+    const t = useTranslations("help")
     const searchParams = useSearchParams()
     const [query, setQuery] = useState("")
     const [activeId, setActiveId] = useState(HELP_SECTIONS[0].id)
@@ -600,29 +602,26 @@ export function HelpContent({ embedded = false }: { embedded?: boolean }) {
         <div className={embedded ? "space-y-6 p-4 sm:p-6" : "space-y-6"}>
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h1 className="apple-page-title">Centre d&apos;aide TeducAI</h1>
-                    <p className="apple-page-description max-w-3xl">
-                        Guide détaillé pour utiliser les sections de l&apos;application, comprendre les champs à remplir,
-                        valider les formulaires et anticiper le résultat attendu après chaque enregistrement.
-                    </p>
+                    <h1 className="apple-page-title">{t("pageTitle")}</h1>
+                    <p className="apple-page-description max-w-3xl">{t("pageSubtitle")}</p>
                 </div>
                 <div className="relative w-full max-w-md">
                     <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B7280]" />
                     <input
                         value={query}
                         onChange={event => setQuery(event.target.value)}
-                        placeholder="Rechercher une aide, un champ ou un module..."
+                        placeholder={t("searchPlaceholder")}
                         className="apple-input pl-11"
                     />
                     <select
                         value={helpMode}
                         onChange={event => updateHelpMode(event.target.value)}
                         className="mt-3 apple-select"
-                        title="Choisissez comment le bouton Aide ouvre les explications depuis les pages du Dashboard."
+                        title={t("modeHint")}
                     >
-                        <option value="page">Ouvrir l&apos;aide dans une page</option>
-                        <option value="modal">Ouvrir l&apos;aide dans une modale</option>
-                        <option value="drawer">Ouvrir l&apos;aide dans un panneau latéral</option>
+                        <option value="page">{t("modePage")}</option>
+                        <option value="modal">{t("modeModal")}</option>
+                        <option value="drawer">{t("modeDrawer")}</option>
                     </select>
                 </div>
             </div>
@@ -630,7 +629,7 @@ export function HelpContent({ embedded = false }: { embedded?: boolean }) {
             <div className="grid gap-5 xl:grid-cols-[320px_1fr]">
                 <Card className="h-fit">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><CircleHelp className="h-5 w-5" /> Sections</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><CircleHelp className="h-5 w-5" /> {t("sections")}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
                         {filteredSections.map(section => {
@@ -647,22 +646,22 @@ export function HelpContent({ embedded = false }: { embedded?: boolean }) {
                                 </button>
                             )
                         })}
-                        {!filteredSections.length && <p className="text-sm text-[#6B7280]">Aucune section trouvée.</p>}
+                        {!filteredSections.length && <p className="text-sm text-[#6B7280]">{t("noSection")}</p>}
                     </CardContent>
                 </Card>
 
                 <div className="space-y-5">
                     <HelpSectionCard section={activeSection} />
                     <Card>
-                        <CardHeader><CardTitle>Cycle standard d&apos;un formulaire</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>{t("cycleTitle")}</CardTitle></CardHeader>
                         <CardContent>
                             <div className="grid gap-3 md:grid-cols-5">
                                 {[
-                                    ["1", "Lire l'aide du champ", "Survolez le champ pour voir les consignes et formats attendus."],
-                                    ["2", "Saisir les données", "Utilisez des valeurs exactes, officielles et vérifiables."],
-                                    ["3", "Contrôler les erreurs", "Les champs obligatoires, formats et permissions sont vérifiés."],
-                                    ["4", "Enregistrer", "Cliquez sur Enregistrer pour créer ou mettre à jour la donnée."],
-                                    ["5", "Vérifier le résultat", "La donnée apparaît dans les listes, rapports, documents, portails ou notifications."],
+                                    ["1", t("s1Title"), t("s1Text")],
+                                    ["2", t("s2Title"), t("s2Text")],
+                                    ["3", t("s3Title"), t("s3Text")],
+                                    ["4", t("s4Title"), t("s4Text")],
+                                    ["5", t("s5Title"), t("s5Text")],
                                 ].map(([step, title, text]) => (
                                     <div key={step} className="rounded-2xl border border-[#E5E7EB] bg-white p-4">
                                         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black text-sm font-semibold text-white">{step}</span>
@@ -684,6 +683,7 @@ export default function HelpPage() {
 }
 
 function HelpSectionCard({ section }: { section: HelpSection }) {
+    const t = useTranslations("help")
     const Icon = section.icon
     return (
         <Card>
@@ -695,12 +695,12 @@ function HelpSectionCard({ section }: { section: HelpSection }) {
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="rounded-2xl border border-[#E5E7EB] bg-[#F8FAFC] p-4">
-                    <p className="text-sm font-semibold text-[#111827]">Objectif</p>
+                    <p className="text-sm font-semibold text-[#111827]">{t("objective")}</p>
                     <p className="mt-1 text-sm text-[#4B5563]">{section.purpose}</p>
                 </div>
 
                 <div>
-                    <h2 className="text-lg font-semibold text-[#111827]">Étapes d&apos;utilisation</h2>
+                    <h2 className="text-lg font-semibold text-[#111827]">{t("usageSteps")}</h2>
                     <ol className="mt-3 space-y-2">
                         {section.steps.map((step, index) => (
                             <li key={step} className="flex gap-3 rounded-xl border border-[#E5E7EB] bg-white p-3 text-sm">
@@ -712,15 +712,15 @@ function HelpSectionCard({ section }: { section: HelpSection }) {
                 </div>
 
                 <div>
-                    <h2 className="text-lg font-semibold text-[#111827]">Champs, types de données et validations</h2>
+                    <h2 className="text-lg font-semibold text-[#111827]">{t("fieldsTitle")}</h2>
                     <div className="mt-3 overflow-x-auto rounded-2xl border border-[#E5E7EB]">
                         <table className="w-full min-w-[760px] text-sm">
                             <thead className="bg-[#F8FAFC]">
                                 <tr className="border-b">
-                                    <th className="px-4 py-3 text-left">Champ</th>
-                                    <th className="px-4 py-3 text-left">Type</th>
-                                    <th className="px-4 py-3 text-left">Donnée à saisir</th>
-                                    <th className="px-4 py-3 text-left">Validation</th>
+                                    <th className="px-4 py-3 text-left">{t("colField")}</th>
+                                    <th className="px-4 py-3 text-left">{t("colType")}</th>
+                                    <th className="px-4 py-3 text-left">{t("colData")}</th>
+                                    <th className="px-4 py-3 text-left">{t("colValidation")}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -738,7 +738,7 @@ function HelpSectionCard({ section }: { section: HelpSection }) {
                 </div>
 
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                    <p className="text-sm font-semibold text-emerald-950">Résultat attendu après Enregistrer</p>
+                    <p className="text-sm font-semibold text-emerald-950">{t("result")}</p>
                     <p className="mt-1 text-sm text-emerald-900">{section.result}</p>
                 </div>
             </CardContent>
