@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Plus, Pencil, Trash2, ClipboardList } from "lucide-react"
 import { useRouter, useParams } from "next/navigation"
+import { tx } from "@/lib/product-copy"
 
 interface Assessment {
     id: number
@@ -143,7 +144,7 @@ export default function AssessmentsPage() {
 
     const handleSave = async () => {
         if (!formData.title.trim() || !formData.class_id || !formData.subject_id || !formData.term_id) {
-            setError("Title, class, subject, and term are required")
+            setError(tx(locale, "titleClassSubjectTermRequired"))
             return
         }
         setSaving(true)
@@ -175,14 +176,14 @@ export default function AssessmentsPage() {
                 setError(data.detail || "Failed to save assessment")
             }
         } catch {
-            setError("An error occurred")
+            setError(tx(locale, "genericError"))
         } finally {
             setSaving(false)
         }
     }
 
     const handleDelete = async (assessment: Assessment) => {
-        if (!await requestConfirmation({ title: "Supprimer cette évaluation", description: `L'évaluation « ${assessment.title} » sera supprimée si aucune note ne la protège.`, confirmLabel: "Supprimer définitivement", destructive: true })) return
+        if (!await requestConfirmation({ title: tx(locale, "deleteAssessmentTitle"), description: tx(locale, "deleteAssessmentDesc", { title: assessment.title }), confirmLabel: tx(locale, "deletePermanently"), destructive: true })) return
         try {
             const res = await fetch(`${API_BASE_URL}/grades/assessments/${assessment.id}`, {
                 method: "DELETE",
@@ -199,9 +200,9 @@ export default function AssessmentsPage() {
     const getTermName = (id: number) => terms.find(t => t.id === id)?.name || "—"
 
     const filterColumns = useMemo<FilterColumn<Assessment>[]>(() => [
-        { key: "title", label: "Title", accessor: assessment => assessment.title },
-        { key: "class", label: "Class", accessor: assessment => classes.find(c => c.id === assessment.class_id)?.name },
-        { key: "subject", label: "Subject", accessor: assessment => subjects.find(s => s.id === assessment.subject_id)?.name },
+        { key: "title", label: tx(locale, "title"), accessor: assessment => assessment.title },
+        { key: "class", label: tx(locale, "class"), accessor: assessment => classes.find(c => c.id === assessment.class_id)?.name },
+        { key: "subject", label: tx(locale, "subject"), accessor: assessment => subjects.find(s => s.id === assessment.subject_id)?.name },
     ], [classes, subjects])
     const filter = useTableFilter(assessments, filterColumns, { storageKey: "assessments" })
     const filtered = filter.filtered
@@ -210,12 +211,12 @@ export default function AssessmentsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#111827]">Assessments</h1>
-                    <p className="text-sm text-[#6B7280] mt-1">Manage exams, tests and grade entries</p>
+                    <h1 className="text-2xl font-bold text-[#111827]">{tx(locale, "assessmentsTitle")}</h1>
+                    <p className="text-sm text-[#6B7280] mt-1">{tx(locale, "assessmentsDescription")}</p>
                 </div>
                 <Button onClick={openCreate} className="bg-black text-white hover:bg-black/90 rounded-lg">
                     <Plus className="h-4 w-4 mr-2" />
-                    New Assessment
+                    {tx(locale, "newAssessment")}
                 </Button>
             </div>
 
@@ -228,34 +229,34 @@ export default function AssessmentsPage() {
                     onChange={(e) => setFilterClassId(e.target.value)}
                     className="border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 >
-                    <option value="">All Classes</option>
+                    <option value="">{tx(locale, "allClasses")}</option>
                     {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
             </div>
 
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-[#111827]">Assessment List ({filtered.length})</CardTitle>
+                    <CardTitle className="text-[#111827]">{tx(locale, "assessmentList")} ({filtered.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
-                        <div className="text-center py-12 text-[#6B7280]">Loading assessments...</div>
+                        <div className="text-center py-12 text-[#6B7280]">{tx(locale, "loadingAssessments")}</div>
                     ) : filtered.length === 0 ? (
                         <div className="text-center py-12 text-[#6B7280]">
-                            {filter.controls.query ? `No assessments found matching "${filter.controls.query}"` : "No assessments yet. Create your first assessment!"}
+                            {filter.controls.query ? tx(locale, "noAssessmentsSearch", { query: filter.controls.query }) : tx(locale, "noAssessments")}
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-[#E5E7EB]">
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Title</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Class</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Subject</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Term</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Date</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Max Score</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Actions</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "title")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "class")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "subject")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "term")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "date")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "maxScore")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "actions")}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -274,7 +275,7 @@ export default function AssessmentsPage() {
                                                         size="sm"
                                                         className="h-8 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                                                         onClick={() => router.push(`/${locale}/dashboard/grades/assessments/${assessment.id}`)}
-                                                        title="Enter grades"
+                                                        title={tx(locale, "enterGrades")}
                                                     >
                                                         <ClipboardList className="h-4 w-4" />
                                                     </Button>
@@ -308,57 +309,57 @@ export default function AssessmentsPage() {
             <Dialog open={showModal} onOpenChange={setShowModal}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
-                        <DialogTitle>{editingAssessment ? "Edit Assessment" : "New Assessment"}</DialogTitle>
+                        <DialogTitle>{editingAssessment ? tx(locale, "editAssessment") : tx(locale, "newAssessment")}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         {error && (
                             <div className="bg-red-50 border border-red-200 text-red-800 px-3 py-2 rounded text-sm">{error}</div>
                         )}
                         <div className="space-y-2">
-                            <Label>Title *</Label>
+                            <Label>{tx(locale, "title")} *</Label>
                             <Input
-                                placeholder="e.g. Mid-term exam, Quiz 1"
+                                placeholder={tx(locale, "assessmentTitleExample")}
                                 value={formData.title}
                                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Class *</Label>
+                                <Label>{tx(locale, "class")} *</Label>
                                 <select
                                     value={formData.class_id}
                                     onChange={(e) => setFormData({ ...formData, class_id: e.target.value })}
                                     className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                                 >
-                                    <option value="">Select class</option>
+                                    <option value="">{tx(locale, "selectClass")}</option>
                                     {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Subject *</Label>
+                                <Label>{tx(locale, "subject")} *</Label>
                                 <select
                                     value={formData.subject_id}
                                     onChange={(e) => setFormData({ ...formData, subject_id: e.target.value })}
                                     className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                                 >
-                                    <option value="">Select subject</option>
+                                    <option value="">{tx(locale, "selectSubject")}</option>
                                     {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                 </select>
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label>Term *</Label>
+                            <Label>{tx(locale, "term")} *</Label>
                             <select
                                 value={formData.term_id}
                                 onChange={(e) => setFormData({ ...formData, term_id: e.target.value })}
                                 className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                             >
-                                <option value="">Select term</option>
+                                <option value="">{tx(locale, "selectTerm")}</option>
                                 {terms.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <Label>Date *</Label>
+                            <Label>{tx(locale, "date")} *</Label>
                             <input
                                 type="date"
                                 value={formData.date}
@@ -368,7 +369,7 @@ export default function AssessmentsPage() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Max Score</Label>
+                                <Label>{tx(locale, "maxScore")}</Label>
                                 <Input
                                     type="number"
                                     min="1"
@@ -378,7 +379,7 @@ export default function AssessmentsPage() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Weight</Label>
+                                <Label>{tx(locale, "weight")}</Label>
                                 <Input
                                     type="number"
                                     min="1"
@@ -390,9 +391,9 @@ export default function AssessmentsPage() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
+                        <Button variant="outline" onClick={() => setShowModal(false)}>{tx(locale, "cancel")}</Button>
                         <Button onClick={handleSave} disabled={saving} className="bg-black text-white hover:bg-black/90">
-                            {saving ? "Saving..." : "Save"}
+                            {saving ? tx(locale, "savingState") : tx(locale, "save")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

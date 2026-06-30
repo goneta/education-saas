@@ -60,8 +60,8 @@ notifications and master data (zero data duplication).
   (c) **Help Center** — context-aware (route→`?section=`); documented levels/facilities/
   personnel/payroll/leave/announcements. (d) **i18n** — Teachers/Students/Subjects lists
   + TeacherListTable via the shared `lists` namespace; payroll/leave/announcements/
-  facilities/personnel/transport namespaces. Open: deep Add/Edit modals + legacy pages
-  (finance/operations/grades) still hardcoded; Help content: chrome i18n (help namespace); per-section HELP_SECTIONS content still French-only.
+  facilities/personnel/transport namespaces. Done: Teacher/Student Add/Edit modals; Finance, Operations and Grades pages now
+  localized via tx()/PRODUCT_COPY. Open: other scattered legacy pages may remain; Help content: chrome i18n (help namespace); per-section HELP_SECTIONS content still French-only.
 
 - **Payroll / Paie system (Finance, #7) — backend foundation**: country-extensible
   calculation engine (`services/payroll.py`), per-employee `SalaryProfile`, and

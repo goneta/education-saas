@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowLeft, Save } from "lucide-react"
 import { useRouter, useParams } from "next/navigation"
+import { tx } from "@/lib/product-copy"
 
 interface Assessment {
     id: number
@@ -117,7 +118,7 @@ export default function AssessmentGradesPage() {
                 }))
 
             if (gradesToSubmit.length === 0) {
-                setError("No grades entered")
+                setError(tx(locale, "noGradesEntered"))
                 return
             }
 
@@ -131,28 +132,28 @@ export default function AssessmentGradesPage() {
             })
 
             if (res.ok) {
-                setSaveMessage(`Successfully saved ${gradesToSubmit.length} grades`)
+                setSaveMessage(tx(locale, "gradesSaved", { count: gradesToSubmit.length }))
                 loadData()
             } else {
                 const data = await res.json()
                 setError(data.detail || "Failed to save grades")
             }
         } catch {
-            setError("An error occurred")
+            setError(tx(locale, "genericError"))
         } finally {
             setSaving(false)
         }
     }
 
     if (isLoading) {
-        return <div className="text-center py-12 text-[#6B7280]">Loading assessment...</div>
+        return <div className="text-center py-12 text-[#6B7280]">{tx(locale, "loadingAssessment")}</div>
     }
 
     if (error && !assessment) {
         return (
             <div className="space-y-4">
                 <Button variant="ghost" onClick={() => router.back()} className="gap-2">
-                    <ArrowLeft className="h-4 w-4" /> Back
+                    <ArrowLeft className="h-4 w-4" /> {tx(locale, "back")}
                 </Button>
                 <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">{error}</div>
             </div>
@@ -163,14 +164,14 @@ export default function AssessmentGradesPage() {
         <div className="space-y-6">
             <div className="flex items-center gap-4">
                 <Button variant="ghost" onClick={() => router.push(`/${locale}/dashboard/grades/assessments`)} className="gap-2">
-                    <ArrowLeft className="h-4 w-4" /> Back
+                    <ArrowLeft className="h-4 w-4" /> {tx(locale, "back")}
                 </Button>
                 <div>
                     <h1 className="text-2xl font-bold text-[#111827]">{assessment?.title}</h1>
                     <p className="text-sm text-[#6B7280] mt-1">
                         {assessment && new Date(assessment.date).toLocaleDateString()}
-                        {" — "}Max Score: {assessment?.max_score}
-                        {" — "}Weight: {assessment?.weight}
+                        {" — "}{tx(locale, "maxScore")}: {assessment?.max_score}
+                        {" — "}{tx(locale, "weight")}: {assessment?.weight}
                     </p>
                 </div>
             </div>
@@ -184,28 +185,28 @@ export default function AssessmentGradesPage() {
 
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-[#111827]">Grade Entry ({students.length} students)</CardTitle>
+                    <CardTitle className="text-[#111827]">{tx(locale, "gradeEntry")} ({students.length})</CardTitle>
                     <Button
                         onClick={handleSaveGrades}
                         disabled={saving}
                         className="bg-black text-white hover:bg-black/90"
                     >
                         <Save className="h-4 w-4 mr-2" />
-                        {saving ? "Saving..." : "Save Grades"}
+                        {saving ? tx(locale, "savingState") : tx(locale, "saveGrades")}
                     </Button>
                 </CardHeader>
                 <CardContent>
                     {students.length === 0 ? (
-                        <div className="text-center py-12 text-[#6B7280]">No students found in this class.</div>
+                        <div className="text-center py-12 text-[#6B7280]">{tx(locale, "noStudentsClass")}</div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-[#E5E7EB]">
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Student</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Reg. No.</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Score (/{assessment?.max_score})</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Comment</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "student")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "regNo")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "score")} (/{assessment?.max_score})</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "comment")}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -230,7 +231,7 @@ export default function AssessmentGradesPage() {
                                             </td>
                                             <td className="py-3 px-4">
                                                 <Input
-                                                    placeholder="Optional comment"
+                                                    placeholder={tx(locale, "optionalComment")}
                                                     value={gradeInputs[student.id]?.comment || ""}
                                                     onChange={(e) => setGradeInputs(prev => ({
                                                         ...prev,
