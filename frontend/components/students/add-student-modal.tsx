@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import {
@@ -48,6 +48,19 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
     })
 
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+    const [levels, setLevels] = useState<{ id: number; code: string; name: string }[]>([])
+    const [classes, setClasses] = useState<{ id: number; name: string; level: string }[]>([])
+    const [selectedLevel, setSelectedLevel] = useState("")
+
+    // Load the levels referential + classes when the modal opens (#4 cascade).
+    useEffect(() => {
+        if (!open || !token) return
+        const headers = { Authorization: `Bearer ${token}` }
+        fetch(`${API_BASE_URL}/levels?active_only=true`, { headers }).then(r => r.ok ? r.json() : []).then(setLevels).catch(() => undefined)
+        fetch(`${API_BASE_URL}/education/classes`, { headers }).then(r => r.ok ? r.json() : []).then(setClasses).catch(() => undefined)
+    }, [open, token])
+
+    const classesForLevel = selectedLevel ? classes.filter(c => c.level === selectedLevel) : []
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }))
@@ -352,6 +365,33 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
                             {validationErrors.parentAddress && (
                                 <p className="text-xs text-red-600">{validationErrors.parentAddress}</p>
                             )}
+                        </div>
+                    </div>
+
+                    {/* Informations sur la Classe (#4): level -> dynamically filtered classes */}
+                    <div className="space-y-4">
+                        <h3 className="text-sm font-semibold text-[#111827]">Informations sur la Classe</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="level">Niveau scolaire</Label>
+                                <Select value={selectedLevel} onValueChange={value => { setSelectedLevel(value); handleInputChange("currentClassId", "") }}>
+                                    <SelectTrigger id="level"><SelectValue placeholder="Sélectionner un niveau" /></SelectTrigger>
+                                    <SelectContent>
+                                        {levels.map(level => <SelectItem key={level.id} value={level.code}>{level.code} — {level.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="currentClassId">Classe</Label>
+                                <Select value={formData.currentClassId} onValueChange={value => handleInputChange("currentClassId", value)} disabled={!selectedLevel}>
+                                    <SelectTrigger id="currentClassId"><SelectValue placeholder={selectedLevel ? "Sélectionner une classe" : "Choisissez d'abord un niveau"} /></SelectTrigger>
+                                    <SelectContent>
+                                        {classesForLevel.length === 0 ? (
+                                            <SelectItem value="none" disabled>Aucune classe pour ce niveau</SelectItem>
+                                        ) : classesForLevel.map(cls => <SelectItem key={cls.id} value={String(cls.id)}>{cls.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                     </div>
 
