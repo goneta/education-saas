@@ -25,3 +25,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
+- #1/#6: class list has a **Nb Élèves** column (count per class from `/education/classes/{id}/students`) and a Users action opening a modal with a scrollable students table (Nom complet / Âge / Sexe), each row clickable to the student profile (`/dashboard/students/{user_id}`).

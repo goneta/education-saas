@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { useRouter, useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
@@ -17,7 +18,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Pencil, Trash2, Plus, Eye, Printer } from "lucide-react"
+import { Pencil, Trash2, Plus, Eye, Printer, Users, X } from "lucide-react"
 import {
     Select,
     SelectContent,
@@ -66,6 +67,16 @@ export default function ClassesPage() {
     const [currentClass, setCurrentClass] = useState<ClassItem | null>(null)
     const [formData, setFormData] = useState<{ name: string, level: string, main_teacher_id: string | null }>({ name: "", level: "", main_teacher_id: null })
     const [roster, setRoster] = useState<Roster | null>(null)
+    const router = useRouter()
+    const params = useParams()
+    const locale = (params?.locale as string) || "fr"
+    const [studentCounts, setStudentCounts] = useState<Record<number, number>>({})
+    const [studentsModal, setStudentsModal] = useState<{ cls: ClassItem; students: { id: number; user_id: number; full_name: string; age: number | null; gender?: string | null }[] } | null>(null)
+
+    const openStudents = async (cls: ClassItem) => {
+        const res = await fetch(`${API_BASE_URL}/education/classes/${cls.id}/students`, { headers: { Authorization: `Bearer ${token}` } })
+        if (res.ok) setStudentsModal({ cls, students: (await res.json()).students })
+    }
 
     useEffect(() => {
         if (token) {
@@ -95,8 +106,14 @@ export default function ClassesPage() {
                 headers: { Authorization: `Bearer ${token}` }
             })
             if (res.ok) {
-                const data = await res.json()
+                const data: ClassItem[] = await res.json()
                 setClasses(data)
+                // Nb Élèves per class (#1/#6).
+                const counts = await Promise.all(data.map(async cls => {
+                    const r = await fetch(`${API_BASE_URL}/education/classes/${cls.id}/students`, { headers: { Authorization: `Bearer ${token}` } })
+                    return [cls.id, r.ok ? (await r.json()).count : 0] as const
+                }))
+                setStudentCounts(Object.fromEntries(counts))
             }
         } catch (error) {
             console.error("Failed to fetch classes", error)
@@ -261,14 +278,15 @@ export default function ClassesPage() {
                             <th className="px-6 py-3 font-medium text-gray-500 dark:text-[#eef3f8]">Nom</th>
                             <th className="px-6 py-3 font-medium text-gray-500 dark:text-[#eef3f8]">Niveau</th>
                             <th className="px-6 py-3 font-medium text-gray-500 dark:text-[#eef3f8]">Professeur principal</th>
+                            <th className="px-6 py-3 font-medium text-gray-500 dark:text-[#eef3f8]">Nb Élèves</th>
                             <th className="px-6 py-3 font-medium text-gray-500 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y">
                         {isLoading ? (
-                            <tr><td colSpan={4} className="px-6 py-4 text-center">Chargement...</td></tr>
+                            <tr><td colSpan={5} className="px-6 py-4 text-center">Chargement...</td></tr>
                         ) : filter.filtered.length === 0 ? (
-                            <tr><td colSpan={4} className="px-6 py-4 text-center text-gray-500">Aucune classe trouvée.</td></tr>
+                            <tr><td colSpan={5} className="px-6 py-4 text-center text-gray-500">Aucune classe trouvée.</td></tr>
                         ) : (
                             filter.filtered.map((cls) => (
                                 <tr key={cls.id} className="border-b border-[#E5E7EB] last:border-0 hover:bg-[#F6F7F9] dark:border-[#343b41] dark:hover:bg-[#2a3035]">
@@ -279,8 +297,12 @@ export default function ClassesPage() {
                                             ? teachers.find(t => t.id === cls.main_teacher_id)?.full_name
                                             : "-"}
                                     </td>
+                                    <td className="px-6 py-4">{studentCounts[cls.id] ?? "—"}</td>
                                     <td className="px-6 py-4 text-right space-x-2">
-                                        <Button variant="ghost" size="sm" onClick={() => openRoster(cls)} title="View roster">
+                                        <Button variant="ghost" size="sm" onClick={() => openStudents(cls)} title="Voir les élèves">
+                                            <Users className="h-4 w-4" />
+                                        </Button>
+                                        <Button variant="ghost" size="sm" onClick={() => openRoster(cls)} title="Détails / finances">
                                             <Eye className="h-4 w-4" />
                                         </Button>
                                         <Button variant="ghost" size="sm" onClick={() => openEdit(cls)}>
@@ -343,6 +365,40 @@ export default function ClassesPage() {
                                 ))}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            )}
+
+            {studentsModal && (
+                <div className="fixed inset-0 z-[1300] flex items-center justify-center bg-black/40 p-4" onClick={() => setStudentsModal(null)}>
+                    <div className="w-full max-w-lg rounded-[20px] bg-white p-5 shadow-xl dark:bg-[#202528]" onClick={e => e.stopPropagation()}>
+                        <div className="mb-3 flex items-center justify-between">
+                            <div>
+                                <h3 className="font-semibold text-[#111827] dark:text-white">{studentsModal.cls.name}</h3>
+                                <p className="text-sm text-[#6B7280]">{studentsModal.students.length} élève(s) inscrit(s)</p>
+                            </div>
+                            <button onClick={() => setStudentsModal(null)} aria-label="Fermer"><X className="h-4 w-4" /></button>
+                        </div>
+                        {studentsModal.students.length === 0 ? (
+                            <p className="py-6 text-center text-sm text-[#6B7280]">Aucun élève inscrit dans cette classe.</p>
+                        ) : (
+                            <div className="max-h-[55vh] overflow-y-auto rounded-xl border border-[#E5E7EB] dark:border-[#3b4248]">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="sticky top-0 bg-[#F8FAFC] dark:bg-[#252b30]">
+                                        <tr className="text-[#6B7280]"><th className="px-3 py-2">Nom complet</th><th className="px-3 py-2">Âge</th><th className="px-3 py-2">Sexe</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        {studentsModal.students.map(s => (
+                                            <tr key={s.id} onClick={() => router.push(`/${locale}/dashboard/students/${s.user_id}`)} className="cursor-pointer border-t border-[#F0F1F3] hover:bg-[#F6F7F9] dark:border-[#2a3035] dark:hover:bg-[#2a3035]">
+                                                <td className="px-3 py-2 font-medium text-[#111827] dark:text-[#f4f7fb]">{s.full_name}</td>
+                                                <td className="px-3 py-2">{s.age ?? "—"}</td>
+                                                <td className="px-3 py-2">{s.gender || "—"}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
