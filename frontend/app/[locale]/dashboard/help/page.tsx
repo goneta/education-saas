@@ -458,6 +458,76 @@ const HELP_SECTIONS: HelpSection[] = [
         ],
         result: "Le module crée l'enregistrement, met à jour les tableaux de bord, déclenche les validations et conserve une trace d'audit.",
     },
+    {
+        id: "levels",
+        title: "Niveaux scolaires",
+        icon: GraduationCap,
+        purpose: "Gérer le référentiel central des niveaux (CP1, 6ème, Terminale, BTS…) utilisé par tous les établissements pour créer leurs classes. Réservé au Super Administrateur.",
+        steps: [
+            "Ouvrez Système → Niveaux scolaires (visible uniquement par le Super Admin).",
+            "Saisissez le code (ex. CP1), le nom, la catégorie et l'ordre d'affichage, puis cliquez sur Ajouter.",
+            "Activez ou désactivez un niveau avec le bouton d'état ; un niveau désactivé n'apparaît plus dans la création de classe.",
+            "Supprimez un niveau uniquement s'il n'est utilisé par aucune classe (sinon l'action est bloquée).",
+        ],
+        fields: [
+            { name: "Code", type: "Texte", expected: "Identifiant court unique (CP1, 6E, TLE…).", validation: "Obligatoire et unique ; rejet en cas de doublon (409)." },
+            { name: "Catégorie", type: "Liste", expected: "Primaire, collège, lycée, supérieur ou autre.", validation: "Sert à regrouper et trier les niveaux." },
+            { name: "Ordre", type: "Nombre", expected: "Position dans la liste.", validation: "Tri croissant dans les menus déroulants." },
+        ],
+        result: "Le référentiel est partagé par toutes les écoles ; les niveaux alimentent la création des classes et la cascade niveau→classe du formulaire élève.",
+    },
+    {
+        id: "facilities",
+        title: "Bâtiments et salles",
+        icon: Settings,
+        purpose: "Gérer les bâtiments de l'établissement et les salles qu'ils contiennent (type, capacité), avec les règles intelligentes d'occupation.",
+        steps: [
+            "Ouvrez Gestion → Bâtiments pour créer un bâtiment (nom, description, campus, état).",
+            "Ouvrez Gestion → Salles, choisissez le bâtiment, puis renseignez nom, capacité et type (classe, laboratoire, salle informatique…).",
+            "Consultez la colonne « Nb Classes » et le bouton « Voir » pour connaître les classes planifiées dans une salle.",
+            "La suppression est bloquée si la salle est utilisée dans un emploi du temps, ou si le bâtiment contient des salles.",
+        ],
+        fields: [
+            { name: "Capacité", type: "Nombre", expected: "Nombre maximum de places.", validation: "Une classe plus nombreuse que la salle est refusée lors de la planification (409)." },
+            { name: "Type de salle", type: "Liste", expected: "Classe, laboratoire, salle informatique, atelier, gymnase, autre.", validation: "Sert au filtrage et aux règles pédagogiques." },
+        ],
+        result: "Les espaces sont structurés (établissement → bâtiment → salle) et les règles de capacité/occupation préviennent les conflits d'emploi du temps.",
+    },
+    {
+        id: "personnel",
+        title: "Personnel scolaire",
+        icon: Users,
+        purpose: "Créer et gérer les comptes du personnel (secrétaires, comptables, surveillants…) avec rôle principal, rôles additionnels, département, fonction et statut. La création génère automatiquement le compte utilisateur.",
+        steps: [
+            "Ouvrez Gestion → Personnel scolaire.",
+            "Renseignez nom, e-mail, téléphone, rôle principal, rôles additionnels (puces), département, fonction et statut, puis cliquez sur Ajouter.",
+            "Notez le mot de passe temporaire affiché une seule fois à la création.",
+            "Changez le statut (actif, inactif, suspendu, en congé) en ligne ; la suppression désactive le compte sans le détruire.",
+        ],
+        fields: [
+            { name: "Rôle principal", type: "Liste", expected: "Rôle déterminant les menus visibles.", validation: "Doit être un rôle connu du système." },
+            { name: "Statut", type: "Liste", expected: "Actif, inactif, suspendu, en congé.", validation: "Un compte inactif ne peut pas se connecter." },
+        ],
+        result: "Un compte utilisateur opérationnel est créé et rattaché à l'établissement, avec son rôle et ses droits.",
+    },
+    {
+        id: "payroll",
+        title: "Paie et bulletins de salaire",
+        icon: CreditCard,
+        purpose: "Configurer les salaires, générer les bulletins (calcul automatique brut→net), les approuver et les payer. Les employés et enseignants consultent leurs propres bulletins en libre-service.",
+        steps: [
+            "Ouvrez Finance → Paie, onglet « Profils de salaire » pour configurer chaque employé (type d'employé, type de paie, taux de base, devise, taux de cotisation et d'impôt).",
+            "Onglet « Bulletins » → Générer : choisissez l'employé, la période, les unités travaillées et ajoutez les lignes (indemnités, primes, heures sup, retenues, avances).",
+            "Vérifiez le détail brut→net, puis Approuvez et Payez (virement, espèces, Stripe, CinetPay, Djamo).",
+            "Côté employé/enseignant : Finance → Mes bulletins permet de consulter et imprimer ses propres bulletins.",
+        ],
+        fields: [
+            { name: "Type de paie", type: "Liste", expected: "Horaire, journalier, hebdomadaire ou mensuel.", validation: "Le salaire de base = taux × unités (sauf mensuel = montant fixe)." },
+            { name: "Taux de cotisation / d'impôt", type: "Nombre (%)", expected: "Pourcentages appliqués au brut puis à la base imposable.", validation: "Saisis en %, convertis en fractions ; le moteur est extensible par pays." },
+            { name: "Lignes", type: "Liste", expected: "Indemnité, prime, heures sup (gains) ; retenue, avance (déductions).", validation: "Les gains augmentent le brut ; les déductions réduisent le net." },
+        ],
+        result: "Un bulletin complet (salaire de base, primes, cotisations, impôt, brut et net) est généré, traçable, payable et consultable par l'employé.",
+    },
 ]
 
 export function HelpContent({ embedded = false }: { embedded?: boolean }) {
