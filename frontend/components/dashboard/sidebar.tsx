@@ -182,6 +182,80 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
         }
     ]
 
+    // Role-based dashboards (#8): Teacher / Student / Parent never see the admin
+    // menus (Gestion, Scolarité admin, Finances admin, Opérations, Système).
+    // Each gets a curated menu of existing routes. All other roles (Super Admin,
+    // School Admin and operational staff) keep the full menu unchanged.
+    const role = String(user?.role || "").toLowerCase()
+    const overviewSection = sidebarSections[0]
+
+    const teacherMenu = [
+        overviewSection,
+        {
+            title: t("academics"),
+            items: [
+                { href: `/${locale}/dashboard/education/classes`, label: t("classes"), icon: BookOpen },
+                { href: `/${locale}/dashboard/education/subjects`, label: t("subjects"), icon: BookOpen },
+                { href: `/${locale}/dashboard/education/timetable`, label: t("timetable"), icon: Calendar },
+                { href: `/${locale}/dashboard/education/pedagogy`, label: t("pedagogy"), icon: GraduationCap },
+                { href: `/${locale}/dashboard/grades/assessments`, label: t("grades"), icon: ClipboardCheck },
+                { href: `/${locale}/dashboard/documents`, label: t("documents"), icon: FileText },
+                { href: `/${locale}/dashboard/library`, label: t("library"), icon: BookOpen },
+                { href: `/${locale}/dashboard/portal`, label: t("portal"), icon: Users },
+            ],
+        },
+        {
+            title: t("system"),
+            items: [
+                { href: `/${locale}/dashboard/ai-command-center`, label: t("aiCommandCenter"), icon: BrainCircuit },
+            ],
+        },
+    ]
+
+    const studentMenu = [
+        overviewSection,
+        {
+            title: t("academics"),
+            items: [
+                { href: `/${locale}/dashboard/education/timetable`, label: t("timetable"), icon: Calendar },
+                { href: `/${locale}/dashboard/grades/assessments`, label: t("grades"), icon: ClipboardCheck },
+                { href: `/${locale}/dashboard/documents`, label: t("documents"), icon: FileText },
+                { href: `/${locale}/dashboard/library`, label: t("library"), icon: BookOpen },
+                { href: `/${locale}/dashboard/education/internships`, label: t("internships"), icon: BriefcaseBusiness },
+                { href: `/${locale}/dashboard/portal`, label: t("portal"), icon: Users },
+            ],
+        },
+        {
+            title: t("finance"),
+            items: [
+                { href: `/${locale}/dashboard/finance`, label: t("finance"), icon: CreditCard },
+            ],
+        },
+    ]
+
+    const parentMenu = [
+        overviewSection,
+        {
+            title: t("academics"),
+            items: [
+                { href: `/${locale}/dashboard/portal`, label: t("portal"), icon: Users },
+                { href: `/${locale}/dashboard/grades/assessments`, label: t("grades"), icon: ClipboardCheck },
+                { href: `/${locale}/dashboard/documents`, label: t("documents"), icon: FileText },
+            ],
+        },
+        {
+            title: t("finance"),
+            items: [
+                { href: `/${locale}/dashboard/finance`, label: t("finance"), icon: CreditCard },
+            ],
+        },
+    ]
+
+    let visibleSections = sidebarSections
+    if (["teacher", "trainer", "instructor", "educator"].includes(role)) visibleSections = teacherMenu
+    else if (["student", "pupil"].includes(role)) visibleSections = studentMenu
+    else if (["parent", "guardian"].includes(role)) visibleSections = parentMenu
+
     const accountRolePresets = useMemo(() => [
         { key: "school_admin", label: "Administrateur d'établissement" },
         { key: "director", label: "Directeur" },
@@ -286,7 +360,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                 <nav className="grid items-start px-2 text-sm font-medium lg:px-4 space-y-2 mt-4">
-                    {sidebarSections.map((section, idx) => {
+                    {visibleSections.map((section, idx) => {
                         const items = section.items.filter(item => {
                             if (accountType === "recruiter") {
                                 return item.href.includes("/dashboard/emploi-recruteur")
