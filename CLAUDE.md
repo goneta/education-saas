@@ -50,6 +50,12 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
+- **Functional improvements (in progress, increment by increment)**: #3 School
+  Levels referential — global, Super-Admin-managed `SchoolLevel` (`/levels` CRUD,
+  delete-if-unused) consumed by class creation + the student form. Next: buildings/
+  rooms UI, smart class/room rules, class details, student level→class cascade,
+  personnel module, role-based dashboards, full i18n sweep.
+
 - **Timetable constraints UI**: surfaced the constraint engine on the timetable page
   (panel above; no backend change). Now also surfaces explainable-AI (/explain), scenario
   simulation (teacher-absent / extra-working-day), energy/travel metrics (derived),

@@ -136,6 +136,22 @@ class SchoolModel(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
+class SchoolLevel(Base):
+    """Global, platform-managed referential of school levels (CP1, 6ème, Terminale,
+    BTS Informatique, …). Administered exclusively by the Super Admin; schools then
+    pick from it when creating classes. `Class.level` references it by code."""
+    __tablename__ = "school_levels"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String, nullable=False, unique=True, index=True)  # e.g. "CP1"
+    name = Column(String, nullable=False)
+    category = Column(String, nullable=True)  # primaire | college | lycee | superieur | autre
+    sort_order = Column(Integer, default=0, index=True)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
 class School(Base):
     __tablename__ = "schools"
 

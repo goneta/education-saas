@@ -65,7 +65,8 @@
     "stops": "Vituo vya basi",
     "tracking": "Ufuatiliaji GPS",
     "boarding": "Kupanda",
-    "fleetOps": "Matengenezo na mafuta"
+    "fleetOps": "Matengenezo na mafuta",
+    "schoolLevels": "Madarasa"
   },
   "layout": {
     "previewTitle": "Hakiki ya maudhui yaliyotengenezwa na AI",
@@ -160,5 +161,29 @@
     "allColumns": "Safu zote",
     "searchPlaceholder": "Chuja...",
     "noResults": "Hakuna matokeo"
+  },
+  "schoolLevels": {
+    "title": "Madarasa",
+    "subtitle": "Rejeleo kuu linalosimamiwa na Super Admin; shule hutumia wakati wa kuunda madarasa.",
+    "addLevel": "Ongeza ngazi",
+    "code": "Msimbo",
+    "name": "Jina",
+    "category": "Kategoria",
+    "order": "Mpangilio",
+    "status": "Hali",
+    "actions": "Vitendo",
+    "active": "Inatumika",
+    "inactive": "Haitumiki",
+    "add": "Ongeza",
+    "list": "Orodha",
+    "empty": "Hakuna ngazi bado.",
+    "confirmDelete": "Futa ngazi hii?",
+    "deactivate": "Zima",
+    "activate": "Washa",
+    "primaire": "Msingi",
+    "college": "Sekondari",
+    "lycee": "Upili",
+    "superieur": "Elimu ya juu",
+    "autre": "Nyingine"
   }
 }

@@ -65,7 +65,8 @@
     "stops": "Paradas de bus",
     "tracking": "Rastreo GPS",
     "boarding": "Embarque",
-    "fleetOps": "Mantenimiento y combustible"
+    "fleetOps": "Mantenimiento y combustible",
+    "schoolLevels": "Niveles escolares"
   },
   "layout": {
     "previewTitle": "Vista previa del contenido generado por IA",
@@ -160,5 +161,29 @@
     "allColumns": "Todas las columnas",
     "searchPlaceholder": "Filtrar...",
     "noResults": "Sin resultados"
+  },
+  "schoolLevels": {
+    "title": "Niveles escolares",
+    "subtitle": "Referencial central gestionado por el Super Admin; las escuelas lo usan al crear clases.",
+    "addLevel": "A\u00f1adir un nivel",
+    "code": "C\u00f3digo",
+    "name": "Nombre",
+    "category": "Categor\u00eda",
+    "order": "Orden",
+    "status": "Estado",
+    "actions": "Acciones",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "add": "A\u00f1adir",
+    "list": "Niveles",
+    "empty": "Ning\u00fan nivel todav\u00eda.",
+    "confirmDelete": "\u00bfEliminar este nivel?",
+    "deactivate": "Desactivar",
+    "activate": "Activar",
+    "primaire": "Primaria",
+    "college": "Secundaria",
+    "lycee": "Bachillerato",
+    "superieur": "Superior",
+    "autre": "Otro"
   }
 }

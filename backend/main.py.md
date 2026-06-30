@@ -46,3 +46,4 @@ The application registers the `/site` router for the public marketing-site conte
 - Registers the `/extensibility` router (webhooks + API keys).
 - Registers the `/ai-learning` router (lesson/quiz/exam generators).
 - Global `ResponseValidationError` handler: logs the exact failing field(s)/value(s) and returns a JSON 500 instead of an opaque text/plain one — a safety net so any remaining strict response field surfaces in logs rather than silently 500-ing a list.
+- Registers the `/levels` router (school-levels referential).

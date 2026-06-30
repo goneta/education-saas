@@ -65,7 +65,8 @@
     "stops": "Bus stops",
     "tracking": "GPS tracking",
     "boarding": "Boarding",
-    "fleetOps": "Maintenance & fuel"
+    "fleetOps": "Maintenance & fuel",
+    "schoolLevels": "School levels"
   },
   "layout": {
     "previewTitle": "AI Generated Content Preview",
@@ -160,5 +161,29 @@
     "allColumns": "All columns",
     "searchPlaceholder": "Filter...",
     "noResults": "No results"
+  },
+  "schoolLevels": {
+    "title": "School levels",
+    "subtitle": "Central referential managed by the Super Admin; schools pick from it when creating classes.",
+    "addLevel": "Add a level",
+    "code": "Code",
+    "name": "Name",
+    "category": "Category",
+    "order": "Order",
+    "status": "Status",
+    "actions": "Actions",
+    "active": "Active",
+    "inactive": "Inactive",
+    "add": "Add",
+    "list": "Levels",
+    "empty": "No level yet.",
+    "confirmDelete": "Delete this level?",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "primaire": "Primary",
+    "college": "Middle school",
+    "lycee": "High school",
+    "superieur": "Higher education",
+    "autre": "Other"
   }
 }

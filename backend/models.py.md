@@ -50,3 +50,4 @@ Grades, attendance, assignment submissions, internships, fees, invoices, registr
 - SIS: `StudentGuardian`, `StudentEmergencyContact`, `StudentMedicalRecord` (multiple guardians + emergency contacts + one medical record per student).
 - Communication: `Announcement` (audience broadcast, scheduled/emergency).
 - Extensibility: `WebhookEndpoint`, `WebhookDelivery` (retry bookkeeping), `ApiKey` (hashed).
+- `SchoolLevel`: global, Super-Admin-managed levels referential (code/name/category/sort_order/active); `Class.level` references its code.

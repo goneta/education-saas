@@ -65,7 +65,8 @@
     "stops": "Arr\u00eats de bus",
     "tracking": "Suivi GPS",
     "boarding": "Embarquement",
-    "fleetOps": "Maintenance & carburant"
+    "fleetOps": "Maintenance & carburant",
+    "schoolLevels": "Niveaux scolaires"
   },
   "layout": {
     "previewTitle": "Apercu du contenu genere par l'IA",
@@ -160,5 +161,29 @@
     "allColumns": "Toutes les colonnes",
     "searchPlaceholder": "Filtrer...",
     "noResults": "Aucun r\u00e9sultat"
+  },
+  "schoolLevels": {
+    "title": "Niveaux scolaires",
+    "subtitle": "R\u00e9f\u00e9rentiel central administr\u00e9 par le Super Admin ; les \u00e9tablissements l'utilisent pour cr\u00e9er leurs classes.",
+    "addLevel": "Ajouter un niveau",
+    "code": "Code",
+    "name": "Nom",
+    "category": "Cat\u00e9gorie",
+    "order": "Ordre",
+    "status": "Statut",
+    "actions": "Actions",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "add": "Ajouter",
+    "list": "Liste des niveaux",
+    "empty": "Aucun niveau pour le moment.",
+    "confirmDelete": "Supprimer ce niveau ?",
+    "deactivate": "D\u00e9sactiver",
+    "activate": "Activer",
+    "primaire": "Primaire",
+    "college": "Coll\u00e8ge",
+    "lycee": "Lyc\u00e9e",
+    "superieur": "Sup\u00e9rieur",
+    "autre": "Autre"
   }
 }

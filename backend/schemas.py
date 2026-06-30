@@ -2661,6 +2661,28 @@ class LeaveDecision(BaseModel):
     status: str  # approved | rejected
 
 
+class SchoolLevelCreate(BaseModel):
+    code: str
+    name: str
+    category: Optional[str] = None
+    sort_order: int = 0
+    is_active: bool = True
+
+
+class SchoolLevelUpdate(BaseModel):
+    code: Optional[str] = None
+    name: Optional[str] = None
+    category: Optional[str] = None
+    sort_order: Optional[int] = None
+    is_active: Optional[bool] = None
+
+
+class SchoolLevelResponse(SchoolLevelCreate):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class WebhookEndpointCreate(BaseModel):
     url: str
     event_types: Optional[List[str]] = None
