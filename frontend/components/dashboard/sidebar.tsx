@@ -118,6 +118,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/teachers`, label: t("teachers"), icon: GraduationCap },
                 { href: `/${locale}/dashboard/buildings`, label: t("buildings"), icon: Building2 },
                 { href: `/${locale}/dashboard/rooms`, label: t("rooms"), icon: DoorOpen },
+                { href: `/${locale}/dashboard/personnel`, label: t("personnel"), icon: UserCog },
             ]
         },
         {

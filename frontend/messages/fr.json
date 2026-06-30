@@ -68,7 +68,8 @@
     "fleetOps": "Maintenance & carburant",
     "schoolLevels": "Niveaux scolaires",
     "buildings": "B\u00e2timents",
-    "rooms": "Salles"
+    "rooms": "Salles",
+    "personnel": "Personnel scolaire"
   },
   "layout": {
     "previewTitle": "Apercu du contenu genere par l'IA",
@@ -220,5 +221,43 @@
     "workshop": "Atelier",
     "gym": "Gymnase",
     "other": "Autre"
+  },
+  "personnel": {
+    "title": "Personnel scolaire",
+    "subtitle": "Cr\u00e9ez et g\u00e9rez les comptes du personnel.",
+    "addStaff": "Ajouter un membre du personnel",
+    "fullName": "Nom complet",
+    "email": "E-mail",
+    "phone": "T\u00e9l\u00e9phone",
+    "primaryRole": "R\u00f4le principal",
+    "additionalRoles": "R\u00f4les suppl\u00e9mentaires",
+    "department": "D\u00e9partement",
+    "function": "Fonction",
+    "status": "Statut",
+    "actions": "Actions",
+    "add": "Ajouter",
+    "empty": "Aucun personnel pour le moment.",
+    "confirmDelete": "D\u00e9sactiver ce membre du personnel ?",
+    "noDepartment": "Aucun d\u00e9partement",
+    "passwordGenerated": "Compte cr\u00e9\u00e9. Mot de passe temporaire :",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "suspended": "Suspendu",
+    "on_leave": "En cong\u00e9",
+    "roles": {
+      "school_admin": "Administrateur",
+      "director": "Directeur",
+      "principal": "Proviseur",
+      "department_head": "Chef de d\u00e9partement",
+      "pedagogy_coordinator": "Coordonnateur p\u00e9dagogique",
+      "educator": "\u00c9ducateur",
+      "teacher": "Enseignant",
+      "secretary": "Secr\u00e9taire",
+      "registrar": "Responsable scolarit\u00e9",
+      "receptionist": "R\u00e9ceptionniste",
+      "accountant": "Comptable",
+      "cashier": "Caissier",
+      "staff": "Personnel"
+    }
   }
 }

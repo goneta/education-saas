@@ -68,7 +68,8 @@
     "fleetOps": "Maintenance & fuel",
     "schoolLevels": "School levels",
     "buildings": "Buildings",
-    "rooms": "Rooms"
+    "rooms": "Rooms",
+    "personnel": "Staff"
   },
   "layout": {
     "previewTitle": "AI Generated Content Preview",
@@ -220,5 +221,43 @@
     "workshop": "Workshop",
     "gym": "Gym",
     "other": "Other"
+  },
+  "personnel": {
+    "title": "School staff",
+    "subtitle": "Create and manage staff accounts.",
+    "addStaff": "Add a staff member",
+    "fullName": "Full name",
+    "email": "Email",
+    "phone": "Phone",
+    "primaryRole": "Primary role",
+    "additionalRoles": "Additional roles",
+    "department": "Department",
+    "function": "Function",
+    "status": "Status",
+    "actions": "Actions",
+    "add": "Add",
+    "empty": "No staff yet.",
+    "confirmDelete": "Deactivate this staff member?",
+    "noDepartment": "No department",
+    "passwordGenerated": "Account created. Temporary password:",
+    "active": "Active",
+    "inactive": "Inactive",
+    "suspended": "Suspended",
+    "on_leave": "On leave",
+    "roles": {
+      "school_admin": "School admin",
+      "director": "Director",
+      "principal": "Principal",
+      "department_head": "Department head",
+      "pedagogy_coordinator": "Pedagogy coordinator",
+      "educator": "Educator",
+      "teacher": "Teacher",
+      "secretary": "Secretary",
+      "registrar": "Registrar",
+      "receptionist": "Receptionist",
+      "accountant": "Accountant",
+      "cashier": "Cashier",
+      "staff": "Staff"
+    }
   }
 }

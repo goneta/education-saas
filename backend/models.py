@@ -2715,6 +2715,26 @@ class StaffContract(Base):
     school = relationship("School")
 
 
+class StaffProfile(Base):
+    """School staff member (#7 Personnel scolaire): employment metadata layered
+    on a User account (auto-created on staff creation). Distinct from
+    StaffContract (HR/payroll). The User carries personal info + the primary role;
+    this row carries establishment, department, function, additional roles and an
+    operational status."""
+    __tablename__ = "staff_profiles"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True, index=True)
+    job_title = Column(String, nullable=True)
+    additional_roles = Column(JSON, nullable=True)  # list[str] of UserRole values
+    status = Column(String, default="active", nullable=False, index=True)  # active|inactive|suspended|on_leave
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    user = relationship("User")
+    department = relationship("Department")
+
+
 class LeaveRequest(Base):
     __tablename__ = "leave_requests"
 

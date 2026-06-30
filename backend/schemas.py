@@ -2567,6 +2567,49 @@ class DepartmentResponse(DepartmentCreate):
     model_config = ConfigDict(from_attributes=True)
 
 
+# --- Personnel scolaire (#7) -------------------------------------------------
+
+class StaffCreate(BaseModel):
+    full_name: str
+    email: EmailStr
+    phone_number: Optional[str] = None
+    password: Optional[str] = None  # generated when omitted
+    primary_role: str
+    additional_roles: List[str] = []
+    department_id: Optional[int] = None
+    job_title: Optional[str] = None
+    status: str = "active"
+
+
+class StaffUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    primary_role: Optional[str] = None
+    additional_roles: Optional[List[str]] = None
+    department_id: Optional[int] = None
+    job_title: Optional[str] = None
+    status: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class StaffResponse(BaseModel):
+    id: int
+    user_id: int
+    full_name: Optional[str] = None
+    email: Optional[str] = None  # tolerant on read
+    phone_number: Optional[str] = None
+    primary_role: Optional[str] = None
+    additional_roles: List[str] = []
+    department_id: Optional[int] = None
+    department_name: Optional[str] = None
+    job_title: Optional[str] = None
+    status: str = "active"
+    is_active: bool = True
+    generated_password: Optional[str] = None  # only returned at creation
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class FeatureFlagSet(BaseModel):
     key: str
     is_enabled: bool

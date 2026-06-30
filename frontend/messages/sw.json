@@ -68,7 +68,8 @@
     "fleetOps": "Matengenezo na mafuta",
     "schoolLevels": "Madarasa",
     "buildings": "Majengo",
-    "rooms": "Vyumba"
+    "rooms": "Vyumba",
+    "personnel": "Wafanyakazi"
   },
   "layout": {
     "previewTitle": "Hakiki ya maudhui yaliyotengenezwa na AI",
@@ -220,5 +221,43 @@
     "workshop": "Karakana",
     "gym": "Mazoezi",
     "other": "Nyingine"
+  },
+  "personnel": {
+    "title": "Wafanyakazi wa shule",
+    "subtitle": "Unda na simamia akaunti za wafanyakazi.",
+    "addStaff": "Ongeza mfanyakazi",
+    "fullName": "Jina kamili",
+    "email": "Barua pepe",
+    "phone": "Simu",
+    "primaryRole": "Jukumu kuu",
+    "additionalRoles": "Majukumu ya ziada",
+    "department": "Idara",
+    "function": "Kazi",
+    "status": "Hali",
+    "actions": "Vitendo",
+    "add": "Ongeza",
+    "empty": "Hakuna wafanyakazi.",
+    "confirmDelete": "Zima?",
+    "noDepartment": "Hakuna idara",
+    "passwordGenerated": "Akaunti imeundwa. Nenosiri la muda:",
+    "active": "Inatumika",
+    "inactive": "Haitumiki",
+    "suspended": "Imesimamishwa",
+    "on_leave": "Likizoni",
+    "roles": {
+      "school_admin": "Msimamizi",
+      "director": "Mkurugenzi",
+      "principal": "Mwalimu mkuu",
+      "department_head": "Mkuu wa idara",
+      "pedagogy_coordinator": "Mratibu wa ufundishaji",
+      "educator": "Mwalimu",
+      "teacher": "Mwalimu",
+      "secretary": "Katibu",
+      "registrar": "Msajili",
+      "receptionist": "Mpokeaji",
+      "accountant": "Mhasibu",
+      "cashier": "Keshia",
+      "staff": "Mfanyakazi"
+    }
   }
 }

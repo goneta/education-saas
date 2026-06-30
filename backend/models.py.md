@@ -52,3 +52,4 @@ Grades, attendance, assignment submissions, internships, fees, invoices, registr
 - Extensibility: `WebhookEndpoint`, `WebhookDelivery` (retry bookkeeping), `ApiKey` (hashed).
 - `SchoolLevel`: global, Super-Admin-managed levels referential (code/name/category/sort_order/active); `Class.level` references its code.
 - `Building.description` column (#5 buildings management).
+- `StaffProfile` (#7 Personnel scolaire): employment metadata on a User (department, job_title, additional_roles JSON, status); distinct from `StaffContract`.

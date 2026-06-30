@@ -68,7 +68,8 @@
     "fleetOps": "Mantenimiento y combustible",
     "schoolLevels": "Niveles escolares",
     "buildings": "Edificios",
-    "rooms": "Aulas"
+    "rooms": "Aulas",
+    "personnel": "Personal"
   },
   "layout": {
     "previewTitle": "Vista previa del contenido generado por IA",
@@ -220,5 +221,43 @@
     "workshop": "Taller",
     "gym": "Gimnasio",
     "other": "Otro"
+  },
+  "personnel": {
+    "title": "Personal escolar",
+    "subtitle": "Cree y gestione cuentas del personal.",
+    "addStaff": "A\u00f1adir personal",
+    "fullName": "Nombre completo",
+    "email": "Correo",
+    "phone": "Tel\u00e9fono",
+    "primaryRole": "Rol principal",
+    "additionalRoles": "Roles adicionales",
+    "department": "Departamento",
+    "function": "Funci\u00f3n",
+    "status": "Estado",
+    "actions": "Acciones",
+    "add": "A\u00f1adir",
+    "empty": "Sin personal.",
+    "confirmDelete": "\u00bfDesactivar?",
+    "noDepartment": "Sin departamento",
+    "passwordGenerated": "Cuenta creada. Contrase\u00f1a temporal:",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "suspended": "Suspendido",
+    "on_leave": "De permiso",
+    "roles": {
+      "school_admin": "Administrador",
+      "director": "Director",
+      "principal": "Director",
+      "department_head": "Jefe de departamento",
+      "pedagogy_coordinator": "Coordinador pedag\u00f3gico",
+      "educator": "Educador",
+      "teacher": "Profesor",
+      "secretary": "Secretario",
+      "registrar": "Registrador",
+      "receptionist": "Recepcionista",
+      "accountant": "Contable",
+      "cashier": "Cajero",
+      "staff": "Personal"
+    }
   }
 }
