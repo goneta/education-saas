@@ -254,11 +254,11 @@ export default function FeesPage() {
                     onChange={(e) => setFilterStatus(e.target.value)}
                     className="border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 >
-                    <option value="">Tous les statuts</option>
-                    <option value="pending">En attente</option>
-                    <option value="partial">Partiel</option>
-                    <option value="paid">Paye</option>
-                    <option value="overdue">En retard</option>
+                    <option value="">{tx(locale, "allStatuses")}</option>
+                    <option value="pending">{tx(locale, "statusPending")}</option>
+                    <option value="partial">{tx(locale, "statusPartial")}</option>
+                    <option value="paid">{tx(locale, "statusPaid")}</option>
+                    <option value="overdue">{tx(locale, "statusOverdue")}</option>
                 </select>
             </div>
 
@@ -307,7 +307,7 @@ export default function FeesPage() {
                                                         size="sm"
                                                         className="h-8 text-green-600 hover:text-green-600 hover:bg-green-50"
                                                         onClick={() => openPayment(fee)}
-                                                        title="Add payment"
+                                                        title={tx(locale, "addPaymentTitle")}
                                                     >
                                                         <CreditCard className="h-4 w-4" />
                                                     </Button>
@@ -351,7 +351,7 @@ export default function FeesPage() {
                         <div className="space-y-2">
                             <ExplainedField label={tx(locale, "title")} required help="Titre clair du frais. Exemple: Scolarite trimestre 1. Il apparait sur la facture, le recu et le portail parent/eleve.">
                             <Input
-                                placeholder="e.g. Tuition Fee Term 1"
+                                placeholder={tx(locale, "feeNameExample")}
                                 value={formData.title}
                                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                             />
@@ -375,7 +375,7 @@ export default function FeesPage() {
                                 onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
                                 className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                             >
-                                <option value="">Frais etablissement</option>
+                                <option value="">{tx(locale, "schoolFeeOption")}</option>
                                 {students.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
                             </select>
                             </ExplainedField>
@@ -397,17 +397,17 @@ export default function FeesPage() {
                                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                                 className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                             >
-                                <option value="pending">En attente</option>
-                                <option value="partial">Partiel</option>
-                                <option value="paid">Paye</option>
-                                <option value="overdue">En retard</option>
+                                <option value="pending">{tx(locale, "statusPending")}</option>
+                                <option value="partial">{tx(locale, "statusPartial")}</option>
+                                <option value="paid">{tx(locale, "statusPaid")}</option>
+                                <option value="overdue">{tx(locale, "statusOverdue")}</option>
                             </select>
                             </ExplainedField>
                         </div>
                         <div className="space-y-2">
                             <ExplainedField label={tx(locale, "description")} help="Notes facultatives pour preciser la periode, la prise en charge ou le contexte comptable.">
                             <Input
-                                placeholder="Notes facultatives"
+                                placeholder={tx(locale, "optionalNotes")}
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             />
@@ -427,7 +427,7 @@ export default function FeesPage() {
             <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
                 <DialogContent className="sm:max-w-[350px]">
                     <DialogHeader>
-                        <DialogTitle>Enregistrer un paiement</DialogTitle>
+                        <DialogTitle>{tx(locale, "recordPayment")}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         {error && (
@@ -452,19 +452,19 @@ export default function FeesPage() {
                         </div>
                         <ExplainedField label="Mode de paiement" required help="Sélectionnez Espèces pour un encaissement reçu physiquement à la caisse. Le mode est conservé dans le journal et l'audit.">
                             <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm">
-                                <option value="cash">Espèces</option>
+                                <option value="cash">{tx(locale, "methodCash")}</option>
                                 <option value="mobile_money">Mobile Money</option>
-                                <option value="bank_transfer">Virement bancaire</option>
+                                <option value="bank_transfer">{tx(locale, "methodBankTransfer")}</option>
                                 <option value="stripe">Stripe</option>
                                 <option value="djamo">Djamo</option>
                                 <option value="cinetpay">CinetPay</option>
                             </select>
                         </ExplainedField>
                         <ExplainedField label="Référence interne" help="Numéro de bordereau, référence Mobile Money ou identifiant interne permettant de rapprocher l'encaissement.">
-                            <Input placeholder="Ex. CAISSE-2026-0042" value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} />
+                            <Input placeholder={tx(locale, "referenceExample")} value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} />
                         </ExplainedField>
                         <ExplainedField label="Note" help="Précision facultative enregistrée dans l'historique financier de l'élève et le journal d'audit.">
-                            <Input placeholder="Observation facultative" value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} />
+                            <Input placeholder={tx(locale, "observationOptional")} value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} />
                         </ExplainedField>
                     </div>
                     <DialogFooter>

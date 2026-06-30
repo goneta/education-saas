@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
@@ -11,6 +12,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Plus, Pencil, Trash2 } from "lucide-react"
+import { normalizeLocale } from "@/lib/i18n"
+import { tx } from "@/lib/product-copy"
 
 interface Expense {
     id: number
@@ -25,10 +28,12 @@ interface Expense {
 
 const CATEGORIES = ["salaries", "utilities", "maintenance", "supplies", "equipment", "other"]
 
-const categoryLabel = (c: string) => c.charAt(0).toUpperCase() + c.slice(1)
 
 export default function ExpensesPage() {
     const { token } = useAuth()
+    const params = useParams<{ locale: string }>()
+    const locale = normalizeLocale(params?.locale)
+    const categoryLabel = (c: string) => tx(locale, "cat" + c.charAt(0).toUpperCase() + c.slice(1))
     const [expenses, setExpenses] = useState<Expense[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [filterCategory, setFilterCategory] = useState("")
@@ -88,7 +93,7 @@ export default function ExpensesPage() {
 
     const handleSave = async () => {
         if (!formData.title.trim() || !formData.amount) {
-            setError("Title and amount are required")
+            setError(tx(locale, "titleAmountRequired"))
             return
         }
         setSaving(true)
@@ -115,10 +120,10 @@ export default function ExpensesPage() {
                 fetchExpenses()
             } else {
                 const data = await res.json()
-                setError(data.detail || "Failed to save expense")
+                setError(data.detail || tx(locale, "saveExpenseError"))
             }
         } catch {
-            setError("An error occurred")
+            setError(tx(locale, "genericError"))
         } finally {
             setSaving(false)
         }
@@ -150,12 +155,12 @@ export default function ExpensesPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#111827]">Expenses</h1>
-                    <p className="text-sm text-[#6B7280] mt-1">Track and manage school expenditures</p>
+                    <h1 className="text-2xl font-bold text-[#111827]">{tx(locale, "expenses")}</h1>
+                    <p className="text-sm text-[#6B7280] mt-1">{tx(locale, "expensesDescription")}</p>
                 </div>
                 <Button onClick={openCreate} className="bg-black text-white hover:bg-black/90 rounded-lg">
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Expense
+                    {tx(locale, "addExpense")}
                 </Button>
             </div>
 
@@ -168,7 +173,7 @@ export default function ExpensesPage() {
                     onChange={(e) => setFilterCategory(e.target.value)}
                     className="border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 >
-                    <option value="">All Categories</option>
+                    <option value="">{tx(locale, "allCategories")}</option>
                     {CATEGORIES.map(c => <option key={c} value={c}>{categoryLabel(c)}</option>)}
                 </select>
             </div>
@@ -177,7 +182,7 @@ export default function ExpensesPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
                         <CardContent className="pt-6">
-                            <p className="text-sm text-[#6B7280]">Total ({filtered.length} entries)</p>
+                            <p className="text-sm text-[#6B7280]">{tx(locale, "totalEntries", { count: filtered.length })}</p>
                             <p className="text-2xl font-bold text-[#111827]">{totalAmount.toLocaleString()} FCFA</p>
                         </CardContent>
                     </Card>
@@ -186,25 +191,25 @@ export default function ExpensesPage() {
 
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-[#111827]">Expense List ({filtered.length})</CardTitle>
+                    <CardTitle className="text-[#111827]">{tx(locale, "expenseList")} ({filtered.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
-                        <div className="text-center py-12 text-[#6B7280]">Loading expenses...</div>
+                        <div className="text-center py-12 text-[#6B7280]">{tx(locale, "loadingExpenses")}</div>
                     ) : filtered.length === 0 ? (
                         <div className="text-center py-12 text-[#6B7280]">
-                            {filter.controls.query ? `No expenses found matching "${filter.controls.query}"` : "No expenses yet. Add your first expense!"}
+                            {filter.controls.query ? tx(locale, "noExpensesSearch", { query: filter.controls.query }) : tx(locale, "noExpenses")}
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-[#E5E7EB]">
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Title</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Category</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Amount</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Date</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Actions</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "title")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "category")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "amount")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "date")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{tx(locale, "actions")}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -252,23 +257,23 @@ export default function ExpensesPage() {
             <Dialog open={showModal} onOpenChange={setShowModal}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>{editingExpense ? "Edit Expense" : "Add Expense"}</DialogTitle>
+                        <DialogTitle>{editingExpense ? tx(locale, "editExpense") : tx(locale, "addExpense")}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         {error && (
                             <div className="bg-red-50 border border-red-200 text-red-800 px-3 py-2 rounded text-sm">{error}</div>
                         )}
                         <div className="space-y-2">
-                            <Label htmlFor="title">Title *</Label>
+                            <Label htmlFor="title">{tx(locale, "title")} *</Label>
                             <Input
                                 id="title"
-                                placeholder="e.g. Electricity bill"
+                                placeholder={tx(locale, "expenseTitleExample")}
                                 value={formData.title}
                                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="amount">Amount (FCFA) *</Label>
+                            <Label htmlFor="amount">{tx(locale, "amount")} (FCFA) *</Label>
                             <Input
                                 id="amount"
                                 type="number"
@@ -279,7 +284,7 @@ export default function ExpensesPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Category</Label>
+                            <Label>{tx(locale, "category")}</Label>
                             <select
                                 value={formData.category}
                                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -289,7 +294,7 @@ export default function ExpensesPage() {
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="date">Date</Label>
+                            <Label htmlFor="date">{tx(locale, "date")}</Label>
                             <input
                                 id="date"
                                 type="date"
@@ -299,19 +304,19 @@ export default function ExpensesPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="description">Description</Label>
+                            <Label htmlFor="description">{tx(locale, "description")}</Label>
                             <Input
                                 id="description"
-                                placeholder="Optional notes"
+                                placeholder={tx(locale, "optionalNotes")}
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             />
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
+                        <Button variant="outline" onClick={() => setShowModal(false)}>{tx(locale, "cancel")}</Button>
                         <Button onClick={handleSave} disabled={saving} className="bg-black text-white hover:bg-black/90">
-                            {saving ? "Saving..." : "Save"}
+                            {saving ? tx(locale, "savingState") : tx(locale, "save")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
