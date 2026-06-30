@@ -528,6 +528,42 @@ const HELP_SECTIONS: HelpSection[] = [
         ],
         result: "Un bulletin complet (salaire de base, primes, cotisations, impôt, brut et net) est généré, traçable, payable et consultable par l'employé.",
     },
+    {
+        id: "leave",
+        title: "Congés et absences",
+        icon: BriefcaseBusiness,
+        purpose: "Permettre à chaque employé/enseignant de soumettre des demandes de congé en libre-service et aux administrateurs de les approuver ou refuser.",
+        steps: [
+            "Ouvrez Congés (Gestion pour les administrateurs ; menu personnel pour les enseignants).",
+            "Choisissez le type (annuel, maladie, sans solde, maternité/paternité, autre), les dates de début et de fin, et un motif facultatif, puis Soumettre.",
+            "Les administrateurs voient toutes les demandes de l'établissement et les approuvent ou refusent ; les autres ne voient que les leurs.",
+            "Le demandeur est notifié de la décision ; le statut passe à Approuvé ou Refusé.",
+        ],
+        fields: [
+            { name: "Type de congé", type: "Liste", expected: "Annuel, maladie, sans solde, maternité/paternité, autre.", validation: "Détermine la nature de la demande." },
+            { name: "Dates", type: "Dates", expected: "Début et fin de l'absence.", validation: "La date de fin ne peut pas précéder la date de début." },
+            { name: "Statut", type: "Liste", expected: "En attente, approuvé, refusé.", validation: "Seuls les administrateurs peuvent décider." },
+        ],
+        result: "La demande est enregistrée, soumise au circuit d'approbation et historisée avec sa décision.",
+    },
+    {
+        id: "announcements",
+        title: "Annonces et communication",
+        icon: MessageSquareText,
+        purpose: "Publier des annonces à destination de la communauté scolaire (tous, enseignants, élèves ou parents), avec option d'urgence et de planification.",
+        steps: [
+            "Ouvrez Annonces.",
+            "Saisissez un titre et un message, choisissez l'audience, cochez Urgence si nécessaire et planifiez une date (facultatif).",
+            "Créez l'annonce (brouillon ou planifiée), puis cliquez sur Publier pour la diffuser via la couche de notifications.",
+            "Suivez le statut (brouillon, planifié, publié) dans la liste.",
+        ],
+        fields: [
+            { name: "Audience", type: "Liste", expected: "Tous, enseignants, élèves ou parents.", validation: "Détermine les destinataires de la diffusion." },
+            { name: "Urgence", type: "Case à cocher", expected: "Marque l'annonce comme prioritaire.", validation: "À réserver aux communications critiques." },
+            { name: "Planifier pour", type: "Date/heure", expected: "Diffusion différée (facultatif).", validation: "Sans date, l'annonce reste en brouillon jusqu'à publication manuelle." },
+        ],
+        result: "L'annonce est publiée et diffusée à l'audience choisie ; son statut et sa date de publication sont conservés.",
+    },
 ]
 
 export function HelpContent({ embedded = false }: { embedded?: boolean }) {

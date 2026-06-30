@@ -71,7 +71,9 @@
     "rooms": "Aulas",
     "personnel": "Personal",
     "payroll": "N\u00f3mina",
-    "myPayslips": "Mis n\u00f3minas"
+    "myPayslips": "Mis n\u00f3minas",
+    "leave": "Permisos",
+    "announcements": "Anuncios"
   },
   "layout": {
     "previewTitle": "Vista previa del contenido generado por IA",
@@ -574,5 +576,55 @@
       "phone": "Tel\u00e9fono",
       "general": "General"
     }
+  },
+  "leave": {
+    "title": "Permisos",
+    "subtitle": "Solicite permisos y siga las aprobaciones.",
+    "request": "Solicitar permiso",
+    "type": "Tipo",
+    "annual": "Permiso anual",
+    "sick": "Baja por enfermedad",
+    "unpaid": "Sin sueldo",
+    "maternity": "Maternidad / paternidad",
+    "other": "Otro",
+    "startDate": "Inicio",
+    "endDate": "Fin",
+    "reason": "Motivo",
+    "submit": "Enviar",
+    "list": "Solicitudes",
+    "empty": "Ninguna solicitud.",
+    "employee": "Empleado",
+    "dates": "Fechas",
+    "status": "Estado",
+    "pending": "Pendiente",
+    "approved": "Aprobado",
+    "rejected": "Rechazado",
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "actions": "Acciones",
+    "dateError": "La fecha de fin es anterior a la de inicio."
+  },
+  "announcements": {
+    "title": "Anuncios",
+    "subtitle": "Publique anuncios para la comunidad escolar.",
+    "create": "Nuevo anuncio",
+    "titleField": "T\u00edtulo",
+    "body": "Mensaje",
+    "audience": "Audiencia",
+    "all": "Todos",
+    "teachers": "Profesores",
+    "students": "Alumnos",
+    "parents": "Padres",
+    "emergency": "Emergencia",
+    "scheduledFor": "Programar para (opcional)",
+    "publish": "Publicar",
+    "save": "Crear",
+    "list": "Anuncios",
+    "empty": "Ning\u00fan anuncio.",
+    "status": "Estado",
+    "draft": "Borrador",
+    "scheduled": "Programado",
+    "published": "Publicado",
+    "actions": "Acciones"
   }
 }

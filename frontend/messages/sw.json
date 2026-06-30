@@ -71,7 +71,9 @@
     "rooms": "Vyumba",
     "personnel": "Wafanyakazi",
     "payroll": "Mishahara",
-    "myPayslips": "Risiti zangu"
+    "myPayslips": "Risiti zangu",
+    "leave": "Likizo",
+    "announcements": "Matangazo"
   },
   "layout": {
     "previewTitle": "Hakiki ya maudhui yaliyotengenezwa na AI",
@@ -574,5 +576,55 @@
       "phone": "Simu",
       "general": "Jumla"
     }
+  },
+  "leave": {
+    "title": "Likizo",
+    "subtitle": "Omba likizo na ufuatilie idhini.",
+    "request": "Omba likizo",
+    "type": "Aina",
+    "annual": "Likizo ya mwaka",
+    "sick": "Likizo ya ugonjwa",
+    "unpaid": "Bila malipo",
+    "maternity": "Uzazi",
+    "other": "Nyingine",
+    "startDate": "Anza",
+    "endDate": "Mwisho",
+    "reason": "Sababu",
+    "submit": "Wasilisha",
+    "list": "Maombi",
+    "empty": "Hakuna ombi la likizo.",
+    "employee": "Mfanyakazi",
+    "dates": "Tarehe",
+    "status": "Hali",
+    "pending": "Inasubiri",
+    "approved": "Imeidhinishwa",
+    "rejected": "Imekataliwa",
+    "approve": "Idhinisha",
+    "reject": "Kataa",
+    "actions": "Vitendo",
+    "dateError": "Tarehe ya mwisho iko kabla ya tarehe ya kuanza."
+  },
+  "announcements": {
+    "title": "Matangazo",
+    "subtitle": "Chapisha matangazo kwa jamii ya shule.",
+    "create": "Tangazo jipya",
+    "titleField": "Kichwa",
+    "body": "Ujumbe",
+    "audience": "Hadhira",
+    "all": "Wote",
+    "teachers": "Walimu",
+    "students": "Wanafunzi",
+    "parents": "Wazazi",
+    "emergency": "Dharura",
+    "scheduledFor": "Panga kwa (hiari)",
+    "publish": "Chapisha",
+    "save": "Unda",
+    "list": "Matangazo",
+    "empty": "Hakuna tangazo bado.",
+    "status": "Hali",
+    "draft": "Rasimu",
+    "scheduled": "Imepangwa",
+    "published": "Imechapishwa",
+    "actions": "Vitendo"
   }
 }

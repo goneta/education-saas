@@ -119,6 +119,8 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/buildings`, label: t("buildings"), icon: Building2 },
                 { href: `/${locale}/dashboard/rooms`, label: t("rooms"), icon: DoorOpen },
                 { href: `/${locale}/dashboard/personnel`, label: t("personnel"), icon: UserCog },
+                { href: `/${locale}/dashboard/hr/leave`, label: t("leave"), icon: Calendar },
+                { href: `/${locale}/dashboard/communication`, label: t("announcements"), icon: MessageSquare },
             ]
         },
         {
@@ -209,6 +211,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
             title: t("finance"),
             items: [
                 { href: `/${locale}/dashboard/finance/my-payslips`, label: t("myPayslips"), icon: Receipt },
+                { href: `/${locale}/dashboard/hr/leave`, label: t("leave"), icon: Calendar },
             ],
         },
         {

@@ -71,7 +71,9 @@
     "rooms": "Salles",
     "personnel": "Personnel scolaire",
     "payroll": "Paie",
-    "myPayslips": "Mes bulletins"
+    "myPayslips": "Mes bulletins",
+    "leave": "Cong\u00e9s",
+    "announcements": "Annonces"
   },
   "layout": {
     "previewTitle": "Apercu du contenu genere par l'IA",
@@ -574,5 +576,55 @@
       "phone": "T\u00e9l\u00e9phone",
       "general": "G\u00e9n\u00e9ral"
     }
+  },
+  "leave": {
+    "title": "Cong\u00e9s",
+    "subtitle": "Demandez des cong\u00e9s et suivez les approbations.",
+    "request": "Demander un cong\u00e9",
+    "type": "Type",
+    "annual": "Cong\u00e9 annuel",
+    "sick": "Cong\u00e9 maladie",
+    "unpaid": "Sans solde",
+    "maternity": "Maternit\u00e9 / paternit\u00e9",
+    "other": "Autre",
+    "startDate": "D\u00e9but",
+    "endDate": "Fin",
+    "reason": "Motif",
+    "submit": "Soumettre",
+    "list": "Demandes",
+    "empty": "Aucune demande de cong\u00e9.",
+    "employee": "Employ\u00e9",
+    "dates": "Dates",
+    "status": "Statut",
+    "pending": "En attente",
+    "approved": "Approuv\u00e9",
+    "rejected": "Refus\u00e9",
+    "approve": "Approuver",
+    "reject": "Refuser",
+    "actions": "Actions",
+    "dateError": "La date de fin pr\u00e9c\u00e8de la date de d\u00e9but."
+  },
+  "announcements": {
+    "title": "Annonces",
+    "subtitle": "Publiez des annonces \u00e0 destination de la communaut\u00e9 scolaire.",
+    "create": "Nouvelle annonce",
+    "titleField": "Titre",
+    "body": "Message",
+    "audience": "Audience",
+    "all": "Tous",
+    "teachers": "Enseignants",
+    "students": "\u00c9l\u00e8ves",
+    "parents": "Parents",
+    "emergency": "Urgence",
+    "scheduledFor": "Planifier pour (facultatif)",
+    "publish": "Publier",
+    "save": "Cr\u00e9er",
+    "list": "Annonces",
+    "empty": "Aucune annonce pour le moment.",
+    "status": "Statut",
+    "draft": "Brouillon",
+    "scheduled": "Planifi\u00e9",
+    "published": "Publi\u00e9",
+    "actions": "Actions"
   }
 }

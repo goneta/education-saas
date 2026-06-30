@@ -71,7 +71,9 @@
     "rooms": "Rooms",
     "personnel": "Staff",
     "payroll": "Payroll",
-    "myPayslips": "My payslips"
+    "myPayslips": "My payslips",
+    "leave": "Leave",
+    "announcements": "Announcements"
   },
   "layout": {
     "previewTitle": "AI Generated Content Preview",
@@ -574,5 +576,55 @@
       "phone": "Phone",
       "general": "General"
     }
+  },
+  "leave": {
+    "title": "Leave",
+    "subtitle": "Request leave and track approvals.",
+    "request": "Request leave",
+    "type": "Type",
+    "annual": "Annual leave",
+    "sick": "Sick leave",
+    "unpaid": "Unpaid leave",
+    "maternity": "Maternity / paternity",
+    "other": "Other",
+    "startDate": "Start",
+    "endDate": "End",
+    "reason": "Reason",
+    "submit": "Submit",
+    "list": "Requests",
+    "empty": "No leave request.",
+    "employee": "Employee",
+    "dates": "Dates",
+    "status": "Status",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "approve": "Approve",
+    "reject": "Reject",
+    "actions": "Actions",
+    "dateError": "The end date precedes the start date."
+  },
+  "announcements": {
+    "title": "Announcements",
+    "subtitle": "Publish announcements to the school community.",
+    "create": "New announcement",
+    "titleField": "Title",
+    "body": "Message",
+    "audience": "Audience",
+    "all": "Everyone",
+    "teachers": "Teachers",
+    "students": "Students",
+    "parents": "Parents",
+    "emergency": "Emergency",
+    "scheduledFor": "Schedule for (optional)",
+    "publish": "Publish",
+    "save": "Create",
+    "list": "Announcements",
+    "empty": "No announcement yet.",
+    "status": "Status",
+    "draft": "Draft",
+    "scheduled": "Scheduled",
+    "published": "Published",
+    "actions": "Actions"
   }
 }
