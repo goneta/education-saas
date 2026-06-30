@@ -259,5 +259,23 @@
       "cashier": "Keshia",
       "staff": "Mfanyakazi"
     }
+  },
+  "classRoster": {
+    "nbStudents": "Wanafunzi",
+    "viewStudents": "Tazama wanafunzi",
+    "details": "Maelezo / fedha",
+    "enrolledCount": "Wanafunzi {count} waliosajiliwa",
+    "fullName": "Jina kamili",
+    "age": "Umri",
+    "sex": "Jinsia",
+    "noStudents": "Hakuna mwanafunzi aliyesajiliwa katika darasa hili.",
+    "close": "Funga",
+    "classInfo": "Taarifa za darasa",
+    "schoolLevel": "Ngazi ya shule",
+    "classLabel": "Darasa",
+    "selectLevel": "Chagua ngazi",
+    "selectClass": "Chagua darasa",
+    "chooseLevelFirst": "Chagua ngazi kwanza",
+    "noClassForLevel": "Hakuna darasa kwa ngazi hii"
   }
 }

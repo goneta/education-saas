@@ -259,5 +259,23 @@
       "cashier": "Caissier",
       "staff": "Personnel"
     }
+  },
+  "classRoster": {
+    "nbStudents": "Nb \u00c9l\u00e8ves",
+    "viewStudents": "Voir les \u00e9l\u00e8ves",
+    "details": "D\u00e9tails / finances",
+    "enrolledCount": "{count} \u00e9l\u00e8ve(s) inscrit(s)",
+    "fullName": "Nom complet",
+    "age": "\u00c2ge",
+    "sex": "Sexe",
+    "noStudents": "Aucun \u00e9l\u00e8ve inscrit dans cette classe.",
+    "close": "Fermer",
+    "classInfo": "Informations sur la Classe",
+    "schoolLevel": "Niveau scolaire",
+    "classLabel": "Classe",
+    "selectLevel": "S\u00e9lectionner un niveau",
+    "selectClass": "S\u00e9lectionner une classe",
+    "chooseLevelFirst": "Choisissez d'abord un niveau",
+    "noClassForLevel": "Aucune classe pour ce niveau"
   }
 }

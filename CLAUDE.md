@@ -50,11 +50,21 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
-- **Functional improvements (in progress, increment by increment)**: #3 School
-  Levels referential — global, Super-Admin-managed `SchoolLevel` (`/levels` CRUD,
-  delete-if-unused) consumed by class creation + the student form. Next: buildings/
-  rooms UI, smart class/room rules, class details, student level→class cascade,
-  personnel module, role-based dashboards, full i18n sweep.
+- **Functional improvements batch (8 modules, shipped increment by increment)**:
+  (#3) global Super-Admin `SchoolLevel` referential (`/levels`, delete-if-unused);
+  (#5) Buildings & Rooms UI in Gestion (`Building.description`; building PATCH/
+  DELETE; rooms with type/capacity); (#6) smart class/room rules — class>room
+  capacity guard on timetable entries (409), room-in-use & class-with-students
+  delete guards (409), `GET /facilities/rooms/{id}/classes` + `GET /education/
+  classes/{id}/students`, Nb Classes / Nb Élèves columns + "Voir" modals; (#1)
+  class read-only students modal (scrollable Nom/Âge/Sexe, row→profile); (#4)
+  student form level→class cascade; (#7) Personnel scolaire module (`StaffProfile`
+  + `/personnel`, auto-creates the User account, roles/department/function/status);
+  (#8) role-based sidebars (Teacher/Student/Parent hide admin menus; establishment
+  selector already scoped server-side); (#2) i18n — new modules fully localized
+  (levels/facilities/personnel/classRoster namespaces, FR/EN/ES/SW parity).
+  NOTE on (#2): a full app-wide sweep of all legacy pages remains an open effort;
+  only this batch's surfaces are guaranteed hardcoded-text-free.
 
 - **Timetable constraints UI**: surfaced the constraint engine on the timetable page
   (panel above; no backend change). Now also surfaces explainable-AI (/explain), scenario

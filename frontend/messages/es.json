@@ -259,5 +259,23 @@
       "cashier": "Cajero",
       "staff": "Personal"
     }
+  },
+  "classRoster": {
+    "nbStudents": "N.\u00ba alumnos",
+    "viewStudents": "Ver alumnos",
+    "details": "Detalles / finanzas",
+    "enrolledCount": "{count} alumno(s) inscrito(s)",
+    "fullName": "Nombre completo",
+    "age": "Edad",
+    "sex": "Sexo",
+    "noStudents": "Ning\u00fan alumno inscrito en esta clase.",
+    "close": "Cerrar",
+    "classInfo": "Informaci\u00f3n de la clase",
+    "schoolLevel": "Nivel escolar",
+    "classLabel": "Clase",
+    "selectLevel": "Seleccionar un nivel",
+    "selectClass": "Seleccionar una clase",
+    "chooseLevelFirst": "Elija primero un nivel",
+    "noClassForLevel": "Sin clases para este nivel"
   }
 }

@@ -259,5 +259,23 @@
       "cashier": "Cashier",
       "staff": "Staff"
     }
+  },
+  "classRoster": {
+    "nbStudents": "Students",
+    "viewStudents": "View students",
+    "details": "Details / finances",
+    "enrolledCount": "{count} student(s) enrolled",
+    "fullName": "Full name",
+    "age": "Age",
+    "sex": "Sex",
+    "noStudents": "No student enrolled in this class.",
+    "close": "Close",
+    "classInfo": "Class information",
+    "schoolLevel": "School level",
+    "classLabel": "Class",
+    "selectLevel": "Select a level",
+    "selectClass": "Select a class",
+    "chooseLevelFirst": "Choose a level first",
+    "noClassForLevel": "No class for this level"
   }
 }

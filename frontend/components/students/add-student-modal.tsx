@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import {
@@ -25,6 +26,7 @@ interface AddStudentModalProps {
 
 export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentModalProps) {
     const { token } = useAuth()
+    const tr = useTranslations("classRoster")
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -370,24 +372,24 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
 
                     {/* Informations sur la Classe (#4): level -> dynamically filtered classes */}
                     <div className="space-y-4">
-                        <h3 className="text-sm font-semibold text-[#111827]">Informations sur la Classe</h3>
+                        <h3 className="text-sm font-semibold text-[#111827]">{tr("classInfo")}</h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="level">Niveau scolaire</Label>
+                                <Label htmlFor="level">{tr("schoolLevel")}</Label>
                                 <Select value={selectedLevel} onValueChange={value => { setSelectedLevel(value); handleInputChange("currentClassId", "") }}>
-                                    <SelectTrigger id="level"><SelectValue placeholder="Sélectionner un niveau" /></SelectTrigger>
+                                    <SelectTrigger id="level"><SelectValue placeholder={tr("selectLevel")} /></SelectTrigger>
                                     <SelectContent>
                                         {levels.map(level => <SelectItem key={level.id} value={level.code}>{level.code} — {level.name}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="currentClassId">Classe</Label>
+                                <Label htmlFor="currentClassId">{tr("classLabel")}</Label>
                                 <Select value={formData.currentClassId} onValueChange={value => handleInputChange("currentClassId", value)} disabled={!selectedLevel}>
-                                    <SelectTrigger id="currentClassId"><SelectValue placeholder={selectedLevel ? "Sélectionner une classe" : "Choisissez d'abord un niveau"} /></SelectTrigger>
+                                    <SelectTrigger id="currentClassId"><SelectValue placeholder={selectedLevel ? tr("selectClass") : tr("chooseLevelFirst")} /></SelectTrigger>
                                     <SelectContent>
                                         {classesForLevel.length === 0 ? (
-                                            <SelectItem value="none" disabled>Aucune classe pour ce niveau</SelectItem>
+                                            <SelectItem value="none" disabled>{tr("noClassForLevel")}</SelectItem>
                                         ) : classesForLevel.map(cls => <SelectItem key={cls.id} value={String(cls.id)}>{cls.name}</SelectItem>)}
                                     </SelectContent>
                                 </Select>

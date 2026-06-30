@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { useTranslations } from "next-intl"
 import { useRouter, useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
@@ -60,6 +61,7 @@ interface Roster {
 
 export default function ClassesPage() {
     const { token } = useAuth()
+    const tr = useTranslations("classRoster")
     const [classes, setClasses] = useState<ClassItem[]>([])
     const [teachers, setTeachers] = useState<TeacherOption[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -278,7 +280,7 @@ export default function ClassesPage() {
                             <th className="px-6 py-3 font-medium text-gray-500 dark:text-[#eef3f8]">Nom</th>
                             <th className="px-6 py-3 font-medium text-gray-500 dark:text-[#eef3f8]">Niveau</th>
                             <th className="px-6 py-3 font-medium text-gray-500 dark:text-[#eef3f8]">Professeur principal</th>
-                            <th className="px-6 py-3 font-medium text-gray-500 dark:text-[#eef3f8]">Nb Élèves</th>
+                            <th className="px-6 py-3 font-medium text-gray-500 dark:text-[#eef3f8]">{tr("nbStudents")}</th>
                             <th className="px-6 py-3 font-medium text-gray-500 text-right">Actions</th>
                         </tr>
                     </thead>
@@ -299,10 +301,10 @@ export default function ClassesPage() {
                                     </td>
                                     <td className="px-6 py-4">{studentCounts[cls.id] ?? "—"}</td>
                                     <td className="px-6 py-4 text-right space-x-2">
-                                        <Button variant="ghost" size="sm" onClick={() => openStudents(cls)} title="Voir les élèves">
+                                        <Button variant="ghost" size="sm" onClick={() => openStudents(cls)} title={tr("viewStudents")}>
                                             <Users className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="sm" onClick={() => openRoster(cls)} title="Détails / finances">
+                                        <Button variant="ghost" size="sm" onClick={() => openRoster(cls)} title={tr("details")}>
                                             <Eye className="h-4 w-4" />
                                         </Button>
                                         <Button variant="ghost" size="sm" onClick={() => openEdit(cls)}>
@@ -375,17 +377,17 @@ export default function ClassesPage() {
                         <div className="mb-3 flex items-center justify-between">
                             <div>
                                 <h3 className="font-semibold text-[#111827] dark:text-white">{studentsModal.cls.name}</h3>
-                                <p className="text-sm text-[#6B7280]">{studentsModal.students.length} élève(s) inscrit(s)</p>
+                                <p className="text-sm text-[#6B7280]">{tr("enrolledCount", { count: studentsModal.students.length })}</p>
                             </div>
-                            <button onClick={() => setStudentsModal(null)} aria-label="Fermer"><X className="h-4 w-4" /></button>
+                            <button onClick={() => setStudentsModal(null)} aria-label={tr("close")}><X className="h-4 w-4" /></button>
                         </div>
                         {studentsModal.students.length === 0 ? (
-                            <p className="py-6 text-center text-sm text-[#6B7280]">Aucun élève inscrit dans cette classe.</p>
+                            <p className="py-6 text-center text-sm text-[#6B7280]">{tr("noStudents")}</p>
                         ) : (
                             <div className="max-h-[55vh] overflow-y-auto rounded-xl border border-[#E5E7EB] dark:border-[#3b4248]">
                                 <table className="w-full text-left text-sm">
                                     <thead className="sticky top-0 bg-[#F8FAFC] dark:bg-[#252b30]">
-                                        <tr className="text-[#6B7280]"><th className="px-3 py-2">Nom complet</th><th className="px-3 py-2">Âge</th><th className="px-3 py-2">Sexe</th></tr>
+                                        <tr className="text-[#6B7280]"><th className="px-3 py-2">{tr("fullName")}</th><th className="px-3 py-2">{tr("age")}</th><th className="px-3 py-2">{tr("sex")}</th></tr>
                                     </thead>
                                     <tbody>
                                         {studentsModal.students.map(s => (
