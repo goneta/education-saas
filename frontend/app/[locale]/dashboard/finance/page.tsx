@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { API_BASE_URL } from "@/lib/config"
 import { formatCurrency } from "@/lib/format"
+import { tx } from "@/lib/product-copy"
 
 // Types (should ideally be in a types file)
 interface Payment {
@@ -76,19 +77,19 @@ export default function FinanceDashboard({ params: { locale } }: { params: { loc
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold tracking-tight">Financial Management</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{tx(locale, "financeManagement")}</h1>
                 <div className="space-x-2">
                     <Link href={`/${locale}/dashboard/finance/fees`}>
-                        <Button variant="outline">Manage Fees</Button>
+                        <Button variant="outline">{tx(locale, "manageFees")}</Button>
                     </Link>
                     <Link href={`/${locale}/dashboard/finance/expenses`}>
-                        <Button variant="outline">Manage Expenses</Button>
+                        <Button variant="outline">{tx(locale, "manageExpenses")}</Button>
                     </Link>
                     <Link href={`/${locale}/dashboard/finance/reports`}>
-                        <Button variant="outline">Reports</Button>
+                        <Button variant="outline">{tx(locale, "reports")}</Button>
                     </Link>
                     <Link href={`/${locale}/dashboard/finance/cash-journal`}>
-                        <Button variant="outline">Cash Journal</Button>
+                        <Button variant="outline">{tx(locale, "cashJournal")}</Button>
                     </Link>
                 </div>
             </div>
@@ -96,31 +97,31 @@ export default function FinanceDashboard({ params: { locale } }: { params: { loc
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                        <CardTitle className="text-sm font-medium">{tx(locale, "totalRevenue")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-green-600">
                             {formatCurrency(totalCollected, locale)}
                         </div>
-                        <p className="text-xs text-muted-foreground">Collected from fees</p>
+                        <p className="text-xs text-muted-foreground">{tx(locale, "collectedFromFees")}</p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+                        <CardTitle className="text-sm font-medium">{tx(locale, "totalExpenses")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-red-600">
                             {formatCurrency(totalExpenses, locale)}
                         </div>
-                        <p className="text-xs text-muted-foreground">Operational costs</p>
+                        <p className="text-xs text-muted-foreground">{tx(locale, "operationalCosts")}</p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Net Income</CardTitle>
+                        <CardTitle className="text-sm font-medium">{tx(locale, "netIncome")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className={`text-2xl font-bold ${netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -131,13 +132,13 @@ export default function FinanceDashboard({ params: { locale } }: { params: { loc
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Outstanding Fees</CardTitle>
+                        <CardTitle className="text-sm font-medium">{tx(locale, "outstandingFees")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-yellow-600">
                             {formatCurrency(totalExpected - totalCollected, locale)}
                         </div>
-                        <p className="text-xs text-muted-foreground">Pending collection</p>
+                        <p className="text-xs text-muted-foreground">{tx(locale, "pendingCollection")}</p>
                     </CardContent>
                 </Card>
             </div>

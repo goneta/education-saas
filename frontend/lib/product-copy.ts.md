@@ -21,3 +21,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint lib/<path>"
+- Extended with finance-dashboard, parent-SMS and forecast-help keys (legacy-page i18n sweep).
