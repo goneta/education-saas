@@ -1844,10 +1844,48 @@ class PayrollRecord(Base):
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
     created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    # Rich payslip breakdown (#7 Payroll). All nullable so the legacy
+    # /operations payroll CRUD (gross/deductions/net only) keeps working.
+    period_type = Column(String, nullable=True)       # weekly | monthly
+    pay_type = Column(String, nullable=True)          # hourly | daily | weekly | monthly
+    currency = Column(String, nullable=True)
+    country_code = Column(String, nullable=True)
+    base_amount = Column(Float, nullable=True)
+    allowances_total = Column(Float, nullable=True)
+    bonus_total = Column(Float, nullable=True)
+    overtime_total = Column(Float, nullable=True)
+    advances_total = Column(Float, nullable=True)
+    other_deductions_total = Column(Float, nullable=True)
+    social_contributions = Column(Float, nullable=True)
+    tax_amount = Column(Float, nullable=True)
+    academic_year_id = Column(Integer, ForeignKey("academic_years.id"), nullable=True)
+    payment_method = Column(String, nullable=True)     # bank_transfer | cash | stripe | cinetpay | djamo
+    payment_reference = Column(String, nullable=True)
 
     staff = relationship("User", foreign_keys=[staff_user_id])
     school = relationship("School")
     created_by = relationship("User", foreign_keys=[created_by_id])
+
+
+class SalaryProfile(Base):
+    """Per-employee compensation configuration (#7 Payroll) — covers staff and
+    teachers (both are Users). Feeds the country-extensible calculation engine."""
+    __tablename__ = "salary_profiles"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    employee_type = Column(String, nullable=False, default="permanent")  # permanent|contract|vacataire|consultant
+    pay_type = Column(String, nullable=False, default="monthly")          # hourly|daily|weekly|monthly
+    base_rate = Column(Float, nullable=False, default=0)
+    currency = Column(String, nullable=False, default="XOF")
+    country_code = Column(String, nullable=True)
+    cotisation_rate = Column(Float, nullable=False, default=0)            # social contributions, fraction (0–1)
+    tax_rate = Column(Float, nullable=False, default=0)                   # income tax, fraction (0–1)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    user = relationship("User")
+    school = relationship("School")
 
 
 class TransportDriver(Base):

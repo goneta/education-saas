@@ -59,3 +59,4 @@ The schema catalog includes enrollment, transfer, academic-year closure, tempora
 - `SchoolLevel*` schemas (#3 levels referential).
 - `Building` gains `description`; `BuildingUpdate` added (#5).
 - `Staff*` schemas (#7 Personnel scolaire); response email tolerant `Optional[str]`.
+- `SalaryProfile*`, `Payslip*` schemas (#7 Payroll); response email tolerant.

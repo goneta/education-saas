@@ -2362,6 +2362,107 @@ class PayrollRecordResponse(PayrollRecordCreate):
     model_config = ConfigDict(from_attributes=True)
 
 
+# --- Payroll / Paie (#7) -----------------------------------------------------
+
+EMPLOYEE_TYPES = ("permanent", "contract", "vacataire", "consultant")
+PAY_TYPES = ("hourly", "daily", "weekly", "monthly")
+PAYROLL_PAYMENT_METHODS = ("bank_transfer", "cash", "stripe", "cinetpay", "djamo")
+
+
+class SalaryProfileCreate(BaseModel):
+    user_id: int
+    employee_type: str = "permanent"
+    pay_type: str = "monthly"
+    base_rate: float = 0
+    currency: str = "XOF"
+    country_code: Optional[str] = None
+    cotisation_rate: float = 0
+    tax_rate: float = 0
+    is_active: bool = True
+
+
+class SalaryProfileUpdate(BaseModel):
+    employee_type: Optional[str] = None
+    pay_type: Optional[str] = None
+    base_rate: Optional[float] = None
+    currency: Optional[str] = None
+    country_code: Optional[str] = None
+    cotisation_rate: Optional[float] = None
+    tax_rate: Optional[float] = None
+    is_active: Optional[bool] = None
+
+
+class SalaryProfileResponse(SalaryProfileCreate):
+    id: int
+    school_id: int
+    full_name: Optional[str] = None
+    email: Optional[str] = None  # tolerant on read
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PayslipLineInput(BaseModel):
+    type: str  # allowance | bonus | overtime | deduction | advance
+    label: str
+    amount: float
+    is_taxable: bool = True
+
+
+class PayslipGenerate(BaseModel):
+    staff_user_id: int
+    period: str                 # "2026-06" (monthly) or "2026-W23" (weekly)
+    period_type: str = "monthly"  # weekly | monthly
+    units: float = 1            # worked hours/days for hourly/daily/weekly
+    base_amount_override: Optional[float] = None
+    academic_year_id: Optional[int] = None
+    lines: List[PayslipLineInput] = []
+
+
+class PayslipLine(BaseModel):
+    type: str
+    label: str
+    amount: float
+    is_taxable: bool = True
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PayslipResponse(BaseModel):
+    id: int
+    staff_user_id: int
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    school_id: int
+    period: str
+    period_type: Optional[str] = None
+    pay_type: Optional[str] = None
+    currency: Optional[str] = None
+    base_amount: Optional[float] = None
+    allowances_total: Optional[float] = None
+    bonus_total: Optional[float] = None
+    overtime_total: Optional[float] = None
+    advances_total: Optional[float] = None
+    other_deductions_total: Optional[float] = None
+    gross_amount: float
+    social_contributions: Optional[float] = None
+    tax_amount: Optional[float] = None
+    deductions: float
+    net_amount: float
+    status: PayrollStatus
+    payment_method: Optional[str] = None
+    payment_reference: Optional[str] = None
+    paid_at: Optional[datetime] = None
+    created_at: datetime
+    lines: List[PayslipLine] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PayslipPay(BaseModel):
+    payment_method: str = "bank_transfer"
+    payment_reference: Optional[str] = None
+
+
 class TransportRouteCreate(BaseModel):
     name: str
     vehicle_identifier: Optional[str] = None

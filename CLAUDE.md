@@ -50,6 +50,16 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
+- **Payroll / Paie system (Finance, #7) — backend foundation**: country-extensible
+  calculation engine (`services/payroll.py`), per-employee `SalaryProfile`, and
+  `/finance/payroll` router (salary-profiles CRUD, payslip generate with gross→net
+  breakdown + itemised lines, approve/pay method-agnostic, self-service `/payslips/me`).
+  Built on the existing `PayrollRecord`/`PayrollAdjustment` (extended, nullable) so the
+  legacy `/operations` payroll keeps working. Frontend (Finance UI + employee/teacher
+  self-service) follows. Part of a broader audit-driven program (UI-for-backend-features,
+  Help Center, establishment historisation, list/table uniformity) shipped increment by
+  increment.
+
 - **Functional improvements batch (8 modules, shipped increment by increment)**:
   (#3) global Super-Admin `SchoolLevel` referential (`/levels`, delete-if-unused);
   (#5) Buildings & Rooms UI in Gestion (`Building.description`; building PATCH/
