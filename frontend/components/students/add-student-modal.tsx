@@ -27,6 +27,7 @@ interface AddStudentModalProps {
 export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentModalProps) {
     const { token } = useAuth()
     const tr = useTranslations("classRoster")
+    const sf = useTranslations("studentForm")
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -80,26 +81,26 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
         const errors: Record<string, string> = {}
 
         // Required fields
-        if (!formData.fullName.trim()) errors.fullName = "Full name is required"
-        if (!formData.email.trim()) errors.email = "Email is required"
+        if (!formData.fullName.trim()) errors.fullName = sf("vFullName")
+        if (!formData.email.trim()) errors.email = sf("vEmailReq")
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            errors.email = "Invalid email format"
+            errors.email = sf("vEmailInvalid")
         }
-        if (!formData.password) errors.password = "Password is required"
+        if (!formData.password) errors.password = sf("vPassword")
         else if (formData.password.length < 8) {
-            errors.password = "Password must be at least 8 characters"
+            errors.password = sf("vPasswordMin")
         }
-        if (!formData.registrationNumber.trim()) errors.registrationNumber = "Registration number is required"
-        if (!formData.dateOfBirth) errors.dateOfBirth = "Date of birth is required"
-        if (!formData.gender) errors.gender = "Gender is required"
-        if (!formData.studentAddress.trim()) errors.studentAddress = "Student address is required"
-        if (!formData.parentName.trim()) errors.parentName = "Parent name is required"
-        if (!formData.parentPhone.trim()) errors.parentPhone = "Parent phone is required"
-        if (!formData.parentAddress.trim()) errors.parentAddress = "Parent address is required"
+        if (!formData.registrationNumber.trim()) errors.registrationNumber = sf("vRegistration")
+        if (!formData.dateOfBirth) errors.dateOfBirth = sf("vDob")
+        if (!formData.gender) errors.gender = sf("vGender")
+        if (!formData.studentAddress.trim()) errors.studentAddress = sf("vStudentAddress")
+        if (!formData.parentName.trim()) errors.parentName = sf("vParentName")
+        if (!formData.parentPhone.trim()) errors.parentPhone = sf("vParentPhone")
+        if (!formData.parentAddress.trim()) errors.parentAddress = sf("vParentAddress")
 
         // Optional parent email validation
         if (formData.parentEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.parentEmail)) {
-            errors.parentEmail = "Invalid email format"
+            errors.parentEmail = sf("vEmailInvalid")
         }
 
         setValidationErrors(errors)
@@ -119,7 +120,7 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
         try {
             // Get JWT token from auth context
             if (!token) {
-                throw new Error("Not authenticated. Please log in first.")
+                throw new Error(sf("notAuth"))
             }
 
             const response = await fetch(`${API_BASE_URL}/students`, {
@@ -148,7 +149,7 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
 
             if (!response.ok) {
                 const errorData = await response.json()
-                throw new Error(errorData.detail || "Failed to create student")
+                throw new Error(errorData.detail || sf("createError"))
             }
 
             // Success
@@ -175,7 +176,7 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
             onSuccess?.()
 
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An error occurred")
+            setError(err instanceof Error ? err.message : sf("genericError"))
         } finally {
             setIsLoading(false)
         }
@@ -185,10 +186,8 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Add New Student</DialogTitle>
-                    <DialogDescription>
-                        Enter the student&apos;s information to register them in the system.
-                    </DialogDescription>
+                    <DialogTitle>{sf("addTitle")}</DialogTitle>
+                    <DialogDescription>{sf("addDesc")}</DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -201,16 +200,16 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
 
                     {/* Student Information */}
                     <div className="space-y-4">
-                        <h3 className="text-sm font-semibold text-[#111827]">Student Information</h3>
+                        <h3 className="text-sm font-semibold text-[#111827]">{sf("studentInfo")}</h3>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="fullName">Full Name *</Label>
+                                <Label htmlFor="fullName">{sf("fullName")}</Label>
                                 <Input
                                     id="fullName"
                                     value={formData.fullName}
                                     onChange={(e) => handleInputChange("fullName", e.target.value)}
-                                    placeholder="John Doe"
+                                    placeholder={sf("fullNamePh")}
                                 />
                                 {validationErrors.fullName && (
                                     <p className="text-xs text-red-600">{validationErrors.fullName}</p>
@@ -218,13 +217,13 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email *</Label>
+                                <Label htmlFor="email">{sf("email")}</Label>
                                 <Input
                                     id="email"
                                     type="email"
                                     value={formData.email}
                                     onChange={(e) => handleInputChange("email", e.target.value)}
-                                    placeholder="student@example.com"
+                                    placeholder={sf("emailPh")}
                                 />
                                 {validationErrors.email && (
                                     <p className="text-xs text-red-600">{validationErrors.email}</p>
@@ -234,13 +233,13 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="password">Password *</Label>
+                                <Label htmlFor="password">{sf("password")}</Label>
                                 <Input
                                     id="password"
                                     type="password"
                                     value={formData.password}
                                     onChange={(e) => handleInputChange("password", e.target.value)}
-                                    placeholder="Min. 8 characters"
+                                    placeholder={sf("passwordPh")}
                                 />
                                 {validationErrors.password && (
                                     <p className="text-xs text-red-600">{validationErrors.password}</p>
@@ -248,12 +247,12 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="registrationNumber">Registration Number *</Label>
+                                <Label htmlFor="registrationNumber">{sf("registration")}</Label>
                                 <Input
                                     id="registrationNumber"
                                     value={formData.registrationNumber}
                                     onChange={(e) => handleInputChange("registrationNumber", e.target.value)}
-                                    placeholder="STU2024001"
+                                    placeholder={sf("registrationPh")}
                                 />
                                 {validationErrors.registrationNumber && (
                                     <p className="text-xs text-red-600">{validationErrors.registrationNumber}</p>
@@ -263,7 +262,7 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+                                <Label htmlFor="dateOfBirth">{sf("dob")}</Label>
                                 <Input
                                     id="dateOfBirth"
                                     type="date"
@@ -276,15 +275,15 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="gender">Gender *</Label>
+                                <Label htmlFor="gender">{sf("gender")}</Label>
                                 <Select value={formData.gender} onValueChange={(value) => handleInputChange("gender", value)}>
                                     <SelectTrigger id="gender">
-                                        <SelectValue placeholder="Select gender" />
+                                        <SelectValue placeholder={sf("genderPh")} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Male">Male</SelectItem>
-                                        <SelectItem value="Female">Female</SelectItem>
-                                        <SelectItem value="Other">Other</SelectItem>
+                                        <SelectItem value="Male">{sf("male")}</SelectItem>
+                                        <SelectItem value="Female">{sf("female")}</SelectItem>
+                                        <SelectItem value="Other">{sf("other")}</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 {validationErrors.gender && (
@@ -294,12 +293,12 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="studentAddress">Student Address *</Label>
+                            <Label htmlFor="studentAddress">{sf("studentAddress")}</Label>
                             <Textarea
                                 id="studentAddress"
                                 value={formData.studentAddress}
                                 onChange={(e) => handleInputChange("studentAddress", e.target.value)}
-                                placeholder="Enter full address"
+                                placeholder={sf("addressPh")}
                                 rows={2}
                             />
                             {validationErrors.studentAddress && (
@@ -310,16 +309,16 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
 
                     {/* Parent/Guardian Information */}
                     <div className="space-y-4">
-                        <h3 className="text-sm font-semibold text-[#111827]">Parent/Guardian Information</h3>
+                        <h3 className="text-sm font-semibold text-[#111827]">{sf("parentInfo")}</h3>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="parentName">Parent Name *</Label>
+                                <Label htmlFor="parentName">{sf("parentName")}</Label>
                                 <Input
                                     id="parentName"
                                     value={formData.parentName}
                                     onChange={(e) => handleInputChange("parentName", e.target.value)}
-                                    placeholder="Jane Doe"
+                                    placeholder={sf("parentNamePh")}
                                 />
                                 {validationErrors.parentName && (
                                     <p className="text-xs text-red-600">{validationErrors.parentName}</p>
@@ -327,13 +326,13 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="parentPhone">Parent Phone *</Label>
+                                <Label htmlFor="parentPhone">{sf("parentPhone")}</Label>
                                 <Input
                                     id="parentPhone"
                                     type="tel"
                                     value={formData.parentPhone}
                                     onChange={(e) => handleInputChange("parentPhone", e.target.value)}
-                                    placeholder="+1234567890"
+                                    placeholder={sf("parentPhonePh")}
                                 />
                                 {validationErrors.parentPhone && (
                                     <p className="text-xs text-red-600">{validationErrors.parentPhone}</p>
@@ -342,13 +341,13 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="parentEmail">Parent Email (Optional)</Label>
+                            <Label htmlFor="parentEmail">{sf("parentEmail")}</Label>
                             <Input
                                 id="parentEmail"
                                 type="email"
                                 value={formData.parentEmail}
                                 onChange={(e) => handleInputChange("parentEmail", e.target.value)}
-                                placeholder="parent@example.com"
+                                placeholder={sf("parentEmailPh")}
                             />
                             {validationErrors.parentEmail && (
                                 <p className="text-xs text-red-600">{validationErrors.parentEmail}</p>
@@ -356,12 +355,12 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="parentAddress">Parent Address *</Label>
+                            <Label htmlFor="parentAddress">{sf("parentAddress")}</Label>
                             <Textarea
                                 id="parentAddress"
                                 value={formData.parentAddress}
                                 onChange={(e) => handleInputChange("parentAddress", e.target.value)}
-                                placeholder="Enter full address"
+                                placeholder={sf("addressPh")}
                                 rows={2}
                             />
                             {validationErrors.parentAddress && (
@@ -404,14 +403,14 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
                             onClick={() => onOpenChange(false)}
                             disabled={isLoading}
                         >
-                            Cancel
+                            {sf("cancel")}
                         </Button>
                         <Button
                             type="submit"
                             className="bg-black text-white hover:bg-black/90"
                             disabled={isLoading}
                         >
-                            {isLoading ? "Creating..." : "Create Student"}
+                            {isLoading ? sf("creating") : sf("create")}
                         </Button>
                     </DialogFooter>
                 </form>

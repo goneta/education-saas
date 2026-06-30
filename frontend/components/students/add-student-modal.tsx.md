@@ -22,3 +22,4 @@
 
 - cmd.exe /c "cd frontend&& npx eslint components/<path>"; npm run build for shared/layout changes
 - #4: adds an "Informations sur la Classe" section (after Parent/Guardian) — select a niveau (from `/levels?active_only=true`) then a class dynamically filtered to that level (`class.level === level.code`); sends `current_class_id`.
+- i18n: uses the shared `studentForm` namespace (FR/EN/ES/SW) — labels, placeholders, gender options, buttons, validation + error messages.

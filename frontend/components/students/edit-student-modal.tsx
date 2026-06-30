@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import {
@@ -44,6 +45,7 @@ interface EditStudentModalProps {
 }
 
 export function EditStudentModal({ open, onOpenChange, student, onSuccess }: EditStudentModalProps) {
+    const sf = useTranslations("studentForm")
     const { token } = useAuth()
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -134,7 +136,7 @@ export function EditStudentModal({ open, onOpenChange, student, onSuccess }: Edi
 
         try {
             if (!token) {
-                throw new Error("Not authenticated. Please log in first.")
+                throw new Error(sf("notAuth"))
             }
 
             const response = await fetch(`${API_BASE_URL}/students/${student.id}`, {
@@ -162,7 +164,7 @@ export function EditStudentModal({ open, onOpenChange, student, onSuccess }: Edi
 
             if (!response.ok) {
                 const errorData = await response.json()
-                throw new Error(errorData.detail || "Failed to update student")
+                throw new Error(errorData.detail || sf("updateError"))
             }
 
             // Success
@@ -170,7 +172,7 @@ export function EditStudentModal({ open, onOpenChange, student, onSuccess }: Edi
             onSuccess?.()
 
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An error occurred")
+            setError(err instanceof Error ? err.message : sf("genericError"))
         } finally {
             setIsLoading(false)
         }
@@ -180,10 +182,8 @@ export function EditStudentModal({ open, onOpenChange, student, onSuccess }: Edi
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Edit Student</DialogTitle>
-                    <DialogDescription>
-                        Update the student&apos;s information.
-                    </DialogDescription>
+                    <DialogTitle>{sf("editTitle")}</DialogTitle>
+                    <DialogDescription>{sf("editDesc")}</DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -200,12 +200,12 @@ export function EditStudentModal({ open, onOpenChange, student, onSuccess }: Edi
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="fullName">Full Name *</Label>
+                                <Label htmlFor="fullName">{sf("fullName")}</Label>
                                 <Input
                                     id="fullName"
                                     value={formData.fullName}
                                     onChange={(e) => handleInputChange("fullName", e.target.value)}
-                                    placeholder="John Doe"
+                                    placeholder={sf("fullNamePh")}
                                 />
                                 {validationErrors.fullName && (
                                     <p className="text-xs text-red-600">{validationErrors.fullName}</p>
@@ -213,13 +213,13 @@ export function EditStudentModal({ open, onOpenChange, student, onSuccess }: Edi
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email *</Label>
+                                <Label htmlFor="email">{sf("email")}</Label>
                                 <Input
                                     id="email"
                                     type="email"
                                     value={formData.email}
                                     onChange={(e) => handleInputChange("email", e.target.value)}
-                                    placeholder="student@example.com"
+                                    placeholder={sf("emailPh")}
                                 />
                                 {validationErrors.email && (
                                     <p className="text-xs text-red-600">{validationErrors.email}</p>
@@ -229,12 +229,12 @@ export function EditStudentModal({ open, onOpenChange, student, onSuccess }: Edi
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="registrationNumber">Registration Number *</Label>
+                                <Label htmlFor="registrationNumber">{sf("registration")}</Label>
                                 <Input
                                     id="registrationNumber"
                                     value={formData.registrationNumber}
                                     onChange={(e) => handleInputChange("registrationNumber", e.target.value)}
-                                    placeholder="STU2024001"
+                                    placeholder={sf("registrationPh")}
                                 />
                                 {validationErrors.registrationNumber && (
                                     <p className="text-xs text-red-600">{validationErrors.registrationNumber}</p>
@@ -242,7 +242,7 @@ export function EditStudentModal({ open, onOpenChange, student, onSuccess }: Edi
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+                                <Label htmlFor="dateOfBirth">{sf("dob")}</Label>
                                 <Input
                                     id="dateOfBirth"
                                     type="date"
@@ -257,15 +257,15 @@ export function EditStudentModal({ open, onOpenChange, student, onSuccess }: Edi
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="gender">Gender *</Label>
+                                <Label htmlFor="gender">{sf("gender")}</Label>
                                 <Select value={formData.gender} onValueChange={(value) => handleInputChange("gender", value)}>
                                     <SelectTrigger id="gender">
-                                        <SelectValue placeholder="Select gender" />
+                                        <SelectValue placeholder={sf("genderPh")} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Male">Male</SelectItem>
-                                        <SelectItem value="Female">Female</SelectItem>
-                                        <SelectItem value="Other">Other</SelectItem>
+                                        <SelectItem value="Male">{sf("male")}</SelectItem>
+                                        <SelectItem value="Female">{sf("female")}</SelectItem>
+                                        <SelectItem value="Other">{sf("other")}</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 {validationErrors.gender && (
@@ -275,12 +275,12 @@ export function EditStudentModal({ open, onOpenChange, student, onSuccess }: Edi
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="studentAddress">Student Address *</Label>
+                            <Label htmlFor="studentAddress">{sf("studentAddress")}</Label>
                             <Textarea
                                 id="studentAddress"
                                 value={formData.studentAddress}
                                 onChange={(e) => handleInputChange("studentAddress", e.target.value)}
-                                placeholder="Enter full address"
+                                placeholder={sf("addressPh")}
                                 rows={2}
                             />
                             {validationErrors.studentAddress && (
@@ -291,16 +291,16 @@ export function EditStudentModal({ open, onOpenChange, student, onSuccess }: Edi
 
                     {/* Parent/Guardian Information */}
                     <div className="space-y-4">
-                        <h3 className="text-sm font-semibold text-[#111827]">Parent/Guardian Information</h3>
+                        <h3 className="text-sm font-semibold text-[#111827]">{sf("parentInfo")}</h3>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="parentName">Parent Name *</Label>
+                                <Label htmlFor="parentName">{sf("parentName")}</Label>
                                 <Input
                                     id="parentName"
                                     value={formData.parentName}
                                     onChange={(e) => handleInputChange("parentName", e.target.value)}
-                                    placeholder="Jane Doe"
+                                    placeholder={sf("parentNamePh")}
                                 />
                                 {validationErrors.parentName && (
                                     <p className="text-xs text-red-600">{validationErrors.parentName}</p>
@@ -308,13 +308,13 @@ export function EditStudentModal({ open, onOpenChange, student, onSuccess }: Edi
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="parentPhone">Parent Phone *</Label>
+                                <Label htmlFor="parentPhone">{sf("parentPhone")}</Label>
                                 <Input
                                     id="parentPhone"
                                     type="tel"
                                     value={formData.parentPhone}
                                     onChange={(e) => handleInputChange("parentPhone", e.target.value)}
-                                    placeholder="+1234567890"
+                                    placeholder={sf("parentPhonePh")}
                                 />
                                 {validationErrors.parentPhone && (
                                     <p className="text-xs text-red-600">{validationErrors.parentPhone}</p>
@@ -323,13 +323,13 @@ export function EditStudentModal({ open, onOpenChange, student, onSuccess }: Edi
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="parentEmail">Parent Email (Optional)</Label>
+                            <Label htmlFor="parentEmail">{sf("parentEmail")}</Label>
                             <Input
                                 id="parentEmail"
                                 type="email"
                                 value={formData.parentEmail}
                                 onChange={(e) => handleInputChange("parentEmail", e.target.value)}
-                                placeholder="parent@example.com"
+                                placeholder={sf("parentEmailPh")}
                             />
                             {validationErrors.parentEmail && (
                                 <p className="text-xs text-red-600">{validationErrors.parentEmail}</p>
@@ -337,12 +337,12 @@ export function EditStudentModal({ open, onOpenChange, student, onSuccess }: Edi
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="parentAddress">Parent Address *</Label>
+                            <Label htmlFor="parentAddress">{sf("parentAddress")}</Label>
                             <Textarea
                                 id="parentAddress"
                                 value={formData.parentAddress}
                                 onChange={(e) => handleInputChange("parentAddress", e.target.value)}
-                                placeholder="Enter full address"
+                                placeholder={sf("addressPh")}
                                 rows={2}
                             />
                             {validationErrors.parentAddress && (
@@ -358,14 +358,14 @@ export function EditStudentModal({ open, onOpenChange, student, onSuccess }: Edi
                             onClick={() => onOpenChange(false)}
                             disabled={isLoading}
                         >
-                            Cancel
+                            {sf("cancel")}
                         </Button>
                         <Button
                             type="submit"
                             className="bg-black text-white hover:bg-black/90"
                             disabled={isLoading}
                         >
-                            {isLoading ? "Saving..." : "Save Changes"}
+                            {isLoading ? sf("saving") : sf("saveChanges")}
                         </Button>
                     </DialogFooter>
                 </form>

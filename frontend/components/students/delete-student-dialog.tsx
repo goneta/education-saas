@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import {
@@ -27,6 +28,7 @@ interface DeleteStudentDialogProps {
 }
 
 export function DeleteStudentDialog({ open, onOpenChange, student, onSuccess }: DeleteStudentDialogProps) {
+    const sf = useTranslations("studentForm")
     const { token } = useAuth()
     const [isDeleting, setIsDeleting] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -47,19 +49,19 @@ export function DeleteStudentDialog({ open, onOpenChange, student, onSuccess }: 
 
             if (!response.ok) {
                 if (response.status === 401) {
-                    throw new Error("Session expired. Please log in again.")
+                    throw new Error(sf("sessionExpired"))
                 }
                 if (response.status === 404) {
-                    throw new Error("Student not found.")
+                    throw new Error(sf("notFound"))
                 }
-                throw new Error("Failed to delete student")
+                throw new Error(sf("deleteError"))
             }
 
             // Success
             onOpenChange(false)
             onSuccess()
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An error occurred")
+            setError(err instanceof Error ? err.message : sf("genericError"))
         } finally {
             setIsDeleting(false)
         }
@@ -69,9 +71,9 @@ export function DeleteStudentDialog({ open, onOpenChange, student, onSuccess }: 
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Delete Student</DialogTitle>
+                    <DialogTitle>{sf("deleteTitle")}</DialogTitle>
                     <DialogDescription>
-                        Are you sure you want to delete this student? This action cannot be undone.
+                        {sf("deleteConfirm")}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -94,16 +96,14 @@ export function DeleteStudentDialog({ open, onOpenChange, student, onSuccess }: 
                         variant="outline"
                         onClick={() => onOpenChange(false)}
                         disabled={isDeleting}
-                    >
-                        Cancel
-                    </Button>
+                    >{sf("cancel")}</Button>
                     <Button
                         type="button"
                         className="bg-red-600 text-white hover:bg-red-700"
                         onClick={handleDelete}
                         disabled={isDeleting}
                     >
-                        {isDeleting ? "Deleting..." : "Delete Student"}
+                        {isDeleting ? sf("deleting") : sf("deleteBtn")}
                     </Button>
                 </DialogFooter>
             </DialogContent>
