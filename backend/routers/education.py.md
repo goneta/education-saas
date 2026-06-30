@@ -31,3 +31,4 @@
 ## Verification
 
 - python -m py_compile backend\routers\<module>.py; python -c "import backend.main as m; print(m.app.title)"
+- #1/#6: `GET /education/classes/{id}/students` (count + full_name/age/sex for the class details modal); `delete_class` blocked when the class has enrolled students (409); `_room_capacity_check` blocks scheduling a class into a room smaller than its headcount on timetable entry creation (409).

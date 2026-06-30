@@ -77,4 +77,5 @@ def test_room_in_use_cannot_be_deleted():
     db.commit()
     with pytest.raises(HTTPException) as exc:
         facilities.delete_room(room_id=room.id, current_user=admin, db=db, school_id=None)
-    assert exc.value.status_code == 400
+    # 409 Conflict — "resource in use", consistent with class/level delete guards.
+    assert exc.value.status_code == 409

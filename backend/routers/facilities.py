@@ -136,13 +136,29 @@ def update_room(room_id: int, payload: schemas.RoomUpdate, current_user: models.
     return _room_or_404(db, row.id, resolved)
 
 
+@router.get("/rooms/{room_id}/classes")
+def room_classes(room_id: int, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db), school_id: Optional[int] = None):
+    """Classes scheduled in a room (for the rooms list "Nb Classes" column + the
+    "Voir" modal): each class with its level. Distinct on class_id (#6)."""
+    _admin(current_user)
+    resolved = _school(current_user, school_id, db)
+    _room_or_404(db, room_id, resolved)
+    class_ids = [
+        cid for (cid,) in db.query(models.Timetable.class_id)
+        .filter(models.Timetable.room_id == room_id, models.Timetable.class_id.isnot(None))
+        .distinct().all()
+    ]
+    classes = db.query(models.Class).filter(models.Class.id.in_(class_ids or [-1])).order_by(models.Class.name).all()
+    return {"room_id": room_id, "count": len(classes), "classes": [{"id": c.id, "name": c.name, "level": c.level} for c in classes]}
+
+
 @router.delete("/rooms/{room_id}", status_code=204)
 def delete_room(room_id: int, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db), school_id: Optional[int] = None):
     _admin(current_user)
     resolved = _school(current_user, school_id, db)
     row = _room_or_404(db, room_id, resolved)
     if db.query(models.Timetable.id).filter(models.Timetable.room_id == row.id).first():
-        raise HTTPException(status_code=400, detail="Room is used in a timetable; reassign those courses first")
+        raise HTTPException(status_code=409, detail="Cette salle est utilisée dans un emploi du temps ; réaffectez d'abord ces cours avant de la supprimer.")
     db.delete(row)
     audit.record_audit(db, action="facilities.room.deleted", current_user=current_user, entity_type="room", entity_id=room_id)
     db.commit()

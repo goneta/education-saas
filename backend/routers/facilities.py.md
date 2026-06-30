@@ -23,3 +23,4 @@
 
 - python -m py_compile backend\routers\facilities.py; python -c "import backend.main as m; print(m.app.title)"
 - python -m pytest backend/test_facilities.py
+- #6: `GET /facilities/rooms/{id}/classes` (distinct classes scheduled in a room + their level, for the Nb Classes column / Voir modal); room delete uses 409 (consistent with class/level guards) when the room is used in a timetable.

@@ -325,9 +325,45 @@ def delete_class(
         raise HTTPException(status_code=404, detail="Classe introuvable dans le contexte actif.")
     if cls.is_system_default:
         raise HTTPException(status_code=409, detail="Une classe systeme ne peut pas etre supprimee.")
-        
+    # A class that has enrolled students can never be deleted (#6).
+    student_count = db.query(models.StudentProfile.id).filter(models.StudentProfile.current_class_id == class_id).count()
+    if student_count:
+        raise HTTPException(status_code=409, detail=f"Cette classe contient {student_count} élève(s) et ne peut pas être supprimée. Transférez d'abord les élèves.")
+
     db.delete(cls)
     db.commit()
+
+
+@router.get("/classes/{class_id}/students")
+def class_students(class_id: int, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    """Students enrolled in a class (for the class read-only details, #1):
+    full name, age and sex, clickable through to the student profile."""
+    cls = tenancy.apply_school_filter(db.query(models.Class).filter(models.Class.id == class_id), models.Class, current_user).first()
+    if not cls:
+        raise HTTPException(status_code=404, detail="Class not found")
+    rows = (
+        db.query(models.StudentProfile, models.User)
+        .join(models.User, models.User.id == models.StudentProfile.user_id)
+        .filter(models.StudentProfile.current_class_id == class_id)
+        .order_by(models.User.full_name.asc())
+        .all()
+    )
+
+    def _age(dob):
+        if not dob:
+            return None
+        today = datetime.utcnow().date()
+        d = dob.date() if hasattr(dob, "date") else dob
+        return today.year - d.year - ((today.month, today.day) < (d.month, d.day))
+
+    return {
+        "class_id": class_id,
+        "count": len(rows),
+        "students": [
+            {"id": profile.id, "user_id": user.id, "full_name": user.full_name, "age": _age(profile.date_of_birth), "gender": profile.gender, "registration_number": profile.registration_number}
+            for profile, user in rows
+        ],
+    }
 
 # ---------------------------------------------------------
 # Years & Terms Endpoints
@@ -538,6 +574,23 @@ def _timetable_query_for_user(db: Session, current_user: models.User, school_id:
     return query
 
 
+def _room_capacity_check(db: Session, school_id: int, class_id: int, room_name: Optional[str]) -> None:
+    """A class cannot be scheduled in a room smaller than its headcount (#6).
+    Rooms are matched by name (timetable rooms are free-text); the check is a
+    no-op when the room is unknown or has no declared capacity."""
+    if not room_name or not room_name.strip():
+        return
+    room = db.query(models.Room).filter(
+        models.Room.school_id == school_id,
+        models.Room.name.ilike(room_name.strip()),
+    ).first()
+    if not room or not room.capacity:
+        return
+    student_count = db.query(models.StudentProfile.id).filter(models.StudentProfile.current_class_id == class_id).count()
+    if student_count > room.capacity:
+        raise HTTPException(status_code=409, detail=f"La salle « {room.name} » ({room.capacity} places) ne peut pas accueillir cette classe ({student_count} élèves).")
+
+
 @router.post("/timetables", response_model=schemas.TimetableResponse)
 def create_timetable_entry(
     entry_in: schemas.TimetableCreate,
@@ -549,6 +602,7 @@ def create_timetable_entry(
     _entry_school_check(db, school_id, entry_in.class_id)
     _subject_school_check(db, school_id, entry_in.subject_id)
     _teacher_school_check(db, school_id, entry_in.teacher_id)
+    _room_capacity_check(db, school_id, entry_in.class_id, entry_in.room)
     entry = models.Timetable(**entry_in.model_dump())
     conflicts = _detect_timetable_conflicts(db, school_id, entry, constraints=entry_in.constraints_snapshot)
     _apply_conflicts(entry, conflicts)
