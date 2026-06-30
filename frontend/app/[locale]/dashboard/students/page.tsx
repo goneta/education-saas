@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { useParams, useRouter } from "next/navigation"
 import { Eye, Plus, Route } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
@@ -47,6 +48,7 @@ function normalizeStudents(payload: unknown): Student[] {
 }
 
 export default function StudentsPage() {
+    const t = useTranslations("lists")
     const { token } = useAuth()
     const params = useParams()
     const router = useRouter()
@@ -93,9 +95,10 @@ export default function StudentsPage() {
     }, [fetchStudents])
 
     const filterColumns = useMemo<FilterColumn<Student>[]>(() => [
-        { key: "name", label: "Nom", accessor: student => student.full_name },
-        { key: "email", label: "Email", accessor: student => student.email },
-        { key: "registration", label: "Matricule", accessor: student => student.student_profile?.registration_number },
+        { key: "name", label: t("common.name"), accessor: student => student.full_name },
+        { key: "email", label: t("common.email"), accessor: student => student.email },
+        { key: "registration", label: t("students.registration"), accessor: student => student.student_profile?.registration_number },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- labels from a stable translator
     ], [])
     const filter = useTableFilter(students, filterColumns, { storageKey: "students" })
 
@@ -105,15 +108,15 @@ export default function StudentsPage() {
         <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#111827]">Élèves</h1>
-                    <p className="mt-1 text-sm text-[#6B7280]">Gérez les inscriptions, dossiers et profils des élèves.</p>
+                    <h1 className="text-2xl font-bold text-[#111827]">{t("students.title")}</h1>
+                    <p className="mt-1 text-sm text-[#6B7280]">{t("students.subtitle")}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                 <Button variant="outline" onClick={() => router.push(`/${locale}/dashboard/student-lifecycle`)} className="gap-2">
-                    <Route className="h-4 w-4" /> Parcours et transferts
+                    <Route className="h-4 w-4" /> {t("students.lifecycle")}
                 </Button>
                 <Button onClick={() => setShowAddModal(true)} className="rounded-lg bg-black text-white hover:bg-black/90">
-                    <Plus className="mr-2 h-4 w-4" /> Ajouter un élève
+                    <Plus className="mr-2 h-4 w-4" /> {t("students.add")}
                 </Button>
                 </div>
             </div>
@@ -126,21 +129,21 @@ export default function StudentsPage() {
 
             <Card data-teducai-collapsible="false" className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
                 <CardHeader>
-                    <CardTitle className="text-[#111827]">Liste des élèves ({filter.filtered.length})</CardTitle>
+                    <CardTitle className="text-[#111827]">{t("students.list")} ({filter.filtered.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
-                        <p className="py-12 text-center text-[#6B7280]">Chargement des élèves...</p>
+                        <p className="py-12 text-center text-[#6B7280]">{t("students.loading")}</p>
                     ) : filter.filtered.length === 0 ? (
                         <p className="py-12 text-center text-[#6B7280]">
-                            {filter.controls.query ? `Aucun élève ne correspond à « ${filter.controls.query} ».` : "Aucun élève trouvé. Ajoutez votre premier élève."}
+                            {filter.controls.query ? t("students.emptySearch", { query: filter.controls.query }) : t("students.empty")}
                         </p>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-[#E5E7EB]">
-                                        {["Nom", "Email", "Matricule", "Genre", "Statut", "Actions"].map(label => (
+                                        {[t("common.name"), t("common.email"), t("students.registration"), t("students.gender"), t("common.status"), t("common.actions")].map(label => (
                                             <th key={label} className="px-4 py-3 text-left text-sm font-medium text-[#6B7280]">{label}</th>
                                         ))}
                                     </tr>
@@ -159,14 +162,14 @@ export default function StudentsPage() {
                                             <td className="px-4 py-3 text-sm text-[#6B7280]">{student.student_profile?.gender || "-"}</td>
                                             <td className="px-4 py-3">
                                                 <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${student.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
-                                                    {student.is_active ? "Actif" : "Inactif"}
+                                                    {student.is_active ? t("common.active") : t("common.inactive")}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3" onClick={event => event.stopPropagation()}>
                                                 <div className="flex gap-2">
-                                                    <Button variant="ghost" size="sm" onClick={() => openStudent(student.id)} title="Afficher les détails"><Eye className="h-4 w-4" /></Button>
-                                                    <Button variant="ghost" size="sm" onClick={() => { setSelectedStudent(student); setShowEditModal(true) }}>Modifier</Button>
-                                                    <Button variant="ghost" size="sm" className="text-red-600" onClick={() => { setSelectedStudent(student); setShowDeleteDialog(true) }}>Supprimer</Button>
+                                                    <Button variant="ghost" size="sm" onClick={() => openStudent(student.id)} title={t("common.details")}><Eye className="h-4 w-4" /></Button>
+                                                    <Button variant="ghost" size="sm" onClick={() => { setSelectedStudent(student); setShowEditModal(true) }}>{t("common.edit")}</Button>
+                                                    <Button variant="ghost" size="sm" className="text-red-600" onClick={() => { setSelectedStudent(student); setShowDeleteDialog(true) }}>{t("common.delete")}</Button>
                                                 </div>
                                             </td>
                                         </tr>

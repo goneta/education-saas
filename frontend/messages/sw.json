@@ -507,5 +507,72 @@
     "close": "Funga",
     "selectEmployee": "Chagua mfanyakazi",
     "filterName": "Jina"
+  },
+  "lists": {
+    "common": {
+      "name": "Jina",
+      "email": "Barua pepe",
+      "actions": "Vitendo",
+      "status": "Hali",
+      "active": "Inatumika",
+      "inactive": "Haitumiki",
+      "edit": "Hariri",
+      "delete": "Futa",
+      "cancel": "Ghairi",
+      "save": "Hifadhi",
+      "saving": "Inahifadhi\u2026",
+      "details": "Tazama maelezo",
+      "description": "Maelezo",
+      "genericError": "Hitilafu imetokea."
+    },
+    "subjects": {
+      "title": "Masomo",
+      "subtitle": "Simamia masomo na mitaala ya shule.",
+      "add": "Ongeza somo",
+      "list": "Orodha ya masomo",
+      "loading": "Inapakia masomo\u2026",
+      "emptySearch": "Hakuna somo linalolingana na \u00ab {query} \u00bb.",
+      "empty": "Hakuna somo bado. Ongeza somo lako la kwanza.",
+      "coefficient": "Kipeo",
+      "nameRequired": "Jina la somo linahitajika.",
+      "saveError": "Imeshindwa kuhifadhi somo.",
+      "editTitle": "Hariri somo",
+      "nameLabel": "Jina la somo *",
+      "namePlaceholder": "k.m. Hisabati, Kifaransa",
+      "descPlaceholder": "Maelezo ya hiari",
+      "confirmDeleteTitle": "Futa somo hili",
+      "confirmDeleteDesc": "Somo \u00ab {name} \u00bb litafutwa kabisa ikiwa hakuna data inayolilinda.",
+      "confirmDeleteLabel": "Futa kabisa"
+    },
+    "students": {
+      "title": "Wanafunzi",
+      "subtitle": "Simamia usajili, rekodi na wasifu wa wanafunzi.",
+      "lifecycle": "Safari na uhamisho",
+      "add": "Ongeza mwanafunzi",
+      "list": "Orodha ya wanafunzi",
+      "loading": "Inapakia wanafunzi\u2026",
+      "emptySearch": "Hakuna mwanafunzi anayelingana na \u00ab {query} \u00bb.",
+      "empty": "Hakuna mwanafunzi. Ongeza wa kwanza.",
+      "registration": "Namba ya usajili",
+      "gender": "Jinsia"
+    },
+    "teachers": {
+      "title": "Walimu",
+      "subtitle": "Simamia walimu, wakufunzi na mgawo wao.",
+      "existing": "Mwalimu aliyepo",
+      "add": "Ongeza mwalimu",
+      "assignTitle": "Mgawe mwalimu aliyepo kwenye taasisi hii",
+      "assignDesc": "Mwalimu aliyepo katika taasisi nyingine anaweza kufundisha hapa pia, bila kuunda nakala.",
+      "emailPlaceholder": "barua pepe ya mwalimu",
+      "assigning": "Inagawa\u2026",
+      "assign": "Gawa",
+      "list": "Orodha ya walimu",
+      "loading": "Inapakia walimu\u2026",
+      "emptySearch": "Hakuna mwalimu anayelingana na \u00ab {query} \u00bb.",
+      "empty": "Hakuna mwalimu. Ongeza wa kwanza.",
+      "specialization": "Utaalamu",
+      "phone": "Simu",
+      "general": "Jumla"
+    }
   }
 }

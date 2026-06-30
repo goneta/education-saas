@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Plus, UserPlus } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
@@ -23,6 +24,7 @@ function normalizeTeachers(payload: unknown): Teacher[] {
 }
 
 export default function TeachersPage() {
+    const t = useTranslations("lists")
     const { token } = useAuth()
     const [teachers, setTeachers] = useState<Teacher[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -97,10 +99,11 @@ export default function TeachersPage() {
 
     // Universal table filter: column selector + accent/case-insensitive search.
     const filterColumns = useMemo<FilterColumn<Teacher>[]>(() => [
-        { key: "name", label: "Nom", accessor: teacher => teacher.full_name },
-        { key: "email", label: "Email", accessor: teacher => teacher.email },
-        { key: "phone", label: "Téléphone", accessor: teacher => teacher.phone_number },
-        { key: "specialization", label: "Spécialité", accessor: teacher => teacher.teacher_profile?.specialization },
+        { key: "name", label: t("common.name"), accessor: teacher => teacher.full_name },
+        { key: "email", label: t("common.email"), accessor: teacher => teacher.email },
+        { key: "phone", label: t("teachers.phone"), accessor: teacher => teacher.phone_number },
+        { key: "specialization", label: t("teachers.specialization"), accessor: teacher => teacher.teacher_profile?.specialization },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- labels from a stable translator
     ], [])
     const filter = useTableFilter(teachers, filterColumns, { storageKey: "teachers" })
 
@@ -108,32 +111,32 @@ export default function TeachersPage() {
         <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#111827]">Professeurs</h1>
-                    <p className="mt-1 text-sm text-[#6B7280]">Gérez les enseignants, formateurs et leurs affectations.</p>
+                    <h1 className="text-2xl font-bold text-[#111827]">{t("teachers.title")}</h1>
+                    <p className="mt-1 text-sm text-[#6B7280]">{t("teachers.subtitle")}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <Button onClick={() => setShowAssignExisting(value => !value)} variant="outline" className="rounded-lg">
-                        <UserPlus className="mr-2 h-4 w-4" /> Enseignant existant
+                        <UserPlus className="mr-2 h-4 w-4" /> {t("teachers.existing")}
                     </Button>
                     <Button onClick={() => setShowAddModal(true)} className="rounded-lg bg-black text-white hover:bg-black/90">
-                        <Plus className="mr-2 h-4 w-4" /> Ajouter un professeur
+                        <Plus className="mr-2 h-4 w-4" /> {t("teachers.add")}
                     </Button>
                 </div>
             </div>
             {showAssignExisting && (
                 <div className="rounded-lg border border-[#E5E7EB] bg-white p-4 dark:border-[#3b4248] dark:bg-[#202528]">
-                    <p className="text-sm font-semibold text-[#111827] dark:text-white">Affecter un enseignant existant à cet établissement</p>
-                    <p className="mt-1 text-sm text-[#6B7280] dark:text-[#c7d0da]">Un enseignant déjà présent dans un autre établissement peut enseigner ici en parallèle, sans créer de doublon.</p>
+                    <p className="text-sm font-semibold text-[#111827] dark:text-white">{t("teachers.assignTitle")}</p>
+                    <p className="mt-1 text-sm text-[#6B7280] dark:text-[#c7d0da]">{t("teachers.assignDesc")}</p>
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                         <Input
                             type="email"
-                            placeholder="email de l'enseignant"
+                            placeholder={t("teachers.emailPlaceholder")}
                             value={assignEmail}
                             onChange={event => setAssignEmail(event.target.value)}
                             className="max-w-xs rounded-lg border border-[#E5E7EB] bg-white text-[#111827] dark:border-[#3b4248] dark:bg-[#252b30] dark:text-[#f4f7fb]"
                         />
                         <Button onClick={assignExistingTeacher} disabled={assignBusy || !assignEmail.trim()} className="rounded-lg bg-black text-white hover:bg-black/90">
-                            {assignBusy ? "Affectation..." : "Affecter"}
+                            {assignBusy ? t("teachers.assigning") : t("teachers.assign")}
                         </Button>
                     </div>
                     {assignMessage && <p className="mt-2 text-sm text-[#0F766E] dark:text-[#5eead4]">{assignMessage}</p>}

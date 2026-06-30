@@ -25,3 +25,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
+- i18n: uses the shared `lists` namespace (FR/EN/ES/SW) — no hardcoded UI strings (titles, columns, buttons, empty/loading states, dialog).

@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Pencil, Trash2 } from "lucide-react"
@@ -38,6 +39,7 @@ export function TeacherListTable({
     onDelete,
     onPhotoChanged,
 }: TeacherListTableProps) {
+    const t = useTranslations("lists")
     const filteredTeachers = teachers.filter(teacher =>
         teacher.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         teacher.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -47,7 +49,7 @@ export function TeacherListTable({
     return (
         <Card data-teducai-collapsible="false" className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
             <CardHeader>
-                <CardTitle className="text-[#111827]">Liste des enseignants ({filteredTeachers.length})</CardTitle>
+                <CardTitle className="text-[#111827]">{t("teachers.list")} ({filteredTeachers.length})</CardTitle>
             </CardHeader>
             <CardContent>
                 {error ? (
@@ -56,12 +58,12 @@ export function TeacherListTable({
                     </div>
                 ) : isLoading ? (
                     <div className="text-center py-12">
-                        <p className="text-[#6B7280]">Chargement des enseignants...</p>
+                        <p className="text-[#6B7280]">{t("teachers.loading")}</p>
                     </div>
                 ) : filteredTeachers.length === 0 ? (
                     <div className="text-center py-12">
                         <p className="text-[#6B7280]">
-                            {searchQuery ? `Aucun enseignant ne correspond à « ${searchQuery} ».` : "Aucun enseignant trouvé. Ajoutez votre premier enseignant."}
+                            {searchQuery ? t("teachers.emptySearch", { query: searchQuery }) : t("teachers.empty")}
                         </p>
                     </div>
                 ) : (
@@ -69,11 +71,11 @@ export function TeacherListTable({
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b border-[#E5E7EB]">
-                                    <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Nom</th>
-                                    <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Spécialisation</th>
-                                    <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Email</th>
-                                    <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Téléphone</th>
-                                    <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Actions</th>
+                                    <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{t("common.name")}</th>
+                                    <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{t("teachers.specialization")}</th>
+                                    <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{t("common.email")}</th>
+                                    <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{t("teachers.phone")}</th>
+                                    <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{t("common.actions")}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -89,7 +91,7 @@ export function TeacherListTable({
                                             </div>
                                         </td>
                                         <td className="py-3 px-4 text-sm text-[#6B7280]">
-                                            {teacher.teacher_profile?.specialization || "Général"}
+                                            {teacher.teacher_profile?.specialization || t("teachers.general")}
                                         </td>
                                         <td className="py-3 px-4 text-sm text-[#6B7280]">{teacher.email}</td>
                                         <td className="py-3 px-4 text-sm text-[#6B7280]">{teacher.phone_number || "-"}</td>
@@ -101,7 +103,7 @@ export function TeacherListTable({
                                                     className="h-8 text-[#2563EB] hover:text-[#2563EB] hover:bg-[#F0F1F3]"
                                                     onClick={() => onEdit(teacher)}
                                                 >
-                                                    <Pencil className="h-3.5 w-3.5 mr-1" /> Modifier
+                                                    <Pencil className="h-3.5 w-3.5 mr-1" /> {t("common.edit")}
                                                 </Button>
                                                 <Button
                                                     variant="ghost"
@@ -109,7 +111,7 @@ export function TeacherListTable({
                                                     className="h-8 text-red-600 hover:text-red-600 hover:bg-red-50"
                                                     onClick={() => onDelete(teacher.id)}
                                                 >
-                                                    <Trash2 className="h-3.5 w-3.5 mr-1" /> Supprimer
+                                                    <Trash2 className="h-3.5 w-3.5 mr-1" /> {t("common.delete")}
                                                 </Button>
                                             </div>
                                         </td>

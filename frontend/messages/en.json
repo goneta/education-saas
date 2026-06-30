@@ -507,5 +507,72 @@
     "close": "Close",
     "selectEmployee": "Select an employee",
     "filterName": "Name"
+  },
+  "lists": {
+    "common": {
+      "name": "Name",
+      "email": "Email",
+      "actions": "Actions",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "edit": "Edit",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving\u2026",
+      "details": "View details",
+      "description": "Description",
+      "genericError": "An error occurred."
+    },
+    "subjects": {
+      "title": "Subjects",
+      "subtitle": "Manage the school's subjects and curricula.",
+      "add": "Add a subject",
+      "list": "Subject list",
+      "loading": "Loading subjects\u2026",
+      "emptySearch": "No subject matches \u00ab {query} \u00bb.",
+      "empty": "No subject yet. Add your first subject.",
+      "coefficient": "Coefficient",
+      "nameRequired": "The subject name is required.",
+      "saveError": "Could not save the subject.",
+      "editTitle": "Edit subject",
+      "nameLabel": "Subject name *",
+      "namePlaceholder": "e.g. Mathematics, French",
+      "descPlaceholder": "Optional description",
+      "confirmDeleteTitle": "Delete this subject",
+      "confirmDeleteDesc": "The subject \u00ab {name} \u00bb will be permanently deleted if no data protects it.",
+      "confirmDeleteLabel": "Delete permanently"
+    },
+    "students": {
+      "title": "Students",
+      "subtitle": "Manage enrolments, records and student profiles.",
+      "lifecycle": "Journeys & transfers",
+      "add": "Add a student",
+      "list": "Student list",
+      "loading": "Loading students\u2026",
+      "emptySearch": "No student matches \u00ab {query} \u00bb.",
+      "empty": "No student found. Add your first student.",
+      "registration": "Reg. number",
+      "gender": "Gender"
+    },
+    "teachers": {
+      "title": "Teachers",
+      "subtitle": "Manage teachers, trainers and their assignments.",
+      "existing": "Existing teacher",
+      "add": "Add a teacher",
+      "assignTitle": "Assign an existing teacher to this establishment",
+      "assignDesc": "A teacher already present in another establishment can teach here in parallel, without creating a duplicate.",
+      "emailPlaceholder": "teacher's email",
+      "assigning": "Assigning\u2026",
+      "assign": "Assign",
+      "list": "Teacher list",
+      "loading": "Loading teachers\u2026",
+      "emptySearch": "No teacher matches \u00ab {query} \u00bb.",
+      "empty": "No teacher found. Add your first teacher.",
+      "specialization": "Specialisation",
+      "phone": "Phone",
+      "general": "General"
+    }
   }
 }

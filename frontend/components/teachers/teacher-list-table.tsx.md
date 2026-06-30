@@ -22,3 +22,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint components/<path>"; npm run build for shared/layout changes
+- i18n: uses the shared `lists` namespace (FR/EN/ES/SW) — no hardcoded UI strings (titles, columns, buttons, empty/loading states, dialog).

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
@@ -21,6 +22,7 @@ interface Subject {
 }
 
 export default function SubjectsPage() {
+    const t = useTranslations("lists")
     const { token } = useAuth()
     const [subjects, setSubjects] = useState<Subject[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -71,7 +73,7 @@ export default function SubjectsPage() {
 
     const handleSave = async () => {
         if (!formData.name.trim()) {
-            setError("Le nom de la matière est obligatoire.")
+            setError(t("subjects.nameRequired"))
             return
         }
         setSaving(true)
@@ -96,17 +98,17 @@ export default function SubjectsPage() {
                 fetchSubjects()
             } else {
                 const data = await res.json()
-                setError(data.detail || "Impossible d'enregistrer la matière.")
+                setError(data.detail || t("subjects.saveError"))
             }
         } catch {
-            setError("Une erreur est survenue.")
+            setError(t("common.genericError"))
         } finally {
             setSaving(false)
         }
     }
 
     const handleDelete = async (subject: Subject) => {
-        if (!await requestConfirmation({ title: "Supprimer cette matière", description: `La matière « ${subject.name} » sera supprimée définitivement si aucune donnée ne la protège.`, confirmLabel: "Supprimer définitivement", destructive: true })) return
+        if (!await requestConfirmation({ title: t("subjects.confirmDeleteTitle"), description: t("subjects.confirmDeleteDesc", { name: subject.name }), confirmLabel: t("subjects.confirmDeleteLabel"), destructive: true })) return
         try {
             const res = await fetch(`${API_BASE_URL}/education/subjects/${subject.id}`, {
                 method: "DELETE",
@@ -119,8 +121,9 @@ export default function SubjectsPage() {
     }
 
     const filterColumns = useMemo<FilterColumn<Subject>[]>(() => [
-        { key: "name", label: "Nom", accessor: subject => subject.name },
-        { key: "description", label: "Description", accessor: subject => subject.description },
+        { key: "name", label: t("common.name"), accessor: subject => subject.name },
+        { key: "description", label: t("common.description"), accessor: subject => subject.description },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- labels from a stable translator
     ], [])
     const filter = useTableFilter(subjects, filterColumns, { storageKey: "subjects" })
     const filtered = filter.filtered
@@ -129,12 +132,12 @@ export default function SubjectsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#111827]">Matières</h1>
-                    <p className="text-sm text-[#6B7280] mt-1">Gérez les matières et programmes de l&apos;établissement.</p>
+                    <h1 className="text-2xl font-bold text-[#111827]">{t("subjects.title")}</h1>
+                    <p className="text-sm text-[#6B7280] mt-1">{t("subjects.subtitle")}</p>
                 </div>
                 <Button onClick={openCreate} className="bg-black text-white hover:bg-black/90 rounded-lg">
                     <Plus className="h-4 w-4 mr-2" />
-                    Ajouter une matière
+                    {t("subjects.add")}
                 </Button>
             </div>
 
@@ -144,24 +147,24 @@ export default function SubjectsPage() {
 
             <Card data-teducai-collapsible="false" className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
                 <CardHeader>
-                    <CardTitle className="text-[#111827]">Liste des matières ({filtered.length})</CardTitle>
+                    <CardTitle className="text-[#111827]">{t("subjects.list")} ({filtered.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
-                        <div className="text-center py-12 text-[#6B7280]">Chargement des matières...</div>
+                        <div className="text-center py-12 text-[#6B7280]">{t("subjects.loading")}</div>
                     ) : filtered.length === 0 ? (
                         <div className="text-center py-12 text-[#6B7280]">
-                            {filter.controls.query ? `Aucune matière ne correspond à « ${filter.controls.query} ».` : "Aucune matière enregistrée. Ajoutez votre première matière."}
+                            {filter.controls.query ? t("subjects.emptySearch", { query: filter.controls.query }) : t("subjects.empty")}
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-[#E5E7EB]">
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Nom</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Description</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Coefficient</th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">Actions</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{t("common.name")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{t("common.description")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{t("subjects.coefficient")}</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-[#6B7280]">{t("common.actions")}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -202,32 +205,32 @@ export default function SubjectsPage() {
             <Dialog open={showModal} onOpenChange={setShowModal}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>{editingSubject ? "Modifier la matière" : "Ajouter une matière"}</DialogTitle>
+                        <DialogTitle>{editingSubject ? t("subjects.editTitle") : t("subjects.add")}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         {error && (
                             <div className="bg-red-50 border border-red-200 text-red-800 px-3 py-2 rounded text-sm">{error}</div>
                         )}
                         <div className="space-y-2">
-                            <Label htmlFor="name">Nom de la matière *</Label>
+                            <Label htmlFor="name">{t("subjects.nameLabel")}</Label>
                             <Input
                                 id="name"
-                                placeholder="Ex. Mathématiques, Français"
+                                placeholder={t("subjects.namePlaceholder")}
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="description">Description</Label>
+                            <Label htmlFor="description">{t("common.description")}</Label>
                             <Input
                                 id="description"
-                                placeholder="Description facultative"
+                                placeholder={t("subjects.descPlaceholder")}
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="coefficient">Coefficient</Label>
+                            <Label htmlFor="coefficient">{t("subjects.coefficient")}</Label>
                             <Input
                                 id="coefficient"
                                 type="number"
@@ -239,9 +242,9 @@ export default function SubjectsPage() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowModal(false)}>Annuler</Button>
+                        <Button variant="outline" onClick={() => setShowModal(false)}>{t("common.cancel")}</Button>
                         <Button onClick={handleSave} disabled={saving} className="bg-black text-white hover:bg-black/90">
-                            {saving ? "Enregistrement..." : "Enregistrer"}
+                            {saving ? t("common.saving") : t("common.save")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

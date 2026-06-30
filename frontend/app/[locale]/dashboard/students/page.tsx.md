@@ -28,3 +28,4 @@
 # Lifecycle navigation
 
 The student list links to the global journey administration workspace for transfers, imports, and academic-year closure.
+- i18n: uses the shared `lists` namespace (FR/EN/ES/SW) — no hardcoded UI strings (titles, columns, buttons, empty/loading states, dialog).

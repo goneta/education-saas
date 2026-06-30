@@ -507,5 +507,72 @@
     "close": "Cerrar",
     "selectEmployee": "Seleccionar un empleado",
     "filterName": "Nombre"
+  },
+  "lists": {
+    "common": {
+      "name": "Nombre",
+      "email": "Correo",
+      "actions": "Acciones",
+      "status": "Estado",
+      "active": "Activo",
+      "inactive": "Inactivo",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "saving": "Guardando\u2026",
+      "details": "Ver detalles",
+      "description": "Descripci\u00f3n",
+      "genericError": "Ocurri\u00f3 un error."
+    },
+    "subjects": {
+      "title": "Asignaturas",
+      "subtitle": "Gestione las asignaturas y programas del centro.",
+      "add": "A\u00f1adir una asignatura",
+      "list": "Lista de asignaturas",
+      "loading": "Cargando asignaturas\u2026",
+      "emptySearch": "Ninguna asignatura coincide con \u00ab {query} \u00bb.",
+      "empty": "Ninguna asignatura. A\u00f1ada la primera.",
+      "coefficient": "Coeficiente",
+      "nameRequired": "El nombre de la asignatura es obligatorio.",
+      "saveError": "No se pudo guardar la asignatura.",
+      "editTitle": "Editar asignatura",
+      "nameLabel": "Nombre de la asignatura *",
+      "namePlaceholder": "Ej. Matem\u00e1ticas, Franc\u00e9s",
+      "descPlaceholder": "Descripci\u00f3n opcional",
+      "confirmDeleteTitle": "Eliminar esta asignatura",
+      "confirmDeleteDesc": "La asignatura \u00ab {name} \u00bb se eliminar\u00e1 definitivamente si ning\u00fan dato la protege.",
+      "confirmDeleteLabel": "Eliminar definitivamente"
+    },
+    "students": {
+      "title": "Alumnos",
+      "subtitle": "Gestione matr\u00edculas, expedientes y perfiles de alumnos.",
+      "lifecycle": "Trayectorias y traslados",
+      "add": "A\u00f1adir un alumno",
+      "list": "Lista de alumnos",
+      "loading": "Cargando alumnos\u2026",
+      "emptySearch": "Ning\u00fan alumno coincide con \u00ab {query} \u00bb.",
+      "empty": "Ning\u00fan alumno. A\u00f1ada el primero.",
+      "registration": "Matr\u00edcula",
+      "gender": "G\u00e9nero"
+    },
+    "teachers": {
+      "title": "Profesores",
+      "subtitle": "Gestione profesores, formadores y sus asignaciones.",
+      "existing": "Profesor existente",
+      "add": "A\u00f1adir un profesor",
+      "assignTitle": "Asignar un profesor existente a este establecimiento",
+      "assignDesc": "Un profesor ya presente en otro establecimiento puede ense\u00f1ar aqu\u00ed en paralelo, sin crear duplicados.",
+      "emailPlaceholder": "correo del profesor",
+      "assigning": "Asignando\u2026",
+      "assign": "Asignar",
+      "list": "Lista de profesores",
+      "loading": "Cargando profesores\u2026",
+      "emptySearch": "Ning\u00fan profesor coincide con \u00ab {query} \u00bb.",
+      "empty": "Ning\u00fan profesor. A\u00f1ada el primero.",
+      "specialization": "Especializaci\u00f3n",
+      "phone": "Tel\u00e9fono",
+      "general": "General"
+    }
   }
 }
