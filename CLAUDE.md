@@ -50,6 +50,19 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
+- **Audit-driven program (ongoing, increment by increment)**: (a) **UI for UI-less
+  backends (#1)** — surfaced HR **Congés** (`/hr/leave-requests`: self-service request
+  + role-scoped list + admin approve/reject) and **Annonces** (`/communication/
+  announcements`: create/list/publish). Still UI-less: analytics, extensibility,
+  ai-learning. (b) **Establishment historisation (#3)** — students (`StudentEnrollment`)
+  and teachers (`TeacherAssignment`) already historised; filled the **personnel** gap
+  by reusing `SchoolMembership` (`/personnel/{id}/assignments` + `/assignments/{id}/end`).
+  (c) **Help Center** — context-aware (route→`?section=`); documented levels/facilities/
+  personnel/payroll/leave/announcements. (d) **i18n** — Teachers/Students/Subjects lists
+  + TeacherListTable via the shared `lists` namespace; payroll/leave/announcements/
+  facilities/personnel/transport namespaces. Open: deep Add/Edit modals + legacy pages
+  (finance/operations/grades) still hardcoded; Help content still French-only.
+
 - **Payroll / Paie system (Finance, #7) — backend foundation**: country-extensible
   calculation engine (`services/payroll.py`), per-employee `SalaryProfile`, and
   `/finance/payroll` router (salary-profiles CRUD, payslip generate with gross→net
