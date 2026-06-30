@@ -62,3 +62,8 @@ never duplicate, and keep every query tenant-scoped.
 
 - Backend: `python -m pytest backend/test_transport.py`
 - Frontend: `npm run build` (cannot run in this sandbox — verify by inspection)
+
+## i18n + TableFilter rollout
+
+- All transport pages are now internationalised via the `transport` message namespace (FR/EN + ES/SW parity) — no hardcoded UI strings. Use `useTranslations("transport")` with dotted keys (`drivers.title`, `common.add`, etc.).
+- Every list surface (drivers, vehicles, routes, stops, assignments, boarding, tracking positions, fleet-ops incidents) wires the shared `TableFilter`/`useTableFilter`. The dashboard is KPI cards (no collection) so it is i18n-only.

@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Plus, Trash2, Wallet } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
@@ -32,6 +33,7 @@ function normalizeStudents(payload: unknown): StudentOption[] {
 }
 
 export default function TransportAssignmentsPage() {
+    const t = useTranslations("transport")
     const { token } = useAuth()
     const [assignments, setAssignments] = useState<Assignment[]>([])
     const [routes, setRoutes] = useState<Route[]>([])
@@ -66,7 +68,7 @@ export default function TransportAssignmentsPage() {
         })
         const response = await fetch(`${API_BASE_URL}/transport/assignments`, { method: "POST", headers, body })
         if (response.ok) { setForm({ route_id: "", student_id: "", pickup_stop: "", dropoff_stop: "" }); void load() }
-        else setError("Affectation impossible (élève ou trajet invalide).")
+        else setError(t("assignments.assignFailed"))
     }
 
     const remove = async (id: number) => {
@@ -77,12 +79,12 @@ export default function TransportAssignmentsPage() {
 
     const generateBilling = async () => {
         if (!headers) return
-        const period = window.prompt("Générer les frais de transport pour la période (AAAA-MM) :", "2026-09")
+        const period = window.prompt(t("assignments.billingPrompt"), "2026-09")
         if (!period) return
         const response = await fetch(`${API_BASE_URL}/transport/billing/generate?period=${encodeURIComponent(period)}`, { method: "POST", headers })
         if (response.ok) {
             const data = await response.json()
-            window.alert(`Frais générés : ${data.generated} · ignorés : ${data.skipped}. Retrouvez-les dans Finance › Frais (catégorie « transport »).`)
+            window.alert(t("assignments.billingResult", { generated: data.generated, skipped: data.skipped }))
         }
     }
 
@@ -90,9 +92,9 @@ export default function TransportAssignmentsPage() {
     const routeName = (id: number) => routes.find(r => r.id === id)?.name || `#${id}`
 
     const columns = useMemo<FilterColumn<Assignment>[]>(() => [
-        { key: "student", label: "Élève", accessor: assignment => studentName(assignment.student_id) },
-        { key: "route", label: "Trajet", accessor: assignment => routeName(assignment.route_id) },
-        { key: "pickup", label: "Arrêt montée", accessor: assignment => assignment.pickup_stop },
+        { key: "student", label: t("assignments.student"), accessor: assignment => studentName(assignment.student_id) },
+        { key: "route", label: t("assignments.route"), accessor: assignment => routeName(assignment.route_id) },
+        { key: "pickup", label: t("assignments.pickup"), accessor: assignment => assignment.pickup_stop },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- name lookups derive from students/routes
     ], [students, routes])
     const filter = useTableFilter(assignments, columns, { storageKey: "transport-assignments" })
@@ -101,26 +103,26 @@ export default function TransportAssignmentsPage() {
         <div className="space-y-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#111827] dark:text-white">Affectations élèves</h1>
-                    <p className="mt-1 text-sm text-[#6B7280] dark:text-[#c7d0da]">Affectez chaque élève à un trajet — relié directement aux dossiers élèves (source unique de données).</p>
+                    <h1 className="text-2xl font-bold text-[#111827] dark:text-white">{t("assignments.title")}</h1>
+                    <p className="mt-1 text-sm text-[#6B7280] dark:text-[#c7d0da]">{t("assignments.subtitle")}</p>
                 </div>
-                <Button variant="outline" onClick={generateBilling} className="gap-2"><Wallet className="h-4 w-4" /> Générer les frais</Button>
+                <Button variant="outline" onClick={generateBilling} className="gap-2"><Wallet className="h-4 w-4" /> {t("assignments.generateBilling")}</Button>
             </div>
 
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
-                <CardHeader><CardTitle>Nouvelle affectation</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t("assignments.newTitle")}</CardTitle></CardHeader>
                 <CardContent className="grid gap-3 md:grid-cols-5">
                     <select value={form.student_id} onChange={e => setForm({ ...form, student_id: e.target.value })} className="rounded-md border px-3 py-2 text-sm dark:border-[#4a535b] dark:bg-transparent">
-                        <option value="">Élève…</option>
+                        <option value="">{t("common.studentPlaceholder")}</option>
                         {students.map(student => <option key={student.profileId} value={student.profileId}>{student.name}</option>)}
                     </select>
                     <select value={form.route_id} onChange={e => setForm({ ...form, route_id: e.target.value })} className="rounded-md border px-3 py-2 text-sm dark:border-[#4a535b] dark:bg-transparent">
-                        <option value="">Trajet…</option>
+                        <option value="">{t("common.routePlaceholder")}</option>
                         {routes.map(route => <option key={route.id} value={route.id}>{route.name}</option>)}
                     </select>
-                    <input value={form.pickup_stop} onChange={e => setForm({ ...form, pickup_stop: e.target.value })} placeholder="Arrêt montée" className="rounded-md border px-3 py-2 text-sm dark:border-[#4a535b] dark:bg-transparent" />
-                    <input value={form.dropoff_stop} onChange={e => setForm({ ...form, dropoff_stop: e.target.value })} placeholder="Arrêt descente" className="rounded-md border px-3 py-2 text-sm dark:border-[#4a535b] dark:bg-transparent" />
-                    <Button onClick={create} className="bg-black text-white hover:bg-black/90"><Plus className="mr-2 h-4 w-4" /> Affecter</Button>
+                    <input value={form.pickup_stop} onChange={e => setForm({ ...form, pickup_stop: e.target.value })} placeholder={t("assignments.pickup")} className="rounded-md border px-3 py-2 text-sm dark:border-[#4a535b] dark:bg-transparent" />
+                    <input value={form.dropoff_stop} onChange={e => setForm({ ...form, dropoff_stop: e.target.value })} placeholder={t("assignments.dropoff")} className="rounded-md border px-3 py-2 text-sm dark:border-[#4a535b] dark:bg-transparent" />
+                    <Button onClick={create} className="bg-black text-white hover:bg-black/90"><Plus className="mr-2 h-4 w-4" /> {t("assignments.assign")}</Button>
                     {error && <p className="text-sm text-red-600 md:col-span-5">{error}</p>}
                 </CardContent>
             </Card>
@@ -128,17 +130,17 @@ export default function TransportAssignmentsPage() {
             <div className="max-w-2xl"><TableFilter {...filter.controls} /></div>
 
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
-                <CardHeader><CardTitle>Affectations ({filter.filtered.length})</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t("assignments.list")} ({filter.filtered.length})</CardTitle></CardHeader>
                 <CardContent className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
                         <thead>
                             <tr className="border-b border-[#E5E7EB] text-[#6B7280] dark:border-[#3b4248]">
-                                <th className="px-3 py-2">Élève</th><th className="px-3 py-2">Trajet</th><th className="px-3 py-2">Montée</th><th className="px-3 py-2">Descente</th><th className="px-3 py-2 text-right">Actions</th>
+                                <th className="px-3 py-2">{t("assignments.student")}</th><th className="px-3 py-2">{t("assignments.route")}</th><th className="px-3 py-2">{t("assignments.pickupCol")}</th><th className="px-3 py-2">{t("assignments.dropoffCol")}</th><th className="px-3 py-2 text-right">{t("common.actions")}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filter.filtered.length === 0 ? (
-                                <tr><td colSpan={5} className="px-3 py-6 text-center text-[#6B7280]">Aucune affectation.</td></tr>
+                                <tr><td colSpan={5} className="px-3 py-6 text-center text-[#6B7280]">{t("assignments.empty")}</td></tr>
                             ) : filter.filtered.map(assignment => (
                                 <tr key={assignment.id} className="border-b border-[#F0F1F3] dark:border-[#2a3035]">
                                     <td className="px-3 py-2 font-medium">{studentName(assignment.student_id)}</td>

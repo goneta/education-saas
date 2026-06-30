@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { ScanLine } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
@@ -23,6 +24,7 @@ function normalizeStudents(payload: unknown): StudentOption[] {
 }
 
 export default function TransportBoardingPage() {
+    const t = useTranslations("transport")
     const { token } = useAuth()
     const [events, setEvents] = useState<Boarding[]>([])
     const [routes, setRoutes] = useState<Route[]>([])
@@ -62,9 +64,9 @@ export default function TransportBoardingPage() {
     const routeName = (id?: number | null) => id ? (routes.find(r => r.id === id)?.name || `#${id}`) : "-"
 
     const columns = useMemo<FilterColumn<Boarding>[]>(() => [
-        { key: "student", label: "Élève", accessor: event => studentName(event.student_id) },
-        { key: "direction", label: "Sens", accessor: event => event.direction },
-        { key: "type", label: "Type", accessor: event => event.event_type },
+        { key: "student", label: t("boarding.student"), accessor: event => studentName(event.student_id) },
+        { key: "direction", label: t("boarding.direction"), accessor: event => event.direction },
+        { key: "type", label: t("boarding.type"), accessor: event => event.event_type },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     ], [students])
     const filter = useTableFilter(events, columns, { storageKey: "transport-boarding" })
@@ -72,49 +74,49 @@ export default function TransportBoardingPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-[#111827] dark:text-white">Embarquement</h1>
-                <p className="mt-1 text-sm text-[#6B7280] dark:text-[#c7d0da]">Pointage d&apos;embarquement/débarquement (manuel, QR ou RFID) — alimente le contrôle de sécurité et l&apos;attendance.</p>
+                <h1 className="text-2xl font-bold text-[#111827] dark:text-white">{t("boarding.title")}</h1>
+                <p className="mt-1 text-sm text-[#6B7280] dark:text-[#c7d0da]">{t("boarding.subtitle")}</p>
             </div>
 
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
-                <CardHeader><CardTitle>Pointer un embarquement</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t("boarding.recordTitle")}</CardTitle></CardHeader>
                 <CardContent className="grid gap-3 md:grid-cols-6">
                     <select value={form.student_id} onChange={e => setForm({ ...form, student_id: e.target.value })} className="rounded-md border px-3 py-2 text-sm dark:border-[#4a535b] dark:bg-transparent md:col-span-2">
-                        <option value="">Élève…</option>
+                        <option value="">{t("common.studentPlaceholder")}</option>
                         {students.map(student => <option key={student.profileId} value={student.profileId}>{student.name}</option>)}
                     </select>
                     <select value={form.route_id} onChange={e => setForm({ ...form, route_id: e.target.value })} className="rounded-md border px-3 py-2 text-sm dark:border-[#4a535b] dark:bg-transparent">
-                        <option value="">Trajet…</option>
+                        <option value="">{t("common.routePlaceholder")}</option>
                         {routes.map(route => <option key={route.id} value={route.id}>{route.name}</option>)}
                     </select>
                     <select value={form.direction} onChange={e => setForm({ ...form, direction: e.target.value })} className="rounded-md border px-3 py-2 text-sm dark:border-[#4a535b] dark:bg-transparent">
-                        <option value="morning">Matin</option>
-                        <option value="afternoon">Après-midi</option>
+                        <option value="morning">{t("boarding.morning")}</option>
+                        <option value="afternoon">{t("boarding.afternoon")}</option>
                     </select>
                     <select value={form.event_type} onChange={e => setForm({ ...form, event_type: e.target.value })} className="rounded-md border px-3 py-2 text-sm dark:border-[#4a535b] dark:bg-transparent">
-                        <option value="boarded">Montée</option>
-                        <option value="dropped">Descente</option>
+                        <option value="boarded">{t("boarding.boarded")}</option>
+                        <option value="dropped">{t("boarding.dropped")}</option>
                     </select>
-                    <Button onClick={record} className="bg-black text-white hover:bg-black/90"><ScanLine className="mr-2 h-4 w-4" /> Pointer</Button>
+                    <Button onClick={record} className="bg-black text-white hover:bg-black/90"><ScanLine className="mr-2 h-4 w-4" /> {t("boarding.recordButton")}</Button>
                 </CardContent>
             </Card>
 
             <div className="max-w-2xl"><TableFilter {...filter.controls} /></div>
 
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
-                <CardHeader><CardTitle>Pointages ({filter.filtered.length})</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t("boarding.list")} ({filter.filtered.length})</CardTitle></CardHeader>
                 <CardContent className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
-                        <thead><tr className="border-b border-[#E5E7EB] text-[#6B7280] dark:border-[#3b4248]"><th className="px-3 py-2">Élève</th><th className="px-3 py-2">Trajet</th><th className="px-3 py-2">Sens</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">Méthode</th><th className="px-3 py-2">Heure</th></tr></thead>
+                        <thead><tr className="border-b border-[#E5E7EB] text-[#6B7280] dark:border-[#3b4248]"><th className="px-3 py-2">{t("boarding.student")}</th><th className="px-3 py-2">{t("boarding.route")}</th><th className="px-3 py-2">{t("boarding.direction")}</th><th className="px-3 py-2">{t("boarding.type")}</th><th className="px-3 py-2">{t("boarding.method")}</th><th className="px-3 py-2">{t("boarding.time")}</th></tr></thead>
                         <tbody>
                             {filter.filtered.length === 0 ? (
-                                <tr><td colSpan={6} className="px-3 py-6 text-center text-[#6B7280]">Aucun pointage.</td></tr>
+                                <tr><td colSpan={6} className="px-3 py-6 text-center text-[#6B7280]">{t("boarding.empty")}</td></tr>
                             ) : filter.filtered.map(event => (
                                 <tr key={event.id} className="border-b border-[#F0F1F3] dark:border-[#2a3035]">
                                     <td className="px-3 py-2 font-medium">{studentName(event.student_id)}</td>
                                     <td className="px-3 py-2">{routeName(event.route_id)}</td>
-                                    <td className="px-3 py-2">{event.direction === "morning" ? "Matin" : "Après-midi"}</td>
-                                    <td className="px-3 py-2">{event.event_type === "boarded" ? "Montée" : "Descente"}</td>
+                                    <td className="px-3 py-2">{event.direction === "morning" ? t("boarding.morning") : t("boarding.afternoon")}</td>
+                                    <td className="px-3 py-2">{event.event_type === "boarded" ? t("boarding.boarded") : t("boarding.dropped")}</td>
                                     <td className="px-3 py-2">{event.method}</td>
                                     <td className="px-3 py-2">{event.recorded_at ? new Date(event.recorded_at).toLocaleTimeString() : "-"}</td>
                                 </tr>

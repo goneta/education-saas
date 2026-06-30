@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Bus, Users, Route as RouteIcon, Gauge, Wallet, Wrench, MapPin, ShieldAlert, Fuel } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
@@ -30,6 +31,7 @@ const EMPTY: TransportDashboard = {
 }
 
 export default function TransportDashboardPage() {
+    const t = useTranslations("transport")
     const { token } = useAuth()
     const [data, setData] = useState<TransportDashboard>(EMPTY)
 
@@ -42,27 +44,25 @@ export default function TransportDashboardPage() {
     useEffect(() => { void load() }, [load])
 
     const metrics = [
-        { label: "Véhicules", value: data.vehicles, icon: Bus },
-        { label: "Chauffeurs", value: data.drivers, icon: Users },
-        { label: "Trajets actifs", value: `${data.active_routes}/${data.routes}`, icon: RouteIcon },
-        { label: "Arrêts de bus", value: data.bus_stops, icon: MapPin },
-        { label: "Élèves transportés", value: data.students_transported, icon: Users },
-        { label: "Taux d'occupation", value: `${data.occupancy_rate}%`, icon: Gauge },
-        { label: "Recettes transport / mois", value: `${data.monthly_transport_revenue.toLocaleString()} FCFA`, icon: Wallet },
-        { label: "Capacité de la flotte", value: data.fleet_capacity, icon: Bus },
-        { label: "En maintenance", value: data.vehicles_in_maintenance, icon: Wrench },
-        { label: "Embarquements aujourd'hui", value: data.boardings_today, icon: Users },
-        { label: "Incidents ouverts", value: data.open_incidents, icon: ShieldAlert },
-        { label: "Coût carburant", value: `${data.fuel_cost_total.toLocaleString()} FCFA`, icon: Fuel },
+        { label: t("dashboard.vehicles"), value: data.vehicles, icon: Bus },
+        { label: t("dashboard.drivers"), value: data.drivers, icon: Users },
+        { label: t("dashboard.activeRoutes"), value: `${data.active_routes}/${data.routes}`, icon: RouteIcon },
+        { label: t("dashboard.busStops"), value: data.bus_stops, icon: MapPin },
+        { label: t("dashboard.studentsTransported"), value: data.students_transported, icon: Users },
+        { label: t("dashboard.occupancyRate"), value: `${data.occupancy_rate}%`, icon: Gauge },
+        { label: t("dashboard.monthlyRevenue"), value: `${data.monthly_transport_revenue.toLocaleString()} FCFA`, icon: Wallet },
+        { label: t("dashboard.fleetCapacity"), value: data.fleet_capacity, icon: Bus },
+        { label: t("dashboard.inMaintenance"), value: data.vehicles_in_maintenance, icon: Wrench },
+        { label: t("dashboard.boardingsToday"), value: data.boardings_today, icon: Users },
+        { label: t("dashboard.openIncidents"), value: data.open_incidents, icon: ShieldAlert },
+        { label: t("dashboard.fuelCost"), value: `${data.fuel_cost_total.toLocaleString()} FCFA`, icon: Fuel },
     ]
 
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-[#111827] dark:text-white">Smart Transport</h1>
-                <p className="mt-1 text-sm text-[#6B7280] dark:text-[#c7d0da]">
-                    Vue d&apos;ensemble de la flotte, des chauffeurs, des trajets et des affectations élèves — source unique de données, intégrée à la facturation et aux dossiers élèves.
-                </p>
+                <h1 className="text-2xl font-bold text-[#111827] dark:text-white">{t("dashboard.title")}</h1>
+                <p className="mt-1 text-sm text-[#6B7280] dark:text-[#c7d0da]">{t("dashboard.subtitle")}</p>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {metrics.map(metric => (
