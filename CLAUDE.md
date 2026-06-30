@@ -61,7 +61,7 @@ notifications and master data (zero data duplication).
   personnel/payroll/leave/announcements. (d) **i18n** — Teachers/Students/Subjects lists
   + TeacherListTable via the shared `lists` namespace; payroll/leave/announcements/
   facilities/personnel/transport namespaces. Done: Teacher/Student Add/Edit modals; Finance, Operations and Grades pages now
-  localized via tx()/PRODUCT_COPY. Open: other scattered legacy pages may remain; Help content: chrome i18n (help namespace); per-section HELP_SECTIONS content still French-only.
+  localized via tx()/PRODUCT_COPY. Open: other scattered legacy pages may remain; Help content: chrome i18n + locale-aware section content (loc() resolver over {fr,en,es,sw}); the 6 new-module sections translated, ~16 legacy sections still French (graceful fallback).
 
 - **Payroll / Paie system (Finance, #7) — backend foundation**: country-extensible
   calculation engine (`services/payroll.py`), per-employee `SalaryProfile`, and

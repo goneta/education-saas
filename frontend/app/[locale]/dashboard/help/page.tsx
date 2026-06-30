@@ -1,27 +1,36 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { useTranslations } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
 import { useSearchParams } from "next/navigation"
 import type { ComponentType } from "react"
 import { BookOpen, BrainCircuit, BriefcaseBusiness, CheckCircle2, CircleHelp, CreditCard, FileText, GraduationCap, MessageSquareText, Search, Settings, Smartphone, Users, Wand2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
+// A help string is either plain French (legacy, falls back) or fully localized.
+type LS = string | { fr: string; en: string; es: string; sw: string }
+
+function loc(value: LS, locale: string): string {
+    if (typeof value === "string") return value
+    const key = (["fr", "en", "es", "sw"].includes(locale) ? locale : "fr") as keyof typeof value
+    return value[key] || value.fr
+}
+
 type HelpField = {
-    name: string
-    type: string
-    expected: string
-    validation: string
+    name: LS
+    type: LS
+    expected: LS
+    validation: LS
 }
 
 type HelpSection = {
     id: string
-    title: string
+    title: LS
     icon: ComponentType<{ className?: string }>
-    purpose: string
-    steps: string[]
+    purpose: LS
+    steps: LS[]
     fields: HelpField[]
-    result: string
+    result: LS
 }
 
 const HELP_SECTIONS: HelpSection[] = [
@@ -461,114 +470,175 @@ const HELP_SECTIONS: HelpSection[] = [
     },
     {
         id: "levels",
-        title: "Niveaux scolaires",
+        title: { fr: "Niveaux scolaires", en: "School levels", es: "Niveles escolares", sw: "Ngazi za shule" },
         icon: GraduationCap,
-        purpose: "Gérer le référentiel central des niveaux (CP1, 6ème, Terminale, BTS…) utilisé par tous les établissements pour créer leurs classes. Réservé au Super Administrateur.",
+        purpose: {
+            fr: "Gérer le référentiel central des niveaux (CP1, 6ème, Terminale, BTS…) utilisé par tous les établissements pour créer leurs classes. Réservé au Super Administrateur.",
+            en: "Manage the central levels referential (CP1, Year 7, Final year, vocational diplomas…) used by every school to create its classes. Super-Admin only.",
+            es: "Gestionar el referencial central de niveles (CP1, 1.º ESO, Bachillerato, FP…) usado por todos los centros para crear sus clases. Solo Super Administrador.",
+            sw: "Simamia orodha kuu ya ngazi (CP1, Kidato cha 1, Kidato cha mwisho, stashahada…) inayotumiwa na kila shule kuunda madarasa. Kwa Super Admin pekee.",
+        },
         steps: [
-            "Ouvrez Système → Niveaux scolaires (visible uniquement par le Super Admin).",
-            "Saisissez le code (ex. CP1), le nom, la catégorie et l'ordre d'affichage, puis cliquez sur Ajouter.",
-            "Activez ou désactivez un niveau avec le bouton d'état ; un niveau désactivé n'apparaît plus dans la création de classe.",
-            "Supprimez un niveau uniquement s'il n'est utilisé par aucune classe (sinon l'action est bloquée).",
+            { fr: "Ouvrez Système → Niveaux scolaires (visible uniquement par le Super Admin).", en: "Open System → School levels (visible only to the Super Admin).", es: "Abra Sistema → Niveles escolares (solo visible para el Super Admin).", sw: "Fungua Mfumo → Ngazi za shule (inaonekana kwa Super Admin pekee)." },
+            { fr: "Saisissez le code (ex. CP1), le nom, la catégorie et l'ordre d'affichage, puis cliquez sur Ajouter.", en: "Enter the code (e.g. CP1), name, category and display order, then click Add.", es: "Introduzca el código (p. ej. CP1), el nombre, la categoría y el orden, y haga clic en Añadir.", sw: "Weka msimbo (k.m. CP1), jina, kategoria na mpangilio, kisha bofya Ongeza." },
+            { fr: "Activez ou désactivez un niveau avec le bouton d'état ; un niveau désactivé n'apparaît plus dans la création de classe.", en: "Activate or deactivate a level with the status button; a deactivated level no longer appears in class creation.", es: "Active o desactive un nivel con el botón de estado; un nivel desactivado ya no aparece al crear clases.", sw: "Washa au zima ngazi kwa kitufe cha hali; ngazi iliyozimwa haionekani tena wakati wa kuunda darasa." },
+            { fr: "Supprimez un niveau uniquement s'il n'est utilisé par aucune classe (sinon l'action est bloquée).", en: "Delete a level only if no class uses it (otherwise the action is blocked).", es: "Elimine un nivel solo si ninguna clase lo usa (de lo contrario, la acción se bloquea).", sw: "Futa ngazi tu ikiwa hakuna darasa linalotumia (vinginevyo kitendo kinazuiwa)." },
         ],
         fields: [
-            { name: "Code", type: "Texte", expected: "Identifiant court unique (CP1, 6E, TLE…).", validation: "Obligatoire et unique ; rejet en cas de doublon (409)." },
-            { name: "Catégorie", type: "Liste", expected: "Primaire, collège, lycée, supérieur ou autre.", validation: "Sert à regrouper et trier les niveaux." },
-            { name: "Ordre", type: "Nombre", expected: "Position dans la liste.", validation: "Tri croissant dans les menus déroulants." },
+            { name: { fr: "Code", en: "Code", es: "Código", sw: "Msimbo" }, type: { fr: "Texte", en: "Text", es: "Texto", sw: "Maandishi" }, expected: { fr: "Identifiant court unique (CP1, 6E, TLE…).", en: "Unique short identifier (CP1, Y7, FIN…).", es: "Identificador corto único (CP1, 1ESO, BACH…).", sw: "Kitambulisho kifupi cha kipekee (CP1, K1, FIN…)." }, validation: { fr: "Obligatoire et unique ; rejet en cas de doublon (409).", en: "Required and unique; duplicates are rejected (409).", es: "Obligatorio y único; los duplicados se rechazan (409).", sw: "Inahitajika na ya kipekee; nakala zinakataliwa (409)." } },
+            { name: { fr: "Catégorie", en: "Category", es: "Categoría", sw: "Kategoria" }, type: { fr: "Liste", en: "List", es: "Lista", sw: "Orodha" }, expected: { fr: "Primaire, collège, lycée, supérieur ou autre.", en: "Primary, middle, high, higher education or other.", es: "Primaria, secundaria, bachillerato, superior u otro.", sw: "Msingi, sekondari, upili, elimu ya juu au nyingine." }, validation: { fr: "Sert à regrouper et trier les niveaux.", en: "Used to group and sort the levels.", es: "Sirve para agrupar y ordenar los niveles.", sw: "Hutumika kupanga na kuchambua ngazi." } },
+            { name: { fr: "Ordre", en: "Order", es: "Orden", sw: "Mpangilio" }, type: { fr: "Nombre", en: "Number", es: "Número", sw: "Namba" }, expected: { fr: "Position dans la liste.", en: "Position in the list.", es: "Posición en la lista.", sw: "Nafasi katika orodha." }, validation: { fr: "Tri croissant dans les menus déroulants.", en: "Ascending sort in the dropdowns.", es: "Orden ascendente en los desplegables.", sw: "Mpangilio wa kupanda katika menyu." } },
         ],
-        result: "Le référentiel est partagé par toutes les écoles ; les niveaux alimentent la création des classes et la cascade niveau→classe du formulaire élève.",
+        result: {
+            fr: "Le référentiel est partagé par toutes les écoles ; les niveaux alimentent la création des classes et la cascade niveau→classe du formulaire élève.",
+            en: "The referential is shared by all schools; the levels feed class creation and the level→class cascade on the student form.",
+            es: "El referencial es compartido por todos los centros; los niveles alimentan la creación de clases y la cascada nivel→clase del formulario de alumno.",
+            sw: "Orodha hii inashirikiwa na shule zote; ngazi huchochea uundaji wa madarasa na mtiririko ngazi→darasa kwenye fomu ya mwanafunzi.",
+        },
     },
     {
         id: "facilities",
-        title: "Bâtiments et salles",
+        title: { fr: "Bâtiments et salles", en: "Buildings and rooms", es: "Edificios y aulas", sw: "Majengo na vyumba" },
         icon: Settings,
-        purpose: "Gérer les bâtiments de l'établissement et les salles qu'ils contiennent (type, capacité), avec les règles intelligentes d'occupation.",
+        purpose: {
+            fr: "Gérer les bâtiments de l'établissement et les salles qu'ils contiennent (type, capacité), avec les règles intelligentes d'occupation.",
+            en: "Manage the school's buildings and the rooms they contain (type, capacity), with smart occupancy rules.",
+            es: "Gestionar los edificios del centro y las aulas que contienen (tipo, capacidad), con reglas inteligentes de ocupación.",
+            sw: "Simamia majengo ya shule na vyumba vilivyomo (aina, uwezo), pamoja na kanuni mahiri za matumizi.",
+        },
         steps: [
-            "Ouvrez Gestion → Bâtiments pour créer un bâtiment (nom, description, campus, état).",
-            "Ouvrez Gestion → Salles, choisissez le bâtiment, puis renseignez nom, capacité et type (classe, laboratoire, salle informatique…).",
-            "Consultez la colonne « Nb Classes » et le bouton « Voir » pour connaître les classes planifiées dans une salle.",
-            "La suppression est bloquée si la salle est utilisée dans un emploi du temps, ou si le bâtiment contient des salles.",
+            { fr: "Ouvrez Gestion → Bâtiments pour créer un bâtiment (nom, description, campus, état).", en: "Open Management → Buildings to create a building (name, description, campus, status).", es: "Abra Gestión → Edificios para crear un edificio (nombre, descripción, campus, estado).", sw: "Fungua Usimamizi → Majengo kuunda jengo (jina, maelezo, kampasi, hali)." },
+            { fr: "Ouvrez Gestion → Salles, choisissez le bâtiment, puis renseignez nom, capacité et type (classe, laboratoire, salle informatique…).", en: "Open Management → Rooms, pick the building, then enter name, capacity and type (classroom, laboratory, computer room…).", es: "Abra Gestión → Aulas, elija el edificio e introduzca nombre, capacidad y tipo (aula, laboratorio, sala de informática…).", sw: "Fungua Usimamizi → Vyumba, chagua jengo, kisha weka jina, uwezo na aina (darasa, maabara, chumba cha kompyuta…)." },
+            { fr: "Consultez la colonne « Nb Classes » et le bouton « Voir » pour connaître les classes planifiées dans une salle.", en: "Use the “Classes” column and the “View” button to see the classes scheduled in a room.", es: "Use la columna «Clases» y el botón «Ver» para conocer las clases programadas en un aula.", sw: "Tumia safu ya “Madarasa” na kitufe cha “Tazama” kuona madarasa yaliyopangwa katika chumba." },
+            { fr: "La suppression est bloquée si la salle est utilisée dans un emploi du temps, ou si le bâtiment contient des salles.", en: "Deletion is blocked if the room is used in a timetable, or if the building still contains rooms.", es: "La eliminación se bloquea si el aula se usa en un horario o si el edificio aún contiene aulas.", sw: "Ufutaji unazuiwa ikiwa chumba kinatumika katika ratiba, au jengo bado lina vyumba." },
         ],
         fields: [
-            { name: "Capacité", type: "Nombre", expected: "Nombre maximum de places.", validation: "Une classe plus nombreuse que la salle est refusée lors de la planification (409)." },
-            { name: "Type de salle", type: "Liste", expected: "Classe, laboratoire, salle informatique, atelier, gymnase, autre.", validation: "Sert au filtrage et aux règles pédagogiques." },
+            { name: { fr: "Capacité", en: "Capacity", es: "Capacidad", sw: "Uwezo" }, type: { fr: "Nombre", en: "Number", es: "Número", sw: "Namba" }, expected: { fr: "Nombre maximum de places.", en: "Maximum number of seats.", es: "Número máximo de plazas.", sw: "Idadi ya juu ya viti." }, validation: { fr: "Une classe plus nombreuse que la salle est refusée lors de la planification (409).", en: "A class larger than the room is refused during scheduling (409).", es: "Una clase mayor que el aula se rechaza al programar (409).", sw: "Darasa kubwa kuliko chumba linakataliwa wakati wa kupanga (409)." } },
+            { name: { fr: "Type de salle", en: "Room type", es: "Tipo de aula", sw: "Aina ya chumba" }, type: { fr: "Liste", en: "List", es: "Lista", sw: "Orodha" }, expected: { fr: "Classe, laboratoire, salle informatique, atelier, gymnase, autre.", en: "Classroom, laboratory, computer room, workshop, gym, other.", es: "Aula, laboratorio, sala de informática, taller, gimnasio, otro.", sw: "Darasa, maabara, chumba cha kompyuta, karakana, mazoezi, nyingine." }, validation: { fr: "Sert au filtrage et aux règles pédagogiques.", en: "Used for filtering and pedagogical rules.", es: "Sirve para el filtrado y las reglas pedagógicas.", sw: "Hutumika kwa kuchuja na kanuni za ufundishaji." } },
         ],
-        result: "Les espaces sont structurés (établissement → bâtiment → salle) et les règles de capacité/occupation préviennent les conflits d'emploi du temps.",
+        result: {
+            fr: "Les espaces sont structurés (établissement → bâtiment → salle) et les règles de capacité/occupation préviennent les conflits d'emploi du temps.",
+            en: "Spaces are structured (school → building → room) and the capacity/occupancy rules prevent timetable conflicts.",
+            es: "Los espacios quedan estructurados (centro → edificio → aula) y las reglas de capacidad/ocupación evitan conflictos de horario.",
+            sw: "Nafasi zimepangwa (shule → jengo → chumba) na kanuni za uwezo/matumizi huzuia migongano ya ratiba.",
+        },
     },
     {
         id: "personnel",
-        title: "Personnel scolaire",
+        title: { fr: "Personnel scolaire", en: "School staff", es: "Personal escolar", sw: "Wafanyakazi wa shule" },
         icon: Users,
-        purpose: "Créer et gérer les comptes du personnel (secrétaires, comptables, surveillants…) avec rôle principal, rôles additionnels, département, fonction et statut. La création génère automatiquement le compte utilisateur.",
+        purpose: {
+            fr: "Créer et gérer les comptes du personnel (secrétaires, comptables, surveillants…) avec rôle principal, rôles additionnels, département, fonction et statut. La création génère automatiquement le compte utilisateur.",
+            en: "Create and manage staff accounts (secretaries, accountants, supervisors…) with a primary role, additional roles, department, function and status. Creation auto-generates the user account.",
+            es: "Crear y gestionar cuentas del personal (secretarios, contables, supervisores…) con rol principal, roles adicionales, departamento, función y estado. La creación genera automáticamente la cuenta de usuario.",
+            sw: "Unda na simamia akaunti za wafanyakazi (makatibu, wahasibu, wasimamizi…) zenye jukumu kuu, majukumu ya ziada, idara, kazi na hali. Uundaji hutengeneza akaunti ya mtumiaji kiotomatiki.",
+        },
         steps: [
-            "Ouvrez Gestion → Personnel scolaire.",
-            "Renseignez nom, e-mail, téléphone, rôle principal, rôles additionnels (puces), département, fonction et statut, puis cliquez sur Ajouter.",
-            "Notez le mot de passe temporaire affiché une seule fois à la création.",
-            "Changez le statut (actif, inactif, suspendu, en congé) en ligne ; la suppression désactive le compte sans le détruire.",
+            { fr: "Ouvrez Gestion → Personnel scolaire.", en: "Open Management → School staff.", es: "Abra Gestión → Personal escolar.", sw: "Fungua Usimamizi → Wafanyakazi wa shule." },
+            { fr: "Renseignez nom, e-mail, téléphone, rôle principal, rôles additionnels (puces), département, fonction et statut, puis cliquez sur Ajouter.", en: "Enter name, email, phone, primary role, additional roles (chips), department, function and status, then click Add.", es: "Introduzca nombre, correo, teléfono, rol principal, roles adicionales (chips), departamento, función y estado, y haga clic en Añadir.", sw: "Weka jina, barua pepe, simu, jukumu kuu, majukumu ya ziada, idara, kazi na hali, kisha bofya Ongeza." },
+            { fr: "Notez le mot de passe temporaire affiché une seule fois à la création.", en: "Note the temporary password shown only once at creation.", es: "Anote la contraseña temporal mostrada una sola vez al crear.", sw: "Andika nenosiri la muda linaloonyeshwa mara moja tu wakati wa kuunda." },
+            { fr: "Changez le statut (actif, inactif, suspendu, en congé) en ligne ; la suppression désactive le compte sans le détruire.", en: "Change the status (active, inactive, suspended, on leave) inline; deleting deactivates the account without destroying it.", es: "Cambie el estado (activo, inactivo, suspendido, de permiso) en línea; eliminar desactiva la cuenta sin destruirla.", sw: "Badilisha hali (inatumika, haitumiki, imesimamishwa, likizoni) papo hapo; kufuta huzima akaunti bila kuiharibu." },
         ],
         fields: [
-            { name: "Rôle principal", type: "Liste", expected: "Rôle déterminant les menus visibles.", validation: "Doit être un rôle connu du système." },
-            { name: "Statut", type: "Liste", expected: "Actif, inactif, suspendu, en congé.", validation: "Un compte inactif ne peut pas se connecter." },
+            { name: { fr: "Rôle principal", en: "Primary role", es: "Rol principal", sw: "Jukumu kuu" }, type: { fr: "Liste", en: "List", es: "Lista", sw: "Orodha" }, expected: { fr: "Rôle déterminant les menus visibles.", en: "Role that determines the visible menus.", es: "Rol que determina los menús visibles.", sw: "Jukumu linaloamua menyu zinazoonekana." }, validation: { fr: "Doit être un rôle connu du système.", en: "Must be a role known to the system.", es: "Debe ser un rol conocido por el sistema.", sw: "Lazima liwe jukumu linalojulikana na mfumo." } },
+            { name: { fr: "Statut", en: "Status", es: "Estado", sw: "Hali" }, type: { fr: "Liste", en: "List", es: "Lista", sw: "Orodha" }, expected: { fr: "Actif, inactif, suspendu, en congé.", en: "Active, inactive, suspended, on leave.", es: "Activo, inactivo, suspendido, de permiso.", sw: "Inatumika, haitumiki, imesimamishwa, likizoni." }, validation: { fr: "Un compte inactif ne peut pas se connecter.", en: "An inactive account cannot log in.", es: "Una cuenta inactiva no puede iniciar sesión.", sw: "Akaunti isiyotumika haiwezi kuingia." } },
         ],
-        result: "Un compte utilisateur opérationnel est créé et rattaché à l'établissement, avec son rôle et ses droits.",
+        result: {
+            fr: "Un compte utilisateur opérationnel est créé et rattaché à l'établissement, avec son rôle et ses droits.",
+            en: "An operational user account is created and attached to the school, with its role and permissions.",
+            es: "Se crea una cuenta de usuario operativa vinculada al centro, con su rol y permisos.",
+            sw: "Akaunti ya mtumiaji inayofanya kazi inaundwa na kuunganishwa na shule, pamoja na jukumu na ruhusa zake.",
+        },
     },
     {
         id: "payroll",
-        title: "Paie et bulletins de salaire",
+        title: { fr: "Paie et bulletins de salaire", en: "Payroll and payslips", es: "Nómina y recibos de salario", sw: "Mishahara na risiti za mshahara" },
         icon: CreditCard,
-        purpose: "Configurer les salaires, générer les bulletins (calcul automatique brut→net), les approuver et les payer. Les employés et enseignants consultent leurs propres bulletins en libre-service.",
+        purpose: {
+            fr: "Configurer les salaires, générer les bulletins (calcul automatique brut→net), les approuver et les payer. Les employés et enseignants consultent leurs propres bulletins en libre-service.",
+            en: "Configure salaries, generate payslips (automatic gross→net calculation), approve and pay them. Employees and teachers view their own payslips in self-service.",
+            es: "Configurar salarios, generar recibos (cálculo automático bruto→neto), aprobarlos y pagarlos. Empleados y profesores consultan sus propios recibos en autoservicio.",
+            sw: "Sanidi mishahara, tengeneza risiti (hesabu otomatiki jumla→halisi), idhinisha na ulipe. Wafanyakazi na walimu huona risiti zao wenyewe kwa kujihudumia.",
+        },
         steps: [
-            "Ouvrez Finance → Paie, onglet « Profils de salaire » pour configurer chaque employé (type d'employé, type de paie, taux de base, devise, taux de cotisation et d'impôt).",
-            "Onglet « Bulletins » → Générer : choisissez l'employé, la période, les unités travaillées et ajoutez les lignes (indemnités, primes, heures sup, retenues, avances).",
-            "Vérifiez le détail brut→net, puis Approuvez et Payez (virement, espèces, Stripe, CinetPay, Djamo).",
-            "Côté employé/enseignant : Finance → Mes bulletins permet de consulter et imprimer ses propres bulletins.",
+            { fr: "Ouvrez Finance → Paie, onglet « Profils de salaire » pour configurer chaque employé (type d'employé, type de paie, taux de base, devise, taux de cotisation et d'impôt).", en: "Open Finance → Payroll, “Salary profiles” tab to configure each employee (employee type, pay type, base rate, currency, contribution and tax rates).", es: "Abra Finanzas → Nómina, pestaña «Perfiles salariales» para configurar cada empleado (tipo de empleado, tipo de pago, tarifa base, moneda, tasas de cotización e impuesto).", sw: "Fungua Fedha → Mishahara, kichupo cha “Wasifu wa mshahara” kusanidi kila mfanyakazi (aina ya mfanyakazi, aina ya malipo, kiwango cha msingi, sarafu, viwango vya mchango na kodi)." },
+            { fr: "Onglet « Bulletins » → Générer : choisissez l'employé, la période, les unités travaillées et ajoutez les lignes (indemnités, primes, heures sup, retenues, avances).", en: "“Payslips” tab → Generate: pick the employee, the period, the worked units and add the lines (allowances, bonuses, overtime, deductions, advances).", es: "Pestaña «Recibos» → Generar: elija el empleado, el período, las unidades trabajadas y añada las líneas (subsidios, primas, horas extra, deducciones, anticipos).", sw: "Kichupo cha “Risiti” → Tengeneza: chagua mfanyakazi, kipindi, vipimo vilivyofanyiwa kazi na ongeza mistari (posho, bonasi, saa za ziada, makato, malipo ya awali)." },
+            { fr: "Vérifiez le détail brut→net, puis Approuvez et Payez (virement, espèces, Stripe, CinetPay, Djamo).", en: "Check the gross→net breakdown, then Approve and Pay (bank transfer, cash, Stripe, CinetPay, Djamo).", es: "Verifique el desglose bruto→neto, luego Apruebe y Pague (transferencia, efectivo, Stripe, CinetPay, Djamo).", sw: "Angalia mchanganuo jumla→halisi, kisha Idhinisha na Lipa (uhamisho wa benki, fedha taslimu, Stripe, CinetPay, Djamo)." },
+            { fr: "Côté employé/enseignant : Finance → Mes bulletins permet de consulter et imprimer ses propres bulletins.", en: "Employee/teacher side: Finance → My payslips lets them view and print their own payslips.", es: "Lado del empleado/profesor: Finanzas → Mis recibos permite consultar e imprimir sus propios recibos.", sw: "Upande wa mfanyakazi/mwalimu: Fedha → Risiti zangu huruhusu kuona na kuchapisha risiti zao." },
         ],
         fields: [
-            { name: "Type de paie", type: "Liste", expected: "Horaire, journalier, hebdomadaire ou mensuel.", validation: "Le salaire de base = taux × unités (sauf mensuel = montant fixe)." },
-            { name: "Taux de cotisation / d'impôt", type: "Nombre (%)", expected: "Pourcentages appliqués au brut puis à la base imposable.", validation: "Saisis en %, convertis en fractions ; le moteur est extensible par pays." },
-            { name: "Lignes", type: "Liste", expected: "Indemnité, prime, heures sup (gains) ; retenue, avance (déductions).", validation: "Les gains augmentent le brut ; les déductions réduisent le net." },
+            { name: { fr: "Type de paie", en: "Pay type", es: "Tipo de pago", sw: "Aina ya malipo" }, type: { fr: "Liste", en: "List", es: "Lista", sw: "Orodha" }, expected: { fr: "Horaire, journalier, hebdomadaire ou mensuel.", en: "Hourly, daily, weekly or monthly.", es: "Por hora, diario, semanal o mensual.", sw: "Kwa saa, kwa siku, kwa wiki au kwa mwezi." }, validation: { fr: "Le salaire de base = taux × unités (sauf mensuel = montant fixe).", en: "Base salary = rate × units (except monthly = fixed amount).", es: "Salario base = tarifa × unidades (salvo mensual = importe fijo).", sw: "Mshahara wa msingi = kiwango × vipimo (isipokuwa kwa mwezi = kiasi kisichobadilika)." } },
+            { name: { fr: "Taux de cotisation / d'impôt", en: "Contribution / tax rate", es: "Tasa de cotización / impuesto", sw: "Kiwango cha mchango / kodi" }, type: { fr: "Nombre (%)", en: "Number (%)", es: "Número (%)", sw: "Namba (%)" }, expected: { fr: "Pourcentages appliqués au brut puis à la base imposable.", en: "Percentages applied to the gross then to the taxable base.", es: "Porcentajes aplicados al bruto y luego a la base imponible.", sw: "Asilimia zinazotumika kwa jumla kisha kwa msingi wa kodi." }, validation: { fr: "Saisis en %, convertis en fractions ; le moteur est extensible par pays.", en: "Entered as %, converted to fractions; the engine is country-extensible.", es: "Introducidos en %, convertidos a fracciones; el motor es extensible por país.", sw: "Huingizwa kwa %, hubadilishwa kuwa sehemu; injini inaweza kupanuliwa kwa nchi." } },
+            { name: { fr: "Lignes", en: "Lines", es: "Líneas", sw: "Mistari" }, type: { fr: "Liste", en: "List", es: "Lista", sw: "Orodha" }, expected: { fr: "Indemnité, prime, heures sup (gains) ; retenue, avance (déductions).", en: "Allowance, bonus, overtime (earnings); deduction, advance (deductions).", es: "Subsidio, prima, horas extra (ingresos); deducción, anticipo (deducciones).", sw: "Posho, bonasi, saa za ziada (mapato); makato, malipo ya awali (makato)." }, validation: { fr: "Les gains augmentent le brut ; les déductions réduisent le net.", en: "Earnings increase the gross; deductions reduce the net.", es: "Los ingresos aumentan el bruto; las deducciones reducen el neto.", sw: "Mapato huongeza jumla; makato hupunguza halisi." } },
         ],
-        result: "Un bulletin complet (salaire de base, primes, cotisations, impôt, brut et net) est généré, traçable, payable et consultable par l'employé.",
+        result: {
+            fr: "Un bulletin complet (salaire de base, primes, cotisations, impôt, brut et net) est généré, traçable, payable et consultable par l'employé.",
+            en: "A complete payslip (base salary, bonuses, contributions, tax, gross and net) is generated — traceable, payable and viewable by the employee.",
+            es: "Se genera un recibo completo (salario base, primas, cotizaciones, impuesto, bruto y neto), trazable, pagable y consultable por el empleado.",
+            sw: "Risiti kamili (mshahara wa msingi, bonasi, michango, kodi, jumla na halisi) hutengenezwa — inayofuatilika, inayolipika na inayoonekana na mfanyakazi.",
+        },
     },
     {
         id: "leave",
-        title: "Congés et absences",
+        title: { fr: "Congés et absences", en: "Leave and absences", es: "Permisos y ausencias", sw: "Likizo na kutohudhuria" },
         icon: BriefcaseBusiness,
-        purpose: "Permettre à chaque employé/enseignant de soumettre des demandes de congé en libre-service et aux administrateurs de les approuver ou refuser.",
+        purpose: {
+            fr: "Permettre à chaque employé/enseignant de soumettre des demandes de congé en libre-service et aux administrateurs de les approuver ou refuser.",
+            en: "Let each employee/teacher submit leave requests in self-service and administrators approve or reject them.",
+            es: "Permitir que cada empleado/profesor envíe solicitudes de permiso en autoservicio y que los administradores las aprueben o rechacen.",
+            sw: "Kuruhusu kila mfanyakazi/mwalimu kuwasilisha maombi ya likizo kwa kujihudumia na wasimamizi kuyaidhinisha au kuyakataa.",
+        },
         steps: [
-            "Ouvrez Congés (Gestion pour les administrateurs ; menu personnel pour les enseignants).",
-            "Choisissez le type (annuel, maladie, sans solde, maternité/paternité, autre), les dates de début et de fin, et un motif facultatif, puis Soumettre.",
-            "Les administrateurs voient toutes les demandes de l'établissement et les approuvent ou refusent ; les autres ne voient que les leurs.",
-            "Le demandeur est notifié de la décision ; le statut passe à Approuvé ou Refusé.",
+            { fr: "Ouvrez Congés (Gestion pour les administrateurs ; menu personnel pour les enseignants).", en: "Open Leave (Management for administrators; personal menu for teachers).", es: "Abra Permisos (Gestión para administradores; menú personal para profesores).", sw: "Fungua Likizo (Usimamizi kwa wasimamizi; menyu ya kibinafsi kwa walimu)." },
+            { fr: "Choisissez le type (annuel, maladie, sans solde, maternité/paternité, autre), les dates de début et de fin, et un motif facultatif, puis Soumettre.", en: "Choose the type (annual, sick, unpaid, maternity/paternity, other), the start and end dates, and an optional reason, then Submit.", es: "Elija el tipo (anual, enfermedad, sin sueldo, maternidad/paternidad, otro), las fechas de inicio y fin, y un motivo opcional, y Envíe.", sw: "Chagua aina (mwaka, ugonjwa, bila malipo, uzazi, nyingine), tarehe za kuanza na kumaliza, na sababu ya hiari, kisha Wasilisha." },
+            { fr: "Les administrateurs voient toutes les demandes de l'établissement et les approuvent ou refusent ; les autres ne voient que les leurs.", en: "Administrators see all the school's requests and approve or reject them; others see only their own.", es: "Los administradores ven todas las solicitudes del centro y las aprueban o rechazan; los demás solo ven las suyas.", sw: "Wasimamizi huona maombi yote ya shule na kuyaidhinisha au kuyakataa; wengine huona yao tu." },
+            { fr: "Le demandeur est notifié de la décision ; le statut passe à Approuvé ou Refusé.", en: "The requester is notified of the decision; the status becomes Approved or Rejected.", es: "Se notifica la decisión al solicitante; el estado pasa a Aprobado o Rechazado.", sw: "Mwombaji hupewa taarifa ya uamuzi; hali hubadilika kuwa Imeidhinishwa au Imekataliwa." },
         ],
         fields: [
-            { name: "Type de congé", type: "Liste", expected: "Annuel, maladie, sans solde, maternité/paternité, autre.", validation: "Détermine la nature de la demande." },
-            { name: "Dates", type: "Dates", expected: "Début et fin de l'absence.", validation: "La date de fin ne peut pas précéder la date de début." },
-            { name: "Statut", type: "Liste", expected: "En attente, approuvé, refusé.", validation: "Seuls les administrateurs peuvent décider." },
+            { name: { fr: "Type de congé", en: "Leave type", es: "Tipo de permiso", sw: "Aina ya likizo" }, type: { fr: "Liste", en: "List", es: "Lista", sw: "Orodha" }, expected: { fr: "Annuel, maladie, sans solde, maternité/paternité, autre.", en: "Annual, sick, unpaid, maternity/paternity, other.", es: "Anual, enfermedad, sin sueldo, maternidad/paternidad, otro.", sw: "Mwaka, ugonjwa, bila malipo, uzazi, nyingine." }, validation: { fr: "Détermine la nature de la demande.", en: "Determines the nature of the request.", es: "Determina la naturaleza de la solicitud.", sw: "Huamua aina ya ombi." } },
+            { name: { fr: "Dates", en: "Dates", es: "Fechas", sw: "Tarehe" }, type: { fr: "Dates", en: "Dates", es: "Fechas", sw: "Tarehe" }, expected: { fr: "Début et fin de l'absence.", en: "Start and end of the absence.", es: "Inicio y fin de la ausencia.", sw: "Mwanzo na mwisho wa kutohudhuria." }, validation: { fr: "La date de fin ne peut pas précéder la date de début.", en: "The end date cannot precede the start date.", es: "La fecha de fin no puede ser anterior a la de inicio.", sw: "Tarehe ya mwisho haiwezi kuwa kabla ya tarehe ya kuanza." } },
+            { name: { fr: "Statut", en: "Status", es: "Estado", sw: "Hali" }, type: { fr: "Liste", en: "List", es: "Lista", sw: "Orodha" }, expected: { fr: "En attente, approuvé, refusé.", en: "Pending, approved, rejected.", es: "Pendiente, aprobado, rechazado.", sw: "Inasubiri, imeidhinishwa, imekataliwa." }, validation: { fr: "Seuls les administrateurs peuvent décider.", en: "Only administrators can decide.", es: "Solo los administradores pueden decidir.", sw: "Wasimamizi pekee wanaweza kuamua." } },
         ],
-        result: "La demande est enregistrée, soumise au circuit d'approbation et historisée avec sa décision.",
+        result: {
+            fr: "La demande est enregistrée, soumise au circuit d'approbation et historisée avec sa décision.",
+            en: "The request is recorded, submitted to the approval flow and historised with its decision.",
+            es: "La solicitud se registra, se somete al circuito de aprobación y se historiza con su decisión.",
+            sw: "Ombi linaandikishwa, linapelekwa kwenye mzunguko wa idhini na kuhifadhiwa pamoja na uamuzi wake.",
+        },
     },
     {
         id: "announcements",
-        title: "Annonces et communication",
+        title: { fr: "Annonces et communication", en: "Announcements and communication", es: "Anuncios y comunicación", sw: "Matangazo na mawasiliano" },
         icon: MessageSquareText,
-        purpose: "Publier des annonces à destination de la communauté scolaire (tous, enseignants, élèves ou parents), avec option d'urgence et de planification.",
+        purpose: {
+            fr: "Publier des annonces à destination de la communauté scolaire (tous, enseignants, élèves ou parents), avec option d'urgence et de planification.",
+            en: "Publish announcements to the school community (everyone, teachers, students or parents), with emergency and scheduling options.",
+            es: "Publicar anuncios para la comunidad escolar (todos, profesores, alumnos o padres), con opciones de emergencia y programación.",
+            sw: "Chapisha matangazo kwa jamii ya shule (wote, walimu, wanafunzi au wazazi), na chaguo za dharura na kupanga.",
+        },
         steps: [
-            "Ouvrez Annonces.",
-            "Saisissez un titre et un message, choisissez l'audience, cochez Urgence si nécessaire et planifiez une date (facultatif).",
-            "Créez l'annonce (brouillon ou planifiée), puis cliquez sur Publier pour la diffuser via la couche de notifications.",
-            "Suivez le statut (brouillon, planifié, publié) dans la liste.",
+            { fr: "Ouvrez Annonces.", en: "Open Announcements.", es: "Abra Anuncios.", sw: "Fungua Matangazo." },
+            { fr: "Saisissez un titre et un message, choisissez l'audience, cochez Urgence si nécessaire et planifiez une date (facultatif).", en: "Enter a title and message, choose the audience, tick Emergency if needed and schedule a date (optional).", es: "Introduzca un título y un mensaje, elija la audiencia, marque Emergencia si es necesario y programe una fecha (opcional).", sw: "Weka kichwa na ujumbe, chagua hadhira, weka alama Dharura ikihitajika na panga tarehe (hiari)." },
+            { fr: "Créez l'annonce (brouillon ou planifiée), puis cliquez sur Publier pour la diffuser via la couche de notifications.", en: "Create the announcement (draft or scheduled), then click Publish to broadcast it via the notification layer.", es: "Cree el anuncio (borrador o programado) y haga clic en Publicar para difundirlo mediante la capa de notificaciones.", sw: "Unda tangazo (rasimu au lililopangwa), kisha bofya Chapisha kulisambaza kupitia tabaka la arifa." },
+            { fr: "Suivez le statut (brouillon, planifié, publié) dans la liste.", en: "Track the status (draft, scheduled, published) in the list.", es: "Siga el estado (borrador, programado, publicado) en la lista.", sw: "Fuatilia hali (rasimu, imepangwa, imechapishwa) katika orodha." },
         ],
         fields: [
-            { name: "Audience", type: "Liste", expected: "Tous, enseignants, élèves ou parents.", validation: "Détermine les destinataires de la diffusion." },
-            { name: "Urgence", type: "Case à cocher", expected: "Marque l'annonce comme prioritaire.", validation: "À réserver aux communications critiques." },
-            { name: "Planifier pour", type: "Date/heure", expected: "Diffusion différée (facultatif).", validation: "Sans date, l'annonce reste en brouillon jusqu'à publication manuelle." },
+            { name: { fr: "Audience", en: "Audience", es: "Audiencia", sw: "Hadhira" }, type: { fr: "Liste", en: "List", es: "Lista", sw: "Orodha" }, expected: { fr: "Tous, enseignants, élèves ou parents.", en: "Everyone, teachers, students or parents.", es: "Todos, profesores, alumnos o padres.", sw: "Wote, walimu, wanafunzi au wazazi." }, validation: { fr: "Détermine les destinataires de la diffusion.", en: "Determines the broadcast recipients.", es: "Determina los destinatarios de la difusión.", sw: "Huamua wapokeaji wa usambazaji." } },
+            { name: { fr: "Urgence", en: "Emergency", es: "Emergencia", sw: "Dharura" }, type: { fr: "Case à cocher", en: "Checkbox", es: "Casilla", sw: "Kisanduku" }, expected: { fr: "Marque l'annonce comme prioritaire.", en: "Marks the announcement as priority.", es: "Marca el anuncio como prioritario.", sw: "Huweka tangazo kama la kipaumbele." }, validation: { fr: "À réserver aux communications critiques.", en: "Reserve for critical communications.", es: "Reservar para comunicaciones críticas.", sw: "Itumike kwa mawasiliano muhimu pekee." } },
+            { name: { fr: "Planifier pour", en: "Schedule for", es: "Programar para", sw: "Panga kwa" }, type: { fr: "Date/heure", en: "Date/time", es: "Fecha/hora", sw: "Tarehe/saa" }, expected: { fr: "Diffusion différée (facultatif).", en: "Deferred broadcast (optional).", es: "Difusión diferida (opcional).", sw: "Usambazaji wa baadaye (hiari)." }, validation: { fr: "Sans date, l'annonce reste en brouillon jusqu'à publication manuelle.", en: "Without a date, the announcement stays a draft until manual publication.", es: "Sin fecha, el anuncio queda como borrador hasta su publicación manual.", sw: "Bila tarehe, tangazo hubaki rasimu hadi lichapishwe kwa mkono." } },
         ],
-        result: "L'annonce est publiée et diffusée à l'audience choisie ; son statut et sa date de publication sont conservés.",
+        result: {
+            fr: "L'annonce est publiée et diffusée à l'audience choisie ; son statut et sa date de publication sont conservés.",
+            en: "The announcement is published and broadcast to the chosen audience; its status and publication date are kept.",
+            es: "El anuncio se publica y difunde a la audiencia elegida; se conservan su estado y fecha de publicación.",
+            sw: "Tangazo huchapishwa na kusambazwa kwa hadhira iliyochaguliwa; hali yake na tarehe ya kuchapishwa huhifadhiwa.",
+        },
     },
 ]
 
 export function HelpContent({ embedded = false }: { embedded?: boolean }) {
     const t = useTranslations("help")
+    const locale = useLocale()
     const searchParams = useSearchParams()
     const [query, setQuery] = useState("")
     const [activeId, setActiveId] = useState(HELP_SECTIONS[0].id)
@@ -590,11 +660,12 @@ export function HelpContent({ embedded = false }: { embedded?: boolean }) {
         if (!search) return HELP_SECTIONS
         return HELP_SECTIONS.filter(section =>
             [section.title, section.purpose, section.result, ...section.steps, ...section.fields.flatMap(field => [field.name, field.expected, field.validation])]
+                .map(value => loc(value, locale))
                 .join(" ")
                 .toLowerCase()
                 .includes(search)
         )
-    }, [query])
+    }, [query, locale])
 
     const activeSection = filteredSections.find(section => section.id === activeId) || filteredSections[0] || HELP_SECTIONS[0]
 
@@ -642,7 +713,7 @@ export function HelpContent({ embedded = false }: { embedded?: boolean }) {
                                     className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm transition ${activeSection.id === section.id ? "bg-black text-white" : "bg-[#F5F5F7] text-[#111827] hover:bg-[#EDEEF2]"}`}
                                 >
                                     <Icon className="h-5 w-5 shrink-0" />
-                                    <span className="font-medium">{section.title}</span>
+                                    <span className="font-medium">{loc(section.title, locale)}</span>
                                 </button>
                             )
                         })}
@@ -684,28 +755,29 @@ export default function HelpPage() {
 
 function HelpSectionCard({ section }: { section: HelpSection }) {
     const t = useTranslations("help")
+    const locale = useLocale()
     const Icon = section.icon
     return (
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-3">
                     <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-black text-white"><Icon className="h-5 w-5" /></span>
-                    {section.title}
+                    {loc(section.title, locale)}
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="rounded-2xl border border-[#E5E7EB] bg-[#F8FAFC] p-4">
                     <p className="text-sm font-semibold text-[#111827]">{t("objective")}</p>
-                    <p className="mt-1 text-sm text-[#4B5563]">{section.purpose}</p>
+                    <p className="mt-1 text-sm text-[#4B5563]">{loc(section.purpose, locale)}</p>
                 </div>
 
                 <div>
                     <h2 className="text-lg font-semibold text-[#111827]">{t("usageSteps")}</h2>
                     <ol className="mt-3 space-y-2">
                         {section.steps.map((step, index) => (
-                            <li key={step} className="flex gap-3 rounded-xl border border-[#E5E7EB] bg-white p-3 text-sm">
+                            <li key={index} className="flex gap-3 rounded-xl border border-[#E5E7EB] bg-white p-3 text-sm">
                                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#F5F5F7] text-xs font-semibold">{index + 1}</span>
-                                <span>{step}</span>
+                                <span>{loc(step, locale)}</span>
                             </li>
                         ))}
                     </ol>
@@ -725,11 +797,11 @@ function HelpSectionCard({ section }: { section: HelpSection }) {
                             </thead>
                             <tbody>
                                 {section.fields.map(field => (
-                                    <tr key={field.name} className="border-b last:border-0">
-                                        <td className="px-4 py-3 font-medium text-[#111827]">{field.name}</td>
-                                        <td className="px-4 py-3 text-[#4B5563]">{field.type}</td>
-                                        <td className="px-4 py-3 text-[#4B5563]">{field.expected}</td>
-                                        <td className="px-4 py-3 text-[#4B5563]">{field.validation}</td>
+                                    <tr key={typeof field.name === "string" ? field.name : field.name.fr} className="border-b last:border-0">
+                                        <td className="px-4 py-3 font-medium text-[#111827]">{loc(field.name, locale)}</td>
+                                        <td className="px-4 py-3 text-[#4B5563]">{loc(field.type, locale)}</td>
+                                        <td className="px-4 py-3 text-[#4B5563]">{loc(field.expected, locale)}</td>
+                                        <td className="px-4 py-3 text-[#4B5563]">{loc(field.validation, locale)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -739,7 +811,7 @@ function HelpSectionCard({ section }: { section: HelpSection }) {
 
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
                     <p className="text-sm font-semibold text-emerald-950">{t("result")}</p>
-                    <p className="mt-1 text-sm text-emerald-900">{section.result}</p>
+                    <p className="mt-1 text-sm text-emerald-900">{loc(section.result, locale)}</p>
                 </div>
             </CardContent>
         </Card>

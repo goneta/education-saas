@@ -28,3 +28,4 @@
 - HELP_SECTIONS now documents the new modules (ids `levels`, `facilities`, `personnel`, `payroll`) — purpose, steps, fields, expected result. Deep-linked via `?section=<id>`.
 - HELP_SECTIONS also documents `leave` and `announcements` (#1).
 - i18n (#2): the page chrome (title, subtitle, search, help-mode options, Sections nav, standard-form-cycle, Objectif/Etapes/result labels, field-table headers) uses the help namespace (FR/EN/ES/SW). The per-section HELP_SECTIONS content (purpose/steps/fields) stays French - full content translation is a separate effort.
+- Help CONTENT is now locale-aware: a `loc(value, locale)` resolver accepts either a plain French string (legacy fallback) or a `{fr,en,es,sw}` object. The 6 new-module sections (levels, facilities, personnel, payroll, leave, announcements) are fully translated; the remaining legacy sections stay French until translated (resolver falls back).
