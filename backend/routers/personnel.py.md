@@ -7,3 +7,4 @@
 - Primary + additional roles validated against `UserRole`. Email uniqueness enforced (409). Status in {active,inactive,suspended,on_leave}. DELETE removes the profile and deactivates the user (never hard-deletes). A generated temporary password is returned once at creation when none supplied.
 ## Verification
 - `python -m pytest backend/test_personnel.py`
+- #3 historisation: staff creation now records a `SchoolMembership` (establishment posting). New endpoints `GET/POST /personnel/{id}/assignments` + `POST /personnel/assignments/{id}/end` expose a staff member's multi-establishment posting history (reuses `SchoolMembership`; school-admins post only within their school, Super Admin anywhere).

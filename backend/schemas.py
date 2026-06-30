@@ -2711,6 +2711,25 @@ class StaffResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class StaffAssignmentCreate(BaseModel):
+    school_id: int
+    role: Optional[str] = None  # defaults to the staff member's primary role
+
+
+class StaffAssignmentResponse(BaseModel):
+    id: int
+    user_id: int
+    school_id: int
+    school_name: Optional[str] = None
+    role: str
+    membership_status: str
+    is_active: bool
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class FeatureFlagSet(BaseModel):
     key: str
     is_enabled: bool

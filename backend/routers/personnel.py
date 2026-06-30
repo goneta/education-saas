@@ -7,6 +7,7 @@ School Admin / Super Admin.
 """
 
 import secrets
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -117,6 +118,12 @@ def create_staff(payload: schemas.StaffCreate, school_id: Optional[int] = None, 
         status=payload.status,
     )
     db.add(profile)
+    # Record the establishment posting in the shared membership history (#3) so a
+    # staff member's affectations are historised and can span establishments.
+    db.add(models.SchoolMembership(
+        user_id=user.id, school_id=resolved, role=role.value,
+        start_date=datetime.utcnow(), is_active=True, membership_status="active",
+    ))
     audit.record_audit(db, action="personnel.staff.created", current_user=current_user, entity_type="staff_profile", entity_id=user.id)
     db.commit()
     db.refresh(profile)
@@ -183,3 +190,89 @@ def delete_staff(staff_id: int, school_id: Optional[int] = None, db: Session = D
     db.delete(profile)
     audit.record_audit(db, action="personnel.staff.deleted", current_user=current_user, entity_type="staff_profile", entity_id=staff_id)
     db.commit()
+
+
+# --- Establishment assignment history (#3) -----------------------------------
+
+def _assignment_response(membership: models.SchoolMembership, school: Optional[models.School]) -> schemas.StaffAssignmentResponse:
+    return schemas.StaffAssignmentResponse(
+        id=membership.id, user_id=membership.user_id, school_id=membership.school_id,
+        school_name=school.name if school else None, role=membership.role,
+        membership_status=membership.membership_status, is_active=bool(membership.is_active),
+        start_date=membership.start_date, end_date=membership.end_date,
+    )
+
+
+def _resolve_staff(db: Session, staff_id: int, school_id: int) -> models.StaffProfile:
+    profile = db.query(models.StaffProfile).filter(models.StaffProfile.id == staff_id, models.StaffProfile.school_id == school_id).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Membre du personnel introuvable.")
+    return profile
+
+
+@router.get("/{staff_id}/assignments", response_model=List[schemas.StaffAssignmentResponse])
+def list_staff_assignments(staff_id: int, school_id: Optional[int] = None, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    """Full establishment-posting history of a staff member (may span several
+    establishments), most recent first."""
+    _ensure_admin(current_user)
+    resolved = _resolve_school(current_user, school_id)
+    profile = _resolve_staff(db, staff_id, resolved)
+    rows = (
+        db.query(models.SchoolMembership, models.School)
+        .outerjoin(models.School, models.School.id == models.SchoolMembership.school_id)
+        .filter(models.SchoolMembership.user_id == profile.user_id)
+        .order_by(models.SchoolMembership.start_date.desc().nullslast(), models.SchoolMembership.id.desc())
+        .all()
+    )
+    return [_assignment_response(membership, school) for membership, school in rows]
+
+
+@router.post("/{staff_id}/assignments", response_model=schemas.StaffAssignmentResponse, status_code=201)
+def add_staff_assignment(staff_id: int, payload: schemas.StaffAssignmentCreate, school_id: Optional[int] = None, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    """Post a staff member to another establishment (historised). A school admin
+    may only post to their own establishment; the Super Admin may post to any."""
+    _ensure_admin(current_user)
+    resolved = _resolve_school(current_user, school_id)
+    profile = _resolve_staff(db, staff_id, resolved)
+    if current_user.role != models.UserRole.SUPER_ADMIN and payload.school_id != resolved:
+        raise HTTPException(status_code=403, detail="Vous ne pouvez affecter que dans votre établissement.")
+    target = db.query(models.School).filter(models.School.id == payload.school_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Établissement cible introuvable.")
+    if db.query(models.SchoolMembership.id).filter(
+        models.SchoolMembership.user_id == profile.user_id,
+        models.SchoolMembership.school_id == payload.school_id,
+        models.SchoolMembership.is_active == True,  # noqa: E712
+    ).first():
+        raise HTTPException(status_code=409, detail="Ce membre est déjà affecté à cet établissement.")
+    user = db.query(models.User).filter(models.User.id == profile.user_id).first()
+    membership = models.SchoolMembership(
+        user_id=profile.user_id, school_id=payload.school_id,
+        role=payload.role or (user.role.value if user and user.role else "staff"),
+        start_date=datetime.utcnow(), is_active=True, membership_status="active",
+    )
+    db.add(membership)
+    audit.record_audit(db, action="personnel.assignment.added", current_user=current_user, entity_type="school_membership", entity_id=profile.user_id, details={"school_id": payload.school_id})
+    db.commit()
+    db.refresh(membership)
+    return _assignment_response(membership, target)
+
+
+@router.post("/assignments/{membership_id}/end", response_model=schemas.StaffAssignmentResponse)
+def end_staff_assignment(membership_id: int, school_id: Optional[int] = None, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    """Close a posting — sets the end date and deactivates it (kept for history)."""
+    _ensure_admin(current_user)
+    resolved = _resolve_school(current_user, school_id)
+    membership = db.query(models.SchoolMembership).filter(models.SchoolMembership.id == membership_id).first()
+    if not membership:
+        raise HTTPException(status_code=404, detail="Affectation introuvable.")
+    if current_user.role != models.UserRole.SUPER_ADMIN and membership.school_id != resolved:
+        raise HTTPException(status_code=403, detail="Accès refusé.")
+    membership.is_active = False
+    membership.membership_status = "ended"
+    membership.end_date = datetime.utcnow()
+    audit.record_audit(db, action="personnel.assignment.ended", current_user=current_user, entity_type="school_membership", entity_id=membership_id)
+    db.commit()
+    db.refresh(membership)
+    school = db.query(models.School).filter(models.School.id == membership.school_id).first()
+    return _assignment_response(membership, school)

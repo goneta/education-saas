@@ -74,3 +74,51 @@ def test_non_admin_forbidden():
         assert False
     except Exception as exc:
         assert getattr(exc, "status_code", None) == 403
+
+
+def test_staff_creation_records_initial_assignment():
+    db = _session()
+    school, admin = _admin(db)
+    created = personnel.create_staff(payload=schemas.StaffCreate(full_name="Awa", email="awa2@example.com", primary_role="secretary"), school_id=None, db=db, current_user=admin)
+    history = personnel.list_staff_assignments(staff_id=created.id, school_id=None, db=db, current_user=admin)
+    assert len(history) == 1
+    assert history[0].school_id == school.id and history[0].is_active and history[0].role == "secretary"
+
+
+def test_add_and_end_assignment_across_establishments():
+    db = _session()
+    school_a, admin = _admin(db)
+    # Super admin can post the staff member to a second establishment (historised).
+    school_b = models.School(name="B", domain_prefix=f"b_{uuid.uuid4().hex[:6]}", school_type=models.SchoolType.GENERAL)
+    db.add(school_b); db.flush()
+    superadmin = models.User(email=f"su_{uuid.uuid4().hex[:6]}@example.com", hashed_password="x", full_name="SU", role=models.UserRole.SUPER_ADMIN, is_active=True)
+    db.add(superadmin); db.commit()
+    created = personnel.create_staff(payload=schemas.StaffCreate(full_name="Bob", email="bob@example.com", primary_role="staff"), school_id=None, db=db, current_user=admin)
+
+    # School-admin of A cannot cross-assign to B.
+    try:
+        personnel.add_staff_assignment(staff_id=created.id, payload=schemas.StaffAssignmentCreate(school_id=school_b.id), school_id=None, db=db, current_user=admin)
+        assert False, "school admin should not cross-assign"
+    except Exception as exc:
+        assert getattr(exc, "status_code", None) == 403
+
+    # Super admin can.
+    posting = personnel.add_staff_assignment(staff_id=created.id, payload=schemas.StaffAssignmentCreate(school_id=school_b.id), school_id=school_a.id, db=db, current_user=superadmin)
+    assert posting.school_id == school_b.id and posting.is_active
+    history = personnel.list_staff_assignments(staff_id=created.id, school_id=None, db=db, current_user=admin)
+    assert len(history) == 2  # A (initial) + B
+    # Closing a posting keeps it in history but deactivates it.
+    ended = personnel.end_staff_assignment(membership_id=posting.id, school_id=school_a.id, db=db, current_user=superadmin)
+    assert ended.is_active is False and ended.end_date is not None and ended.membership_status == "ended"
+
+
+def test_duplicate_active_assignment_rejected():
+    db = _session()
+    school_a, admin = _admin(db)
+    created = personnel.create_staff(payload=schemas.StaffCreate(full_name="Cara", email="cara@example.com", primary_role="staff"), school_id=None, db=db, current_user=admin)
+    # Re-posting to the same (already active) establishment is rejected.
+    try:
+        personnel.add_staff_assignment(staff_id=created.id, payload=schemas.StaffAssignmentCreate(school_id=school_a.id), school_id=None, db=db, current_user=admin)
+        assert False
+    except Exception as exc:
+        assert getattr(exc, "status_code", None) == 409
