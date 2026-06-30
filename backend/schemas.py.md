@@ -57,3 +57,4 @@ The schema catalog includes enrollment, transfer, academic-year closure, tempora
 - `UserResponse.email` is tolerant `Optional[str]` on read (a stored email strict `EmailStr` rejects must not 500 a list/response); `UserBase`/`UserCreate` keep `EmailStr` for input. Fixes the Teachers/`/auth/me` 500.
 - `SchoolResponse.email` is tolerant `Optional[str]` on read (nested in `UserResponse.school`, returned by teachers/students lists); a stored school email strict EmailStr rejects must not 500 the list. Input schemas keep EmailStr.
 - `SchoolLevel*` schemas (#3 levels referential).
+- `Building` gains `description`; `BuildingUpdate` added (#5).

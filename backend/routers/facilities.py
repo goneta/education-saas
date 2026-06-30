@@ -76,6 +76,34 @@ def create_building(payload: schemas.BuildingCreate, current_user: models.User =
     return row
 
 
+@router.patch("/buildings/{building_id}", response_model=schemas.BuildingResponse)
+def update_building(building_id: int, payload: schemas.BuildingUpdate, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db), school_id: Optional[int] = None):
+    _admin(current_user)
+    resolved = _school(current_user, school_id, db)
+    row = db.query(models.Building).filter(models.Building.id == building_id, models.Building.school_id == resolved).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Building not found")
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(row, key, value)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.delete("/buildings/{building_id}", status_code=204)
+def delete_building(building_id: int, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db), school_id: Optional[int] = None):
+    _admin(current_user)
+    resolved = _school(current_user, school_id, db)
+    row = db.query(models.Building).filter(models.Building.id == building_id, models.Building.school_id == resolved).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Building not found")
+    if db.query(models.Room.id).filter(models.Room.building_id == building_id).first():
+        raise HTTPException(status_code=409, detail="Ce bâtiment contient des salles ; supprimez-les d'abord.")
+    db.delete(row)
+    audit.record_audit(db, action="facilities.building.deleted", current_user=current_user, entity_type="building", entity_id=building_id)
+    db.commit()
+
+
 # --- Rooms ------------------------------------------------------------------
 
 def _room_or_404(db: Session, room_id: int, school_id: int) -> models.Room:

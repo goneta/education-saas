@@ -66,7 +66,9 @@
     "tracking": "Suivi GPS",
     "boarding": "Embarquement",
     "fleetOps": "Maintenance & carburant",
-    "schoolLevels": "Niveaux scolaires"
+    "schoolLevels": "Niveaux scolaires",
+    "buildings": "B\u00e2timents",
+    "rooms": "Salles"
   },
   "layout": {
     "previewTitle": "Apercu du contenu genere par l'IA",
@@ -185,5 +187,38 @@
     "lycee": "Lyc\u00e9e",
     "superieur": "Sup\u00e9rieur",
     "autre": "Autre"
+  },
+  "facilities": {
+    "buildingsTitle": "B\u00e2timents",
+    "buildingsSubtitle": "G\u00e9rez les b\u00e2timents de l'\u00e9tablissement.",
+    "roomsTitle": "Salles",
+    "roomsSubtitle": "Salles, laboratoires et capacit\u00e9s.",
+    "addBuilding": "Ajouter un b\u00e2timent",
+    "addRoom": "Ajouter une salle",
+    "name": "Nom",
+    "description": "Description",
+    "campus": "Campus",
+    "state": "\u00c9tat",
+    "building": "B\u00e2timent",
+    "capacity": "Capacit\u00e9",
+    "type": "Type",
+    "nbClasses": "Nb Classes",
+    "view": "Voir",
+    "add": "Ajouter",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "actions": "Actions",
+    "empty": "Rien pour le moment.",
+    "confirmDelete": "Supprimer cet \u00e9l\u00e9ment ?",
+    "level": "Niveau",
+    "close": "Fermer",
+    "noCampus": "Aucun campus",
+    "classesInRoom": "Classes utilisant cette salle",
+    "classroom": "Salle de classe",
+    "laboratory": "Laboratoire",
+    "computer_room": "Salle informatique",
+    "workshop": "Atelier",
+    "gym": "Gymnase",
+    "other": "Autre"
   }
 }

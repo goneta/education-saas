@@ -66,7 +66,9 @@
     "tracking": "GPS tracking",
     "boarding": "Boarding",
     "fleetOps": "Maintenance & fuel",
-    "schoolLevels": "School levels"
+    "schoolLevels": "School levels",
+    "buildings": "Buildings",
+    "rooms": "Rooms"
   },
   "layout": {
     "previewTitle": "AI Generated Content Preview",
@@ -185,5 +187,38 @@
     "lycee": "High school",
     "superieur": "Higher education",
     "autre": "Other"
+  },
+  "facilities": {
+    "buildingsTitle": "Buildings",
+    "buildingsSubtitle": "Manage the school's buildings.",
+    "roomsTitle": "Rooms",
+    "roomsSubtitle": "Rooms, laboratories and capacities.",
+    "addBuilding": "Add a building",
+    "addRoom": "Add a room",
+    "name": "Name",
+    "description": "Description",
+    "campus": "Campus",
+    "state": "State",
+    "building": "Building",
+    "capacity": "Capacity",
+    "type": "Type",
+    "nbClasses": "Classes",
+    "view": "View",
+    "add": "Add",
+    "active": "Active",
+    "inactive": "Inactive",
+    "actions": "Actions",
+    "empty": "Nothing yet.",
+    "confirmDelete": "Delete this item?",
+    "level": "Level",
+    "close": "Close",
+    "noCampus": "No campus",
+    "classesInRoom": "Classes using this room",
+    "classroom": "Classroom",
+    "laboratory": "Laboratory",
+    "computer_room": "Computer room",
+    "workshop": "Workshop",
+    "gym": "Gym",
+    "other": "Other"
   }
 }

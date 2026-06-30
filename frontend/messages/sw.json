@@ -66,7 +66,9 @@
     "tracking": "Ufuatiliaji GPS",
     "boarding": "Kupanda",
     "fleetOps": "Matengenezo na mafuta",
-    "schoolLevels": "Madarasa"
+    "schoolLevels": "Madarasa",
+    "buildings": "Majengo",
+    "rooms": "Vyumba"
   },
   "layout": {
     "previewTitle": "Hakiki ya maudhui yaliyotengenezwa na AI",
@@ -185,5 +187,38 @@
     "lycee": "Upili",
     "superieur": "Elimu ya juu",
     "autre": "Nyingine"
+  },
+  "facilities": {
+    "buildingsTitle": "Majengo",
+    "buildingsSubtitle": "Simamia majengo ya shule.",
+    "roomsTitle": "Vyumba",
+    "roomsSubtitle": "Vyumba, maabara na uwezo.",
+    "addBuilding": "Ongeza jengo",
+    "addRoom": "Ongeza chumba",
+    "name": "Jina",
+    "description": "Maelezo",
+    "campus": "Kampasi",
+    "state": "Hali",
+    "building": "Jengo",
+    "capacity": "Uwezo",
+    "type": "Aina",
+    "nbClasses": "Madarasa",
+    "view": "Tazama",
+    "add": "Ongeza",
+    "active": "Inatumika",
+    "inactive": "Haitumiki",
+    "actions": "Vitendo",
+    "empty": "Hakuna bado.",
+    "confirmDelete": "Futa?",
+    "level": "Ngazi",
+    "close": "Funga",
+    "noCampus": "Hakuna kampasi",
+    "classesInRoom": "Madarasa yanayotumia chumba hiki",
+    "classroom": "Darasa",
+    "laboratory": "Maabara",
+    "computer_room": "Chumba cha kompyuta",
+    "workshop": "Karakana",
+    "gym": "Mazoezi",
+    "other": "Nyingine"
   }
 }

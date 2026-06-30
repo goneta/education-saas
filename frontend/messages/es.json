@@ -66,7 +66,9 @@
     "tracking": "Rastreo GPS",
     "boarding": "Embarque",
     "fleetOps": "Mantenimiento y combustible",
-    "schoolLevels": "Niveles escolares"
+    "schoolLevels": "Niveles escolares",
+    "buildings": "Edificios",
+    "rooms": "Aulas"
   },
   "layout": {
     "previewTitle": "Vista previa del contenido generado por IA",
@@ -185,5 +187,38 @@
     "lycee": "Bachillerato",
     "superieur": "Superior",
     "autre": "Otro"
+  },
+  "facilities": {
+    "buildingsTitle": "Edificios",
+    "buildingsSubtitle": "Gestione los edificios de la escuela.",
+    "roomsTitle": "Aulas",
+    "roomsSubtitle": "Aulas, laboratorios y capacidades.",
+    "addBuilding": "A\u00f1adir un edificio",
+    "addRoom": "A\u00f1adir un aula",
+    "name": "Nombre",
+    "description": "Descripci\u00f3n",
+    "campus": "Campus",
+    "state": "Estado",
+    "building": "Edificio",
+    "capacity": "Capacidad",
+    "type": "Tipo",
+    "nbClasses": "N.\u00ba clases",
+    "view": "Ver",
+    "add": "A\u00f1adir",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "actions": "Acciones",
+    "empty": "Nada todav\u00eda.",
+    "confirmDelete": "\u00bfEliminar?",
+    "level": "Nivel",
+    "close": "Cerrar",
+    "noCampus": "Sin campus",
+    "classesInRoom": "Clases que usan esta aula",
+    "classroom": "Aula",
+    "laboratory": "Laboratorio",
+    "computer_room": "Sala de inform\u00e1tica",
+    "workshop": "Taller",
+    "gym": "Gimnasio",
+    "other": "Otro"
   }
 }

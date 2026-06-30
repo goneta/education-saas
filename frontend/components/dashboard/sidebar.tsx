@@ -42,6 +42,8 @@ import {
     Navigation,
     ScanLine,
     Wrench,
+    Building2,
+    DoorOpen,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -114,6 +116,8 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
             items: [
                 { href: `/${locale}/dashboard/students`, label: t("students"), icon: Users },
                 { href: `/${locale}/dashboard/teachers`, label: t("teachers"), icon: GraduationCap },
+                { href: `/${locale}/dashboard/buildings`, label: t("buildings"), icon: Building2 },
+                { href: `/${locale}/dashboard/rooms`, label: t("rooms"), icon: DoorOpen },
             ]
         },
         {

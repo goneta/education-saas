@@ -1396,8 +1396,16 @@ class CampusResponse(CampusCreate):
 
 class BuildingCreate(BaseModel):
     name: str
+    description: Optional[str] = None
     campus_id: Optional[int] = None
     is_active: bool = True
+
+
+class BuildingUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    campus_id: Optional[int] = None
+    is_active: Optional[bool] = None
 
 
 class BuildingResponse(BuildingCreate):
