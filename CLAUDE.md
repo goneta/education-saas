@@ -50,6 +50,15 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
+- **TeducAI Platform Docs (public docs site)**: a Claude-Docs-style documentation
+  experience at `/{locale}/docs` (linked from the marketing nav, next to Tarification).
+  Sticky header with top tabs, left nav sidebar + search, center content with Copy-page,
+  right scroll-spy TOC, and a floating "Ask TeducAI" button; responsive (sidebar drawer
+  on mobile). Content is typed data in `lib/docs/content.ts` rendered by `components/docs/*`
+  (no MDX build dependency). Feature pages for the AI Timetable Engine, Cash payments &
+  AI credits and Smart Transport come from the supplied feature docx; the rest are written
+  from the implemented modules.
+
 - **Audit-driven program (ongoing, increment by increment)**: (a) **UI for UI-less
   backends (#1)** — surfaced HR **Congés** (`/hr/leave-requests`: self-service request
   + role-scoped list + admin approve/reject) and **Annonces** (`/communication/

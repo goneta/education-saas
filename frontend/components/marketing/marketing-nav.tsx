@@ -21,6 +21,7 @@ export function MarketingNav({ locale }: MarketingNavProps) {
     { href: `/${locale}/emploi`, label: "Emploi" },
     { href: `/${locale}#fonctionnalites`, label: "Fonctionnalités" },
     { href: `/${locale}/pricing`, label: "Tarification" },
+    { href: `/${locale}/docs`, label: "Documentation" },
     { href: `/${locale}/contact`, label: "Contact" },
   ]
 
