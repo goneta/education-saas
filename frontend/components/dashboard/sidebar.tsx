@@ -163,6 +163,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
             title: t("finance"),
             items: [
                 { href: `/${locale}/dashboard/finance`, label: t("finance"), icon: CreditCard },
+                { href: `/${locale}/dashboard/finance/payroll`, label: t("payroll"), icon: Receipt },
                 { href: `/${locale}/dashboard/finance/fees`, label: t("fees"), icon: CreditCard },
                 { href: `/${locale}/dashboard/finance/reports`, label: t("reports"), icon: BarChart3 },
                 { href: `/${locale}/dashboard/finance/cash-journal`, label: t("cashJournal"), icon: ClipboardCheck },
@@ -202,6 +203,12 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/documents`, label: t("documents"), icon: FileText },
                 { href: `/${locale}/dashboard/library`, label: t("library"), icon: BookOpen },
                 { href: `/${locale}/dashboard/portal`, label: t("portal"), icon: Users },
+            ],
+        },
+        {
+            title: t("finance"),
+            items: [
+                { href: `/${locale}/dashboard/finance/my-payslips`, label: t("myPayslips"), icon: Receipt },
             ],
         },
         {

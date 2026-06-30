@@ -27,3 +27,4 @@
 - cmd.exe /c "cd frontend&& npx eslint components/<path>"; npm run build for shared/layout changes
 - Has a dedicated "Smart Transport" section (Tableau de bord, Chauffeurs, Véhicules, Trajets, Affectations); transport was moved here out of Operations.
 - #8 Role-based dashboards: Teacher/Student/Parent get curated menus (no admin sections — Gestion, Finances admin, Opérations, Système hidden); all other roles keep the full menu. Establishment selector already scoped server-side via accessible_schools_query (memberships + school_id).
+- #7 Payroll: Finance section gains "Paie" (admin `/finance/payroll`); Teacher menu gains a Finance "Mes bulletins" self-service entry (`/finance/my-payslips`).
