@@ -203,7 +203,7 @@ export default function AssessmentsPage() {
         { key: "title", label: tx(locale, "title"), accessor: assessment => assessment.title },
         { key: "class", label: tx(locale, "class"), accessor: assessment => classes.find(c => c.id === assessment.class_id)?.name },
         { key: "subject", label: tx(locale, "subject"), accessor: assessment => subjects.find(s => s.id === assessment.subject_id)?.name },
-    ], [classes, subjects])
+    ], [classes, subjects, locale])
     const filter = useTableFilter(assessments, filterColumns, { storageKey: "assessments" })
     const filtered = filter.filtered
 

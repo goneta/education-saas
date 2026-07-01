@@ -99,7 +99,7 @@ export default function GradeReportsPage() {
     const filterColumns = useMemo<FilterColumn<Student>[]>(() => [
         { key: "name", label: tx(locale, "name"), accessor: s => s.full_name },
         { key: "registration", label: tx(locale, "matricule"), accessor: s => s.student_profile?.registration_number },
-    ], [])
+    ], [locale])
     const studentFilter = useTableFilter(students, filterColumns, { storageKey: "report-students" })
     const filteredStudents = studentFilter.filtered
 

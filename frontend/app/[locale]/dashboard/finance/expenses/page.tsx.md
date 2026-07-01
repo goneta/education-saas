@@ -25,3 +25,4 @@
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
 - i18n: localized via tx()/PRODUCT_COPY (FR/EN/ES/SW); no hardcoded visible strings (brand names Stripe/Djamo/CinetPay/Mobile Money kept verbatim).
+- Lint: categoryLabel wrapped in useCallback([locale]); filter-column labels localized via tx and included in the useMemo deps.

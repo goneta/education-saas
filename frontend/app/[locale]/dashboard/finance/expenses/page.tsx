@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
@@ -33,7 +33,7 @@ export default function ExpensesPage() {
     const { token } = useAuth()
     const params = useParams<{ locale: string }>()
     const locale = normalizeLocale(params?.locale)
-    const categoryLabel = (c: string) => tx(locale, "cat" + c.charAt(0).toUpperCase() + c.slice(1))
+    const categoryLabel = useCallback((c: string) => tx(locale, "cat" + c.charAt(0).toUpperCase() + c.slice(1)), [locale])
     const [expenses, setExpenses] = useState<Expense[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [filterCategory, setFilterCategory] = useState("")
@@ -143,9 +143,9 @@ export default function ExpensesPage() {
     }
 
     const filterColumns = useMemo<FilterColumn<Expense>[]>(() => [
-        { key: "title", label: "Title", accessor: expense => expense.title },
-        { key: "category", label: "Category", accessor: expense => categoryLabel(expense.category) },
-    ], [])
+        { key: "title", label: tx(locale, "title"), accessor: expense => expense.title },
+        { key: "category", label: tx(locale, "category"), accessor: expense => categoryLabel(expense.category) },
+    ], [locale, categoryLabel])
     const filter = useTableFilter(expenses, filterColumns, { storageKey: "expenses" })
     const filtered = filter.filtered
 

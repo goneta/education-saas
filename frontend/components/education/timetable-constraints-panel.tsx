@@ -438,7 +438,7 @@ export function TimetableConstraintsPanel({ token, subjects, teachers, classes }
                     <Metric icon={Route} label="Changements de salle (prof.)" value={String(metrics.teacherMoves)} />
                     <Metric icon={Building2} label="Bâtiments" value={String(buildings.length)} />
                 </div>
-                <p className="text-xs text-[#6B7280] dark:text-[#c7d0da]">Mesures dérivées de l'emploi du temps en vigueur : moins de salles occupées = consommation réduite ; moins de changements de salle = moins de déplacements. La génération optimisée cherche à regrouper les cours.</p>
+                <p className="text-xs text-[#6B7280] dark:text-[#c7d0da]">Mesures dérivées de l&apos;emploi du temps en vigueur : moins de salles occupées = consommation réduite ; moins de changements de salle = moins de déplacements. La génération optimisée cherche à regrouper les cours.</p>
             </Section>
 
             <Section icon={FlaskConical} title="Équipements & salles spécialisées" subtitle="Salles, laboratoires et capacités disponibles — réservez un labo à certaines matières via les règles ci-dessus.">
@@ -478,7 +478,7 @@ export function TimetableConstraintsPanel({ token, subjects, teachers, classes }
                     <li>Un professeur ne peut pas être dans deux classes au même moment.</li>
                     <li>Une classe ne peut pas avoir deux cours simultanément.</li>
                     <li>Une salle / un laboratoire ne peut pas être occupé par deux cours en même temps.</li>
-                    <li>Professeurs internes vs externes : la disponibilité des externes se définit via la règle « Disponibilité d'un enseignant » ; les affectations multi-établissements sont gérées dans le module Enseignants.</li>
+                    <li>Professeurs internes vs externes : la disponibilité des externes se définit via la règle « Disponibilité d&apos;un enseignant » ; les affectations multi-établissements sont gérées dans le module Enseignants.</li>
                     <li>Les conflits détectés sont signalés à la validation et résolus par la génération optimisée.</li>
                 </ul>
             </Section>
