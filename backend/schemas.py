@@ -2891,6 +2891,68 @@ class ApiKeyCreated(ApiKeyResponse):
     api_key: str  # plaintext, returned only once at creation
 
 
+class WebhookDeliveryResponse(BaseModel):
+    id: int
+    endpoint_id: int
+    event_type: str
+    status: str
+    attempts: int
+    max_attempts: int
+    next_retry_at: Optional[datetime] = None
+    last_error: Optional[str] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# --- Public partner API (v1) — read-only DTOs, deliberately minimal ---------
+
+class PublicKeyInfo(BaseModel):
+    key_name: str
+    key_prefix: str
+    school_id: int
+    school_name: Optional[str] = None
+
+
+class PublicStudent(BaseModel):
+    id: int
+    full_name: Optional[str] = None
+    email: Optional[str] = None  # tolerant on read
+    is_active: bool
+    registration_number: Optional[str] = None
+    gender: Optional[str] = None
+    class_id: Optional[int] = None
+    class_name: Optional[str] = None
+
+
+class PublicTeacher(BaseModel):
+    id: int
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    is_active: bool
+
+
+class PublicClass(BaseModel):
+    id: int
+    name: str
+    level: Optional[str] = None
+
+
+class PublicSubject(BaseModel):
+    id: int
+    name: str
+    coefficient: Optional[int] = None
+
+
+class PublicAnnouncement(BaseModel):
+    id: int
+    title: str
+    body: str
+    audience: str
+    is_emergency: bool
+    published_at: Optional[datetime] = None
+
+
 class CanteenMealPlanCreate(BaseModel):
     name: str
     day_of_week: Optional[str] = None

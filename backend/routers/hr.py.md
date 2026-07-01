@@ -11,3 +11,4 @@
 
 ## Verification
 - `python -m pytest backend/test_hr.py`
+- Publishes the `leave.decided` outbound webhook event via `emit_event` when a leave request is decided.

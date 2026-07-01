@@ -50,6 +50,16 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
+- **Public partner API + outbound webhooks (live)**: `/api/v1` read-only REST API
+  authenticated by tenant API keys (`X-API-Key`, hashed, school-scoped; minted in
+  `/extensibility/api-keys`) — /me, /students, /teachers, /classes, /subjects,
+  /announcements. `emit_event` is now actually wired: `announcement.published`,
+  `leave.decided`, `payslip.paid` queue webhook deliveries; `GET /extensibility/
+  deliveries` lists them. New System → API & Integrations page (keys, webhooks,
+  deliveries + retry). Docs api-webhooks page documents it; docs language dropdown
+  now switches locale; timetable-integration claim corrected (transport pickup
+  recalculation = roadmap). Async HTTP delivery worker remains NOT READY.
+
 - **TeducAI Platform Docs (public docs site)**: a Claude-Docs-style documentation
   experience at `/{locale}/docs` (linked from the marketing nav, next to Tarification).
   Sticky header with top tabs, left nav sidebar + search, center content with Copy-page,

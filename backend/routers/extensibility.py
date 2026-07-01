@@ -94,6 +94,22 @@ def delete_webhook(endpoint_id: int, db: Session = Depends(database.get_db), cur
     return {"status": "deleted"}
 
 
+@router.get("/deliveries", response_model=List[schemas.WebhookDeliveryResponse])
+def list_deliveries(
+    status: Optional[str] = None,
+    limit: int = 50,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """Recent outbound deliveries for the school (newest first), optionally
+    filtered by status — pending | delivered | failed."""
+    _ensure_admin(current_user)
+    query = db.query(models.WebhookDelivery).filter(models.WebhookDelivery.school_id == _school_id(current_user))
+    if status:
+        query = query.filter(models.WebhookDelivery.status == status)
+    return query.order_by(models.WebhookDelivery.id.desc()).limit(min(max(limit, 1), 200)).all()
+
+
 @router.post("/deliveries/{delivery_id}/retry")
 def retry_delivery(delivery_id: int, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
     """Re-queue a failed delivery (manual retry; the automatic retry worker uses

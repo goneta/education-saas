@@ -61,3 +61,4 @@ The schema catalog includes enrollment, transfer, academic-year closure, tempora
 - `Staff*` schemas (#7 Personnel scolaire); response email tolerant `Optional[str]`.
 - `SalaryProfile*`, `Payslip*` schemas (#7 Payroll); response email tolerant.
 - `StaffAssignment*` schemas (#3 personnel establishment history over `SchoolMembership`).
+- `WebhookDeliveryResponse` + minimal `Public*` DTOs for the partner API v1.

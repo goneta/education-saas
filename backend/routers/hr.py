@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from .. import database, models, schemas, security
+from .extensibility import emit_event
 from ..services import automation
 
 router = APIRouter(prefix="/hr", tags=["Human Resources"])
@@ -88,6 +89,10 @@ def decide_leave_request(request_id: int, payload: schemas.LeaveDecision, db: Se
         source_id=row.id,
         current_user=current_user,
     )
+    emit_event(db, school_id, "leave.decided", {
+        "leave_request_id": row.id, "staff_user_id": row.staff_user_id,
+        "leave_type": row.leave_type, "status": row.status.value,
+    })
     db.commit()
     db.refresh(row)
     return row

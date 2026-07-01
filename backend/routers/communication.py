@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from .. import database, models, schemas, security
+from .extensibility import emit_event
 from ..services import automation
 
 router = APIRouter(prefix="/communication", tags=["Communication"])
@@ -87,6 +88,11 @@ def publish_announcement(announcement_id: int, db: Session = Depends(database.ge
         )
     row.status = "published"
     row.published_at = datetime.now(timezone.utc)
+    # Outbound webhooks: notify subscribed third-party endpoints.
+    emit_event(db, school_id, "announcement.published", {
+        "announcement_id": row.id, "title": row.title, "audience": row.audience,
+        "is_emergency": bool(row.is_emergency),
+    })
     db.commit()
     db.refresh(row)
     return row

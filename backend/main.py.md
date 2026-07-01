@@ -49,3 +49,4 @@ The application registers the `/site` router for the public marketing-site conte
 - Registers the `/levels` router (school-levels referential).
 - Registers the `/personnel` router (#7).
 - Registers the `/finance/payroll` router (#7 Payroll).
+- Registers the `/api/v1` public partner API router.

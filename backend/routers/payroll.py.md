@@ -7,3 +7,4 @@
 - Admin/accountant manage; employees & teachers read only their own. Duplicate staff+period+period_type rejected (409). Built on existing `PayrollRecord` (extended with nullable breakdown columns) + `PayrollAdjustment`; the legacy `/operations` payroll CRUD is unaffected.
 ## Verification
 - `python -m pytest backend/test_payroll.py`
+- Publishes the `payslip.paid` outbound webhook event via `emit_event` when a payslip is paid.

@@ -11,3 +11,4 @@
 
 ## Verification
 - `python -m pytest backend/test_communication.py`
+- Publishes the `announcement.published` outbound webhook event via `emit_event` when an announcement is published.

@@ -29,3 +29,4 @@
 - #8 Role-based dashboards: Teacher/Student/Parent get curated menus (no admin sections — Gestion, Finances admin, Opérations, Système hidden); all other roles keep the full menu. Establishment selector already scoped server-side via accessible_schools_query (memberships + school_id).
 - #7 Payroll: Finance section gains "Paie" (admin `/finance/payroll`); Teacher menu gains a Finance "Mes bulletins" self-service entry (`/finance/my-payslips`).
 - #1 UI-less features: Gestion gains Congés (`/hr/leave`) + Annonces (`/communication`); Teacher menu gains Congés (self-service).
+- System section gains "API & Integrations" (`/dashboard/extensibility`).

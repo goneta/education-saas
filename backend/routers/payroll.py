@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from .. import audit, database, models, schemas, security
 from ..services import payroll as payroll_engine
+from .extensibility import emit_event
 
 router = APIRouter(prefix="/finance/payroll", tags=["Payroll"])
 
@@ -233,6 +234,10 @@ def pay_payslip(record_id: int, payload: schemas.PayslipPay, school_id: Optional
     record.payment_reference = payload.payment_reference
     record.paid_at = datetime.utcnow()
     audit.record_audit(db, action="payroll.payslip.paid", current_user=current_user, entity_type="payroll_record", entity_id=record.id, details={"method": payload.payment_method})
+    emit_event(db, resolved, "payslip.paid", {
+        "payroll_record_id": record.id, "staff_user_id": record.staff_user_id,
+        "period": record.period, "net_amount": record.net_amount, "method": payload.payment_method,
+    })
     db.commit()
     db.refresh(record)
     return _serialize_payslip(db, record)
