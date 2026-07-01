@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { X } from "lucide-react"
+import { List, X } from "lucide-react"
+import { slugify } from "@/components/docs/doc-blocks"
 import { DocsHeader } from "@/components/docs/docs-header"
 import { DocsSidebar } from "@/components/docs/docs-sidebar"
 import { DocsContent } from "@/components/docs/docs-content"
@@ -19,11 +20,18 @@ export function DocsApp({ locale, slug }: { locale: string; slug: string }) {
     const page = DOC_PAGES[slug]
     const [activeTab, setActiveTab] = useState(() => tabForSlug(slug))
     const [drawer, setDrawer] = useState(false)
+    const [tocOpen, setTocOpen] = useState(false)
+
+    // In-page anchors for the mobile floating TOC.
+    const headings = useMemo(
+        () => (page ? page.blocks.filter(b => b.k === "h2" || b.k === "h3").map(b => ({ id: slugify((b as { text: string }).text), text: (b as { text: string }).text, level: b.k })) : []),
+        [page],
+    )
 
     // Keep the active tab in sync with the page being viewed.
     useEffect(() => { setActiveTab(tabForSlug(slug)) }, [slug])
-    // Lock body scroll while the mobile drawer is open.
-    useEffect(() => { document.body.style.overflow = drawer ? "hidden" : ""; return () => { document.body.style.overflow = "" } }, [drawer])
+    // Lock body scroll while the mobile drawer or TOC sheet is open.
+    useEffect(() => { document.body.style.overflow = drawer || tocOpen ? "hidden" : ""; return () => { document.body.style.overflow = "" } }, [drawer, tocOpen])
 
     return (
         <div className="min-h-screen bg-white dark:bg-[#0f1419]">
@@ -75,6 +83,37 @@ export function DocsApp({ locale, slug }: { locale: string; slug: string }) {
                     </div>
                 </div>
             </div>
+
+            {/* Mobile floating TOC (the right sidebar is desktop-only) */}
+            {headings.length > 0 && (
+                <>
+                    {tocOpen && (
+                        <div className="fixed inset-0 z-50 xl:hidden">
+                            <div className="absolute inset-0 bg-black/40" onClick={() => setTocOpen(false)} />
+                            <div className="absolute bottom-0 left-0 right-0 max-h-[60vh] overflow-y-auto rounded-t-2xl border-t border-[#E5E7EB] bg-white p-5 dark:border-[#3b4248] dark:bg-[#0f1419]">
+                                <div className="mb-3 flex items-center justify-between">
+                                    <p className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wide text-[#94A3B8]"><List className="h-4 w-4" /> On this page</p>
+                                    <button onClick={() => setTocOpen(false)} aria-label="Close"><X className="h-4 w-4 text-[#94A3B8]" /></button>
+                                </div>
+                                <ul className="space-y-1">
+                                    {headings.map(h => (
+                                        <li key={h.id}>
+                                            <a href={`#${h.id}`} onClick={() => setTocOpen(false)}
+                                                className={`block rounded-lg px-3 py-2 text-[14px] text-[#374151] hover:bg-[#F8FAFC] dark:text-[#c7d0da] dark:hover:bg-[#1c2227] ${h.level === "h3" ? "pl-7" : ""}`}>
+                                                {h.text}
+                                            </a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+                    <button onClick={() => setTocOpen(true)} aria-label="On this page"
+                        className="fixed bottom-6 left-6 z-40 flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-3 text-sm font-medium text-[#0F172A] shadow-lg xl:hidden dark:border-[#3b4248] dark:bg-[#1c2227] dark:text-white">
+                        <List className="h-4 w-4" /> On this page
+                    </button>
+                </>
+            )}
 
             <AskDocsButton locale={locale} />
         </div>

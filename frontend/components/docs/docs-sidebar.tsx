@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Search, ChevronDown, Building2 } from "lucide-react"
 import { DOC_GROUPS, DOC_PAGES } from "@/lib/docs/content"
 
@@ -12,6 +12,22 @@ export function DocsSidebar({ locale, activeTab, activeSlug, onNavigate }: {
     onNavigate?: () => void
 }) {
     const [query, setQuery] = useState("")
+    const searchRef = useRef<HTMLInputElement | null>(null)
+
+    // Cmd/Ctrl+K focuses the docs search (only when this sidebar is visible).
+    useEffect(() => {
+        const onKey = (event: KeyboardEvent) => {
+            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+                const el = searchRef.current
+                if (el && el.offsetParent !== null) {
+                    event.preventDefault()
+                    el.focus()
+                }
+            }
+        }
+        window.addEventListener("keydown", onKey)
+        return () => window.removeEventListener("keydown", onKey)
+    }, [])
 
     const groups = useMemo(() => {
         const inTab = DOC_GROUPS.filter(g => g.tab === activeTab)
@@ -28,6 +44,7 @@ export function DocsSidebar({ locale, activeTab, activeSlug, onNavigate }: {
                 <div className="relative">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
                     <input
+                        ref={searchRef}
                         value={query}
                         onChange={e => setQuery(e.target.value)}
                         placeholder="Search…"

@@ -24,8 +24,9 @@ export function DocsHeader({ locale, activeTab, onTab, onMenu }: {
                 <nav className="ml-2 hidden items-center gap-1 md:flex">
                     {DOC_TABS.map(tab => (
                         <button key={tab} onClick={() => onTab(tab)}
-                            className={`rounded-full px-3.5 py-1.5 text-[14px] font-medium transition ${activeTab === tab ? "bg-[#F1F3F5] text-[#0F172A] dark:bg-[#252b30] dark:text-white" : "text-[#475569] hover:text-[#0F172A] dark:text-[#c7d0da] dark:hover:text-white"}`}>
+                            className={`flex items-center gap-1 rounded-full px-3.5 py-1.5 text-[14px] font-medium transition ${activeTab === tab ? "bg-[#F1F3F5] text-[#0F172A] dark:bg-[#252b30] dark:text-white" : "text-[#475569] hover:text-[#0F172A] dark:text-[#c7d0da] dark:hover:text-white"}`}>
                             {tab}
+                            {tab === "Resources" && <ChevronDown className="h-3.5 w-3.5 opacity-60" />}
                         </button>
                     ))}
                 </nav>
