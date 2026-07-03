@@ -26,3 +26,4 @@
 ## Verification
 
 - `cmd.exe /c "cd frontend&& npx eslint app/[locale]/dashboard/emploi-recruteur/page.tsx"`
+- Automation D (recruiters): job rows gain a "Questions" button (AI screening questionnaire shown in a <details> under the offer); matches gain a per-candidate "Pourquoi ?" button (AI reasons under the row); new "Agents de recherche sauvegardes" panel (create with name/sector/skills/min-score, run/delete per agent, run result lists only NEW profiles since the last pass).

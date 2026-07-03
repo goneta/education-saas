@@ -12,7 +12,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session, selectinload
 
 from .. import audit, database, models, schemas, security
-from ..services import ai_credits, ai_service, employment, file_storage
+from ..services import ai_credits, ai_service, employment, file_storage, recruiter_agents
 
 router = APIRouter(prefix="/employment", tags=["TeducAI Emploi"])
 logger = logging.getLogger(__name__)
@@ -781,6 +781,96 @@ def recruiter_job_matches(job_id: int, current_user: models.User = Depends(secur
     job.ai_match_summary = {"top_candidates": matches, "generated_at": _now().isoformat()}
     db.commit()
     return {"job_id": job.id, "matches": matches}
+
+
+@router.get("/recruiter/saved-searches", response_model=list[schemas.RecruiterSavedSearchResponse])
+def list_saved_searches(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    recruiter = _recruiter_for_user(db, current_user)
+    return db.query(models.RecruiterSavedSearch).filter(models.RecruiterSavedSearch.recruiter_id == recruiter.id).order_by(models.RecruiterSavedSearch.id.desc()).all()
+
+
+@router.post("/recruiter/saved-searches", response_model=schemas.RecruiterSavedSearchResponse)
+def create_saved_search(payload: schemas.RecruiterSavedSearchCreate, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    recruiter = _recruiter_for_user(db, current_user)
+    _require_recruiter_payment(recruiter)
+    row = models.RecruiterSavedSearch(recruiter_id=recruiter.id, name=payload.name.strip(), criteria=payload.criteria)
+    db.add(row)
+    audit.record_audit(db, action="employment.saved_search.created", current_user=current_user, entity_type="recruiter_saved_search", entity_id=payload.name)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.delete("/recruiter/saved-searches/{search_id}")
+def delete_saved_search(search_id: int, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    recruiter = _recruiter_for_user(db, current_user)
+    row = db.query(models.RecruiterSavedSearch).filter(models.RecruiterSavedSearch.id == search_id, models.RecruiterSavedSearch.recruiter_id == recruiter.id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Recherche introuvable.")
+    db.delete(row)
+    audit.record_audit(db, action="employment.saved_search.deleted", current_user=current_user, entity_type="recruiter_saved_search", entity_id=search_id)
+    db.commit()
+    return {"status": "deleted"}
+
+
+@router.post("/recruiter/saved-searches/{search_id}/run")
+def run_saved_search(search_id: int, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    """Run one saved-search agent now: scores CVs updated since the last run
+    and notifies about new matching graduates (watermark-idempotent)."""
+    recruiter = _recruiter_for_user(db, current_user)
+    _require_recruiter_payment(recruiter)
+    row = db.query(models.RecruiterSavedSearch).filter(models.RecruiterSavedSearch.id == search_id, models.RecruiterSavedSearch.recruiter_id == recruiter.id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Recherche introuvable.")
+    summary = recruiter_agents.run_saved_search(db, row, current_user)
+    audit.record_audit(db, action="employment.saved_search.run", current_user=current_user, entity_type="recruiter_saved_search", entity_id=row.id, details={"match_count": summary["match_count"]})
+    db.commit()
+    return summary
+
+
+@router.post("/recruiter/saved-searches/run-all")
+def run_all_saved_searches(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    """Run every active saved search of the recruiter — cron-friendly."""
+    recruiter = _recruiter_for_user(db, current_user)
+    _require_recruiter_payment(recruiter)
+    rows = db.query(models.RecruiterSavedSearch).filter(
+        models.RecruiterSavedSearch.recruiter_id == recruiter.id,
+        models.RecruiterSavedSearch.is_active == True,  # noqa: E712
+    ).all()
+    results = [recruiter_agents.run_saved_search(db, row, current_user) for row in rows]
+    db.commit()
+    return {"searches": len(results), "total_matches": sum(item["match_count"] for item in results), "results": results}
+
+
+@router.post("/recruiter/jobs/{job_id}/screening-questions")
+def generate_screening_questions(job_id: int, num_questions: int = 6, language: str = "fr", current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    """AI screening questionnaire grounded in the offer (credit-gated); stored
+    on the offer for reuse."""
+    recruiter = _recruiter_for_user(db, current_user)
+    _require_recruiter_payment(recruiter)
+    job = db.query(models.JobOffer).filter(models.JobOffer.id == job_id, models.JobOffer.recruiter_id == recruiter.id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Offre introuvable.")
+    num_questions = min(max(num_questions, 3), 12)
+    result = recruiter_agents.generate_screening_questions(db, job, current_user, num_questions=num_questions, language=language)
+    audit.record_audit(db, action="employment.screening_questions.generated", current_user=current_user, entity_type="job_offer", entity_id=job.id)
+    db.commit()
+    return result
+
+
+@router.post("/recruiter/jobs/{job_id}/matches/{cv_id}/explain")
+def explain_candidate_match(job_id: int, cv_id: int, language: str = "fr", current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    """AI-written reasons for one candidate's ranking (credit-gated), grounded
+    in the deterministic match details."""
+    recruiter = _recruiter_for_user(db, current_user)
+    _require_recruiter_payment(recruiter)
+    job = db.query(models.JobOffer).filter(models.JobOffer.id == job_id, models.JobOffer.recruiter_id == recruiter.id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Offre introuvable.")
+    result = recruiter_agents.explain_match(db, job, cv_id, current_user, language=language)
+    audit.record_audit(db, action="employment.match.explained", current_user=current_user, entity_type="job_offer", entity_id=job.id, details={"cv_id": cv_id})
+    db.commit()
+    return result
 
 
 @router.post("/agent")

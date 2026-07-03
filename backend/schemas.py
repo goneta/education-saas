@@ -1022,6 +1022,22 @@ class EmploymentAgentRequest(BaseModel):
     mode: str = "recruiter"
 
 
+class RecruiterSavedSearchCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    criteria: dict = Field(default_factory=dict)  # {sector, skills[], languages[], min_score, min_experience_years}
+
+
+class RecruiterSavedSearchResponse(BaseModel):
+    id: int
+    name: str
+    criteria: Optional[dict] = None
+    is_active: bool
+    last_run_at: Optional[datetime] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class JobOfferCreate(BaseModel):
     title: str
     company: str

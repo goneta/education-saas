@@ -732,12 +732,31 @@ class JobOffer(Base):
     desired_start_date = Column(DateTime(timezone=True), nullable=True)
     deadline = Column(DateTime, nullable=True, index=True)
     ai_match_summary = Column(JSON, nullable=True)
+    screening_questions = Column(JSON, nullable=True)
     status = Column(String, default="draft", nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     recruiter = relationship("RecruiterProfile", back_populates="job_offers")
     applications = relationship("JobApplication", back_populates="job_offer")
+
+
+class RecruiterSavedSearch(Base):
+    """Saved-search agent (automation D, recruiters): a recruiter's stored
+    candidate criteria (sector, skills, minimum score). The runner re-scores
+    only CVs updated since `last_run_at` (watermark), so scheduled runs notify
+    on NEW matching graduates without re-flagging old ones."""
+    __tablename__ = "recruiter_saved_searches"
+
+    id = Column(Integer, primary_key=True, index=True)
+    recruiter_id = Column(Integer, ForeignKey("recruiter_profiles.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    criteria = Column(JSON, nullable=True)  # {sector, skills[], languages[], min_score}
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    last_run_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    recruiter = relationship("RecruiterProfile")
 
 
 class JobApplication(Base):

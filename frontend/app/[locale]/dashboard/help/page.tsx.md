@@ -38,3 +38,4 @@
 - HELP_SECTIONS documents `remediation` (4-locale): AI practice sets for struggling students, credit-gated, idempotent per student.
 - HELP_SECTIONS documents `explainGrade` (4-locale): AI walk-through of a grade with class context, credit-gated, self/linked-child only.
 - HELP_SECTIONS documents `sequenceBuilder` (4-locale): term lesson sequence from real timetable hours, credit-gated, kept in notifications.
+- The employment help section now covers the three recruiter automations (match reasons, screening questionnaire, saved-search agents) - French legacy-section style.

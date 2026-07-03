@@ -106,9 +106,19 @@ notifications and master data (zero data duplication).
   Timetable slots × the term's weeks; 422 when the pair has no slots),
   credit-gated, persisted as a `sequence.generated` notification; teacher
   page `/dashboard/sequence-builder` (pair/term selectors + optional topic).
-  All help-documented (4-locale) + tested. Next: remaining Phase-2 features
-  (grade-entry OCR — needs a vision provider decision, parent one-tap
-  actions, recruiter/job-seeker automations) increment by increment.
+  (D7) **Automations recruteur** — `services/recruiter_agents.py` on top of
+  the EXISTING `employment.match_score` engine: saved-search agents (new
+  `RecruiterSavedSearch` table, migration 0047; last_run_at watermark with a
+  deliberate 1-second overlap because second-resolution DB timestamps vs
+  microsecond bound params would skip same-second rows; one aggregate
+  EmploymentNotification per run; `run-all` endpoint cron-friendly),
+  AI screening questionnaires stored on `JobOffer.screening_questions`, and
+  per-candidate AI match reasons grounded strictly in match_score details;
+  recruiter page gains the Questions button, "Pourquoi ?" per match and the
+  saved-searches panel. All help-documented + tested. Next: remaining
+  Phase-2 features (job-seeker trio: CV auto-refresh runner, gap analysis,
+  AI cover letters; parent one-tap actions; grade-entry OCR — needs a vision
+  provider decision) increment by increment.
 
 - **Production hardening pass (security audit)**: removed the baked-in default
   passwords (AdmissionEnrollmentCreate schema default + frontend pre-filled

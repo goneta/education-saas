@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Bot, BriefcaseBusiness, Building2, CreditCard, ImageUp, Plus, Search, Sparkles } from "lucide-react"
+import { Bot, BriefcaseBusiness, Building2, CreditCard, ImageUp, ListChecks, Plus, Radar, Search, Sparkles } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { API_BASE_URL } from "@/lib/config"
@@ -42,6 +42,8 @@ type RecruiterProfile = {
   ai_credits_balance?: number
 }
 type Match = { score: number; cv: { id: number; name?: string; professional_title?: string; skills?: string[]; languages?: string[]; total_experience_years?: number }; details?: Record<string, unknown> }
+type SavedSearch = { id: number; name: string; criteria?: { sector?: string; skills?: string[]; min_score?: number } | null; is_active: boolean; last_run_at?: string | null }
+type SavedSearchRun = { search_id: number; name: string; scanned: number; match_count: number; matches: Match[] }
 
 const PENDING_PAYMENT_MESSAGE = "Paiement: pending, must pay before using the service."
 
@@ -64,6 +66,13 @@ export default function RecruiterDashboardPage() {
   const [sharecode, setSharecode] = useState("")
   const [sharecodeResult, setSharecodeResult] = useState<Record<string, unknown> | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
+  const [matchesJobId, setMatchesJobId] = useState<number | null>(null)
+  const [matchReasons, setMatchReasons] = useState<Record<number, string>>({})
+  const [screening, setScreening] = useState<{ jobId: number; questions: string } | null>(null)
+  const [screeningBusy, setScreeningBusy] = useState<number | null>(null)
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([])
+  const [searchForm, setSearchForm] = useState({ name: "", sector: "", skills: "", min_score: "60" })
+  const [searchRun, setSearchRun] = useState<SavedSearchRun | null>(null)
   const [agentPrompt, setAgentPrompt] = useState("Trouve-moi les meilleurs diplomes en Intelligence Artificielle apres 2023.")
   const [agentResult, setAgentResult] = useState("")
   const [subscription, setSubscription] = useState({ plan: "job_posts", duration_months: 1, auto_renew: false, payment_provider: "manual" })
@@ -111,6 +120,7 @@ export default function RecruiterDashboardPage() {
       }
     }).catch(() => undefined)
     fetch(`${API_BASE_URL}/employment/recruiter/jobs`, { headers }).then(res => res.json()).then(data => setJobs(Array.isArray(data) ? data : [])).catch(() => undefined)
+    fetch(`${API_BASE_URL}/employment/recruiter/saved-searches`, { headers }).then(res => res.ok ? res.json() : []).then(data => setSavedSearches(Array.isArray(data) ? data : [])).catch(() => undefined)
   }
 
   useEffect(load, [headers])
@@ -233,6 +243,75 @@ export default function RecruiterDashboardPage() {
       return
     }
     setMatches(data.matches || [])
+    setMatchesJobId(jobId)
+    setMatchReasons({})
+  }
+
+  const explainMatch = async (cvId: number) => {
+    if (!headers || restricted() || !matchesJobId) return
+    const response = await fetch(`${API_BASE_URL}/employment/recruiter/jobs/${matchesJobId}/matches/${cvId}/explain?language=${locale}`, { method: "POST", headers })
+    const data = await response.json().catch(() => null)
+    if (!response.ok) {
+      setStatus(data?.detail || "Explication indisponible.")
+      return
+    }
+    setMatchReasons(previous => ({ ...previous, [cvId]: data.reasons }))
+  }
+
+  const generateScreening = async (jobId: number) => {
+    if (!headers || restricted()) return
+    setScreeningBusy(jobId)
+    try {
+      const response = await fetch(`${API_BASE_URL}/employment/recruiter/jobs/${jobId}/screening-questions?num_questions=6&language=${locale}`, { method: "POST", headers })
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        setStatus(data?.detail || "Generation indisponible.")
+        return
+      }
+      setScreening({ jobId, questions: data.questions })
+    } finally {
+      setScreeningBusy(null)
+    }
+  }
+
+  const createSavedSearch = async () => {
+    if (!headers || restricted() || !searchForm.name.trim()) return
+    const response = await fetch(`${API_BASE_URL}/employment/recruiter/saved-searches`, {
+      method: "POST", headers,
+      body: JSON.stringify({
+        name: searchForm.name.trim(),
+        criteria: {
+          sector: searchForm.sector.trim() || undefined,
+          skills: csv(searchForm.skills),
+          min_score: Number(searchForm.min_score) || 60,
+        },
+      }),
+    })
+    if (!response.ok) {
+      setStatus(await readUserMessage(response))
+      return
+    }
+    setSearchForm({ name: "", sector: "", skills: "", min_score: "60" })
+    setStatus("Agent de recherche enregistre.")
+    load()
+  }
+
+  const runSavedSearch = async (searchId: number) => {
+    if (!headers || restricted()) return
+    const response = await fetch(`${API_BASE_URL}/employment/recruiter/saved-searches/${searchId}/run`, { method: "POST", headers })
+    const data = await response.json().catch(() => null)
+    if (!response.ok) {
+      setStatus(data?.detail || "Execution indisponible.")
+      return
+    }
+    setSearchRun(data)
+    load()
+  }
+
+  const deleteSavedSearch = async (searchId: number) => {
+    if (!headers) return
+    const response = await fetch(`${API_BASE_URL}/employment/recruiter/saved-searches/${searchId}`, { method: "DELETE", headers })
+    if (response.ok) { setSearchRun(null); load() }
   }
 
   const lookupSharecode = async () => {
@@ -355,11 +434,20 @@ export default function RecruiterDashboardPage() {
                     <p className="font-semibold">{job.title}</p>
                     <p className="text-sm text-[#64748B] dark:text-[#c7d0da]">{job.company} - {job.sector} - {job.status}</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button variant="outline" onClick={() => loadMatches(job.id)}>Matching</Button>
+                    <Button variant="outline" onClick={() => generateScreening(job.id)} disabled={screeningBusy !== null}>
+                      <ListChecks className="h-4 w-4" /> {screeningBusy === job.id ? "Generation..." : "Questions"}
+                    </Button>
                     <Button variant="outline" onClick={() => archive(job.id)}>Archiver</Button>
                   </div>
                 </div>
+                {screening?.jobId === job.id && (
+                  <details open className="mt-3 rounded-lg border p-3 text-sm dark:border-[#56616a]">
+                    <summary className="cursor-pointer font-semibold">Questionnaire de preselection genere par l&apos;IA</summary>
+                    <pre className="mt-2 whitespace-pre-wrap font-sans">{screening.questions}</pre>
+                  </details>
+                )}
               </div>
             ))}
             {!jobs.length && <p className="text-sm text-[#64748B] dark:text-[#c7d0da]">Aucune offre.</p>}
@@ -367,11 +455,59 @@ export default function RecruiterDashboardPage() {
         </Panel>
         <Panel title="Meilleurs candidats IA">
           <div className="grid gap-3">
-            {matches.map(item => <div key={item.cv.id} className="rounded-lg border p-3 text-sm dark:border-[#56616a]"><strong>{item.score}%</strong> - {item.cv.name || "Profil"} - {(item.cv.skills || []).slice(0, 4).join(", ")}</div>)}
+            {matches.map(item => (
+              <div key={item.cv.id} className="rounded-lg border p-3 text-sm dark:border-[#56616a]">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span><strong>{item.score}%</strong> - {item.cv.name || "Profil"} - {(item.cv.skills || []).slice(0, 4).join(", ")}</span>
+                  <Button size="sm" variant="outline" onClick={() => explainMatch(item.cv.id)}>Pourquoi ?</Button>
+                </div>
+                {matchReasons[item.cv.id] && <p className="mt-2 whitespace-pre-wrap text-[#475569] dark:text-[#c7d0da]">{matchReasons[item.cv.id]}</p>}
+              </div>
+            ))}
             {!matches.length && <p className="text-sm text-[#64748B] dark:text-[#c7d0da]">Selectionnez une offre pour calculer le matching.</p>}
           </div>
         </Panel>
       </section>
+
+      <Panel title="Agents de recherche sauvegardes">
+        <p className="mb-3 text-sm text-[#64748B] dark:text-[#c7d0da]">Enregistrez vos criteres : chaque execution ne signale que les NOUVEAUX profils correspondants depuis la derniere fois (relançable en cron via POST /employment/recruiter/saved-searches/run-all).</p>
+        <div className="grid gap-3 md:grid-cols-5">
+          <Field label="Nom de l'agent" value={searchForm.name} onChange={value => setSearchForm({ ...searchForm, name: value })} />
+          <Field label="Secteur" value={searchForm.sector} onChange={value => setSearchForm({ ...searchForm, sector: value })} />
+          <Field label="Competences (a,b,c)" value={searchForm.skills} onChange={value => setSearchForm({ ...searchForm, skills: value })} />
+          <Field label="Score minimum" type="number" value={searchForm.min_score} onChange={value => setSearchForm({ ...searchForm, min_score: value })} />
+          <div className="flex items-end">
+            <Button type="button" onClick={createSavedSearch} className="w-full bg-black text-white"><Radar className="h-4 w-4" /> Creer l&apos;agent</Button>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-2">
+          {savedSearches.map(search => (
+            <div key={search.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm dark:border-[#56616a]">
+              <span>
+                <strong>{search.name}</strong>
+                <span className="ml-2 text-[#64748B] dark:text-[#c7d0da]">
+                  {(search.criteria?.skills || []).join(", ") || "—"} · score ≥ {search.criteria?.min_score ?? 60}
+                  {search.last_run_at && ` · dernier passage ${new Date(search.last_run_at).toLocaleString()}`}
+                </span>
+              </span>
+              <span className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => runSavedSearch(search.id)}>Lancer</Button>
+                <Button size="sm" variant="outline" onClick={() => deleteSavedSearch(search.id)}>Supprimer</Button>
+              </span>
+            </div>
+          ))}
+          {!savedSearches.length && <p className="text-sm text-[#64748B] dark:text-[#c7d0da]">Aucun agent enregistre.</p>}
+        </div>
+        {searchRun && (
+          <div className="mt-4 rounded-lg border p-3 text-sm dark:border-[#56616a]">
+            <p className="font-semibold">Agent « {searchRun.name} » : {searchRun.match_count} nouveau(x) profil(s) sur {searchRun.scanned} analyse(s).</p>
+            <div className="mt-2 grid gap-2">
+              {searchRun.matches.map(item => <div key={item.cv.id} className="rounded-lg border p-2 dark:border-[#56616a]"><strong>{item.score}%</strong> - {item.cv.name || "Profil"} - {(item.cv.skills || []).slice(0, 4).join(", ")}</div>)}
+              {!searchRun.matches.length && <p className="text-[#64748B] dark:text-[#c7d0da]">Aucun nouveau profil depuis le dernier passage.</p>}
+            </div>
+          </div>
+        )}
+      </Panel>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] 2xl:grid-cols-3">
         <Panel title="Rechercher un etudiant par ShareCode">

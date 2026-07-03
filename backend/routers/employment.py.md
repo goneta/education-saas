@@ -37,3 +37,4 @@
 - `python -m py_compile backend\routers\employment.py`
 - `python -m pytest backend/test_employment_recruiter_registration.py`
 - Run backend tests for employment flows when available.
+- Automation D (recruiters): saved-search agents (`GET/POST/DELETE /recruiter/saved-searches`, `POST .../{id}/run`, `POST .../run-all` cron-friendly — watermark-idempotent, notifies only NEW matching CVs), `POST /recruiter/jobs/{id}/screening-questions` (AI questionnaire stored on the offer) and `POST /recruiter/jobs/{id}/matches/{cv_id}/explain` (AI match reasons grounded in match_score details). All recruiter-scoped + payment-gated; AI calls credit-gated in services/recruiter_agents.py.
