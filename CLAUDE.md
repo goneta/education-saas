@@ -50,6 +50,17 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
+- **Production hardening pass (security audit)**: removed the baked-in default
+  passwords (AdmissionEnrollmentCreate schema default + frontend pre-filled
+  "SecurePass2026!" in sidebar/settings forms); enroll_admission and personnel
+  now auto-generate policy-compliant credentials (returned once) and validate
+  caller passwords; the fallback-SECRET_KEY refusal also fires when
+  .env.production exists (not only APP_ENV=production); AI chat timeout 10s->60s.
+  Verified good: argon2 + enforced password policy at all creation sites,
+  token-gated bootstrap, CORS wildcard refusal, rate limiting + security headers,
+  encrypted provider keys, per-file access control, env files git-ignored.
+  Known residual: JWT in localStorage (app-wide), async webhook sender NOT READY.
+
 - **Public partner API + outbound webhooks (live)**: `/api/v1` read-only REST API
   authenticated by tenant API keys (`X-API-Key`, hashed, school-scoped; minted in
   `/extensibility/api-keys`) — /me, /students, /teachers, /classes, /subjects,

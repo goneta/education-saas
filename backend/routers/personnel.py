@@ -94,8 +94,11 @@ def create_staff(payload: schemas.StaffCreate, school_id: Optional[int] = None, 
     generated = None
     raw_password = payload.password
     if not raw_password:
-        generated = secrets.token_urlsafe(9)
+        # Policy-compliant random credential (length, cases, digit, special).
+        generated = f"Tk{secrets.token_urlsafe(9)}!3a"
         raw_password = generated
+    else:
+        security.validate_password_strength(raw_password)
 
     user = models.User(
         email=payload.email,

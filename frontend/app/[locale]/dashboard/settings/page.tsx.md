@@ -28,3 +28,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
+- Security: the user-creation form no longer pre-fills a hardcoded default password.

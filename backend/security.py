@@ -11,7 +11,11 @@ from . import models, schemas, database
 
 # Configuration
 SECRET_KEY = os.getenv("SECRET_KEY") or os.getenv("JWT_SECRET_KEY") or "fallback_secret_key"
-if os.getenv("APP_ENV") == "production" and SECRET_KEY == "fallback_secret_key":
+if SECRET_KEY == "fallback_secret_key" and (
+    os.getenv("APP_ENV") == "production" or os.path.exists(".env.production")
+):
+    # A host that ships .env.production is a production host even if APP_ENV was
+    # not exported — never run it on the well-known fallback signing key.
     raise RuntimeError("SECRET_KEY or JWT_SECRET_KEY must be configured in production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30

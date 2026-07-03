@@ -24,3 +24,4 @@
 ## Verification
 
 - python -m py_compile backend\routers\<module>.py; python -c "import backend.main as m; print(m.app.title)"
+- Security: enroll_admission generates a policy-compliant random password when none is supplied (returned once as generated_password) instead of the former publicly-known default; caller-supplied passwords keep strength validation.

@@ -8,3 +8,4 @@
 ## Verification
 - `python -m pytest backend/test_personnel.py`
 - #3 historisation: staff creation now records a `SchoolMembership` (establishment posting). New endpoints `GET/POST /personnel/{id}/assignments` + `POST /personnel/assignments/{id}/end` expose a staff member's multi-establishment posting history (reuses `SchoolMembership`; school-admins post only within their school, Super Admin anywhere).
+- Security: create_staff validates caller-supplied passwords (validate_password_strength) and the auto-generated credential is policy-compliant.

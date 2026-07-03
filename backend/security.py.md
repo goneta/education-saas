@@ -21,3 +21,4 @@
 ## Verification
 
 - python -m py_compile backend\models.py backend\schemas.py backend\main.py; python -m pytest backend when relevant
+- The fallback-SECRET_KEY refusal also fires when .env.production exists at the root (production host without an exported APP_ENV), not only when APP_ENV=production.

@@ -2284,7 +2284,9 @@ class AdmissionApplicationResponse(AdmissionApplicationCreate):
 
 class AdmissionEnrollmentCreate(BaseModel):
     email: str
-    password: str = "ChangeMe123!Secure"
+    # No default: a baked-in password would ship a publicly known credential.
+    # When omitted, the server generates a strong one and returns it once.
+    password: Optional[str] = None
     full_name: Optional[str] = None
     registration_number: Optional[str] = None
     date_of_birth: Optional[datetime] = None

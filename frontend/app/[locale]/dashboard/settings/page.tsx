@@ -224,7 +224,7 @@ export default function SettingsPage() {
     const [roleUsers, setRoleUsers] = useState<ManagedUser[]>([])
     const [newRole, setNewRole] = useState({ name: "", description: "", color: "#0F766E", parent_role_key: "" })
     const [users, setUsers] = useState<ManagedUser[]>([])
-    const [newUser, setNewUser] = useState({ email: "", full_name: "", password: "SecurePass2026!", role: "staff", role_keys: "" })
+    const [newUser, setNewUser] = useState({ email: "", full_name: "", password: "", role: "staff", role_keys: "" })
     const [userStatus, setUserStatus] = useState("")
     const [countries, setCountries] = useState<Record<string, CountryProfile>>({})
     const [schoolSettings, setSchoolSettings] = useState<SchoolSettings | null>(null)
@@ -413,7 +413,7 @@ export default function SettingsPage() {
             })
         })
         if (res.ok) {
-            setNewUser({ email: "", full_name: "", password: "SecurePass2026!", role: "staff", role_keys: "" })
+            setNewUser({ email: "", full_name: "", password: "", role: "staff", role_keys: "" })
             setUserStatus("Utilisateur cree.")
             await loadSystemContext()
         } else {
@@ -436,7 +436,7 @@ export default function SettingsPage() {
         const res = await fetch(`${API_BASE_URL}/system/users/${managedUser.id}/reset-password`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ new_password: "SecurePass2026!" })
+            body: JSON.stringify({ new_password: "" })
         })
         setUserStatus(res.ok ? `Mot de passe reinitialise pour ${managedUser.email}.` : "Reinitialisation impossible.")
     }

@@ -75,7 +75,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
     const [newAccount, setNewAccount] = useState({
         full_name: "",
         email: "",
-        password: "SecurePass2026!",
+        password: "",
         role: "teacher",
         role_keys: "",
     })
@@ -345,7 +345,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
         })
         if (res.ok) {
             setAccountStatus("Compte créé avec les rôles sélectionnés.")
-            setNewAccount({ full_name: "", email: "", password: "SecurePass2026!", role: "teacher", role_keys: "" })
+            setNewAccount({ full_name: "", email: "", password: "", role: "teacher", role_keys: "" })
         } else {
             const error = await res.text()
             setAccountStatus(`Création impossible: ${error.slice(0, 120)}`)

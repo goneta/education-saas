@@ -27,3 +27,4 @@
 
 - cmd.exe /c "cd frontend&& npx eslint components/<path>"; npm run build for shared/layout changes
 - Every successful agent reply now auto-switches to the preview view and reveals the answer progressively (structured 'content' replies show their data payload; conversational replies show the message). Previously only 'content' replies opened the preview.
+- Reliability: chat request timeout raised 10s -> 60s (LLM calls regularly exceed 10s; users saw spurious timeouts).

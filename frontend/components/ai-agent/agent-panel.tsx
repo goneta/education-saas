@@ -55,7 +55,7 @@ export function AgentPanel() {
         try {
             // Create a timeout for the fetch
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+            const timeoutId = setTimeout(() => controller.abort(), 60000); // LLM calls regularly exceed 10s; 60s avoids spurious aborts
 
 
             // IMPORTANT: No trailing slash on the URL to avoid 307 redirects or 404s depending on backend config

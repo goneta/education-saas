@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime
 import csv
 from io import BytesIO, StringIO
@@ -133,7 +134,13 @@ def enroll_admission(application_id: int, payload: schemas.AdmissionEnrollmentCr
         raise HTTPException(status_code=400, detail="Only submitted or accepted applications can be enrolled")
     if db.query(models.User).filter(models.User.email == payload.email).first():
         raise HTTPException(status_code=400, detail="Email already exists")
-    security.validate_password_strength(payload.password)
+    generated_password = None
+    if not payload.password:
+        # Policy-compliant random credential, returned once in the response.
+        generated_password = f"Tk{secrets.token_urlsafe(9)}!3a"
+        payload.password = generated_password
+    else:
+        security.validate_password_strength(payload.password)
 
     cls = None
     if payload.class_id:
@@ -223,6 +230,7 @@ def enroll_admission(application_id: int, payload: schemas.AdmissionEnrollmentCr
     db.refresh(student)
     return {
         "application_id": application.id,
+        "generated_password": generated_password,
         "student_user_id": student_user.id,
         "student_profile_id": student.id,
         "class_id": student.current_class_id,
