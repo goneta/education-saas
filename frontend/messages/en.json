@@ -75,7 +75,8 @@
     "leave": "Leave",
     "announcements": "Announcements",
     "integrations": "API & Integrations",
-    "automations": "Automations"
+    "automations": "Automations",
+    "myDocuments": "My documents"
   },
   "layout": {
     "previewTitle": "AI Generated Content Preview",
@@ -818,5 +819,34 @@
     "date": "Date",
     "noHistory": "No reminder sent yet.",
     "cronHint": "To schedule it, call POST /automations/fee-reminders/run from an external cron with an admin token."
+  },
+  "selfDocs": {
+    "title": "My documents",
+    "subtitle": "Generate your administrative documents yourself: enrollment certificate, attendance attestation and payment receipts.",
+    "selectChild": "Child",
+    "certificateTitle": "Enrollment certificate",
+    "certificateHint": "Proves the student's enrollment for the current academic year.",
+    "certificateBody": "The undersigned head of school certifies that the student identified below is duly enrolled in our institution for the {year} academic year. This certificate is issued at the request of the interested party for all legal intents and purposes.",
+    "attestationTitle": "Attendance attestation",
+    "attestationHint": "Attests that the student attends the institution.",
+    "attestationBody": "The undersigned head of school attests that the student identified below regularly attends our institution for the {year} academic year. This attestation is issued at the request of the interested party for all legal intents and purposes.",
+    "receiptTitle": "Payment receipt",
+    "receiptBody": "This receipt confirms the payment described below, recorded in the institution's financial system.",
+    "receiptsTitle": "Payment receipts",
+    "receiptsHint": "Generate a receipt for each of your confirmed payments.",
+    "receiptButton": "Receipt",
+    "generate": "Generate and print",
+    "historyTitle": "Generated documents",
+    "historyHint": "Each document carries a unique reference verifiable by the institution.",
+    "docType": "Type",
+    "reference": "Reference",
+    "date": "Date",
+    "fee": "Fee",
+    "amount": "Amount",
+    "method": "Method",
+    "reprint": "Reprint",
+    "noPayments": "No confirmed payment.",
+    "noDocuments": "No document generated yet.",
+    "verifyHint": "Authenticity verifiable with the institution using this reference."
   }
 }

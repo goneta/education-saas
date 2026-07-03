@@ -75,7 +75,8 @@
     "leave": "Cong\u00e9s",
     "announcements": "Annonces",
     "integrations": "API & Int\u00e9grations",
-    "automations": "Automatisations"
+    "automations": "Automatisations",
+    "myDocuments": "Mes documents"
   },
   "layout": {
     "previewTitle": "Apercu du contenu genere par l'IA",
@@ -818,5 +819,34 @@
     "date": "Date",
     "noHistory": "Aucune relance envoy\u00e9e pour le moment.",
     "cronHint": "Pour la planifier, appelez POST /automations/fee-reminders/run depuis un cron externe avec un jeton administrateur."
+  },
+  "selfDocs": {
+    "title": "Mes documents",
+    "subtitle": "G\u00e9n\u00e9rez vos documents administratifs vous-m\u00eame : certificat de scolarit\u00e9, attestation et re\u00e7us de paiement.",
+    "selectChild": "Enfant",
+    "certificateTitle": "Certificat de scolarit\u00e9",
+    "certificateHint": "Prouve l'inscription de l'\u00e9l\u00e8ve pour l'ann\u00e9e acad\u00e9mique en cours.",
+    "certificateBody": "Le chef d'\u00e9tablissement soussign\u00e9 certifie que l'\u00e9l\u00e8ve identifi\u00e9 ci-dessous est r\u00e9guli\u00e8rement inscrit dans notre \u00e9tablissement pour l'ann\u00e9e acad\u00e9mique {year}. Ce certificat est d\u00e9livr\u00e9 \u00e0 la demande de l'int\u00e9ress\u00e9 pour servir et valoir ce que de droit.",
+    "attestationTitle": "Attestation de fr\u00e9quentation",
+    "attestationHint": "Atteste que l'\u00e9l\u00e8ve fr\u00e9quente l'\u00e9tablissement.",
+    "attestationBody": "Le chef d'\u00e9tablissement soussign\u00e9 atteste que l'\u00e9l\u00e8ve identifi\u00e9 ci-dessous fr\u00e9quente r\u00e9guli\u00e8rement notre \u00e9tablissement pour l'ann\u00e9e acad\u00e9mique {year}. Cette attestation est d\u00e9livr\u00e9e \u00e0 la demande de l'int\u00e9ress\u00e9 pour servir et valoir ce que de droit.",
+    "receiptTitle": "Re\u00e7u de paiement",
+    "receiptBody": "Le pr\u00e9sent re\u00e7u confirme le paiement d\u00e9crit ci-dessous, enregistr\u00e9 dans le syst\u00e8me financier de l'\u00e9tablissement.",
+    "receiptsTitle": "Re\u00e7us de paiement",
+    "receiptsHint": "G\u00e9n\u00e9rez un re\u00e7u pour chacun de vos paiements confirm\u00e9s.",
+    "receiptButton": "Re\u00e7u",
+    "generate": "G\u00e9n\u00e9rer et imprimer",
+    "historyTitle": "Documents g\u00e9n\u00e9r\u00e9s",
+    "historyHint": "Chaque document porte une r\u00e9f\u00e9rence unique v\u00e9rifiable par l'\u00e9tablissement.",
+    "docType": "Type",
+    "reference": "R\u00e9f\u00e9rence",
+    "date": "Date",
+    "fee": "Frais",
+    "amount": "Montant",
+    "method": "M\u00e9thode",
+    "reprint": "R\u00e9imprimer",
+    "noPayments": "Aucun paiement confirm\u00e9.",
+    "noDocuments": "Aucun document g\u00e9n\u00e9r\u00e9 pour le moment.",
+    "verifyHint": "Authenticit\u00e9 v\u00e9rifiable aupr\u00e8s de l'\u00e9tablissement avec cette r\u00e9f\u00e9rence."
   }
 }

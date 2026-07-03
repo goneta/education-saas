@@ -32,3 +32,4 @@
 - System section gains "API & Integrations" (`/dashboard/extensibility`).
 - Security: the quick account-creation form no longer pre-fills a hardcoded default password.
 - System section gains "Automatisations" (`/dashboard/automations`).
+- Automation B: Student and Parent menus gain "Mes documents" (`/dashboard/my-documents`, FileCheck2) — self-service certificats/attestations/reçus.

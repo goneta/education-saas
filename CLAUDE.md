@@ -50,6 +50,22 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
+- **Automation program (Phase 2, increment by increment)**: (A) **Relances
+  impayés** — idempotent runner (`services/fee_reminders.py` + `/automations/
+  fee-reminders/run|history`): scans overdue fees, 3 escalation levels (N1
+  gentle notif+SMS, N2 firm, N3 urgent + admin escalation), anti-spam cooldown
+  + level monotonicity via `FeeReminder` rows, SMS queued to parent phone;
+  System → Automatisations UI (thresholds, run-now, summary, history). Safe to
+  cron. (B) **Documents libre-service** — `/self-documents` router reusing the
+  EXISTING `GeneratedDocument` table (`source_type="self_service"`, no new
+  table): students/parents (via `ParentStudentLink`) generate certificat de
+  scolarité, attestation and payment receipts themselves; unique verifiable
+  references (CERT-/ATT-/REC-…), full payload stored for identical re-display;
+  "Mes documents" page (print-ready HTML render, child selector for parents)
+  in Student + Parent menus. Both help-documented (4-locale) + tested.
+  Next: weekly parent digest + threshold alerts, then the remaining
+  Phase-2 features.
+
 - **Production hardening pass (security audit)**: removed the baked-in default
   passwords (AdmissionEnrollmentCreate schema default + frontend pre-filled
   "SecurePass2026!" in sidebar/settings forms); enroll_admission and personnel

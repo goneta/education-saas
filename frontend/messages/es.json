@@ -75,7 +75,8 @@
     "leave": "Permisos",
     "announcements": "Anuncios",
     "integrations": "API e integraciones",
-    "automations": "Automatizaciones"
+    "automations": "Automatizaciones",
+    "myDocuments": "Mis documentos"
   },
   "layout": {
     "previewTitle": "Vista previa del contenido generado por IA",
@@ -818,5 +819,34 @@
     "date": "Fecha",
     "noHistory": "Ning\u00fan recordatorio enviado todav\u00eda.",
     "cronHint": "Para programarlo, llame a POST /automations/fee-reminders/run desde un cron externo con un token de administrador."
+  },
+  "selfDocs": {
+    "title": "Mis documentos",
+    "subtitle": "Genere usted mismo sus documentos administrativos: certificado de escolaridad, constancia de asistencia y recibos de pago.",
+    "selectChild": "Hijo/a",
+    "certificateTitle": "Certificado de escolaridad",
+    "certificateHint": "Acredita la matr\u00edcula del alumno para el a\u00f1o acad\u00e9mico en curso.",
+    "certificateBody": "El director del centro que suscribe certifica que el alumno identificado a continuaci\u00f3n est\u00e1 debidamente matriculado en nuestro centro para el a\u00f1o acad\u00e9mico {year}. Este certificado se expide a petici\u00f3n del interesado para los fines que estime oportunos.",
+    "attestationTitle": "Constancia de asistencia",
+    "attestationHint": "Acredita que el alumno asiste al centro.",
+    "attestationBody": "El director del centro que suscribe hace constar que el alumno identificado a continuaci\u00f3n asiste regularmente a nuestro centro durante el a\u00f1o acad\u00e9mico {year}. Esta constancia se expide a petici\u00f3n del interesado para los fines que estime oportunos.",
+    "receiptTitle": "Recibo de pago",
+    "receiptBody": "El presente recibo confirma el pago descrito a continuaci\u00f3n, registrado en el sistema financiero del centro.",
+    "receiptsTitle": "Recibos de pago",
+    "receiptsHint": "Genere un recibo por cada uno de sus pagos confirmados.",
+    "receiptButton": "Recibo",
+    "generate": "Generar e imprimir",
+    "historyTitle": "Documentos generados",
+    "historyHint": "Cada documento lleva una referencia \u00fanica verificable por el centro.",
+    "docType": "Tipo",
+    "reference": "Referencia",
+    "date": "Fecha",
+    "fee": "Cuota",
+    "amount": "Importe",
+    "method": "M\u00e9todo",
+    "reprint": "Reimprimir",
+    "noPayments": "Ning\u00fan pago confirmado.",
+    "noDocuments": "Ning\u00fan documento generado por el momento.",
+    "verifyHint": "Autenticidad verificable ante el centro con esta referencia."
   }
 }

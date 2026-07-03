@@ -606,6 +606,33 @@ const HELP_SECTIONS: HelpSection[] = [
         },
     },
     {
+        id: "selfDocs",
+        title: { fr: "Mes documents (libre-service)", en: "My documents (self-service)", es: "Mis documentos (autoservicio)", sw: "Nyaraka zangu (kujihudumia)" },
+        icon: FileText,
+        purpose: {
+            fr: "Permettre aux élèves et aux parents de générer eux-mêmes leurs documents administratifs — certificat de scolarité, attestation de fréquentation et reçus de paiement — sans solliciter le secrétariat. Chaque document porte une référence unique vérifiable.",
+            en: "Let students and parents generate their administrative documents themselves — enrollment certificate, attendance attestation and payment receipts — without involving the school office. Each document carries a unique verifiable reference.",
+            es: "Permitir que alumnos y padres generen ellos mismos sus documentos administrativos — certificado de escolaridad, constancia de asistencia y recibos de pago — sin pasar por la secretaría. Cada documento lleva una referencia única verificable.",
+            sw: "Kuruhusu wanafunzi na wazazi kutengeneza nyaraka zao za kiutawala wenyewe — cheti cha usajili, uthibitisho wa mahudhurio na risiti za malipo — bila kuhusisha ofisi ya shule. Kila hati ina rejea ya kipekee inayothibitishika.",
+        },
+        steps: [
+            { fr: "Ouvrez Mes documents (menu Élève ou Parent).", en: "Open My documents (Student or Parent menu).", es: "Abra Mis documentos (menú Alumno o Padre).", sw: "Fungua Nyaraka zangu (menyu ya Mwanafunzi au Mzazi)." },
+            { fr: "Parent : sélectionnez l'enfant concerné (seuls les enfants rattachés à votre compte apparaissent).", en: "Parent: select the child concerned (only children linked to your account appear).", es: "Padre: seleccione el hijo en cuestión (solo aparecen los hijos vinculados a su cuenta).", sw: "Mzazi: chagua mtoto husika (watoto waliounganishwa na akaunti yako pekee ndio huonekana)." },
+            { fr: "Cliquez sur « Générer et imprimer » pour le certificat ou l'attestation ; pour un reçu, choisissez le paiement confirmé dans la liste.", en: "Click “Generate and print” for the certificate or attestation; for a receipt, pick the confirmed payment from the list.", es: "Haga clic en «Generar e imprimir» para el certificado o la constancia; para un recibo, elija el pago confirmado en la lista.", sw: "Bofya “Tengeneza na uchapishe” kwa cheti au uthibitisho; kwa risiti, chagua malipo yaliyothibitishwa kwenye orodha." },
+            { fr: "Le document s'ouvre prêt à imprimer avec l'en-tête de l'établissement, la référence unique et l'espace signature/cachet ; retrouvez-le à tout moment dans « Documents générés ».", en: "The document opens print-ready with the school header, the unique reference and the signature/stamp area; find it anytime under “Generated documents”.", es: "El documento se abre listo para imprimir con el membrete del centro, la referencia única y el espacio de firma/sello; recupérelo en cualquier momento en «Documentos generados».", sw: "Hati hufunguka tayari kuchapishwa ikiwa na kichwa cha shule, rejea ya kipekee na nafasi ya saini/muhuri; ipate wakati wowote chini ya “Nyaraka zilizotengenezwa”." },
+        ],
+        fields: [
+            { name: { fr: "Référence unique", en: "Unique reference", es: "Referencia única", sw: "Rejea ya kipekee" }, type: { fr: "Automatique", en: "Automatic", es: "Automático", sw: "Otomatiki" }, expected: { fr: "CERT-…, ATT-… ou REC-… imprimée sur chaque document.", en: "CERT-…, ATT-… or REC-… printed on every document.", es: "CERT-…, ATT-… o REC-… impresa en cada documento.", sw: "CERT-…, ATT-… au REC-… iliyochapishwa kwenye kila hati." }, validation: { fr: "L'établissement peut vérifier l'authenticité à partir de cette référence.", en: "The school can verify authenticity from this reference.", es: "El centro puede verificar la autenticidad a partir de esta referencia.", sw: "Shule inaweza kuthibitisha uhalisia kwa rejea hii." } },
+            { name: { fr: "Contrôle d'accès", en: "Access control", es: "Control de acceso", sw: "Udhibiti wa ufikiaji" }, type: { fr: "Automatique", en: "Automatic", es: "Automático", sw: "Otomatiki" }, expected: { fr: "Un élève ne génère que ses documents ; un parent, ceux de ses enfants rattachés.", en: "A student generates only their own documents; a parent, those of their linked children.", es: "Un alumno solo genera sus documentos; un padre, los de sus hijos vinculados.", sw: "Mwanafunzi hutengeneza nyaraka zake pekee; mzazi, za watoto wake waliounganishwa." }, validation: { fr: "Le personnel autorisé peut générer pour tout élève de l'établissement.", en: "Authorised staff can generate for any student of the school.", es: "El personal autorizado puede generar para cualquier alumno del centro.", sw: "Wafanyakazi walioidhinishwa wanaweza kutengeneza kwa mwanafunzi yeyote wa shule." } },
+        ],
+        result: {
+            fr: "Les familles obtiennent instantanément des documents officiels traçables, et le secrétariat est déchargé des demandes répétitives.",
+            en: "Families instantly obtain traceable official documents, and the school office is relieved of repetitive requests.",
+            es: "Las familias obtienen al instante documentos oficiales trazables y la secretaría se libera de solicitudes repetitivas.",
+            sw: "Familia hupata papo hapo nyaraka rasmi zinazofuatilika, na ofisi ya shule huepushwa na maombi ya kurudia-rudia.",
+        },
+    },
+    {
         id: "leave",
         title: { fr: "Congés et absences", en: "Leave and absences", es: "Permisos y ausencias", sw: "Likizo na kutohudhuria" },
         icon: BriefcaseBusiness,

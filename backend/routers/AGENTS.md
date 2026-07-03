@@ -44,3 +44,4 @@
 # Child DOX Index
 
 - No child AGENTS.md files yet.
+- Self-service documents (`/self-documents`) reuse the existing `GeneratedDocument` table (`source_type="self_service"`) — never create a parallel documents table; access is self/linked-parent/school-staff only, and every payload is stored for identical re-display + reference verification.

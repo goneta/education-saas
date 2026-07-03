@@ -75,7 +75,8 @@
     "leave": "Likizo",
     "announcements": "Matangazo",
     "integrations": "API na Muunganisho",
-    "automations": "Otomatiki"
+    "automations": "Otomatiki",
+    "myDocuments": "Nyaraka zangu"
   },
   "layout": {
     "previewTitle": "Hakiki ya maudhui yaliyotengenezwa na AI",
@@ -818,5 +819,34 @@
     "date": "Tarehe",
     "noHistory": "Hakuna kikumbusho kilichotumwa bado.",
     "cronHint": "Kupanga, ita POST /automations/fee-reminders/run kutoka cron ya nje na tokeni ya msimamizi."
+  },
+  "selfDocs": {
+    "title": "Nyaraka zangu",
+    "subtitle": "Tengeneza nyaraka zako za kiutawala mwenyewe: cheti cha usajili, uthibitisho wa mahudhurio na risiti za malipo.",
+    "selectChild": "Mtoto",
+    "certificateTitle": "Cheti cha usajili",
+    "certificateHint": "Kinathibitisha usajili wa mwanafunzi kwa mwaka wa masomo unaoendelea.",
+    "certificateBody": "Mkuu wa shule aliyetia saini hapa chini anathibitisha kuwa mwanafunzi aliyetambuliwa hapa chini amesajiliwa rasmi katika shule yetu kwa mwaka wa masomo {year}. Cheti hiki kimetolewa kwa ombi la mhusika kwa matumizi yoyote halali.",
+    "attestationTitle": "Uthibitisho wa mahudhurio",
+    "attestationHint": "Unathibitisha kuwa mwanafunzi anahudhuria shule.",
+    "attestationBody": "Mkuu wa shule aliyetia saini hapa chini anathibitisha kuwa mwanafunzi aliyetambuliwa hapa chini anahudhuria shule yetu mara kwa mara kwa mwaka wa masomo {year}. Uthibitisho huu umetolewa kwa ombi la mhusika kwa matumizi yoyote halali.",
+    "receiptTitle": "Risiti ya malipo",
+    "receiptBody": "Risiti hii inathibitisha malipo yaliyoelezwa hapa chini, yaliyorekodiwa katika mfumo wa fedha wa shule.",
+    "receiptsTitle": "Risiti za malipo",
+    "receiptsHint": "Tengeneza risiti kwa kila malipo yako yaliyothibitishwa.",
+    "receiptButton": "Risiti",
+    "generate": "Tengeneza na uchapishe",
+    "historyTitle": "Nyaraka zilizotengenezwa",
+    "historyHint": "Kila hati ina rejea ya kipekee inayoweza kuthibitishwa na shule.",
+    "docType": "Aina",
+    "reference": "Rejea",
+    "date": "Tarehe",
+    "fee": "Ada",
+    "amount": "Kiasi",
+    "method": "Njia",
+    "reprint": "Chapisha tena",
+    "noPayments": "Hakuna malipo yaliyothibitishwa.",
+    "noDocuments": "Hakuna hati iliyotengenezwa bado.",
+    "verifyHint": "Uhalisia unaweza kuthibitishwa shuleni kwa kutumia rejea hii."
   }
 }

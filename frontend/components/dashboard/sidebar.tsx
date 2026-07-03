@@ -46,6 +46,7 @@ import {
     DoorOpen,
     Webhook,
     BellRing,
+    FileCheck2,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -234,6 +235,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/education/timetable`, label: t("timetable"), icon: Calendar },
                 { href: `/${locale}/dashboard/grades/assessments`, label: t("grades"), icon: ClipboardCheck },
                 { href: `/${locale}/dashboard/documents`, label: t("documents"), icon: FileText },
+                { href: `/${locale}/dashboard/my-documents`, label: t("myDocuments"), icon: FileCheck2 },
                 { href: `/${locale}/dashboard/library`, label: t("library"), icon: BookOpen },
                 { href: `/${locale}/dashboard/education/internships`, label: t("internships"), icon: BriefcaseBusiness },
                 { href: `/${locale}/dashboard/portal`, label: t("portal"), icon: Users },
@@ -255,6 +257,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/portal`, label: t("portal"), icon: Users },
                 { href: `/${locale}/dashboard/grades/assessments`, label: t("grades"), icon: ClipboardCheck },
                 { href: `/${locale}/dashboard/documents`, label: t("documents"), icon: FileText },
+                { href: `/${locale}/dashboard/my-documents`, label: t("myDocuments"), icon: FileCheck2 },
             ],
         },
         {
