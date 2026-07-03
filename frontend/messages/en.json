@@ -79,7 +79,8 @@
     "myDocuments": "My documents",
     "studyPlan": "Revision planner",
     "remediation": "AI remediation",
-    "explainGrade": "Explain my grade"
+    "explainGrade": "Explain my grade",
+    "sequenceBuilder": "AI sequence"
   },
   "layout": {
     "previewTitle": "AI Generated Content Preview",
@@ -957,5 +958,21 @@
     "explain": "Explain",
     "noGrades": "No grade recorded yet.",
     "statsLine": "Your score: {score} \u00b7 Class average: {average} \u00b7 Rank: {rank}/{size}"
+  },
+  "sequenceBuilder": {
+    "title": "Sequence builder",
+    "subtitle": "Generate a whole term's lesson plan from the timetable's real weekly hours \u2014 every session pre-filled by the AI.",
+    "parameters": "Parameters",
+    "parametersHint": "Pick the class/subject (only pairs with timetable slots appear) and the term. The topic is optional.",
+    "pair": "Class \u2014 Subject",
+    "term": "Term",
+    "topic": "Term topic (optional)",
+    "topicPlaceholder": "e.g. Fractions and proportionality",
+    "generate": "Generate the sequence",
+    "noPairs": "No timetable slot found.",
+    "noTerms": "No term on the current year.",
+    "slotsInfo": "{slots} slot(s) per week ({minutes} weekly minutes) from the timetable.",
+    "creditsHint": "Generation consumes your AI credits and the sequence is also kept in your notifications.",
+    "resultStats": "{slots} session(s)/week over {weeks} week(s) \u2014 about {sessions} sessions in total."
   }
 }

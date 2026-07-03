@@ -717,6 +717,32 @@ const HELP_SECTIONS: HelpSection[] = [
         },
     },
     {
+        id: "sequenceBuilder",
+        title: { fr: "Générateur de séquence", en: "Sequence builder", es: "Generador de secuencia", sw: "Kitengeneza mfululizo" },
+        icon: BookOpen,
+        purpose: {
+            fr: "Générer le plan de cours d'un trimestre entier pour une classe et une matière, calibré sur l'emploi du temps réel : le nombre de séances vient des créneaux hebdomadaires effectifs et des dates de la période, et l'IA pré-remplit chaque séance (titre, objectif, activités, évaluations intermédiaires puis sommative).",
+            en: "Generate a whole term's lesson plan for a class and subject, calibrated on the real timetable: the session count comes from the actual weekly slots and the term's dates, and the AI pre-fills every session (title, objective, activities, formative then summative assessments).",
+            es: "Generar el plan de clases de todo un trimestre para una clase y asignatura, calibrado con el horario real: el número de sesiones proviene de las franjas semanales efectivas y de las fechas del período, y la IA pre-rellena cada sesión (título, objetivo, actividades, evaluaciones formativas y sumativa).",
+            sw: "Kutengeneza mpango wa masomo wa muhula mzima kwa darasa na somo, ukilingana na ratiba halisi: idadi ya vipindi hutokana na vipindi halisi vya wiki na tarehe za muhula, na AI hujaza kila kipindi (kichwa, lengo, shughuli, tathmini za mara kwa mara kisha ya mwisho).",
+        },
+        steps: [
+            { fr: "Ouvrez Séquence IA (menu Enseignant, section Pédagogie).", en: "Open AI sequence (Teacher menu, Academics section).", es: "Abra Secuencia IA (menú Profesor, sección Académico).", sw: "Fungua Mfululizo wa AI (menyu ya Mwalimu, sehemu ya Taaluma)." },
+            { fr: "Choisissez la paire Classe — Matière (seules les paires ayant des créneaux dans l'emploi du temps apparaissent, avec leur volume hebdomadaire) et la période de l'année en cours.", en: "Pick the Class — Subject pair (only pairs with timetable slots appear, with their weekly volume) and the current year's term.", es: "Elija el par Clase — Asignatura (solo aparecen los pares con franjas en el horario, con su volumen semanal) y el período del año en curso.", sw: "Chagua jozi ya Darasa — Somo (jozi zenye vipindi kwenye ratiba pekee ndizo huonekana, pamoja na kiwango chao cha wiki) na muhula wa mwaka unaoendelea." },
+            { fr: "Précisez un thème (facultatif) puis générez : la séquence complète s'affiche, semaine par semaine, et reste conservée dans vos notifications.", en: "State a topic (optional) then generate: the full sequence displays, week by week, and stays kept in your notifications.", es: "Indique un tema (opcional) y genere: la secuencia completa se muestra, semana a semana, y queda conservada en sus notificaciones.", sw: "Taja mada (hiari) kisha tengeneza: mfululizo kamili huonyeshwa, wiki kwa wiki, na hubaki umehifadhiwa kwenye arifa zako." },
+        ],
+        fields: [
+            { name: { fr: "Volume calculé", en: "Computed volume", es: "Volumen calculado", sw: "Kiwango kilichohesabiwa" }, type: { fr: "Automatique", en: "Automatic", es: "Automático", sw: "Otomatiki" }, expected: { fr: "Séances = créneaux hebdomadaires réels × semaines de la période.", en: "Sessions = real weekly slots × the term's weeks.", es: "Sesiones = franjas semanales reales × semanas del período.", sw: "Vipindi = vipindi halisi vya wiki × wiki za muhula." }, validation: { fr: "422 si la paire n'a aucun créneau dans l'emploi du temps.", en: "422 when the pair has no timetable slot.", es: "422 si el par no tiene ninguna franja en el horario.", sw: "422 jozi isipokuwa na kipindi chochote kwenye ratiba." } },
+            { name: { fr: "Crédits IA", en: "AI credits", es: "Créditos de IA", sw: "Salio la AI" }, type: { fr: "Automatique", en: "Automatic", es: "Automático", sw: "Otomatiki" }, expected: { fr: "Une génération = un débit sur le portefeuille IA de l'enseignant.", en: "One generation = one charge on the teacher's AI wallet.", es: "Una generación = un cargo en la cartera de IA del profesor.", sw: "Utengenezaji mmoja = kukatwa mara moja kwenye pochi ya AI ya mwalimu." }, validation: { fr: "La génération est bloquée si le solde est insuffisant.", en: "Generation is blocked when the balance is insufficient.", es: "La generación se bloquea si el saldo es insuficiente.", sw: "Utengenezaji huzuiwa salio likiwa halitoshi." } },
+        ],
+        result: {
+            fr: "L'enseignant obtient une progression complète et réaliste (calée sur ses vraies heures) qu'il peut ajuster, au lieu de partir d'une page blanche.",
+            en: "The teacher gets a complete, realistic progression (anchored to their real hours) to adjust, instead of starting from a blank page.",
+            es: "El profesor obtiene una progresión completa y realista (anclada a sus horas reales) que puede ajustar, en lugar de partir de una página en blanco.",
+            sw: "Mwalimu hupata mwendelezo kamili na halisi (uliokitwa kwenye saa zake halisi) wa kurekebisha, badala ya kuanza na ukurasa mtupu.",
+        },
+    },
+    {
         id: "leave",
         title: { fr: "Congés et absences", en: "Leave and absences", es: "Permisos y ausencias", sw: "Likizo na kutohudhuria" },
         icon: BriefcaseBusiness,

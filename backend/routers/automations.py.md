@@ -11,3 +11,4 @@
 - Automation D (3/n): `GET /study-plan` (STUDENT/PUPIL self, PARENT via ParentStudentLink) — on-demand revision plan; `POST /homework-reminders/run` (admin) — spaced D-7/D-3/D-1 nudges, idempotent per (assignment, student, bucket).
 - Automation D (4/n): `GET /remediation/assessments` (stats listing) + `POST /remediation/{assessment_id}/run` (threshold_ratio, language) — EDUCATOR_ROLES (teacher included); generation is AI-credit-gated in the service.
 - Automation D (5/n): `GET /explain-grade/grades` + `POST /explain-grade/{grade_id}/run?language=` — student/parent AI grade walk-through; shared `_student_or_linked_child` resolver now serves both study-plan and explain-grade.
+- Automation D (6/n): `GET /sequence/options` + `POST /sequence/run` (class_id, subject_id, term_id, topic, language) — EDUCATOR_ROLES; term sequence anchored to real timetable slots (422 without slots), credit-gated, persisted as a teacher notification.

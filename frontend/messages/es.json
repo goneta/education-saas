@@ -79,7 +79,8 @@
     "myDocuments": "Mis documentos",
     "studyPlan": "Plan de repaso",
     "remediation": "Remediaci\u00f3n IA",
-    "explainGrade": "Explica mi nota"
+    "explainGrade": "Explica mi nota",
+    "sequenceBuilder": "Secuencia IA"
   },
   "layout": {
     "previewTitle": "Vista previa del contenido generado por IA",
@@ -957,5 +958,21 @@
     "explain": "Explicar",
     "noGrades": "Ninguna nota registrada por el momento.",
     "statsLine": "Su nota: {score} \u00b7 Media de la clase: {average} \u00b7 Puesto: {rank}/{size}"
+  },
+  "sequenceBuilder": {
+    "title": "Generador de secuencia",
+    "subtitle": "Genere el plan de clases de todo un trimestre a partir de las horas semanales reales del horario \u2014 cada sesi\u00f3n pre-rellenada por la IA.",
+    "parameters": "Par\u00e1metros",
+    "parametersHint": "Elija la clase/asignatura (solo aparecen los pares con franjas en el horario) y el per\u00edodo. El tema es opcional.",
+    "pair": "Clase \u2014 Asignatura",
+    "term": "Per\u00edodo",
+    "topic": "Tema del trimestre (opcional)",
+    "topicPlaceholder": "p. ej. Fracciones y proporcionalidad",
+    "generate": "Generar la secuencia",
+    "noPairs": "Ninguna franja horaria encontrada.",
+    "noTerms": "Ning\u00fan per\u00edodo en el a\u00f1o en curso.",
+    "slotsInfo": "{slots} franja(s) por semana ({minutes} min semanales) seg\u00fan el horario.",
+    "creditsHint": "La generaci\u00f3n consume sus cr\u00e9ditos de IA y la secuencia tambi\u00e9n se conserva en sus notificaciones.",
+    "resultStats": "{slots} sesi\u00f3n(es)/semana durante {weeks} semana(s) \u2014 unas {sessions} sesiones en total."
   }
 }

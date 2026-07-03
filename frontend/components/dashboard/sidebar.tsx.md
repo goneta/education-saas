@@ -36,3 +36,4 @@
 - Automation D: Student and Parent menus gain "Planning de revision" (`/dashboard/study-plan`, CalendarCheck).
 - Automation D: Teacher menu gains "Remediation IA" (`/dashboard/remediation`, GraduationCap) after Grades.
 - Automation D: Student and Parent menus gain "Explique ma note" (`/dashboard/explain-grade`, HelpCircle).
+- Automation D: Teacher menu gains "Sequence IA" (`/dashboard/sequence-builder`, BookOpen) after Remediation.

@@ -79,7 +79,8 @@
     "myDocuments": "Mes documents",
     "studyPlan": "Planning de r\u00e9vision",
     "remediation": "Rem\u00e9diation IA",
-    "explainGrade": "Explique ma note"
+    "explainGrade": "Explique ma note",
+    "sequenceBuilder": "S\u00e9quence IA"
   },
   "layout": {
     "previewTitle": "Apercu du contenu genere par l'IA",
@@ -957,5 +958,21 @@
     "explain": "Expliquer",
     "noGrades": "Aucune note enregistr\u00e9e pour le moment.",
     "statsLine": "Votre note : {score} \u00b7 Moyenne classe : {average} \u00b7 Rang : {rank}/{size}"
+  },
+  "sequenceBuilder": {
+    "title": "G\u00e9n\u00e9rateur de s\u00e9quence",
+    "subtitle": "G\u00e9n\u00e9rez le plan de cours d'un trimestre entier \u00e0 partir des heures hebdomadaires r\u00e9elles de l'emploi du temps \u2014 chaque s\u00e9ance pr\u00e9-remplie par l'IA.",
+    "parameters": "Param\u00e8tres",
+    "parametersHint": "Choisissez la classe/mati\u00e8re (seules les paires ayant des cr\u00e9neaux dans l'emploi du temps apparaissent) et la p\u00e9riode. Le th\u00e8me est facultatif.",
+    "pair": "Classe \u2014 Mati\u00e8re",
+    "term": "P\u00e9riode",
+    "topic": "Th\u00e8me du trimestre (facultatif)",
+    "topicPlaceholder": "ex. Fractions et proportionnalit\u00e9",
+    "generate": "G\u00e9n\u00e9rer la s\u00e9quence",
+    "noPairs": "Aucun cr\u00e9neau d'emploi du temps trouv\u00e9.",
+    "noTerms": "Aucune p\u00e9riode sur l'ann\u00e9e en cours.",
+    "slotsInfo": "{slots} cr\u00e9neau(x) par semaine ({minutes} min hebdomadaires) d'apr\u00e8s l'emploi du temps.",
+    "creditsHint": "La g\u00e9n\u00e9ration consomme vos cr\u00e9dits IA et la s\u00e9quence est aussi conserv\u00e9e dans vos notifications.",
+    "resultStats": "{slots} s\u00e9ance(s)/semaine sur {weeks} semaine(s) \u2014 environ {sessions} s\u00e9ances au total."
   }
 }

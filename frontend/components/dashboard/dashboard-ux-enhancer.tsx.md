@@ -43,3 +43,4 @@
 - MODULE_BY_PATH maps /study-plan -> studyPlan help section.
 - MODULE_BY_PATH maps /dashboard/remediation -> remediation help section.
 - MODULE_BY_PATH maps /explain-grade -> explainGrade help section.
+- MODULE_BY_PATH maps /sequence-builder -> sequenceBuilder help section.

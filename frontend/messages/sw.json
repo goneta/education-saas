@@ -79,7 +79,8 @@
     "myDocuments": "Nyaraka zangu",
     "studyPlan": "Ratiba ya marudio",
     "remediation": "Marekebisho ya AI",
-    "explainGrade": "Eleza alama yangu"
+    "explainGrade": "Eleza alama yangu",
+    "sequenceBuilder": "Mfululizo wa AI"
   },
   "layout": {
     "previewTitle": "Hakiki ya maudhui yaliyotengenezwa na AI",
@@ -957,5 +958,21 @@
     "explain": "Eleza",
     "noGrades": "Hakuna alama iliyorekodiwa bado.",
     "statsLine": "Alama yako: {score} \u00b7 Wastani wa darasa: {average} \u00b7 Nafasi: {rank}/{size}"
+  },
+  "sequenceBuilder": {
+    "title": "Kitengeneza mfululizo",
+    "subtitle": "Tengeneza mpango wa masomo wa muhula mzima kutoka kwa saa halisi za wiki za ratiba \u2014 kila kipindi kikijazwa awali na AI.",
+    "parameters": "Vigezo",
+    "parametersHint": "Chagua darasa/somo (jozi zenye vipindi kwenye ratiba pekee ndizo huonekana) na kipindi cha mwaka. Mada ni ya hiari.",
+    "pair": "Darasa \u2014 Somo",
+    "term": "Muhula",
+    "topic": "Mada ya muhula (hiari)",
+    "topicPlaceholder": "mf. Sehemu na uwiano",
+    "generate": "Tengeneza mfululizo",
+    "noPairs": "Hakuna kipindi cha ratiba kilichopatikana.",
+    "noTerms": "Hakuna muhula kwenye mwaka unaoendelea.",
+    "slotsInfo": "Vipindi {slots} kwa wiki (dakika {minutes} kwa wiki) kutoka kwa ratiba.",
+    "creditsHint": "Utengenezaji hutumia salio lako la AI na mfululizo pia huhifadhiwa kwenye arifa zako.",
+    "resultStats": "Vipindi {slots}/wiki kwa wiki {weeks} \u2014 takriban vipindi {sessions} kwa jumla."
   }
 }

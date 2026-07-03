@@ -100,10 +100,15 @@ notifications and master data (zero data duplication).
   average/best/rank + teacher-comment reading + 2–3 tips, second person, in
   the caller's UI locale), AI-credit-gated on the caller; student/parent page
   `/dashboard/explain-grade`; shared `_student_or_linked_child` resolver in
-  routers/automations.py now serves study-plan + explain-grade. All
-  help-documented (4-locale) + tested. Next: remaining Phase-2 features
-  (grade-entry OCR, séquence builder, parent one-tap actions,
-  recruiter/job-seeker automations) increment by increment.
+  routers/automations.py now serves study-plan + explain-grade. (D6)
+  **Générateur de séquence** — `services/sequence_builder.py`: a term's full
+  lesson sequence in ONE AI call, calibrated on REAL data (sessions = weekly
+  Timetable slots × the term's weeks; 422 when the pair has no slots),
+  credit-gated, persisted as a `sequence.generated` notification; teacher
+  page `/dashboard/sequence-builder` (pair/term selectors + optional topic).
+  All help-documented (4-locale) + tested. Next: remaining Phase-2 features
+  (grade-entry OCR — needs a vision provider decision, parent one-tap
+  actions, recruiter/job-seeker automations) increment by increment.
 
 - **Production hardening pass (security audit)**: removed the baked-in default
   passwords (AdmissionEnrollmentCreate schema default + frontend pre-filled

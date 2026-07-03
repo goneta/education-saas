@@ -49,6 +49,7 @@ const MODULE_BY_PATH: Array<[RegExp, string, string]> = [
     [/study-plan/, "studyPlan", "studyPlan"],
     [/dashboard\/remediation/, "remediation", "remediation"],
     [/explain-grade/, "explainGrade", "explainGrade"],
+    [/sequence-builder/, "sequenceBuilder", "sequenceBuilder"],
     [/dashboard\/communication/, "communication", "announcements"],
     [/finance\/payroll|finance\/my-payslips/, "payroll", "payroll"],
     [/finance\/cash-journal/, "accounting", "finance"],

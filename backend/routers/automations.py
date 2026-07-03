@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from .. import audit, database, models, schemas, security
 from datetime import datetime
 
-from ..services import absence_followup, anomaly_digest, fee_reminders, grade_explainer, parent_digest, remediation, rentree, student_planner
+from ..services import absence_followup, anomaly_digest, fee_reminders, grade_explainer, parent_digest, remediation, rentree, sequence_builder, student_planner
 
 router = APIRouter(prefix="/automations", tags=["Automations"])
 
@@ -336,6 +336,45 @@ def remediation_run(
     audit.record_audit(db, action="automation.remediation.run", current_user=current_user, entity_type="assessment", entity_id=assessment_id, details={"generated": len(summary["generated"]), "skipped_done": summary["skipped_done"]})
     db.commit()
     return summary
+
+
+@router.get("/sequence/options")
+def sequence_options(
+    school_id: Optional[int] = None,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """(class, subject) pairs with real timetable slots + the current year's
+    terms, to parameterize the séquence builder."""
+    if current_user.role not in EDUCATOR_ROLES:
+        raise HTTPException(status_code=403, detail="Réservé aux enseignants et à l'administration.")
+    resolved = _school_id(current_user, school_id)
+    return sequence_builder.list_sequence_options(db, resolved)
+
+
+@router.post("/sequence/run")
+def sequence_run(
+    class_id: int = Query(..., ge=1),
+    subject_id: int = Query(..., ge=1),
+    term_id: int = Query(..., ge=1),
+    topic: str = Query("", max_length=200),
+    language: str = Query("fr", min_length=2, max_length=5),
+    school_id: Optional[int] = None,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """Generate the term's lesson sequence from the pair's real weekly slots
+    (AI-credit-gated); also recorded as a notification to the teacher."""
+    if current_user.role not in EDUCATOR_ROLES:
+        raise HTTPException(status_code=403, detail="Réservé aux enseignants et à l'administration.")
+    resolved = _school_id(current_user, school_id)
+    result = sequence_builder.build_sequence(
+        db, resolved, current_user,
+        class_id=class_id, subject_id=subject_id, term_id=term_id, topic=topic.strip(), language=language,
+    )
+    audit.record_audit(db, action="automation.sequence.run", current_user=current_user, entity_type="class", entity_id=class_id, details={"subject_id": subject_id, "term_id": term_id})
+    db.commit()
+    return result
 
 
 @router.get("/notifications/history", response_model=List[schemas.ParentDigestNotificationResponse])
