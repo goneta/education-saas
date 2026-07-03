@@ -35,3 +35,4 @@
 - The automations help section now also covers absence follow-up and the anomaly brief (purpose + two dedicated steps, 4-locale).
 - The automations help section now also covers the rentree wizard (preview-then-run step, 4-locale).
 - HELP_SECTIONS documents `studyPlan` (4-locale): spaced revision planner + homework nudges.
+- HELP_SECTIONS documents `remediation` (4-locale): AI practice sets for struggling students, credit-gated, idempotent per student.

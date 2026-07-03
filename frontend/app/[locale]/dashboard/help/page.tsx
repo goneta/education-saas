@@ -664,6 +664,33 @@ const HELP_SECTIONS: HelpSection[] = [
         },
     },
     {
+        id: "remediation",
+        title: { fr: "Remédiation IA", en: "AI remediation", es: "Remediación IA", sw: "Marekebisho ya AI" },
+        icon: BrainCircuit,
+        purpose: {
+            fr: "Après une évaluation, générer en un clic des exercices personnalisés pour chaque élève sous le seuil de difficulté, livrés directement dans leurs notifications. La génération consomme des crédits IA et ne crée jamais de doublon par élève.",
+            en: "After an assessment, generate in one click personalized practice sets for every student below the difficulty threshold, delivered straight to their notifications. Generation consumes AI credits and never duplicates per student.",
+            es: "Tras una evaluación, generar con un clic ejercicios personalizados para cada alumno por debajo del umbral de dificultad, entregados directamente en sus notificaciones. La generación consume créditos de IA y nunca crea duplicados por alumno.",
+            sw: "Baada ya mtihani, tengeneza kwa mbofyo mmoja mazoezi maalum kwa kila mwanafunzi aliye chini ya kizingiti cha ugumu, yakitumwa moja kwa moja kwenye arifa zao. Utengenezaji hutumia salio la AI na hautengenezi nakala kwa mwanafunzi.",
+        },
+        steps: [
+            { fr: "Ouvrez Remédiation IA (menu Enseignant, section Pédagogie).", en: "Open AI remediation (Teacher menu, Academics section).", es: "Abra Remediación IA (menú Profesor, sección Académico).", sw: "Fungua Marekebisho ya AI (menyu ya Mwalimu, sehemu ya Taaluma)." },
+            { fr: "Réglez le seuil de difficulté (% du barème, 50 % par défaut) et repérez dans le tableau les évaluations avec des élèves en difficulté.", en: "Set the difficulty threshold (% of max score, 50% by default) and spot in the table the assessments with struggling students.", es: "Ajuste el umbral de dificultad (% del baremo, 50 % por defecto) y localice en la tabla las evaluaciones con alumnos con dificultades.", sw: "Weka kizingiti cha ugumu (% ya alama kamili, 50% kwa chaguo-msingi) na tambua kwenye jedwali mitihani yenye wanafunzi wenye changamoto." },
+            { fr: "Cliquez sur Générer : chaque élève sous le seuil reçoit une fiche (3–5 exercices progressifs avec indices puis corrigés) adaptée à sa note, en notification.", en: "Click Generate: every student below the threshold receives a sheet (3–5 progressive exercises with hints then answers) tailored to their score, as a notification.", es: "Haga clic en Generar: cada alumno por debajo del umbral recibe una ficha (3–5 ejercicios progresivos con pistas y soluciones) adaptada a su nota, como notificación.", sw: "Bofya Tengeneza: kila mwanafunzi aliye chini ya kizingiti hupokea karatasi (mazoezi 3–5 ya kupanda ngazi yenye vidokezo kisha majibu) inayolingana na alama yake, kama arifa." },
+            { fr: "Relancez après avoir saisi de nouvelles notes : seuls les élèves pas encore servis reçoivent une fiche.", en: "Re-run after entering new grades: only students not yet served receive a sheet.", es: "Relance tras introducir nuevas notas: solo los alumnos aún no servidos reciben una ficha.", sw: "Endesha tena baada ya kuweka alama mpya: wanafunzi ambao hawajahudumiwa pekee ndio hupokea karatasi." },
+        ],
+        fields: [
+            { name: { fr: "Seuil de difficulté", en: "Difficulty threshold", es: "Umbral de dificultad", sw: "Kizingiti cha ugumu" }, type: { fr: "Pourcentage", en: "Percentage", es: "Porcentaje", sw: "Asilimia" }, expected: { fr: "Un élève est « en difficulté » si sa note est sous ce pourcentage du barème.", en: "A student is “struggling” when their score is below this percentage of the max score.", es: "Un alumno está «con dificultades» si su nota está por debajo de este porcentaje del baremo.", sw: "Mwanafunzi ana « changamoto » alama yake ikiwa chini ya asilimia hii ya alama kamili." }, validation: { fr: "Entre 1 et 100 ; 50 % par défaut.", en: "Between 1 and 100; 50% by default.", es: "Entre 1 y 100; 50 % por defecto.", sw: "Kati ya 1 na 100; 50% kwa chaguo-msingi." } },
+            { name: { fr: "Crédits IA", en: "AI credits", es: "Créditos de IA", sw: "Salio la AI" }, type: { fr: "Automatique", en: "Automatic", es: "Automático", sw: "Otomatiki" }, expected: { fr: "Chaque fiche générée est débitée du portefeuille IA de l'enseignant.", en: "Each generated sheet is charged to the teacher's AI wallet.", es: "Cada ficha generada se debita de la cartera de IA del profesor.", sw: "Kila karatasi inayotengenezwa hukatwa kwenye pochi ya AI ya mwalimu." }, validation: { fr: "La génération est bloquée si le solde est insuffisant.", en: "Generation is blocked when the balance is insufficient.", es: "La generación se bloquea si el saldo es insuficiente.", sw: "Utengenezaji huzuiwa salio likiwa halitoshi." } },
+        ],
+        result: {
+            fr: "Chaque élève en difficulté repart avec des exercices ciblés sans travail manuel de l'enseignant, et l'historique reste consultable dans les notifications.",
+            en: "Every struggling student walks away with targeted exercises without manual teacher work, and the history stays reviewable in notifications.",
+            es: "Cada alumno con dificultades recibe ejercicios específicos sin trabajo manual del profesor, y el historial queda consultable en las notificaciones.",
+            sw: "Kila mwanafunzi mwenye changamoto hupata mazoezi maalum bila kazi ya mkono ya mwalimu, na historia hubaki inapatikana kwenye arifa.",
+        },
+    },
+    {
         id: "leave",
         title: { fr: "Congés et absences", en: "Leave and absences", es: "Permisos y ausencias", sw: "Likizo na kutohudhuria" },
         icon: BriefcaseBusiness,

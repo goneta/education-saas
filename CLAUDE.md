@@ -87,10 +87,17 @@ notifications and master data (zero data duplication).
   runner `homework-reminders/run` nudges non-submitters at D-7/D-3/D-1,
   idempotent per (assignment, student, bucket) via event type
   `homework.reminder.d7|d3|d1`. Student/Parent page `/dashboard/study-plan`
-  (+ sidebar entries) and card 6 on the Automations page. All help-documented
-  (4-locale) + tested. Next: remaining Phase-2 features (teacher AI features,
-  parent one-tap actions, recruiter/job-seeker automations) increment by
-  increment.
+  (+ sidebar entries) and card 6 on the Automations page. (D4) **Remédiation
+  IA** — `services/remediation.py`: after an assessment, one personalized
+  practice set per student below the threshold (3–5 progressive exercises,
+  grounded in score + teacher comment) via `ai_service.
+  generate_response_from_config`, AI-credit-gated (`ensure_credits`/
+  `record_usage`), delivered as `remediation.assigned` notifications,
+  idempotent per (assessment, student); teacher page
+  `/dashboard/remediation` (assessments stats table + threshold + expandable
+  results). All help-documented (4-locale) + tested. Next: remaining Phase-2
+  features (grade-entry OCR, séquence builder, explain-my-grade, parent
+  one-tap actions, recruiter/job-seeker automations) increment by increment.
 
 - **Production hardening pass (security audit)**: removed the baked-in default
   passwords (AdmissionEnrollmentCreate schema default + frontend pre-filled

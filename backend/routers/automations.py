@@ -12,12 +12,13 @@ from sqlalchemy.orm import Session
 from .. import audit, database, models, schemas, security
 from datetime import datetime
 
-from ..services import absence_followup, anomaly_digest, fee_reminders, parent_digest, rentree, student_planner
+from ..services import absence_followup, anomaly_digest, fee_reminders, parent_digest, remediation, rentree, student_planner
 
 router = APIRouter(prefix="/automations", tags=["Automations"])
 
 ADMIN_ROLES = (models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN, models.UserRole.ACCOUNTANT, models.UserRole.DIRECTION)
 RENTREE_ROLES = (models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN, models.UserRole.DIRECTION)
+EDUCATOR_ROLES = (models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN, models.UserRole.DIRECTION, models.UserRole.TEACHER)
 
 
 def _ensure_admin(current_user: models.User) -> None:
@@ -262,6 +263,42 @@ def run_homework_reminders(
     resolved = _school_id(current_user, school_id)
     summary = student_planner.run_homework_reminders(db, resolved, current_user)
     audit.record_audit(db, action="automation.homework_reminders.run", current_user=current_user, entity_type="school", entity_id=resolved, details=summary)
+    db.commit()
+    return summary
+
+
+@router.get("/remediation/assessments")
+def remediation_assessments(
+    limit: int = Query(30, ge=1, le=100),
+    school_id: Optional[int] = None,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """Recent assessments with grade stats (average, struggling count) so the
+    teacher can pick where remediation is needed."""
+    if current_user.role not in EDUCATOR_ROLES:
+        raise HTTPException(status_code=403, detail="Réservé aux enseignants et à l'administration.")
+    resolved = _school_id(current_user, school_id)
+    return remediation.list_assessments_with_stats(db, resolved, limit=limit)
+
+
+@router.post("/remediation/{assessment_id}/run")
+def remediation_run(
+    assessment_id: int,
+    threshold_ratio: float = Query(0.5, gt=0, le=1),
+    language: str = Query("fr", min_length=2, max_length=5),
+    school_id: Optional[int] = None,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """Generate a personalized AI practice set for every student below the
+    threshold on this assessment, delivered as a notification. Idempotent per
+    (assessment, student) — re-running only serves newly graded students."""
+    if current_user.role not in EDUCATOR_ROLES:
+        raise HTTPException(status_code=403, detail="Réservé aux enseignants et à l'administration.")
+    resolved = _school_id(current_user, school_id)
+    summary = remediation.run_remediation(db, assessment_id, resolved, current_user, threshold_ratio=threshold_ratio, language=language)
+    audit.record_audit(db, action="automation.remediation.run", current_user=current_user, entity_type="assessment", entity_id=assessment_id, details={"generated": len(summary["generated"]), "skipped_done": summary["skipped_done"]})
     db.commit()
     return summary
 

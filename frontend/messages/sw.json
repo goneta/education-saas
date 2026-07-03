@@ -77,7 +77,8 @@
     "integrations": "API na Muunganisho",
     "automations": "Otomatiki",
     "myDocuments": "Nyaraka zangu",
-    "studyPlan": "Ratiba ya marudio"
+    "studyPlan": "Ratiba ya marudio",
+    "remediation": "Marekebisho ya AI"
   },
   "layout": {
     "previewTitle": "Hakiki ya maudhui yaliyotengenezwa na AI",
@@ -920,5 +921,25 @@
     "stepOverview": "Muhtasari",
     "stepPractice": "Mazoezi",
     "stepFinal": "Marudio ya mwisho"
+  },
+  "remediation": {
+    "title": "Marekebisho ya AI",
+    "subtitle": "Baada ya mtihani, tengeneza kwa mbofyo mmoja mazoezi maalum kwa kila mwanafunzi mwenye changamoto \u2014 yakitumwa moja kwa moja kwenye arifa zao.",
+    "assessments": "Mitihani ya hivi karibuni",
+    "assessmentsHint": "Chagua mtihani: kila mwanafunzi aliye chini ya kizingiti hupokea karatasi ya mazoezi inayolingana na alama yake. Kuendesha tena hakutengenezi nakala.",
+    "threshold": "Kizingiti cha ugumu (% ya alama kamili)",
+    "assessment": "Mtihani",
+    "subject": "Somo",
+    "class": "Darasa",
+    "date": "Tarehe",
+    "gradesCol": "Alama",
+    "average": "Wastani",
+    "struggling": "Wenye changamoto",
+    "generate": "Tengeneza",
+    "noAssessments": "Hakuna mtihani uliopimwa hivi karibuni.",
+    "resultTitle": "Marekebisho \u2014 {title}",
+    "resultHint": "Karatasi {generated} zimetengenezwa, {skipped} tayari zimetumwa, wanafunzi {above} juu ya kizingiti.",
+    "nothingToGenerate": "Hakuna cha kutengeneza: wanafunzi wote wako juu ya kizingiti au tayari wamehudumiwa.",
+    "score": "Alama:"
   }
 }

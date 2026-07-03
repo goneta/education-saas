@@ -77,7 +77,8 @@
     "integrations": "API & Integrations",
     "automations": "Automations",
     "myDocuments": "My documents",
-    "studyPlan": "Revision planner"
+    "studyPlan": "Revision planner",
+    "remediation": "AI remediation"
   },
   "layout": {
     "previewTitle": "AI Generated Content Preview",
@@ -920,5 +921,25 @@
     "stepOverview": "Overview",
     "stepPractice": "Practice",
     "stepFinal": "Final review"
+  },
+  "remediation": {
+    "title": "AI remediation",
+    "subtitle": "After an assessment, generate personalized practice sets for each struggling student in one click \u2014 delivered straight to their notifications.",
+    "assessments": "Recent assessments",
+    "assessmentsHint": "Pick an assessment: every student below the threshold receives a practice sheet tailored to their score. Re-running never creates duplicates.",
+    "threshold": "Difficulty threshold (% of max score)",
+    "assessment": "Assessment",
+    "subject": "Subject",
+    "class": "Class",
+    "date": "Date",
+    "gradesCol": "Grades",
+    "average": "Average",
+    "struggling": "Struggling",
+    "generate": "Generate",
+    "noAssessments": "No recently graded assessment.",
+    "resultTitle": "Remediation \u2014 {title}",
+    "resultHint": "{generated} sheet(s) generated, {skipped} already served, {above} student(s) above the threshold.",
+    "nothingToGenerate": "Nothing to generate: every student is above the threshold or already served.",
+    "score": "Score:"
   }
 }

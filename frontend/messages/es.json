@@ -77,7 +77,8 @@
     "integrations": "API e integraciones",
     "automations": "Automatizaciones",
     "myDocuments": "Mis documentos",
-    "studyPlan": "Plan de repaso"
+    "studyPlan": "Plan de repaso",
+    "remediation": "Remediaci\u00f3n IA"
   },
   "layout": {
     "previewTitle": "Vista previa del contenido generado por IA",
@@ -920,5 +921,25 @@
     "stepOverview": "Visi\u00f3n general",
     "stepPractice": "Ejercicios",
     "stepFinal": "Repaso final"
+  },
+  "remediation": {
+    "title": "Remediaci\u00f3n IA",
+    "subtitle": "Tras una evaluaci\u00f3n, genere con un clic ejercicios personalizados para cada alumno con dificultades \u2014 entregados directamente en sus notificaciones.",
+    "assessments": "Evaluaciones recientes",
+    "assessmentsHint": "Elija una evaluaci\u00f3n: cada alumno por debajo del umbral recibe una ficha de ejercicios adaptada a su nota. Relanzar nunca crea duplicados.",
+    "threshold": "Umbral de dificultad (% del baremo)",
+    "assessment": "Evaluaci\u00f3n",
+    "subject": "Asignatura",
+    "class": "Clase",
+    "date": "Fecha",
+    "gradesCol": "Notas",
+    "average": "Media",
+    "struggling": "Con dificultades",
+    "generate": "Generar",
+    "noAssessments": "Ninguna evaluaci\u00f3n calificada recientemente.",
+    "resultTitle": "Remediaci\u00f3n \u2014 {title}",
+    "resultHint": "{generated} ficha(s) generada(s), {skipped} ya servida(s), {above} alumno(s) por encima del umbral.",
+    "nothingToGenerate": "Nada que generar: todos los alumnos est\u00e1n por encima del umbral o ya fueron servidos.",
+    "score": "Nota:"
   }
 }

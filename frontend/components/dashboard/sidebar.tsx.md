@@ -34,3 +34,4 @@
 - System section gains "Automatisations" (`/dashboard/automations`).
 - Automation B: Student and Parent menus gain "Mes documents" (`/dashboard/my-documents`, FileCheck2) — self-service certificats/attestations/reçus.
 - Automation D: Student and Parent menus gain "Planning de revision" (`/dashboard/study-plan`, CalendarCheck).
+- Automation D: Teacher menu gains "Remediation IA" (`/dashboard/remediation`, GraduationCap) after Grades.

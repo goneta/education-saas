@@ -41,3 +41,4 @@
 - MODULE_BY_PATH maps /dashboard/automations -> automations help section.
 - MODULE_BY_PATH maps /my-documents -> selfDocs help section (placed BEFORE the generic /documents/ catch-all, which would otherwise swallow it).
 - MODULE_BY_PATH maps /study-plan -> studyPlan help section.
+- MODULE_BY_PATH maps /dashboard/remediation -> remediation help section.
