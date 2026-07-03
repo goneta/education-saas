@@ -66,3 +66,4 @@ The schema catalog includes enrollment, transfer, academic-year closure, tempora
 - `FeeReminderRunResult` / `FeeReminderResponse` (automation A).
 - `ParentDigestRunResult` + `ParentDigestNotificationResponse` (automation C run summary + history rows).
 - `AbsenceFollowupRunResult` + `AnomalyDigestRunResult` (automation D run summaries).
+- Rentree schemas: `RentreePreview` (+`RentreePromotionLine`), `RentreeRunRequest`, `RentreeRunResult`.

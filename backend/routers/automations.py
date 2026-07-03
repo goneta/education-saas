@@ -10,16 +10,24 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from .. import audit, database, models, schemas, security
-from ..services import absence_followup, anomaly_digest, fee_reminders, parent_digest
+from datetime import datetime
+
+from ..services import absence_followup, anomaly_digest, fee_reminders, parent_digest, rentree
 
 router = APIRouter(prefix="/automations", tags=["Automations"])
 
 ADMIN_ROLES = (models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN, models.UserRole.ACCOUNTANT, models.UserRole.DIRECTION)
+RENTREE_ROLES = (models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN, models.UserRole.DIRECTION)
 
 
 def _ensure_admin(current_user: models.User) -> None:
     if current_user.role not in ADMIN_ROLES:
         raise HTTPException(status_code=403, detail="Réservé à l'administration.")
+
+
+def _ensure_rentree_admin(current_user: models.User) -> None:
+    if current_user.role not in RENTREE_ROLES:
+        raise HTTPException(status_code=403, detail="Réservé à la direction de l'établissement.")
 
 
 def _school_id(current_user: models.User, school_id: Optional[int]) -> int:
@@ -171,6 +179,41 @@ def run_anomaly_digest(
     resolved = _school_id(current_user, school_id)
     summary = anomaly_digest.run_anomaly_digest(db, resolved, current_user, days=days, unpaid_threshold=unpaid_threshold)
     audit.record_audit(db, action="automation.anomaly_digest.run", current_user=current_user, entity_type="school", entity_id=resolved, details=summary)
+    db.commit()
+    return summary
+
+
+@router.get("/rentree/preview", response_model=schemas.RentreePreview)
+def rentree_preview(
+    school_id: Optional[int] = None,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """Dry-run of the year rollover: per-level promotions, leavers, unmapped
+    students and fee schedules to clone. Never writes."""
+    _ensure_rentree_admin(current_user)
+    resolved = _school_id(current_user, school_id)
+    return rentree.plan_rentree(db, resolved)
+
+
+@router.post("/rentree/run", response_model=schemas.RentreeRunResult)
+def rentree_run(
+    payload: schemas.RentreeRunRequest,
+    school_id: Optional[int] = None,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """Execute the rollover: new current academic year, level→level promotions
+    (least-filled class of the next level), leavers archived, fee schedules
+    cloned. Refuses (409) if the year name already exists."""
+    _ensure_rentree_admin(current_user)
+    resolved = _school_id(current_user, school_id)
+    summary = rentree.run_rentree(
+        db, resolved, current_user,
+        new_year_name=payload.new_year_name.strip(),
+        start_date=payload.start_date,
+        end_date=payload.end_date,
+    )
     db.commit()
     return summary
 

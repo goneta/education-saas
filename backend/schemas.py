@@ -2957,6 +2957,35 @@ class AnomalyDigestRunResult(BaseModel):
     imbalance_flag: Optional[bool] = None
 
 
+class RentreePromotionLine(BaseModel):
+    level_from: str
+    level_to: str
+    students: int
+
+
+class RentreePreview(BaseModel):
+    current_year: Optional[str] = None
+    promotions: List[RentreePromotionLine] = []
+    leavers: int
+    unmapped: int
+    fee_schedules_to_clone: int
+
+
+class RentreeRunRequest(BaseModel):
+    new_year_name: str = Field(min_length=2, max_length=64)
+    start_date: datetime
+    end_date: datetime
+
+
+class RentreeRunResult(BaseModel):
+    new_year_id: int
+    new_year_name: str
+    promoted: int
+    archived: int
+    unmapped: int
+    fee_schedules_cloned: int
+
+
 class WebhookDeliveryResponse(BaseModel):
     id: int
     endpoint_id: int

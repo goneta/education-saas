@@ -74,10 +74,15 @@ notifications and master data (zero data duplication).
   NotificationHistory source tracking) and `services/anomaly_digest.py`
   (deterministic staff brief: absence spike vs previous window, unpaid ratio,
   class-size imbalance; one brief per window). Cards 3-4 on the Automations
-  page + generic `/automations/notifications/history?event_type=`. All
-  help-documented (4-locale) + tested. Next: remaining Phase-2 features
-  (rentrée wizard, teacher/student/recruiter automations) increment by
-  increment.
+  page + generic `/automations/notifications/history?event_type=`. (D2)
+  **Assistant de rentrée** — `services/rentree.py`: preview (dry-run plan:
+  promotions per SchoolLevel sort_order, leavers, fee schedules) then run
+  (new current AcademicYear, promotion to the least-filled next-level class,
+  leavers archived with history kept + account active, FeeSchedule cloned);
+  409 duplicate-year guard; RENTREE_ROLES = admin/direction only (no
+  accountant); card 5 on the Automations page. All help-documented
+  (4-locale) + tested. Next: remaining Phase-2 features (teacher/student/
+  recruiter/job-seeker automations) increment by increment.
 
 - **Production hardening pass (security audit)**: removed the baked-in default
   passwords (AdmissionEnrollmentCreate schema default + frontend pre-filled

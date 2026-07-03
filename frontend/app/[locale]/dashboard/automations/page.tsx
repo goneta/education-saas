@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
-import { AlertTriangle, BellRing, Mail, Play, RefreshCw, UserX } from "lucide-react"
+import { AlertTriangle, BellRing, CalendarClock, Eye, Mail, Play, RefreshCw, UserX } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
@@ -14,6 +14,8 @@ interface Reminder { id: number; fee_id: number; fee_title?: string | null; stud
 interface DigestResult { links: number; digests: number; grade_alerts: number; absence_alerts: number; skipped_cooldown: number }
 interface DigestNotification { id: number; event_type: string; recipient_name?: string | null; subject?: string | null; message: string; created_at: string }
 interface FollowupResult { scanned: number; notified: number; sms_queued: number; skipped_done: number; skipped_no_contact: number }
+interface RentreePreview { current_year?: string | null; promotions: { level_from: string; level_to: string; students: number }[]; leavers: number; unmapped: number; fee_schedules_to_clone: number }
+interface RentreeResult { new_year_name: string; promoted: number; archived: number; unmapped: number; fee_schedules_cloned: number }
 interface AnomalyResult { skipped_cooldown: boolean; anomalies: number; notified: number; absences_current?: number | null; absences_previous?: number | null; unpaid_ratio?: number | null; class_size_min?: number | null; class_size_max?: number | null }
 
 export default function AutomationsPage() {
@@ -36,6 +38,10 @@ export default function AutomationsPage() {
     const [anomalyRunning, setAnomalyRunning] = useState(false)
     const [anomalyResult, setAnomalyResult] = useState<AnomalyResult | null>(null)
     const [anomalyHistory, setAnomalyHistory] = useState<DigestNotification[]>([])
+    const [rentreePreview, setRentreePreview] = useState<RentreePreview | null>(null)
+    const [rentreeForm, setRentreeForm] = useState({ name: "", start: "", end: "" })
+    const [rentreeBusy, setRentreeBusy] = useState<"preview" | "run" | null>(null)
+    const [rentreeResult, setRentreeResult] = useState<RentreeResult | null>(null)
 
     const headers = useMemo(() => token ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` } : undefined, [token])
 
@@ -111,6 +117,34 @@ export default function AutomationsPage() {
             else setError((await res.json().catch(() => ({}))).detail || "—")
         } finally {
             setAnomalyRunning(false)
+        }
+    }
+
+    const previewRentree = async () => {
+        if (!headers) return
+        setRentreeBusy("preview"); setError(null)
+        try {
+            const res = await fetch(`${API_BASE_URL}/automations/rentree/preview`, { headers })
+            if (res.ok) setRentreePreview(await res.json())
+            else setError((await res.json().catch(() => ({}))).detail || "—")
+        } finally {
+            setRentreeBusy(null)
+        }
+    }
+
+    const runRentree = async () => {
+        if (!headers || !rentreeForm.name || !rentreeForm.start || !rentreeForm.end) return
+        if (!window.confirm(t("rentreeConfirm", { year: rentreeForm.name }))) return
+        setRentreeBusy("run"); setError(null); setRentreeResult(null)
+        try {
+            const res = await fetch(`${API_BASE_URL}/automations/rentree/run`, {
+                method: "POST", headers,
+                body: JSON.stringify({ new_year_name: rentreeForm.name, start_date: new Date(rentreeForm.start).toISOString(), end_date: new Date(rentreeForm.end).toISOString() }),
+            })
+            if (res.ok) { setRentreeResult(await res.json()); setRentreePreview(null) }
+            else setError((await res.json().catch(() => ({}))).detail || "—")
+        } finally {
+            setRentreeBusy(null)
         }
     }
 
@@ -345,6 +379,69 @@ export default function AutomationsPage() {
                             ))}
                         </div>
                     </div>
+                </CardContent>
+            </Card>
+
+            <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><CalendarClock className="h-4 w-4" /> {t("rentree")}</CardTitle>
+                    <p className="text-sm text-[#6B7280] dark:text-[#c7d0da]">{t("rentreeHint")}</p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Button onClick={previewRentree} disabled={rentreeBusy !== null} variant="outline">
+                        {rentreeBusy === "preview" ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Eye className="mr-2 h-4 w-4" />}
+                        {t("rentreePreview")}
+                    </Button>
+
+                    {rentreePreview && (
+                        <div className="space-y-3 rounded-xl border border-[#E5E7EB] p-4 dark:border-[#3b4248]">
+                            <p className="text-sm text-[#6B7280] dark:text-[#c7d0da]">{t("rentreeCurrentYear")} : <span className="font-semibold text-[#111827] dark:text-white">{rentreePreview.current_year || "—"}</span></p>
+                            <table className="w-full text-left text-sm">
+                                <thead><tr className="border-b border-[#E5E7EB] text-[#6B7280] dark:border-[#3b4248]"><th className="px-3 py-2">{t("rentreeFrom")}</th><th className="px-3 py-2">{t("rentreeTo")}</th><th className="px-3 py-2">{t("rentreeStudents")}</th></tr></thead>
+                                <tbody>
+                                    {rentreePreview.promotions.length === 0 ? <tr><td colSpan={3} className="px-3 py-4 text-center text-[#6B7280]">{t("rentreeNoPromotions")}</td></tr> : rentreePreview.promotions.map(p => (
+                                        <tr key={`${p.level_from}-${p.level_to}`} className="border-b border-[#F0F1F3] dark:border-[#2a3035]">
+                                            <td className="px-3 py-2 font-medium">{p.level_from}</td>
+                                            <td className="px-3 py-2">{p.level_to}</td>
+                                            <td className="px-3 py-2">{p.students}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            <p className="text-sm text-[#6B7280] dark:text-[#c7d0da]">
+                                {t("rentreeLeavers")}: <span className="font-semibold text-[#111827] dark:text-white">{rentreePreview.leavers}</span> · {t("rentreeUnmapped")}: <span className="font-semibold text-[#111827] dark:text-white">{rentreePreview.unmapped}</span> · {t("rentreeFees")}: <span className="font-semibold text-[#111827] dark:text-white">{rentreePreview.fee_schedules_to_clone}</span>
+                            </p>
+                        </div>
+                    )}
+
+                    <div className="grid gap-3 md:grid-cols-4">
+                        <label className="text-xs text-[#6B7280] dark:text-[#c7d0da]">{t("rentreeYearName")}
+                            <input value={rentreeForm.name} onChange={e => setRentreeForm({ ...rentreeForm, name: e.target.value })} placeholder="2026-2027" className="apple-input mt-1 w-full" />
+                        </label>
+                        <label className="text-xs text-[#6B7280] dark:text-[#c7d0da]">{t("rentreeStart")}
+                            <input type="date" value={rentreeForm.start} onChange={e => setRentreeForm({ ...rentreeForm, start: e.target.value })} className="apple-input mt-1 w-full" />
+                        </label>
+                        <label className="text-xs text-[#6B7280] dark:text-[#c7d0da]">{t("rentreeEnd")}
+                            <input type="date" value={rentreeForm.end} onChange={e => setRentreeForm({ ...rentreeForm, end: e.target.value })} className="apple-input mt-1 w-full" />
+                        </label>
+                        <div className="flex items-end">
+                            <Button onClick={runRentree} disabled={rentreeBusy !== null || !rentreeForm.name || !rentreeForm.start || !rentreeForm.end} className="w-full bg-black text-white hover:bg-black/90">
+                                {rentreeBusy === "run" ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+                                {t("rentreeRun")}
+                            </Button>
+                        </div>
+                    </div>
+
+                    {rentreeResult && (
+                        <div className="grid gap-3 rounded-xl border border-[#CCFBF1] bg-[#F0FDFA] p-4 text-sm dark:border-[#134E4A] dark:bg-[#0f1f1d] sm:grid-cols-4">
+                            <div><p className="text-2xl font-bold text-[#0F766E]">{rentreeResult.promoted}</p><p className="text-[#134E4A] dark:text-[#5eead4]">{t("rentreePromoted")}</p></div>
+                            <div><p className="text-2xl font-bold text-[#0F766E]">{rentreeResult.archived}</p><p className="text-[#134E4A] dark:text-[#5eead4]">{t("rentreeArchived")}</p></div>
+                            <div><p className="text-2xl font-bold text-[#0F766E]">{rentreeResult.unmapped}</p><p className="text-[#134E4A] dark:text-[#5eead4]">{t("rentreeUnmapped")}</p></div>
+                            <div><p className="text-2xl font-bold text-[#0F766E]">{rentreeResult.fee_schedules_cloned}</p><p className="text-[#134E4A] dark:text-[#5eead4]">{t("rentreeFeesCloned")}</p></div>
+                        </div>
+                    )}
+
+                    <p className="text-xs text-[#94A3B8]">{t("rentreeGuard")}</p>
                 </CardContent>
             </Card>
         </div>

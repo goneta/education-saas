@@ -33,3 +33,4 @@
 - HELP_SECTIONS documents `selfDocs` (4-locale): self-service document generation for students/parents with unique verifiable references.
 - The automations help section now also covers the weekly parent digest + threshold alerts (purpose + a dedicated step, 4-locale).
 - The automations help section now also covers absence follow-up and the anomaly brief (purpose + two dedicated steps, 4-locale).
+- The automations help section now also covers the rentree wizard (preview-then-run step, 4-locale).
