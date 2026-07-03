@@ -76,7 +76,8 @@
     "announcements": "Annonces",
     "integrations": "API & Int\u00e9grations",
     "automations": "Automatisations",
-    "myDocuments": "Mes documents"
+    "myDocuments": "Mes documents",
+    "studyPlan": "Planning de r\u00e9vision"
   },
   "layout": {
     "previewTitle": "Apercu du contenu genere par l'IA",
@@ -867,7 +868,13 @@
     "rentreePromoted": "Promus",
     "rentreeArchived": "Archiv\u00e9s",
     "rentreeFeesCloned": "Bar\u00e8mes clon\u00e9s",
-    "rentreeGuard": "Garde-fou : impossible de lancer deux fois la m\u00eame ann\u00e9e (409 si le nom existe d\u00e9j\u00e0). Les comptes des sortants restent actifs (acc\u00e8s portail et documents conserv\u00e9)."
+    "rentreeGuard": "Garde-fou : impossible de lancer deux fois la m\u00eame ann\u00e9e (409 si le nom existe d\u00e9j\u00e0). Les comptes des sortants restent actifs (acc\u00e8s portail et documents conserv\u00e9).",
+    "homeworkReminders": "Rappels de devoirs",
+    "homeworkRemindersHint": "Relance espac\u00e9e (J-7, J-3, J-1) des \u00e9l\u00e8ves qui n'ont pas encore rendu un devoir publi\u00e9. Un seul rappel par palier et par \u00e9l\u00e8ve.",
+    "homeworkAssignments": "Devoirs concern\u00e9s",
+    "homeworkReminded": "Rappels envoy\u00e9s",
+    "homeworkSubmitted": "D\u00e9j\u00e0 rendus",
+    "homeworkCronHint": "Idempotent par palier : planifiez POST /automations/homework-reminders/run chaque jour via un cron externe."
   },
   "selfDocs": {
     "title": "Mes documents",
@@ -897,5 +904,21 @@
     "noPayments": "Aucun paiement confirm\u00e9.",
     "noDocuments": "Aucun document g\u00e9n\u00e9r\u00e9 pour le moment.",
     "verifyHint": "Authenticit\u00e9 v\u00e9rifiable aupr\u00e8s de l'\u00e9tablissement avec cette r\u00e9f\u00e9rence."
+  },
+  "studyPlan": {
+    "title": "Mon planning de r\u00e9vision",
+    "subtitle": "Construit automatiquement \u00e0 partir de votre emploi du temps r\u00e9el, de vos prochaines \u00e9valuations et de vos devoirs \u00e0 rendre.",
+    "selectChild": "Enfant",
+    "assessments": "\u00c9valuations \u00e0 venir",
+    "noAssessments": "Aucune \u00e9valuation planifi\u00e9e sur la p\u00e9riode.",
+    "homework": "Devoirs \u00e0 rendre",
+    "noHomework": "Aucun devoir en attente \u2014 tout est rendu !",
+    "due": "Pour le",
+    "revisionSchedule": "Planning de r\u00e9vision",
+    "revisionHint": "R\u00e9vision espac\u00e9e : vue d'ensemble \u00e0 J-5, exercices \u00e0 J-2, r\u00e9vision finale la veille \u2014 la dur\u00e9e augmente \u00e0 l'approche de l'\u00e9valuation.",
+    "noSlots": "Aucune s\u00e9ance de r\u00e9vision \u00e0 planifier pour le moment.",
+    "stepOverview": "Vue d'ensemble",
+    "stepPractice": "Exercices",
+    "stepFinal": "R\u00e9vision finale"
   }
 }

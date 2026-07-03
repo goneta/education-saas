@@ -76,7 +76,8 @@
     "announcements": "Anuncios",
     "integrations": "API e integraciones",
     "automations": "Automatizaciones",
-    "myDocuments": "Mis documentos"
+    "myDocuments": "Mis documentos",
+    "studyPlan": "Plan de repaso"
   },
   "layout": {
     "previewTitle": "Vista previa del contenido generado por IA",
@@ -867,7 +868,13 @@
     "rentreePromoted": "Promovidos",
     "rentreeArchived": "Archivados",
     "rentreeFeesCloned": "Baremos clonados",
-    "rentreeGuard": "Salvaguarda: el mismo a\u00f1o no puede lanzarse dos veces (409 si el nombre ya existe). Las cuentas de los salientes siguen activas (acceso al portal y a los documentos conservado)."
+    "rentreeGuard": "Salvaguarda: el mismo a\u00f1o no puede lanzarse dos veces (409 si el nombre ya existe). Las cuentas de los salientes siguen activas (acceso al portal y a los documentos conservado).",
+    "homeworkReminders": "Recordatorios de deberes",
+    "homeworkRemindersHint": "Avisos espaciados (D-7, D-3, D-1) a los alumnos que a\u00fan no han entregado un deber publicado. Un recordatorio por tramo y por alumno.",
+    "homeworkAssignments": "Deberes afectados",
+    "homeworkReminded": "Recordatorios enviados",
+    "homeworkSubmitted": "Ya entregados",
+    "homeworkCronHint": "Idempotente por tramo: programe POST /automations/homework-reminders/run cada d\u00eda con un cron externo."
   },
   "selfDocs": {
     "title": "Mis documentos",
@@ -897,5 +904,21 @@
     "noPayments": "Ning\u00fan pago confirmado.",
     "noDocuments": "Ning\u00fan documento generado por el momento.",
     "verifyHint": "Autenticidad verificable ante el centro con esta referencia."
+  },
+  "studyPlan": {
+    "title": "Mi plan de repaso",
+    "subtitle": "Construido autom\u00e1ticamente a partir de su horario real, sus pr\u00f3ximas evaluaciones y sus deberes pendientes.",
+    "selectChild": "Hijo/a",
+    "assessments": "Pr\u00f3ximas evaluaciones",
+    "noAssessments": "Ninguna evaluaci\u00f3n programada en el per\u00edodo.",
+    "homework": "Deberes pendientes",
+    "noHomework": "Ning\u00fan deber pendiente \u2014 \u00a1todo entregado!",
+    "due": "Para el",
+    "revisionSchedule": "Plan de repaso",
+    "revisionHint": "Repaso espaciado: visi\u00f3n general en D-5, ejercicios en D-2, repaso final la v\u00edspera \u2014 la duraci\u00f3n aumenta al acercarse la evaluaci\u00f3n.",
+    "noSlots": "Ninguna sesi\u00f3n de repaso que planificar por ahora.",
+    "stepOverview": "Visi\u00f3n general",
+    "stepPractice": "Ejercicios",
+    "stepFinal": "Repaso final"
   }
 }

@@ -76,7 +76,8 @@
     "announcements": "Matangazo",
     "integrations": "API na Muunganisho",
     "automations": "Otomatiki",
-    "myDocuments": "Nyaraka zangu"
+    "myDocuments": "Nyaraka zangu",
+    "studyPlan": "Ratiba ya marudio"
   },
   "layout": {
     "previewTitle": "Hakiki ya maudhui yaliyotengenezwa na AI",
@@ -867,7 +868,13 @@
     "rentreePromoted": "Waliopandishwa",
     "rentreeArchived": "Waliohifadhiwa",
     "rentreeFeesCloned": "Viwango vilivyonakiliwa",
-    "rentreeGuard": "Kinga: mwaka uleule hauwezi kuanzishwa mara mbili (409 ikiwa jina tayari lipo). Akaunti za wanaoondoka hubaki hai (ufikiaji wa tovuti na nyaraka unabaki)."
+    "rentreeGuard": "Kinga: mwaka uleule hauwezi kuanzishwa mara mbili (409 ikiwa jina tayari lipo). Akaunti za wanaoondoka hubaki hai (ufikiaji wa tovuti na nyaraka unabaki).",
+    "homeworkReminders": "Vikumbusho vya kazi za nyumbani",
+    "homeworkRemindersHint": "Vikumbusho vya nafasi (siku 7, 3, 1 kabla) kwa wanafunzi ambao bado hawajawasilisha kazi iliyochapishwa. Kikumbusho kimoja kwa kila hatua kwa kila mwanafunzi.",
+    "homeworkAssignments": "Kazi zinazohusika",
+    "homeworkReminded": "Vikumbusho vilivyotumwa",
+    "homeworkSubmitted": "Zilizowasilishwa tayari",
+    "homeworkCronHint": "Salama kurudiwa kwa kila hatua: panga POST /automations/homework-reminders/run kila siku kwa cron ya nje."
   },
   "selfDocs": {
     "title": "Nyaraka zangu",
@@ -897,5 +904,21 @@
     "noPayments": "Hakuna malipo yaliyothibitishwa.",
     "noDocuments": "Hakuna hati iliyotengenezwa bado.",
     "verifyHint": "Uhalisia unaweza kuthibitishwa shuleni kwa kutumia rejea hii."
+  },
+  "studyPlan": {
+    "title": "Ratiba yangu ya marudio",
+    "subtitle": "Imetengenezwa kiotomatiki kutoka kwa ratiba yako halisi, mitihani ijayo na kazi za nyumbani zinazosubiri.",
+    "selectChild": "Mtoto",
+    "assessments": "Mitihani ijayo",
+    "noAssessments": "Hakuna mtihani uliopangwa katika kipindi.",
+    "homework": "Kazi za nyumbani",
+    "noHomework": "Hakuna kazi inayosubiri \u2014 zote zimewasilishwa!",
+    "due": "Ifikapo",
+    "revisionSchedule": "Ratiba ya marudio",
+    "revisionHint": "Marudio ya nafasi: muhtasari siku 5 kabla, mazoezi siku 2 kabla, marudio ya mwisho siku moja kabla \u2014 muda huongezeka mtihani unapokaribia.",
+    "noSlots": "Hakuna kipindi cha marudio cha kupanga kwa sasa.",
+    "stepOverview": "Muhtasari",
+    "stepPractice": "Mazoezi",
+    "stepFinal": "Marudio ya mwisho"
   }
 }

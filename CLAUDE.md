@@ -80,9 +80,17 @@ notifications and master data (zero data duplication).
   (new current AcademicYear, promotion to the least-filled next-level class,
   leavers archived with history kept + account active, FeeSchedule cloned);
   409 duplicate-year guard; RENTREE_ROLES = admin/direction only (no
-  accountant); card 5 on the Automations page. All help-documented
-  (4-locale) + tested. Next: remaining Phase-2 features (teacher/student/
-  recruiter/job-seeker automations) increment by increment.
+  accountant); card 5 on the Automations page. (D3) **Planning de révision +
+  rappels de devoirs** — `services/student_planner.py`: on-demand study plan
+  from REAL data (class assessments, unsubmitted PUBLISHED assignments, class
+  timetable) with spaced revision slots (D-5/D-2/D-1, 30/45/60 min); admin
+  runner `homework-reminders/run` nudges non-submitters at D-7/D-3/D-1,
+  idempotent per (assignment, student, bucket) via event type
+  `homework.reminder.d7|d3|d1`. Student/Parent page `/dashboard/study-plan`
+  (+ sidebar entries) and card 6 on the Automations page. All help-documented
+  (4-locale) + tested. Next: remaining Phase-2 features (teacher AI features,
+  parent one-tap actions, recruiter/job-seeker automations) increment by
+  increment.
 
 - **Production hardening pass (security audit)**: removed the baked-in default
   passwords (AdmissionEnrollmentCreate schema default + frontend pre-filled

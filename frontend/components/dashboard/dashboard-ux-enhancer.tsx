@@ -46,6 +46,7 @@ const MODULE_BY_PATH: Array<[RegExp, string, string]> = [
     [/hr\/leave/, "hr", "leave"],
     [/dashboard\/automations/, "automations", "automations"],
     [/my-documents/, "selfDocs", "selfDocs"],
+    [/study-plan/, "studyPlan", "studyPlan"],
     [/dashboard\/communication/, "communication", "announcements"],
     [/finance\/payroll|finance\/my-payslips/, "payroll", "payroll"],
     [/finance\/cash-journal/, "accounting", "finance"],

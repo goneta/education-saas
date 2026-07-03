@@ -637,6 +637,33 @@ const HELP_SECTIONS: HelpSection[] = [
         },
     },
     {
+        id: "studyPlan",
+        title: { fr: "Planning de révision", en: "Revision planner", es: "Plan de repaso", sw: "Ratiba ya marudio" },
+        icon: GraduationCap,
+        purpose: {
+            fr: "Construire automatiquement le planning de révision de l'élève à partir de ses données réelles : emploi du temps de sa classe, évaluations à venir et devoirs à rendre. La révision est espacée (J-5 vue d'ensemble, J-2 exercices, J-1 révision finale) et les rappels de devoirs sont envoyés aux paliers J-7/J-3/J-1.",
+            en: "Automatically build the student's revision plan from their real data: class timetable, upcoming assessments and pending homework. Revision is spaced (D-5 overview, D-2 practice, D-1 final review) and homework nudges fire at the D-7/D-3/D-1 buckets.",
+            es: "Construir automáticamente el plan de repaso del alumno a partir de sus datos reales: horario de su clase, próximas evaluaciones y deberes pendientes. El repaso es espaciado (D-5 visión general, D-2 ejercicios, D-1 repaso final) y los avisos de deberes se envían en los tramos D-7/D-3/D-1.",
+            sw: "Kutengeneza kiotomatiki ratiba ya marudio ya mwanafunzi kutoka kwa data zake halisi: ratiba ya darasa, mitihani ijayo na kazi za nyumbani zinazosubiri. Marudio ni ya nafasi (siku 5 kabla muhtasari, siku 2 kabla mazoezi, siku 1 kabla marudio ya mwisho) na vikumbusho vya kazi hutumwa katika hatua za siku 7/3/1 kabla.",
+        },
+        steps: [
+            { fr: "Ouvrez Planning de révision (menu Élève ; les parents y accèdent aussi avec un sélecteur d'enfant).", en: "Open Revision planner (Student menu; parents also access it with a child selector).", es: "Abra Plan de repaso (menú Alumno; los padres también acceden con un selector de hijo).", sw: "Fungua Ratiba ya marudio (menyu ya Mwanafunzi; wazazi pia huifikia kwa kichaguzi cha mtoto)." },
+            { fr: "Consultez les évaluations à venir et les devoirs non rendus — la liste se met à jour dès qu'un devoir est soumis.", en: "Review upcoming assessments and unsubmitted homework — the list updates as soon as an assignment is submitted.", es: "Consulte las próximas evaluaciones y los deberes no entregados — la lista se actualiza en cuanto se entrega un deber.", sw: "Kagua mitihani ijayo na kazi ambazo hazijawasilishwa — orodha husasishwa mara kazi inapowasilishwa." },
+            { fr: "Suivez les séances de révision proposées, groupées par jour, avec l'étape (vue d'ensemble, exercices, révision finale) et la durée conseillée.", en: "Follow the suggested revision sessions, grouped by day, with the step (overview, practice, final review) and the recommended duration.", es: "Siga las sesiones de repaso propuestas, agrupadas por día, con la etapa (visión general, ejercicios, repaso final) y la duración recomendada.", sw: "Fuata vipindi vya marudio vilivyopendekezwa, vikiwa vimepangwa kwa siku, pamoja na hatua (muhtasari, mazoezi, marudio ya mwisho) na muda unaopendekezwa." },
+            { fr: "Côté administration, la carte « Rappels de devoirs » de la page Automatisations envoie les relances espacées aux élèves n'ayant pas rendu (planifiable en cron quotidien).", en: "On the administration side, the “Homework reminders” card of the Automations page sends the spaced nudges to students who have not submitted (schedulable as a daily cron).", es: "En administración, la tarjeta «Recordatorios de deberes» de la página Automatizaciones envía los avisos espaciados a los alumnos que no han entregado (programable como cron diario).", sw: "Upande wa utawala, kadi ya « Vikumbusho vya kazi za nyumbani » kwenye ukurasa wa Otomatiki hutuma vikumbusho vya nafasi kwa wanafunzi ambao hawajawasilisha (inaweza kupangwa kama cron ya kila siku)." },
+        ],
+        fields: [
+            { name: { fr: "Révision espacée", en: "Spaced revision", es: "Repaso espaciado", sw: "Marudio ya nafasi" }, type: { fr: "Automatique", en: "Automatic", es: "Automático", sw: "Otomatiki" }, expected: { fr: "3 séances par évaluation : J-5 (30 min), J-2 (45 min), J-1 (60 min).", en: "3 sessions per assessment: D-5 (30 min), D-2 (45 min), D-1 (60 min).", es: "3 sesiones por evaluación: D-5 (30 min), D-2 (45 min), D-1 (60 min).", sw: "Vipindi 3 kwa kila mtihani: siku 5 kabla (dak. 30), siku 2 kabla (dak. 45), siku 1 kabla (dak. 60)." }, validation: { fr: "Dérivé des évaluations planifiées de la classe de l'élève.", en: "Derived from the student's class scheduled assessments.", es: "Derivado de las evaluaciones programadas de la clase del alumno.", sw: "Inatokana na mitihani iliyopangwa ya darasa la mwanafunzi." } },
+            { name: { fr: "Rappels de devoirs", en: "Homework nudges", es: "Avisos de deberes", sw: "Vikumbusho vya kazi" }, type: { fr: "Automatique", en: "Automatic", es: "Automático", sw: "Otomatiki" }, expected: { fr: "Un rappel par palier (J-7, J-3, J-1) et par élève n'ayant pas rendu.", en: "One nudge per bucket (D-7, D-3, D-1) per student who has not submitted.", es: "Un aviso por tramo (D-7, D-3, D-1) y por alumno que no ha entregado.", sw: "Kikumbusho kimoja kwa kila hatua (siku 7, 3, 1 kabla) kwa kila mwanafunzi ambaye hajawasilisha." }, validation: { fr: "Idempotent : relancer l'automatisation n'envoie jamais de doublon.", en: "Idempotent: re-running the automation never sends a duplicate.", es: "Idempotente: relanzar la automatización nunca envía duplicados.", sw: "Salama kurudiwa: kuendesha tena hakutumi nakala." } },
+        ],
+        result: {
+            fr: "L'élève sait quoi réviser, quand et combien de temps ; les devoirs oubliés déclenchent des rappels progressifs sans intervention de l'enseignant.",
+            en: "The student knows what to revise, when and for how long; forgotten homework triggers progressive reminders without teacher intervention.",
+            es: "El alumno sabe qué repasar, cuándo y cuánto tiempo; los deberes olvidados generan recordatorios progresivos sin intervención del profesor.",
+            sw: "Mwanafunzi anajua nini cha kurudia, lini na kwa muda gani; kazi zilizosahaulika huchochea vikumbusho vya hatua bila mwalimu kuingilia.",
+        },
+    },
+    {
         id: "leave",
         title: { fr: "Congés et absences", en: "Leave and absences", es: "Permisos y ausencias", sw: "Likizo na kutohudhuria" },
         icon: BriefcaseBusiness,

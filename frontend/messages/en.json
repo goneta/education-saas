@@ -76,7 +76,8 @@
     "announcements": "Announcements",
     "integrations": "API & Integrations",
     "automations": "Automations",
-    "myDocuments": "My documents"
+    "myDocuments": "My documents",
+    "studyPlan": "Revision planner"
   },
   "layout": {
     "previewTitle": "AI Generated Content Preview",
@@ -867,7 +868,13 @@
     "rentreePromoted": "Promoted",
     "rentreeArchived": "Archived",
     "rentreeFeesCloned": "Schedules cloned",
-    "rentreeGuard": "Guard rail: the same year cannot be rolled over twice (409 if the name already exists). Leavers' accounts stay active (portal and document access kept)."
+    "rentreeGuard": "Guard rail: the same year cannot be rolled over twice (409 if the name already exists). Leavers' accounts stay active (portal and document access kept).",
+    "homeworkReminders": "Homework reminders",
+    "homeworkRemindersHint": "Spaced nudges (D-7, D-3, D-1) to students who have not yet submitted a published assignment. One reminder per bucket per student.",
+    "homeworkAssignments": "Assignments in scope",
+    "homeworkReminded": "Reminders sent",
+    "homeworkSubmitted": "Already submitted",
+    "homeworkCronHint": "Idempotent per bucket: schedule POST /automations/homework-reminders/run daily via an external cron."
   },
   "selfDocs": {
     "title": "My documents",
@@ -897,5 +904,21 @@
     "noPayments": "No confirmed payment.",
     "noDocuments": "No document generated yet.",
     "verifyHint": "Authenticity verifiable with the institution using this reference."
+  },
+  "studyPlan": {
+    "title": "My revision planner",
+    "subtitle": "Built automatically from your real timetable, upcoming assessments and pending homework.",
+    "selectChild": "Child",
+    "assessments": "Upcoming assessments",
+    "noAssessments": "No assessment scheduled over the period.",
+    "homework": "Homework due",
+    "noHomework": "No pending homework \u2014 everything is in!",
+    "due": "Due",
+    "revisionSchedule": "Revision schedule",
+    "revisionHint": "Spaced revision: overview at D-5, practice at D-2, final review the day before \u2014 duration grows as the assessment nears.",
+    "noSlots": "No revision session to plan for now.",
+    "stepOverview": "Overview",
+    "stepPractice": "Practice",
+    "stepFinal": "Final review"
   }
 }

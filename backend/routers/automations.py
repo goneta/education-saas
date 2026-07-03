@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from .. import audit, database, models, schemas, security
 from datetime import datetime
 
-from ..services import absence_followup, anomaly_digest, fee_reminders, parent_digest, rentree
+from ..services import absence_followup, anomaly_digest, fee_reminders, parent_digest, rentree, student_planner
 
 router = APIRouter(prefix="/automations", tags=["Automations"])
 
@@ -214,6 +214,54 @@ def rentree_run(
         start_date=payload.start_date,
         end_date=payload.end_date,
     )
+    db.commit()
+    return summary
+
+
+@router.get("/study-plan")
+def study_plan(
+    student_id: Optional[int] = None,
+    horizon_days: int = Query(21, ge=7, le=60),
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """Revision plan built from the student's real timetable, upcoming
+    assessments and pending homework. Students see their own plan; parents can
+    request a linked child's via student_id."""
+    if current_user.role in (models.UserRole.STUDENT, models.UserRole.PUPIL):
+        profile = db.query(models.StudentProfile).filter(models.StudentProfile.user_id == current_user.id).first()
+        if not profile:
+            raise HTTPException(status_code=404, detail="Profil élève introuvable.")
+    elif current_user.role == models.UserRole.PARENT:
+        if not student_id:
+            raise HTTPException(status_code=400, detail="student_id requis pour un parent.")
+        link = db.query(models.ParentStudentLink).filter(
+            models.ParentStudentLink.parent_user_id == current_user.id,
+            models.ParentStudentLink.student_id == student_id,
+        ).first()
+        if not link:
+            raise HTTPException(status_code=403, detail="Cet élève n'est pas rattaché à votre compte.")
+        profile = db.query(models.StudentProfile).filter(models.StudentProfile.id == student_id).first()
+        if not profile:
+            raise HTTPException(status_code=404, detail="Profil élève introuvable.")
+    else:
+        raise HTTPException(status_code=403, detail="Réservé aux élèves et aux parents.")
+    return student_planner.build_study_plan(db, profile, horizon_days=horizon_days)
+
+
+@router.post("/homework-reminders/run", response_model=schemas.HomeworkReminderRunResult)
+def run_homework_reminders(
+    school_id: Optional[int] = None,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """Spaced-repetition homework nudges (D-7 / D-3 / D-1) to students who have
+    not submitted. Idempotent per (assignment, student, bucket) — safe to cron
+    daily."""
+    _ensure_admin(current_user)
+    resolved = _school_id(current_user, school_id)
+    summary = student_planner.run_homework_reminders(db, resolved, current_user)
+    audit.record_audit(db, action="automation.homework_reminders.run", current_user=current_user, entity_type="school", entity_id=resolved, details=summary)
     db.commit()
     return summary
 

@@ -40,3 +40,4 @@
 - MODULE_BY_PATH maps /hr/leave→leave and /dashboard/communication→announcements (#1).
 - MODULE_BY_PATH maps /dashboard/automations -> automations help section.
 - MODULE_BY_PATH maps /my-documents -> selfDocs help section (placed BEFORE the generic /documents/ catch-all, which would otherwise swallow it).
+- MODULE_BY_PATH maps /study-plan -> studyPlan help section.

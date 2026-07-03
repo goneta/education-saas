@@ -2986,6 +2986,13 @@ class RentreeRunResult(BaseModel):
     fee_schedules_cloned: int
 
 
+class HomeworkReminderRunResult(BaseModel):
+    assignments: int
+    reminders: int
+    skipped_sent: int
+    skipped_submitted: int
+
+
 class WebhookDeliveryResponse(BaseModel):
     id: int
     endpoint_id: int

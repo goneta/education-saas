@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
-import { AlertTriangle, BellRing, CalendarClock, Eye, Mail, Play, RefreshCw, UserX } from "lucide-react"
+import { AlertTriangle, BellRing, CalendarClock, ClipboardList, Eye, Mail, Play, RefreshCw, UserX } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
@@ -15,6 +15,7 @@ interface DigestResult { links: number; digests: number; grade_alerts: number; a
 interface DigestNotification { id: number; event_type: string; recipient_name?: string | null; subject?: string | null; message: string; created_at: string }
 interface FollowupResult { scanned: number; notified: number; sms_queued: number; skipped_done: number; skipped_no_contact: number }
 interface RentreePreview { current_year?: string | null; promotions: { level_from: string; level_to: string; students: number }[]; leavers: number; unmapped: number; fee_schedules_to_clone: number }
+interface HomeworkResult { assignments: number; reminders: number; skipped_sent: number; skipped_submitted: number }
 interface RentreeResult { new_year_name: string; promoted: number; archived: number; unmapped: number; fee_schedules_cloned: number }
 interface AnomalyResult { skipped_cooldown: boolean; anomalies: number; notified: number; absences_current?: number | null; absences_previous?: number | null; unpaid_ratio?: number | null; class_size_min?: number | null; class_size_max?: number | null }
 
@@ -38,6 +39,8 @@ export default function AutomationsPage() {
     const [anomalyRunning, setAnomalyRunning] = useState(false)
     const [anomalyResult, setAnomalyResult] = useState<AnomalyResult | null>(null)
     const [anomalyHistory, setAnomalyHistory] = useState<DigestNotification[]>([])
+    const [homeworkRunning, setHomeworkRunning] = useState(false)
+    const [homeworkResult, setHomeworkResult] = useState<HomeworkResult | null>(null)
     const [rentreePreview, setRentreePreview] = useState<RentreePreview | null>(null)
     const [rentreeForm, setRentreeForm] = useState({ name: "", start: "", end: "" })
     const [rentreeBusy, setRentreeBusy] = useState<"preview" | "run" | null>(null)
@@ -117,6 +120,18 @@ export default function AutomationsPage() {
             else setError((await res.json().catch(() => ({}))).detail || "—")
         } finally {
             setAnomalyRunning(false)
+        }
+    }
+
+    const runHomework = async () => {
+        if (!headers) return
+        setHomeworkRunning(true); setError(null); setHomeworkResult(null)
+        try {
+            const res = await fetch(`${API_BASE_URL}/automations/homework-reminders/run`, { method: "POST", headers })
+            if (res.ok) setHomeworkResult(await res.json())
+            else setError((await res.json().catch(() => ({}))).detail || "—")
+        } finally {
+            setHomeworkRunning(false)
         }
     }
 
@@ -379,6 +394,28 @@ export default function AutomationsPage() {
                             ))}
                         </div>
                     </div>
+                </CardContent>
+            </Card>
+
+            <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><ClipboardList className="h-4 w-4" /> {t("homeworkReminders")}</CardTitle>
+                    <p className="text-sm text-[#6B7280] dark:text-[#c7d0da]">{t("homeworkRemindersHint")}</p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Button onClick={runHomework} disabled={homeworkRunning} className="bg-black text-white hover:bg-black/90">
+                        {homeworkRunning ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+                        {homeworkRunning ? t("running") : t("runNow")}
+                    </Button>
+                    {homeworkResult && (
+                        <div className="grid gap-3 rounded-xl border border-[#CCFBF1] bg-[#F0FDFA] p-4 text-sm dark:border-[#134E4A] dark:bg-[#0f1f1d] sm:grid-cols-4">
+                            <div><p className="text-2xl font-bold text-[#0F766E]">{homeworkResult.assignments}</p><p className="text-[#134E4A] dark:text-[#5eead4]">{t("homeworkAssignments")}</p></div>
+                            <div><p className="text-2xl font-bold text-[#0F766E]">{homeworkResult.reminders}</p><p className="text-[#134E4A] dark:text-[#5eead4]">{t("homeworkReminded")}</p></div>
+                            <div><p className="text-2xl font-bold text-[#0F766E]">{homeworkResult.skipped_submitted}</p><p className="text-[#134E4A] dark:text-[#5eead4]">{t("homeworkSubmitted")}</p></div>
+                            <div><p className="text-2xl font-bold text-[#0F766E]">{homeworkResult.skipped_sent}</p><p className="text-[#134E4A] dark:text-[#5eead4]">{t("resultSkipped")}</p></div>
+                        </div>
+                    )}
+                    <p className="text-xs text-[#94A3B8]">{t("homeworkCronHint")}</p>
                 </CardContent>
             </Card>
 
