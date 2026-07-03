@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from .. import audit, database, models, schemas, security
-from ..services import fee_reminders
+from ..services import fee_reminders, parent_digest
 
 router = APIRouter(prefix="/automations", tags=["Automations"])
 
@@ -83,4 +83,55 @@ def fee_reminder_history(
             channels=reminder.channels or [], created_at=reminder.created_at,
         )
         for reminder, fee, user in rows
+    ]
+
+
+@router.post("/parent-digest/run", response_model=schemas.ParentDigestRunResult)
+def run_parent_digest(
+    days: int = Query(7, ge=1, le=31),
+    grade_alert_threshold: float = Query(10.0, ge=0, le=20),
+    absence_alert_count: int = Query(3, ge=1, le=31),
+    school_id: Optional[int] = None,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """Compile the weekly digest (grades, absences, payments due) for every
+    linked parent, in the parent's language, plus threshold alerts (average
+    below the bar, too many absences). Idempotent per window — safe to cron."""
+    _ensure_admin(current_user)
+    resolved = _school_id(current_user, school_id)
+    summary = parent_digest.run_parent_digest(
+        db, resolved, current_user,
+        days=days, grade_alert_threshold=grade_alert_threshold, absence_alert_count=absence_alert_count,
+    )
+    audit.record_audit(db, action="automation.parent_digest.run", current_user=current_user, entity_type="school", entity_id=resolved, details=summary)
+    db.commit()
+    return summary
+
+
+@router.get("/parent-digest/history", response_model=List[schemas.ParentDigestNotificationResponse])
+def parent_digest_history(
+    limit: int = Query(50, ge=1, le=200),
+    school_id: Optional[int] = None,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    _ensure_admin(current_user)
+    resolved = _school_id(current_user, school_id)
+    rows = (
+        db.query(models.NotificationHistory)
+        .filter(
+            models.NotificationHistory.school_id == resolved,
+            models.NotificationHistory.event_type.in_(["parent.digest", "parent.alert.average", "parent.alert.absences"]),
+        )
+        .order_by(models.NotificationHistory.id.desc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        schemas.ParentDigestNotificationResponse(
+            id=row.id, event_type=row.event_type, recipient_name=row.recipient_name,
+            subject=row.subject, message=row.message, created_at=row.created_at,
+        )
+        for row in rows
     ]

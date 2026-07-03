@@ -818,7 +818,22 @@
     "channels": "Canales",
     "date": "Fecha",
     "noHistory": "Ning\u00fan recordatorio enviado todav\u00eda.",
-    "cronHint": "Para programarlo, llame a POST /automations/fee-reminders/run desde un cron externo con un token de administrador."
+    "cronHint": "Para programarlo, llame a POST /automations/fee-reminders/run desde un cron externo con un token de administrador.",
+    "parentDigest": "Resumen semanal para padres",
+    "parentDigestHint": "Compila para cada padre vinculado el resumen semanal de su hijo (notas, ausencias, pagos pendientes) en su idioma, con alertas de umbral (media baja, ausencias repetidas).",
+    "digestDays": "Ventana (d\u00edas)",
+    "digestGradeThreshold": "Umbral de media (/20)",
+    "digestAbsenceCount": "Umbral de ausencias",
+    "digestLinks": "Familias",
+    "digestSent": "Res\u00famenes enviados",
+    "digestGradeAlerts": "Alertas de media",
+    "digestAbsenceAlerts": "Alertas de asistencia",
+    "digestCronHint": "Idempotente: un padre ya atendido en la ventana se omite. Programe POST /automations/parent-digest/run cada semana con un cron externo.",
+    "digestType": "Tipo",
+    "digestRecipient": "Padre",
+    "digestSubject": "Asunto",
+    "digestBadge": "Resumen",
+    "digestAlertBadge": "Alerta"
   },
   "selfDocs": {
     "title": "Mis documentos",

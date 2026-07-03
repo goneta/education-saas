@@ -34,3 +34,4 @@
 # Child DOX Index
 
 - No child AGENTS.md files yet.
+- Automation runners (fee_reminders, parent_digest) must stay idempotent: anti-spam tracking (FeeReminder rows / NotificationHistory window lookups) so manual re-runs and external crons never double-send; all sends go through automation.record_notification (never ad-hoc NotificationHistory inserts).

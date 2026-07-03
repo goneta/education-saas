@@ -31,3 +31,4 @@
 - Help CONTENT is now locale-aware: a `loc(value, locale)` resolver accepts either a plain French string (legacy fallback) or a `{fr,en,es,sw}` object. The 6 new-module sections (levels, facilities, personnel, payroll, leave, announcements) are fully translated; the remaining legacy sections stay French until translated (resolver falls back).
 - HELP_SECTIONS documents `automations` (4-locale) with context-aware routing.
 - HELP_SECTIONS documents `selfDocs` (4-locale): self-service document generation for students/parents with unique verifiable references.
+- The automations help section now also covers the weekly parent digest + threshold alerts (purpose + a dedicated step, 4-locale).

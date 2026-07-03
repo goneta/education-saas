@@ -818,7 +818,22 @@
     "channels": "Njia",
     "date": "Tarehe",
     "noHistory": "Hakuna kikumbusho kilichotumwa bado.",
-    "cronHint": "Kupanga, ita POST /automations/fee-reminders/run kutoka cron ya nje na tokeni ya msimamizi."
+    "cronHint": "Kupanga, ita POST /automations/fee-reminders/run kutoka cron ya nje na tokeni ya msimamizi.",
+    "parentDigest": "Muhtasari wa wiki kwa wazazi",
+    "parentDigestHint": "Huandaa kwa kila mzazi aliyeunganishwa muhtasari wa wiki wa mtoto wake (alama, kutokuwepo, malipo yanayosubiri) kwa lugha yake, pamoja na tahadhari za vizingiti (wastani mdogo, kutokuwepo mara kwa mara).",
+    "digestDays": "Dirisha (siku)",
+    "digestGradeThreshold": "Kizingiti cha wastani (/20)",
+    "digestAbsenceCount": "Kizingiti cha kutokuwepo",
+    "digestLinks": "Familia",
+    "digestSent": "Muhtasari zilizotumwa",
+    "digestGradeAlerts": "Tahadhari za wastani",
+    "digestAbsenceAlerts": "Tahadhari za mahudhurio",
+    "digestCronHint": "Salama kurudiwa: mzazi aliyehudumiwa ndani ya dirisha hurukwa. Panga POST /automations/parent-digest/run kila wiki kwa cron ya nje.",
+    "digestType": "Aina",
+    "digestRecipient": "Mzazi",
+    "digestSubject": "Kichwa",
+    "digestBadge": "Muhtasari",
+    "digestAlertBadge": "Tahadhari"
   },
   "selfDocs": {
     "title": "Nyaraka zangu",

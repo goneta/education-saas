@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
-import { BellRing, Play, RefreshCw } from "lucide-react"
+import { BellRing, Mail, Play, RefreshCw } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button"
 
 interface RunResult { scanned: number; reminded: number; escalated: number; skipped_cooldown: number; skipped_not_due: number; skipped_paid: number; sms_queued: number }
 interface Reminder { id: number; fee_id: number; fee_title?: string | null; student_name?: string | null; level: number; outstanding_amount: number; channels: string[]; created_at: string }
+interface DigestResult { links: number; digests: number; grade_alerts: number; absence_alerts: number; skipped_cooldown: number }
+interface DigestNotification { id: number; event_type: string; recipient_name?: string | null; subject?: string | null; message: string; created_at: string }
 
 export default function AutomationsPage() {
     const t = useTranslations("automations")
@@ -20,6 +22,10 @@ export default function AutomationsPage() {
     const [result, setResult] = useState<RunResult | null>(null)
     const [history, setHistory] = useState<Reminder[]>([])
     const [error, setError] = useState<string | null>(null)
+    const [digestParams, setDigestParams] = useState({ days: "7", grade_alert_threshold: "10", absence_alert_count: "3" })
+    const [digestRunning, setDigestRunning] = useState(false)
+    const [digestResult, setDigestResult] = useState<DigestResult | null>(null)
+    const [digestHistory, setDigestHistory] = useState<DigestNotification[]>([])
 
     const headers = useMemo(() => token ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` } : undefined, [token])
 
@@ -29,7 +35,13 @@ export default function AutomationsPage() {
         if (res.ok) setHistory(await res.json())
     }, [headers])
 
-    useEffect(() => { void loadHistory() }, [loadHistory])
+    const loadDigestHistory = useCallback(async () => {
+        if (!headers) return
+        const res = await fetch(`${API_BASE_URL}/automations/parent-digest/history?limit=50`, { headers })
+        if (res.ok) setDigestHistory(await res.json())
+    }, [headers])
+
+    useEffect(() => { void loadHistory(); void loadDigestHistory() }, [loadHistory, loadDigestHistory])
 
     const run = async () => {
         if (!headers) return
@@ -42,6 +54,28 @@ export default function AutomationsPage() {
         } finally {
             setRunning(false)
         }
+    }
+
+    const runDigest = async () => {
+        if (!headers) return
+        setDigestRunning(true); setError(null); setDigestResult(null)
+        try {
+            const qs = `days=${Number(digestParams.days) || 7}&grade_alert_threshold=${Number(digestParams.grade_alert_threshold) || 10}&absence_alert_count=${Number(digestParams.absence_alert_count) || 3}`
+            const res = await fetch(`${API_BASE_URL}/automations/parent-digest/run?${qs}`, { method: "POST", headers })
+            if (res.ok) { setDigestResult(await res.json()); void loadDigestHistory() }
+            else setError((await res.json().catch(() => ({}))).detail || "—")
+        } finally {
+            setDigestRunning(false)
+        }
+    }
+
+    const eventBadge = (eventType: string) => {
+        const isAlert = eventType.startsWith("parent.alert")
+        return (
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${isAlert ? "bg-red-100 text-red-800" : "bg-emerald-100 text-emerald-800"}`}>
+                {isAlert ? t("digestAlertBadge") : t("digestBadge")}
+            </span>
+        )
     }
 
     const levelBadge = (level: number) => (
@@ -106,6 +140,63 @@ export default function AutomationsPage() {
                                             <td className="px-3 py-2">{r.outstanding_amount.toLocaleString()} FCFA</td>
                                             <td className="px-3 py-2">{r.channels.join(", ")}</td>
                                             <td className="px-3 py-2">{new Date(r.created_at).toLocaleString()}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Mail className="h-4 w-4" /> {t("parentDigest")}</CardTitle>
+                    <p className="text-sm text-[#6B7280] dark:text-[#c7d0da]">{t("parentDigestHint")}</p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="grid gap-3 md:grid-cols-4">
+                        <label className="text-xs text-[#6B7280] dark:text-[#c7d0da]">{t("digestDays")}
+                            <input type="number" min={1} max={31} value={digestParams.days} onChange={e => setDigestParams({ ...digestParams, days: e.target.value })} className="apple-input mt-1 w-full" />
+                        </label>
+                        <label className="text-xs text-[#6B7280] dark:text-[#c7d0da]">{t("digestGradeThreshold")}
+                            <input type="number" min={0} max={20} value={digestParams.grade_alert_threshold} onChange={e => setDigestParams({ ...digestParams, grade_alert_threshold: e.target.value })} className="apple-input mt-1 w-full" />
+                        </label>
+                        <label className="text-xs text-[#6B7280] dark:text-[#c7d0da]">{t("digestAbsenceCount")}
+                            <input type="number" min={1} max={31} value={digestParams.absence_alert_count} onChange={e => setDigestParams({ ...digestParams, absence_alert_count: e.target.value })} className="apple-input mt-1 w-full" />
+                        </label>
+                        <div className="flex items-end">
+                            <Button onClick={runDigest} disabled={digestRunning} className="w-full bg-black text-white hover:bg-black/90">
+                                {digestRunning ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+                                {digestRunning ? t("running") : t("runNow")}
+                            </Button>
+                        </div>
+                    </div>
+
+                    {digestResult && (
+                        <div className="grid gap-3 rounded-xl border border-[#CCFBF1] bg-[#F0FDFA] p-4 text-sm dark:border-[#134E4A] dark:bg-[#0f1f1d] sm:grid-cols-5">
+                            <div><p className="text-2xl font-bold text-[#0F766E]">{digestResult.links}</p><p className="text-[#134E4A] dark:text-[#5eead4]">{t("digestLinks")}</p></div>
+                            <div><p className="text-2xl font-bold text-[#0F766E]">{digestResult.digests}</p><p className="text-[#134E4A] dark:text-[#5eead4]">{t("digestSent")}</p></div>
+                            <div><p className="text-2xl font-bold text-[#0F766E]">{digestResult.grade_alerts}</p><p className="text-[#134E4A] dark:text-[#5eead4]">{t("digestGradeAlerts")}</p></div>
+                            <div><p className="text-2xl font-bold text-[#0F766E]">{digestResult.absence_alerts}</p><p className="text-[#134E4A] dark:text-[#5eead4]">{t("digestAbsenceAlerts")}</p></div>
+                            <div><p className="text-2xl font-bold text-[#0F766E]">{digestResult.skipped_cooldown}</p><p className="text-[#134E4A] dark:text-[#5eead4]">{t("resultSkipped")}</p></div>
+                        </div>
+                    )}
+
+                    <p className="text-xs text-[#94A3B8]">{t("digestCronHint")}</p>
+
+                    <div>
+                        <p className="mb-2 text-sm font-semibold text-[#111827] dark:text-white">{t("history")}</p>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm">
+                                <thead><tr className="border-b border-[#E5E7EB] text-[#6B7280] dark:border-[#3b4248]"><th className="px-3 py-2">{t("digestType")}</th><th className="px-3 py-2">{t("digestRecipient")}</th><th className="px-3 py-2">{t("digestSubject")}</th><th className="px-3 py-2">{t("date")}</th></tr></thead>
+                                <tbody>
+                                    {digestHistory.length === 0 ? <tr><td colSpan={4} className="px-3 py-6 text-center text-[#6B7280]">{t("noHistory")}</td></tr> : digestHistory.map(n => (
+                                        <tr key={n.id} className="border-b border-[#F0F1F3] dark:border-[#2a3035]">
+                                            <td className="px-3 py-2">{eventBadge(n.event_type)}</td>
+                                            <td className="px-3 py-2 font-medium">{n.recipient_name || "—"}</td>
+                                            <td className="px-3 py-2" title={n.message}>{n.subject || "—"}</td>
+                                            <td className="px-3 py-2">{new Date(n.created_at).toLocaleString()}</td>
                                         </tr>
                                     ))}
                                 </tbody>

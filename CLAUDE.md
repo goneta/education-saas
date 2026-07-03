@@ -62,9 +62,15 @@ notifications and master data (zero data duplication).
   scolarité, attestation and payment receipts themselves; unique verifiable
   references (CERT-/ATT-/REC-…), full payload stored for identical re-display;
   "Mes documents" page (print-ready HTML render, child selector for parents)
-  in Student + Parent menus. Both help-documented (4-locale) + tested.
-  Next: weekly parent digest + threshold alerts, then the remaining
-  Phase-2 features.
+  in Student + Parent menus. (C) **Résumé hebdo parents + alertes de seuil** —
+  `services/parent_digest.py` + `/automations/parent-digest/run|history`: one
+  notification per (parent, child) in the PARENT'S language (UserPreference,
+  fr/en/es/sw templates) compiling window grades (avg /20), absences/lates and
+  outstanding fees; threshold alerts ride along (`parent.alert.average`,
+  `parent.alert.absences`); idempotent per window (NotificationHistory
+  lookback). Second card on the Automations page. All help-documented
+  (4-locale) + tested. Next: remaining Phase-2 features (rentrée wizard,
+  teacher/student/recruiter automations) increment by increment.
 
 - **Production hardening pass (security audit)**: removed the baked-in default
   passwords (AdmissionEnrollmentCreate schema default + frontend pre-filled

@@ -2916,6 +2916,25 @@ class FeeReminderResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ParentDigestRunResult(BaseModel):
+    links: int
+    digests: int
+    grade_alerts: int
+    absence_alerts: int
+    skipped_cooldown: int
+
+
+class ParentDigestNotificationResponse(BaseModel):
+    id: int
+    event_type: str
+    recipient_name: Optional[str] = None
+    subject: Optional[str] = None
+    message: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class WebhookDeliveryResponse(BaseModel):
     id: int
     endpoint_id: int

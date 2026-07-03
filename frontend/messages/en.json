@@ -818,7 +818,22 @@
     "channels": "Channels",
     "date": "Date",
     "noHistory": "No reminder sent yet.",
-    "cronHint": "To schedule it, call POST /automations/fee-reminders/run from an external cron with an admin token."
+    "cronHint": "To schedule it, call POST /automations/fee-reminders/run from an external cron with an admin token.",
+    "parentDigest": "Weekly parent digest",
+    "parentDigestHint": "Compiles each linked parent's weekly summary of their child (grades, absences, pending payments) in their language, with threshold alerts (low average, repeated absences).",
+    "digestDays": "Window (days)",
+    "digestGradeThreshold": "Average threshold (/20)",
+    "digestAbsenceCount": "Absence threshold",
+    "digestLinks": "Families",
+    "digestSent": "Digests sent",
+    "digestGradeAlerts": "Average alerts",
+    "digestAbsenceAlerts": "Attendance alerts",
+    "digestCronHint": "Idempotent: a parent already served within the window is skipped. Schedule POST /automations/parent-digest/run weekly via an external cron.",
+    "digestType": "Type",
+    "digestRecipient": "Parent",
+    "digestSubject": "Subject",
+    "digestBadge": "Digest",
+    "digestAlertBadge": "Alert"
   },
   "selfDocs": {
     "title": "My documents",

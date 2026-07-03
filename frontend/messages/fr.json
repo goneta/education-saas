@@ -818,7 +818,22 @@
     "channels": "Canaux",
     "date": "Date",
     "noHistory": "Aucune relance envoy\u00e9e pour le moment.",
-    "cronHint": "Pour la planifier, appelez POST /automations/fee-reminders/run depuis un cron externe avec un jeton administrateur."
+    "cronHint": "Pour la planifier, appelez POST /automations/fee-reminders/run depuis un cron externe avec un jeton administrateur.",
+    "parentDigest": "R\u00e9sum\u00e9 hebdomadaire aux parents",
+    "parentDigestHint": "Compile pour chaque parent rattach\u00e9 le bilan de la semaine de son enfant (notes, absences, paiements en attente) dans sa langue, avec alertes de seuil (moyenne basse, absences r\u00e9p\u00e9t\u00e9es).",
+    "digestDays": "Fen\u00eatre (jours)",
+    "digestGradeThreshold": "Seuil moyenne (/20)",
+    "digestAbsenceCount": "Seuil absences",
+    "digestLinks": "Familles",
+    "digestSent": "R\u00e9sum\u00e9s envoy\u00e9s",
+    "digestGradeAlerts": "Alertes moyenne",
+    "digestAbsenceAlerts": "Alertes assiduit\u00e9",
+    "digestCronHint": "Idempotent : un parent d\u00e9j\u00e0 servi dans la fen\u00eatre est ignor\u00e9. Planifiez POST /automations/parent-digest/run chaque semaine via un cron externe.",
+    "digestType": "Type",
+    "digestRecipient": "Parent",
+    "digestSubject": "Sujet",
+    "digestBadge": "R\u00e9sum\u00e9",
+    "digestAlertBadge": "Alerte"
   },
   "selfDocs": {
     "title": "Mes documents",
