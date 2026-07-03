@@ -115,10 +115,17 @@ notifications and master data (zero data duplication).
   AI screening questionnaires stored on `JobOffer.screening_questions`, and
   per-candidate AI match reasons grounded strictly in match_score details;
   recruiter page gains the Questions button, "Pourquoi ?" per match and the
-  saved-searches panel. All help-documented + tested. Next: remaining
-  Phase-2 features (job-seeker trio: CV auto-refresh runner, gap analysis,
-  AI cover letters; parent one-tap actions; grade-entry OCR — needs a vision
-  provider decision) increment by increment.
+  saved-searches panel. (D8) **Automations chercheur d'emploi** —
+  `services/jobseeker_agents.py`: `POST /me/cv/refresh` (dossier académique
+  réel → CV, mécanique de year-closure exposée à l'élève), gap analysis
+  (diff déterministe des compétences/langues/expérience manquantes via
+  match_score + conseils IA par item) and AI cover letters grounded
+  STRICTLY in the CV's real data (published offers only, credit-gated);
+  student emploi page gains "Actualiser mon CV" + per-offer "Analyse
+  d'écart"/"Lettre IA". All help-documented + tested. Remaining Phase-2:
+  parent one-tap actions (justify absence / pay deep-links; e-sign has no
+  infra → NOT-READY) and grade-entry OCR (needs a vision provider
+  decision).
 
 - **Production hardening pass (security audit)**: removed the baked-in default
   passwords (AdmissionEnrollmentCreate schema default + frontend pre-filled

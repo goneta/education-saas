@@ -65,6 +65,8 @@ export default function EmploymentDashboardPage() {
   const locale = normalizeLocale(params.locale as string)
   const [cv, setCv] = useState<CV | null>(null)
   const [status, setStatus] = useState("")
+  const [jobAiBusy, setJobAiBusy] = useState<number | null>(null)
+  const [jobAiResults, setJobAiResults] = useState<Record<number, string>>({})
   const [recommendations, setRecommendations] = useState<RecommendedJob[]>([])
   const [agentPrompt, setAgentPrompt] = useState("Analyse mon profil et propose trois offres compatibles.")
   const [agentResult, setAgentResult] = useState("")
@@ -249,6 +251,51 @@ export default function EmploymentDashboardPage() {
     setAgentResult(data?.message || data?.data?.recommendations?.join("\n") || "Agent IA indisponible.")
   }
 
+  const refreshCv = async () => {
+    if (!headers) return
+    const response = await fetch(`${API_BASE_URL}/employment/me/cv/refresh`, { method: "POST", headers })
+    const data = await response.json().catch(() => null)
+    if (!response.ok) {
+      setStatus(data?.detail || "Actualisation impossible.")
+      return
+    }
+    setStatus(`CV actualise depuis votre dossier academique (${data.timeline_entries} entree(s), ${data.experience_years} an(s) d'experience).`)
+    load()
+  }
+
+  const runGapAnalysis = async (jobId: number) => {
+    if (!headers) return
+    setJobAiBusy(jobId)
+    try {
+      const response = await fetch(`${API_BASE_URL}/employment/me/jobs/${jobId}/gap-analysis?language=${locale}`, { method: "POST", headers })
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        setStatus(data?.detail || "Analyse indisponible.")
+        return
+      }
+      const missing = [...(data.missing_required_skills || []), ...(data.missing_desired_skills || []), ...(data.missing_languages || [])]
+      setJobAiResults(previous => ({ ...previous, [jobId]: `Score ${data.score}% — manquant : ${missing.join(", ") || "rien"}${data.experience_gap_years ? ` — ${data.experience_gap_years} an(s) d'experience a acquerir` : ""}\n\n${data.advice}` }))
+    } finally {
+      setJobAiBusy(null)
+    }
+  }
+
+  const draftCoverLetter = async (jobId: number) => {
+    if (!headers) return
+    setJobAiBusy(jobId)
+    try {
+      const response = await fetch(`${API_BASE_URL}/employment/me/jobs/${jobId}/cover-letter?language=${locale}`, { method: "POST", headers })
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        setStatus(data?.detail || "Lettre indisponible.")
+        return
+      }
+      setJobAiResults(previous => ({ ...previous, [jobId]: data.letter }))
+    } finally {
+      setJobAiBusy(null)
+    }
+  }
+
   const applyToJob = async (jobId: number) => {
     if (!headers) return
     const response = await fetch(`${API_BASE_URL}/employment/jobs/${jobId}/apply`, { method: "POST", headers, body: JSON.stringify({ motivation_message: "Candidature envoyee depuis les recommandations TeducAI." }) })
@@ -387,6 +434,10 @@ export default function EmploymentDashboardPage() {
           <div className="mt-4 grid gap-2">{(cv.work_history || []).map(item => <div key={item.id} className="rounded-lg border p-3 text-sm dark:border-[#56616a]">{item.position} - {item.company} ({item.experience_type})</div>)}</div>
         </Panel>
         <Panel title="Offres recommandees" collapsible open={openSections.has("offres")} onToggle={() => toggleSection("offres")}>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-[#64748B] dark:text-[#c7d0da]">Notes, parcours et certifications alimentent votre CV automatiquement.</p>
+            <Button type="button" variant="outline" onClick={refreshCv}><RefreshCw className="h-4 w-4" /> Actualiser mon CV</Button>
+          </div>
           <div className="grid gap-3">
             {recommendations.map(({ score, job }) => (
               <div key={job.id} className="rounded-lg border p-4 dark:border-[#56616a]">
@@ -398,7 +449,12 @@ export default function EmploymentDashboardPage() {
                   <strong className="rounded-full bg-[#ECFDF5] px-3 py-1 text-sm text-[#047857]">{score}%</strong>
                 </div>
                 <p className="mt-2 text-sm text-[#64748B] dark:text-[#c7d0da]">Salaire: {job.salary_fixed || job.salary_min || "-"} {job.currency || ""} - limite: {job.deadline?.slice(0, 10) || "-"}</p>
-                <Button type="button" variant="outline" className="mt-3" onClick={() => applyToJob(job.id)}>Postuler</Button>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" onClick={() => applyToJob(job.id)}>Postuler</Button>
+                  <Button type="button" variant="outline" disabled={jobAiBusy !== null} onClick={() => runGapAnalysis(job.id)}>{jobAiBusy === job.id ? "..." : "Analyse d'ecart"}</Button>
+                  <Button type="button" variant="outline" disabled={jobAiBusy !== null} onClick={() => draftCoverLetter(job.id)}>{jobAiBusy === job.id ? "..." : "Lettre IA"}</Button>
+                </div>
+                {jobAiResults[job.id] && <pre className="mt-3 whitespace-pre-wrap rounded-lg bg-[#F8FAFC] p-3 font-sans text-sm text-[#475569] dark:bg-[#1f2427] dark:text-[#c7d0da]">{jobAiResults[job.id]}</pre>}
               </div>
             ))}
             {!recommendations.length && <p className="text-sm text-[#64748B] dark:text-[#c7d0da]">Aucune recommandation pour le moment.</p>}

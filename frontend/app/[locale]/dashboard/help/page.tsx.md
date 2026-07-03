@@ -39,3 +39,4 @@
 - HELP_SECTIONS documents `explainGrade` (4-locale): AI walk-through of a grade with class context, credit-gated, self/linked-child only.
 - HELP_SECTIONS documents `sequenceBuilder` (4-locale): term lesson sequence from real timetable hours, credit-gated, kept in notifications.
 - The employment help section now covers the three recruiter automations (match reasons, screening questionnaire, saved-search agents) - French legacy-section style.
+- The employment help section now also covers the job-seeker automations (CV refresh, gap analysis, AI cover letter) - French legacy-section style.

@@ -25,3 +25,4 @@
 ## Verification
 
 - `cmd.exe /c "cd frontend&& npx eslint app/[locale]/dashboard/emploi/page.tsx"`
+- Automation D (job-seekers): the "Offres recommandees" panel gains "Actualiser mon CV" (POST /me/cv/refresh) and per-offer "Analyse d'ecart" + "Lettre IA" buttons (result shown in a <pre> under the offer; one in-flight AI call at a time).

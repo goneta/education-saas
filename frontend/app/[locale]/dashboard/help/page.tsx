@@ -365,6 +365,7 @@ const HELP_SECTIONS: HelpSection[] = [
             "Le matching IA compare les offres aux CV publics autorises et propose les meilleurs candidats selon competences, secteur, experience et langues ; le bouton « Pourquoi ? » genere une explication IA du classement d'un candidat (credits IA).",
             "Le bouton « Questions » d'une offre genere un questionnaire de preselection IA (connaissances, mise en situation, motivation) conserve sur l'offre (credits IA).",
             "Les agents de recherche sauvegardes surveillent la CVtheque : enregistrez secteur/competences/score minimum, puis lancez (ou planifiez run-all en cron) — seuls les NOUVEAUX profils correspondants depuis le dernier passage sont notifies.",
+            "Cote etudiant, « Actualiser mon CV » reinjecte le dossier academique reel dans le CV ; sur chaque offre recommandee, « Analyse d'ecart » liste ce qui manque (competences, langues, experience) avec des conseils IA pour l'acquerir, et « Lettre IA » redige un brouillon de lettre de motivation fonde uniquement sur les donnees reelles du CV (credits IA).",
             "Les achats de credits IA passent par le checkout TeducAI afin que paiement, facture, notification et solde soient synchronises.",
             "Le Super Admin Emploi surveille les recruteurs, CV, offres, candidatures, paiements en attente et notifications du module.",
         ],

@@ -12,7 +12,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session, selectinload
 
 from .. import audit, database, models, schemas, security
-from ..services import ai_credits, ai_service, employment, file_storage, recruiter_agents
+from ..services import ai_credits, ai_service, employment, file_storage, jobseeker_agents, recruiter_agents
 
 router = APIRouter(prefix="/employment", tags=["TeducAI Emploi"])
 logger = logging.getLogger(__name__)
@@ -732,6 +732,39 @@ def apply_to_job(job_id: int, payload: schemas.JobApplicationCreate, current_use
 def my_applications(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     cv = _student_cv_for_user(db, current_user)
     return db.query(models.JobApplication).filter(models.JobApplication.student_cv_id == cv.id).order_by(models.JobApplication.created_at.desc()).all()
+
+
+@router.post("/me/cv/refresh")
+def refresh_my_cv(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    """Pull the caller's real academic record into their CV on demand (same
+    mechanic as the year-closure auto-refresh)."""
+    cv = _student_cv_for_user(db, current_user)
+    summary = jobseeker_agents.refresh_my_cv(db, cv, current_user)
+    audit.record_audit(db, action="employment.cv.self_refreshed", current_user=current_user, entity_type="student_cv", entity_id=cv.id)
+    db.commit()
+    return summary
+
+
+@router.post("/me/jobs/{job_id}/gap-analysis")
+def my_gap_analysis(job_id: int, language: str = "fr", current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    """Offer→profile gap analysis: deterministic missing skills/languages/
+    experience + AI advice on closing each gap (credit-gated)."""
+    cv = _student_cv_for_user(db, current_user)
+    result = jobseeker_agents.gap_analysis(db, job_id, cv, current_user, language=language)
+    audit.record_audit(db, action="employment.gap_analysis.run", current_user=current_user, entity_type="job_offer", entity_id=job_id, details={"score": result["score"]})
+    db.commit()
+    return result
+
+
+@router.post("/me/jobs/{job_id}/cover-letter")
+def my_cover_letter(job_id: int, language: str = "fr", current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
+    """AI cover-letter draft grounded strictly in the CV's real record
+    (credit-gated)."""
+    cv = _student_cv_for_user(db, current_user)
+    result = jobseeker_agents.draft_cover_letter(db, job_id, cv, current_user, language=language)
+    audit.record_audit(db, action="employment.cover_letter.drafted", current_user=current_user, entity_type="job_offer", entity_id=job_id)
+    db.commit()
+    return result
 
 
 @router.get("/me/recommended-jobs")
