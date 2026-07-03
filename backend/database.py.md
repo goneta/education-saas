@@ -22,3 +22,4 @@
 ## Verification
 
 - python -m py_compile backend\models.py backend\schemas.py backend\main.py; python -m pytest backend when relevant
+- Env loading: `.env` first; `.env.production` (override) when APP_ENV=production; NEW fallback — when APP_ENV is unset and only `.env.production` exists at the root (typical prod host without an exported APP_ENV), it is loaded as the env source so AI provider keys / DATABASE_URL work out of the box.

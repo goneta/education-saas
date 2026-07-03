@@ -80,19 +80,17 @@ export function AgentPanel() {
             setAiStatus("idle")
             setAgentAction(null)
 
-            if (data.type === 'content') {
-                setMessages(prev => [...prev, { role: 'agent', content: data.message, agent: data.agent, handoff: data.handoff }])
-                // Open the preview immediately, then reveal the content progressively.
-                revealCancelRef.current?.()
-                setPreviewContent("")
-                setViewMode("preview")
-                revealCancelRef.current = revealProgressively(
-                    formatPreviewContent(data.data ?? data.message),
-                    setPreviewContent,
-                )
-            } else {
-                setMessages(prev => [...prev, { role: 'agent', content: data.message, agent: data.agent, handoff: data.handoff }])
-            }
+            // Every question switches to the preview view, where the agent's
+            // reply is revealed progressively — structured results ("content")
+            // show their data payload, conversational answers show the message.
+            setMessages(prev => [...prev, { role: 'agent', content: data.message, agent: data.agent, handoff: data.handoff }])
+            revealCancelRef.current?.()
+            setPreviewContent("")
+            setViewMode("preview")
+            revealCancelRef.current = revealProgressively(
+                formatPreviewContent(data.type === 'content' ? (data.data ?? data.message) : data.message),
+                setPreviewContent,
+            )
 
         } catch (error: unknown) {
             console.error("AI Error:", error)
