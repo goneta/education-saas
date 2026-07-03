@@ -21,3 +21,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint components/<path>"; npm run build for shared/layout changes
+- Parent one-tap actions in the notification bell: `absence.followup` (unread, source attendance) rows get a "Justifier l'absence" button (POST /automations/absence/{id}/justify then mark-read); fee.reminder/parent.digest rows get a "Payer maintenant" deep-link to /dashboard/finance. Keys app.justifyAbsence / app.payFee (4-locale).

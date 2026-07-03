@@ -25,7 +25,8 @@ export function Header({ isResizablePanel = false }: HeaderProps) {
     const locale = normalizeLocale(params.locale as string)
     const [notificationsOpen, setNotificationsOpen] = useState(false)
     const [cartOpen, setCartOpen] = useState(false)
-    const [notifications, setNotifications] = useState<Array<{ id: number; subject?: string; message: string; created_at?: string; read_at?: string }>>([])
+    const [notifications, setNotifications] = useState<Array<{ id: number; subject?: string; message: string; created_at?: string; read_at?: string; event_type?: string; source_type?: string; source_id?: number }>>([])
+    const [actionBusyId, setActionBusyId] = useState<number | null>(null)
     const [unreadCount, setUnreadCount] = useState(0)
     const [cart, setCart] = useState<{ items: Array<{ id: number; title: string; quantity: number; unit_amount: number; currency: string; line_total: number }>; total: number; currency: string }>({ items: [], total: 0, currency: "FCFA" })
 
@@ -81,6 +82,27 @@ export function Header({ isResizablePanel = false }: HeaderProps) {
         loadTopbarData()
     }
 
+    // One-tap actions: some notification types carry an inline action for parents.
+    const justifyAbsence = async (notification: { id: number; source_id?: number }) => {
+        if (!token || !notification.source_id) return
+        setActionBusyId(notification.id)
+        try {
+            const response = await fetch(`${API_BASE_URL}/automations/absence/${notification.source_id}/justify`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+            })
+            if (response.ok) await markNotificationRead(notification.id)
+        } finally {
+            setActionBusyId(null)
+        }
+    }
+
+    const notificationAction = (item: { event_type?: string; source_type?: string; source_id?: number; read_at?: string }) => {
+        if (item.event_type === "absence.followup" && item.source_type === "attendance" && item.source_id && !item.read_at) return "justify"
+        if (item.event_type?.startsWith("fee.reminder") || item.event_type === "parent.digest") return "pay"
+        return null
+    }
+
     return (
         <header className={cn(
             "sticky top-0 z-30 flex h-14 shrink-0 items-center gap-4 border-b border-[#E5E7EB] bg-white px-4 lg:h-[60px] lg:px-6 dark:border-[#3a4248] dark:bg-[#1f2427]",
@@ -110,10 +132,22 @@ export function Header({ isResizablePanel = false }: HeaderProps) {
                         <h3 className="px-2 pb-2 text-base font-semibold text-[#111827] dark:text-white">{t("notifications")}</h3>
                         <div className="max-h-[360px] space-y-2 overflow-y-auto">
                             {notifications.length ? notifications.map(item => (
-                                <button type="button" key={item.id} onClick={() => void markNotificationRead(item.id)} className={cn("block w-full rounded-2xl p-3 text-left text-sm transition hover:bg-[#EEF1F4] dark:hover:bg-[#343b41]", item.read_at ? "bg-[#F6F7F9] dark:bg-[#2a3035]" : "bg-[#EAF4FF] dark:bg-[#243545]")}>
-                                    <p className="font-semibold">{item.subject || t("notification")}</p>
-                                    <p className="mt-1 text-[#6B7280] dark:text-[#b9c2cd]">{item.message}</p>
-                                </button>
+                                <div key={item.id} className={cn("rounded-2xl p-3 text-left text-sm transition", item.read_at ? "bg-[#F6F7F9] dark:bg-[#2a3035]" : "bg-[#EAF4FF] dark:bg-[#243545]")}>
+                                    <button type="button" onClick={() => void markNotificationRead(item.id)} className="block w-full text-left">
+                                        <p className="font-semibold">{item.subject || t("notification")}</p>
+                                        <p className="mt-1 text-[#6B7280] dark:text-[#b9c2cd]">{item.message}</p>
+                                    </button>
+                                    {notificationAction(item) === "justify" && (
+                                        <button type="button" disabled={actionBusyId !== null} onClick={() => void justifyAbsence(item)} className="mt-2 rounded-full bg-black px-3 py-1 text-xs font-medium text-white hover:bg-black/90 disabled:opacity-50 dark:bg-white dark:text-black">
+                                            {actionBusyId === item.id ? "…" : t("justifyAbsence")}
+                                        </button>
+                                    )}
+                                    {notificationAction(item) === "pay" && (
+                                        <button type="button" onClick={() => { setNotificationsOpen(false); router.push(`/${locale}/dashboard/finance`) }} className="mt-2 rounded-full bg-black px-3 py-1 text-xs font-medium text-white hover:bg-black/90 dark:bg-white dark:text-black">
+                                            {t("payFee")}
+                                        </button>
+                                    )}
+                                </div>
                             )) : <p className="px-2 py-6 text-center text-sm text-[#6B7280]">{t("noNotifications")}</p>}
                         </div>
                     </div>

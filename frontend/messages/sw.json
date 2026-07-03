@@ -16,7 +16,9 @@
     "themeToggle": "Badilisha mandhari",
     "checkout": "Nenda kwenye malipo",
     "total": "Jumla",
-    "schoolFallback": "Shule #{id}"
+    "schoolFallback": "Shule #{id}",
+    "justifyAbsence": "Halalisha kutokuwepo",
+    "payFee": "Lipa sasa"
   },
   "auth": {
     "login": "Ingia",

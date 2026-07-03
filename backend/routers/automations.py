@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from .. import audit, database, models, schemas, security
 from datetime import datetime
 
-from ..services import absence_followup, anomaly_digest, fee_reminders, grade_explainer, parent_digest, remediation, rentree, sequence_builder, student_planner
+from ..services import absence_followup, anomaly_digest, automation, fee_reminders, grade_explainer, parent_digest, remediation, rentree, sequence_builder, student_planner
 
 router = APIRouter(prefix="/automations", tags=["Automations"])
 
@@ -375,6 +375,58 @@ def sequence_run(
     audit.record_audit(db, action="automation.sequence.run", current_user=current_user, entity_type="class", entity_id=class_id, details={"subject_id": subject_id, "term_id": term_id})
     db.commit()
     return result
+
+
+@router.post("/absence/{attendance_id}/justify")
+def justify_absence(
+    attendance_id: int,
+    reason: str = Query("", max_length=300),
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """One-tap parent action: justify a child's absence straight from the
+    notification. The linked parent flips the attendance to EXCUSED with a
+    traceable remark; the staff member who recorded the absence is notified."""
+    if current_user.role != models.UserRole.PARENT:
+        raise HTTPException(status_code=403, detail="Réservé aux parents.")
+    attendance = db.query(models.Attendance).filter(models.Attendance.id == attendance_id).first()
+    if not attendance:
+        raise HTTPException(status_code=404, detail="Absence introuvable.")
+    link = db.query(models.ParentStudentLink).filter(
+        models.ParentStudentLink.parent_user_id == current_user.id,
+        models.ParentStudentLink.student_id == attendance.student_id,
+        models.ParentStudentLink.is_active == True,  # noqa: E712
+    ).first()
+    if not link:
+        raise HTTPException(status_code=403, detail="Cet élève n'est pas rattaché à votre compte.")
+    if attendance.status not in (models.AttendanceStatus.ABSENT, models.AttendanceStatus.LATE):
+        raise HTTPException(status_code=409, detail="Cette présence n'est pas une absence à justifier.")
+
+    stamp = datetime.utcnow().strftime("%d/%m/%Y")
+    note = f"Justifiée par le parent le {stamp}" + (f" — {reason.strip()}" if reason.strip() else "")
+    attendance.status = models.AttendanceStatus.EXCUSED
+    attendance.remarks = f"{attendance.remarks} | {note}" if attendance.remarks else note
+
+    student = db.query(models.StudentProfile).filter(models.StudentProfile.id == attendance.student_id).first()
+    student_name = student.user.full_name if student and student.user else f"#{attendance.student_id}"
+    recorder = db.query(models.User).filter(models.User.id == attendance.recorded_by_id).first() if attendance.recorded_by_id else None
+    school_id = current_user.school_id or (student.user.school_id if student and student.user else None)
+    if school_id:
+        automation.record_notification(
+            db,
+            event_type="absence.justified",
+            subject=f"Absence justifiée — {student_name}",
+            message=f"L'absence de {student_name} du {attendance.date.strftime('%d/%m/%Y')} a été justifiée par {current_user.full_name}." + (f" Motif : {reason.strip()}" if reason.strip() else ""),
+            school_id=school_id,
+            student_id=attendance.student_id,
+            recipient_user=recorder,
+            source_type="attendance",
+            source_id=attendance.id,
+            current_user=current_user,
+        )
+    audit.record_audit(db, action="automation.absence.justified", current_user=current_user, entity_type="attendance", entity_id=attendance.id, details={"reason": reason.strip() or None})
+    db.commit()
+    return {"status": "excused", "attendance_id": attendance.id}
 
 
 @router.get("/notifications/history", response_model=List[schemas.ParentDigestNotificationResponse])

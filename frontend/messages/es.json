@@ -16,7 +16,9 @@
     "themeToggle": "Cambiar tema",
     "checkout": "Ir al checkout",
     "total": "Total",
-    "schoolFallback": "Establecimiento #{id}"
+    "schoolFallback": "Establecimiento #{id}",
+    "justifyAbsence": "Justificar la ausencia",
+    "payFee": "Pagar ahora"
   },
   "auth": {
     "login": "Inicio de sesion",

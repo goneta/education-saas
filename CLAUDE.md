@@ -122,10 +122,16 @@ notifications and master data (zero data duplication).
   match_score + conseils IA par item) and AI cover letters grounded
   STRICTLY in the CV's real data (published offers only, credit-gated);
   student emploi page gains "Actualiser mon CV" + per-offer "Analyse
-  d'écart"/"Lettre IA". All help-documented + tested. Remaining Phase-2:
-  parent one-tap actions (justify absence / pay deep-links; e-sign has no
-  infra → NOT-READY) and grade-entry OCR (needs a vision provider
-  decision).
+  d'écart"/"Lettre IA". (D9) **Actions parent en un clic** — `POST
+  /automations/absence/{id}/justify` (linked-parent-only: ABSENT/LATE →
+  EXCUSED avec remarque traçable, l'enseignant enregistreur est notifié
+  `absence.justified`, 409 si déjà excusée) ; la cloche de notifications du
+  header propose « Justifier l'absence » sur les `absence.followup` non lues
+  et « Payer maintenant » (deep-link finance) sur fee.reminder/parent.digest
+  (clés app.justifyAbsence/app.payFee, 4-locale). All help-documented +
+  tested. Phase-2 CLOSED except: grade-entry OCR (needs a vision-provider
+  decision + credentials) and e-signature (no infra) — both NOT-READY, never
+  faked.
 
 - **Production hardening pass (security audit)**: removed the baked-in default
   passwords (AdmissionEnrollmentCreate schema default + frontend pre-filled
