@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session, selectinload
 from typing import List
 from datetime import datetime
@@ -205,23 +206,40 @@ def list_students(
     # The profile is the durable source of truth. A learner may have a primary
     # role such as PUPIL or a custom role while still owning a StudentProfile.
     active_context = school_context.resolve_context(db, current_user)
-    query = db.query(models.User).options(selectinload(models.User.student_profile)).join(
-        models.StudentProfile
-    ).join(
-        models.StudentGlobalProfile,
-        models.StudentGlobalProfile.student_profile_id == models.StudentProfile.id,
-    ).join(
-        models.StudentEnrollment,
+    # Tolerant on read: an enrollment matching the active context is the primary
+    # way into the list, but students without an enrollment row (legacy data,
+    # imports, records created before the lifecycle module) must not silently
+    # disappear — they fall back to their home school + model match.
+    enrollment_match = [
         models.StudentEnrollment.student_global_profile_id == models.StudentGlobalProfile.id,
-    ).filter(
-        models.User.deleted_at == None,
         models.StudentEnrollment.school_id == active_context.school_id,
         models.StudentEnrollment.school_model_assignment_id == active_context.school_model_assignment_id,
         models.StudentEnrollment.enrollment_status.in_(["active", "transferred_in"]),
-    )
+    ]
     if active_context.academic_year_id:
-        query = query.filter(models.StudentEnrollment.academic_year_id == active_context.academic_year_id)
-    
+        enrollment_match.append(models.StudentEnrollment.academic_year_id == active_context.academic_year_id)
+    query = db.query(models.User).options(selectinload(models.User.student_profile)).join(
+        models.StudentProfile
+    ).outerjoin(
+        models.StudentGlobalProfile,
+        models.StudentGlobalProfile.student_profile_id == models.StudentProfile.id,
+    ).outerjoin(
+        models.StudentEnrollment,
+        and_(*enrollment_match),
+    ).filter(
+        models.User.deleted_at == None,
+        or_(
+            models.StudentEnrollment.id != None,
+            and_(
+                models.User.school_id == active_context.school_id,
+                or_(
+                    models.StudentProfile.school_model_assignment_id == active_context.school_model_assignment_id,
+                    models.StudentProfile.school_model_assignment_id == None,
+                ),
+            ),
+        ),
+    ).distinct()
+
     if class_id:
         query = query.filter(models.StudentProfile.current_class_id == class_id)
     if search:

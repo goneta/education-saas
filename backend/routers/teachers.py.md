@@ -24,3 +24,4 @@
 ## Verification
 
 - python -m py_compile backend\routers\<module>.py; python -c "import backend.main as m; print(m.app.title)"
+- list_teachers is tolerant on read: the active-TeacherAssignment match is an OUTER join (also accepting assignments with NULL school_model_assignment_id in the active school); teachers without any assignment fall back to home school + teaching role. Adds the missing deleted_at filter. Fixes the production 200-[] empty list.

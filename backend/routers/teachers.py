@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session, selectinload
 from typing import List
 from datetime import datetime
@@ -121,15 +122,36 @@ def list_teachers(
     rbac.require_permission(current_user, "teachers:view", db)
     # Teachers are listed by active teaching assignment, so a teacher engaged at
     # several schools appears in each school's list (not only their primary one).
+    # Tolerant on read: teachers with no assignment row (legacy data) or whose
+    # assignment predates the model-assignment concept (NULL) fall back to their
+    # home school + teaching role instead of silently disappearing.
     active_context = school_context.resolve_context(db, current_user)
-    query = db.query(models.User).options(selectinload(models.User.teacher_profile)).join(
-        models.TeacherAssignment, models.TeacherAssignment.user_id == models.User.id
-    ).filter(
+    assignment_match = and_(
+        models.TeacherAssignment.user_id == models.User.id,
         models.TeacherAssignment.is_active == True,  # noqa: E712
-        models.TeacherAssignment.school_model_assignment_id == active_context.school_model_assignment_id,
+        or_(
+            models.TeacherAssignment.school_model_assignment_id == active_context.school_model_assignment_id,
+            and_(
+                models.TeacherAssignment.school_model_assignment_id == None,
+                models.TeacherAssignment.school_id == active_context.school_id,
+            ),
+        ),
+    )
+    teaching_roles = [models.UserRole.TEACHER, models.UserRole.TRAINER, models.UserRole.INSTRUCTOR]
+    query = db.query(models.User).options(selectinload(models.User.teacher_profile)).outerjoin(
+        models.TeacherAssignment, assignment_match
+    ).filter(
+        models.User.deleted_at == None,
+        or_(
+            models.TeacherAssignment.id != None,
+            and_(
+                models.User.school_id == active_context.school_id,
+                models.User.role.in_(teaching_roles),
+            ),
+        ),
     )
     if school_id and current_user.role == models.UserRole.SUPER_ADMIN:
-        query = query.filter(models.TeacherAssignment.school_id == school_id)
+        query = query.filter(or_(models.TeacherAssignment.school_id == school_id, models.User.school_id == school_id))
     teachers = query.distinct().order_by(models.User.full_name.asc(), models.User.id.asc()).offset(skip).limit(limit).all()
     return teachers
 

@@ -29,3 +29,4 @@
 # Global lifecycle integration
 
 Student registration creates or reuses a global profile and a context-bound enrollment. Student lists are derived from active enrollments rather than the user's legacy primary school, so transferred and concurrently enrolled students appear only in the correct active school/model/year context. Updates honor academic-year locks.
+- list_students is tolerant on read: the StudentEnrollment match (school+model+year, active status) is now an OUTER join; students without an enrollment row (legacy/imports) fall back to User.school_id == active school AND profile model-assignment match-or-NULL. distinct() guards multi-enrollment duplicates. Fixes the production 200-[] empty list.
