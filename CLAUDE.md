@@ -95,9 +95,15 @@ notifications and master data (zero data duplication).
   `record_usage`), delivered as `remediation.assigned` notifications,
   idempotent per (assessment, student); teacher page
   `/dashboard/remediation` (assessments stats table + threshold + expandable
-  results). All help-documented (4-locale) + tested. Next: remaining Phase-2
-  features (grade-entry OCR, séquence builder, explain-my-grade, parent
-  one-tap actions, recruiter/job-seeker automations) increment by increment.
+  results). (D5) **Explique ma note** — `services/grade_explainer.py`:
+  on-demand AI walk-through of one of the student's own grades (class
+  average/best/rank + teacher-comment reading + 2–3 tips, second person, in
+  the caller's UI locale), AI-credit-gated on the caller; student/parent page
+  `/dashboard/explain-grade`; shared `_student_or_linked_child` resolver in
+  routers/automations.py now serves study-plan + explain-grade. All
+  help-documented (4-locale) + tested. Next: remaining Phase-2 features
+  (grade-entry OCR, séquence builder, parent one-tap actions,
+  recruiter/job-seeker automations) increment by increment.
 
 - **Production hardening pass (security audit)**: removed the baked-in default
   passwords (AdmissionEnrollmentCreate schema default + frontend pre-filled

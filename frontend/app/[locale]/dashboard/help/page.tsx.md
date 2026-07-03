@@ -36,3 +36,4 @@
 - The automations help section now also covers the rentree wizard (preview-then-run step, 4-locale).
 - HELP_SECTIONS documents `studyPlan` (4-locale): spaced revision planner + homework nudges.
 - HELP_SECTIONS documents `remediation` (4-locale): AI practice sets for struggling students, credit-gated, idempotent per student.
+- HELP_SECTIONS documents `explainGrade` (4-locale): AI walk-through of a grade with class context, credit-gated, self/linked-child only.

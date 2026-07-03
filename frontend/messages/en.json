@@ -78,7 +78,8 @@
     "automations": "Automations",
     "myDocuments": "My documents",
     "studyPlan": "Revision planner",
-    "remediation": "AI remediation"
+    "remediation": "AI remediation",
+    "explainGrade": "Explain my grade"
   },
   "layout": {
     "previewTitle": "AI Generated Content Preview",
@@ -941,5 +942,20 @@
     "resultHint": "{generated} sheet(s) generated, {skipped} already served, {above} student(s) above the threshold.",
     "nothingToGenerate": "Nothing to generate: every student is above the threshold or already served.",
     "score": "Score:"
+  },
+  "explainGrade": {
+    "title": "Explain my grade",
+    "subtitle": "A personalized AI walk-through of each grade: where you sit in the class, what likely went well or not, and concrete tips to improve.",
+    "selectChild": "Child",
+    "myGrades": "My recent grades",
+    "myGradesHint": "Pick a grade and click Explain. The explanation uses your AI credits.",
+    "assessment": "Assessment",
+    "subject": "Subject",
+    "date": "Date",
+    "score": "Score",
+    "classAverage": "Class average",
+    "explain": "Explain",
+    "noGrades": "No grade recorded yet.",
+    "statsLine": "Your score: {score} \u00b7 Class average: {average} \u00b7 Rank: {rank}/{size}"
   }
 }

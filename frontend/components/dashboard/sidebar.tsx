@@ -239,6 +239,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/documents`, label: t("documents"), icon: FileText },
                 { href: `/${locale}/dashboard/my-documents`, label: t("myDocuments"), icon: FileCheck2 },
                 { href: `/${locale}/dashboard/study-plan`, label: t("studyPlan"), icon: CalendarCheck },
+                { href: `/${locale}/dashboard/explain-grade`, label: t("explainGrade"), icon: HelpCircle },
                 { href: `/${locale}/dashboard/library`, label: t("library"), icon: BookOpen },
                 { href: `/${locale}/dashboard/education/internships`, label: t("internships"), icon: BriefcaseBusiness },
                 { href: `/${locale}/dashboard/portal`, label: t("portal"), icon: Users },
@@ -262,6 +263,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/documents`, label: t("documents"), icon: FileText },
                 { href: `/${locale}/dashboard/my-documents`, label: t("myDocuments"), icon: FileCheck2 },
                 { href: `/${locale}/dashboard/study-plan`, label: t("studyPlan"), icon: CalendarCheck },
+                { href: `/${locale}/dashboard/explain-grade`, label: t("explainGrade"), icon: HelpCircle },
             ],
         },
         {

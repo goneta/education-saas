@@ -78,7 +78,8 @@
     "automations": "Otomatiki",
     "myDocuments": "Nyaraka zangu",
     "studyPlan": "Ratiba ya marudio",
-    "remediation": "Marekebisho ya AI"
+    "remediation": "Marekebisho ya AI",
+    "explainGrade": "Eleza alama yangu"
   },
   "layout": {
     "previewTitle": "Hakiki ya maudhui yaliyotengenezwa na AI",
@@ -941,5 +942,20 @@
     "resultHint": "Karatasi {generated} zimetengenezwa, {skipped} tayari zimetumwa, wanafunzi {above} juu ya kizingiti.",
     "nothingToGenerate": "Hakuna cha kutengeneza: wanafunzi wote wako juu ya kizingiti au tayari wamehudumiwa.",
     "score": "Alama:"
+  },
+  "explainGrade": {
+    "title": "Eleza alama yangu",
+    "subtitle": "Maelezo maalum ya kila alama kwa AI: mahali ulipo darasani, nini huenda kilifanikiwa au la, na vidokezo halisi vya kuboresha.",
+    "selectChild": "Mtoto",
+    "myGrades": "Alama zangu za hivi karibuni",
+    "myGradesHint": "Chagua alama kisha bofya Eleza. Maelezo hutumia salio lako la AI.",
+    "assessment": "Mtihani",
+    "subject": "Somo",
+    "date": "Tarehe",
+    "score": "Alama",
+    "classAverage": "Wastani wa darasa",
+    "explain": "Eleza",
+    "noGrades": "Hakuna alama iliyorekodiwa bado.",
+    "statsLine": "Alama yako: {score} \u00b7 Wastani wa darasa: {average} \u00b7 Nafasi: {rank}/{size}"
   }
 }

@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from .. import audit, database, models, schemas, security
 from datetime import datetime
 
-from ..services import absence_followup, anomaly_digest, fee_reminders, parent_digest, remediation, rentree, student_planner
+from ..services import absence_followup, anomaly_digest, fee_reminders, grade_explainer, parent_digest, remediation, rentree, student_planner
 
 router = APIRouter(prefix="/automations", tags=["Automations"])
 
@@ -219,21 +219,14 @@ def rentree_run(
     return summary
 
 
-@router.get("/study-plan")
-def study_plan(
-    student_id: Optional[int] = None,
-    horizon_days: int = Query(21, ge=7, le=60),
-    db: Session = Depends(database.get_db),
-    current_user: models.User = Depends(security.get_current_user),
-):
-    """Revision plan built from the student's real timetable, upcoming
-    assessments and pending homework. Students see their own plan; parents can
-    request a linked child's via student_id."""
+def _student_or_linked_child(db: Session, current_user: models.User, student_id: Optional[int]) -> models.StudentProfile:
+    """Students resolve to themselves; parents to a linked child via student_id."""
     if current_user.role in (models.UserRole.STUDENT, models.UserRole.PUPIL):
         profile = db.query(models.StudentProfile).filter(models.StudentProfile.user_id == current_user.id).first()
         if not profile:
             raise HTTPException(status_code=404, detail="Profil élève introuvable.")
-    elif current_user.role == models.UserRole.PARENT:
+        return profile
+    if current_user.role == models.UserRole.PARENT:
         if not student_id:
             raise HTTPException(status_code=400, detail="student_id requis pour un parent.")
         link = db.query(models.ParentStudentLink).filter(
@@ -245,9 +238,51 @@ def study_plan(
         profile = db.query(models.StudentProfile).filter(models.StudentProfile.id == student_id).first()
         if not profile:
             raise HTTPException(status_code=404, detail="Profil élève introuvable.")
-    else:
-        raise HTTPException(status_code=403, detail="Réservé aux élèves et aux parents.")
+        return profile
+    raise HTTPException(status_code=403, detail="Réservé aux élèves et aux parents.")
+
+
+@router.get("/study-plan")
+def study_plan(
+    student_id: Optional[int] = None,
+    horizon_days: int = Query(21, ge=7, le=60),
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """Revision plan built from the student's real timetable, upcoming
+    assessments and pending homework. Students see their own plan; parents can
+    request a linked child's via student_id."""
+    profile = _student_or_linked_child(db, current_user, student_id)
     return student_planner.build_study_plan(db, profile, horizon_days=horizon_days)
+
+
+@router.get("/explain-grade/grades")
+def explain_grade_grades(
+    student_id: Optional[int] = None,
+    limit: int = Query(20, ge=1, le=50),
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """The student's recent grades with class stats, to pick one to explain."""
+    profile = _student_or_linked_child(db, current_user, student_id)
+    return grade_explainer.list_grades_with_context(db, profile, limit=limit)
+
+
+@router.post("/explain-grade/{grade_id}/run")
+def explain_grade_run(
+    grade_id: int,
+    student_id: Optional[int] = None,
+    language: str = Query("fr", min_length=2, max_length=5),
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """AI walk-through of one of the student's own grades (class context +
+    improvement tips). AI-credit-gated on the caller."""
+    profile = _student_or_linked_child(db, current_user, student_id)
+    result = grade_explainer.explain_grade(db, grade_id, profile, current_user, language=language)
+    audit.record_audit(db, action="automation.explain_grade.run", current_user=current_user, entity_type="grade", entity_id=grade_id)
+    db.commit()
+    return result
 
 
 @router.post("/homework-reminders/run", response_model=schemas.HomeworkReminderRunResult)

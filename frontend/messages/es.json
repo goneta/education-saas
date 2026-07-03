@@ -78,7 +78,8 @@
     "automations": "Automatizaciones",
     "myDocuments": "Mis documentos",
     "studyPlan": "Plan de repaso",
-    "remediation": "Remediaci\u00f3n IA"
+    "remediation": "Remediaci\u00f3n IA",
+    "explainGrade": "Explica mi nota"
   },
   "layout": {
     "previewTitle": "Vista previa del contenido generado por IA",
@@ -941,5 +942,20 @@
     "resultHint": "{generated} ficha(s) generada(s), {skipped} ya servida(s), {above} alumno(s) por encima del umbral.",
     "nothingToGenerate": "Nada que generar: todos los alumnos est\u00e1n por encima del umbral o ya fueron servidos.",
     "score": "Nota:"
+  },
+  "explainGrade": {
+    "title": "Explica mi nota",
+    "subtitle": "Una explicaci\u00f3n personalizada de cada nota por la IA: d\u00f3nde se sit\u00faa en la clase, qu\u00e9 probablemente funcion\u00f3 o no, y consejos concretos para mejorar.",
+    "selectChild": "Hijo/a",
+    "myGrades": "Mis notas recientes",
+    "myGradesHint": "Elija una nota y haga clic en Explicar. La explicaci\u00f3n consume sus cr\u00e9ditos de IA.",
+    "assessment": "Evaluaci\u00f3n",
+    "subject": "Asignatura",
+    "date": "Fecha",
+    "score": "Nota",
+    "classAverage": "Media de la clase",
+    "explain": "Explicar",
+    "noGrades": "Ninguna nota registrada por el momento.",
+    "statsLine": "Su nota: {score} \u00b7 Media de la clase: {average} \u00b7 Puesto: {rank}/{size}"
   }
 }

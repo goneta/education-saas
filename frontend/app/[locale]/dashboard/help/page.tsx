@@ -691,6 +691,32 @@ const HELP_SECTIONS: HelpSection[] = [
         },
     },
     {
+        id: "explainGrade",
+        title: { fr: "Explique ma note", en: "Explain my grade", es: "Explica mi nota", sw: "Eleza alama yangu" },
+        icon: CircleHelp,
+        purpose: {
+            fr: "Offrir à l'élève (et au parent d'un enfant rattaché) une explication personnalisée de chaque note par l'IA : positionnement dans la classe (moyenne, meilleure note, rang), lecture du commentaire de l'enseignant et 2–3 pistes concrètes de progression. La génération consomme les crédits IA du demandeur.",
+            en: "Give the student (and the parent of a linked child) a personalized AI walk-through of each grade: class positioning (average, best score, rank), a reading of the teacher's comment and 2–3 concrete improvement tips. Generation consumes the requester's AI credits.",
+            es: "Ofrecer al alumno (y al padre de un hijo vinculado) una explicación personalizada de cada nota por la IA: posición en la clase (media, mejor nota, puesto), lectura del comentario del profesor y 2–3 consejos concretos de mejora. La generación consume los créditos de IA del solicitante.",
+            sw: "Kumpa mwanafunzi (na mzazi wa mtoto aliyeunganishwa) maelezo maalum ya kila alama kwa AI: nafasi darasani (wastani, alama bora, cheo), tafsiri ya maoni ya mwalimu na vidokezo 2–3 halisi vya kuboresha. Utengenezaji hutumia salio la AI la mwombaji.",
+        },
+        steps: [
+            { fr: "Ouvrez Explique ma note (menu Élève ; les parents y accèdent avec un sélecteur d'enfant).", en: "Open Explain my grade (Student menu; parents access it with a child selector).", es: "Abra Explica mi nota (menú Alumno; los padres acceden con un selector de hijo).", sw: "Fungua Eleza alama yangu (menyu ya Mwanafunzi; wazazi huifikia kwa kichaguzi cha mtoto)." },
+            { fr: "Repérez la note dans le tableau (note, moyenne de classe, date) — les notes sous la moitié du barème sont signalées en rouge.", en: "Spot the grade in the table (score, class average, date) — scores below half the max are flagged in red.", es: "Localice la nota en la tabla (nota, media de la clase, fecha) — las notas por debajo de la mitad del baremo se marcan en rojo.", sw: "Tambua alama kwenye jedwali (alama, wastani wa darasa, tarehe) — alama chini ya nusu ya alama kamili huwekwa alama nyekundu." },
+            { fr: "Cliquez sur Expliquer : l'IA rédige, dans votre langue, une lecture bienveillante du résultat avec le contexte de classe et des conseils pour la prochaine évaluation.", en: "Click Explain: the AI writes, in your language, a supportive reading of the result with the class context and tips for the next assessment.", es: "Haga clic en Explicar: la IA redacta, en su idioma, una lectura alentadora del resultado con el contexto de la clase y consejos para la próxima evaluación.", sw: "Bofya Eleza: AI huandika, kwa lugha yako, maelezo ya kutia moyo ya matokeo pamoja na muktadha wa darasa na vidokezo kwa mtihani ujao." },
+        ],
+        fields: [
+            { name: { fr: "Contexte de classe", en: "Class context", es: "Contexto de clase", sw: "Muktadha wa darasa" }, type: { fr: "Automatique", en: "Automatic", es: "Automático", sw: "Otomatiki" }, expected: { fr: "Moyenne, meilleure note et rang calculés sur toutes les notes de l'évaluation.", en: "Average, best score and rank computed over all the assessment's grades.", es: "Media, mejor nota y puesto calculados sobre todas las notas de la evaluación.", sw: "Wastani, alama bora na cheo huhesabiwa kwa alama zote za mtihani." }, validation: { fr: "Un élève ne peut expliquer que ses propres notes ; un parent, celles de ses enfants rattachés.", en: "A student can only explain their own grades; a parent, those of their linked children.", es: "Un alumno solo puede explicar sus propias notas; un padre, las de sus hijos vinculados.", sw: "Mwanafunzi anaweza kueleza alama zake pekee; mzazi, za watoto wake waliounganishwa." } },
+            { name: { fr: "Crédits IA", en: "AI credits", es: "Créditos de IA", sw: "Salio la AI" }, type: { fr: "Automatique", en: "Automatic", es: "Automático", sw: "Otomatiki" }, expected: { fr: "Chaque explication est débitée du portefeuille IA du demandeur.", en: "Each explanation is charged to the requester's AI wallet.", es: "Cada explicación se debita de la cartera de IA del solicitante.", sw: "Kila maelezo hukatwa kwenye pochi ya AI ya mwombaji." }, validation: { fr: "La génération est bloquée si le solde est insuffisant.", en: "Generation is blocked when the balance is insufficient.", es: "La generación se bloquea si el saldo es insuficiente.", sw: "Utengenezaji huzuiwa salio likiwa halitoshi." } },
+        ],
+        result: {
+            fr: "L'élève comprend sa note au lieu de la subir, et repart avec des actions concrètes pour la prochaine évaluation.",
+            en: "The student understands their grade instead of just receiving it, and walks away with concrete actions for the next assessment.",
+            es: "El alumno comprende su nota en lugar de solo recibirla, y se lleva acciones concretas para la próxima evaluación.",
+            sw: "Mwanafunzi anaelewa alama yake badala ya kuipokea tu, na huondoka na hatua halisi kwa mtihani ujao.",
+        },
+    },
+    {
         id: "leave",
         title: { fr: "Congés et absences", en: "Leave and absences", es: "Permisos y ausencias", sw: "Likizo na kutohudhuria" },
         icon: BriefcaseBusiness,
