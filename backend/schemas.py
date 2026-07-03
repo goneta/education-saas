@@ -2935,6 +2935,28 @@ class ParentDigestNotificationResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class AbsenceFollowupRunResult(BaseModel):
+    scanned: int
+    notified: int
+    sms_queued: int
+    skipped_done: int
+    skipped_no_contact: int
+
+
+class AnomalyDigestRunResult(BaseModel):
+    skipped_cooldown: bool
+    anomalies: int
+    notified: int
+    absences_current: Optional[int] = None
+    absences_previous: Optional[int] = None
+    absence_spike: Optional[bool] = None
+    unpaid_ratio: Optional[float] = None
+    unpaid_flag: Optional[bool] = None
+    class_size_min: Optional[int] = None
+    class_size_max: Optional[int] = None
+    imbalance_flag: Optional[bool] = None
+
+
 class WebhookDeliveryResponse(BaseModel):
     id: int
     endpoint_id: int

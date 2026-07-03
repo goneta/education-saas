@@ -833,7 +833,21 @@
     "digestRecipient": "Padre",
     "digestSubject": "Asunto",
     "digestBadge": "Resumen",
-    "digestAlertBadge": "Alerta"
+    "digestAlertBadge": "Alerta",
+    "absenceFollowup": "Seguimiento de ausencias",
+    "absenceFollowupHint": "Redacta y env\u00eda autom\u00e1ticamente el mensaje al padre cuando un alumno es marcado ausente: notificaci\u00f3n en el idioma del padre + SMS si hay tel\u00e9fono registrado. Cada ausencia se sigue una sola vez.",
+    "followupDays": "Ventana (d\u00edas)",
+    "followupNotified": "Padres avisados",
+    "followupCronHint": "Idempotente: una ausencia ya seguida se omite. Ejecute tras las clases o programe POST /automations/absence-followup/run cada d\u00eda con un cron externo.",
+    "anomalyDigest": "Informe de anomal\u00edas",
+    "anomalyDigestHint": "Detecta las se\u00f1ales d\u00e9biles del centro en el per\u00edodo: pico de ausencias frente al per\u00edodo anterior, ratio de impagos por encima del umbral, desequilibrio de efectivos entre clases. El informe se notifica al administrador.",
+    "anomalyUnpaidThreshold": "Umbral de impagos (%)",
+    "anomalyCount": "Anomal\u00edas",
+    "anomalyAbsences": "Ausencias (per\u00edodo)",
+    "anomalyUnpaid": "Ratio de impagos",
+    "anomalyClassSizes": "Efectivos m\u00edn\u2013m\u00e1x",
+    "anomalyCooldown": "Ya se gener\u00f3 un informe para esta ventana \u2014 int\u00e9ntelo tras el fin del per\u00edodo.",
+    "anomalyCronHint": "Un informe por ventana y por centro. Programe POST /automations/anomaly-digest/run cada semana con un cron externo."
   },
   "selfDocs": {
     "title": "Mis documentos",

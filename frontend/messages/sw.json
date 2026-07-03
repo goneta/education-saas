@@ -833,7 +833,21 @@
     "digestRecipient": "Mzazi",
     "digestSubject": "Kichwa",
     "digestBadge": "Muhtasari",
-    "digestAlertBadge": "Tahadhari"
+    "digestAlertBadge": "Tahadhari",
+    "absenceFollowup": "Ufuatiliaji wa kutokuwepo",
+    "absenceFollowupHint": "Huandika na kutuma ujumbe kwa mzazi kiotomatiki mwanafunzi anapowekwa alama ya kutokuwepo: arifa kwa lugha ya mzazi + SMS ikiwa simu imehifadhiwa. Kila kutokuwepo hufuatiliwa mara moja tu.",
+    "followupDays": "Dirisha (siku)",
+    "followupNotified": "Wazazi walioarifiwa",
+    "followupCronHint": "Salama kurudiwa: kutokuwepo kulikofuatiliwa tayari hurukwa. Endesha baada ya vipindi au panga POST /automations/absence-followup/run kila siku kwa cron ya nje.",
+    "anomalyDigest": "Muhtasari wa hitilafu",
+    "anomalyDigestHint": "Hugundua ishara hafifu za shule katika kipindi: ongezeko kubwa la kutokuwepo dhidi ya kipindi kilichopita, uwiano wa madeni juu ya kizingiti, tofauti kubwa ya idadi ya wanafunzi kati ya madarasa. Muhtasari hutumwa kwa msimamizi.",
+    "anomalyUnpaidThreshold": "Kizingiti cha madeni (%)",
+    "anomalyCount": "Hitilafu",
+    "anomalyAbsences": "Kutokuwepo (kipindi)",
+    "anomalyUnpaid": "Uwiano wa madeni",
+    "anomalyClassSizes": "Idadi ndogo\u2013kubwa",
+    "anomalyCooldown": "Muhtasari tayari umetengenezwa kwa dirisha hili \u2014 jaribu tena baada ya kipindi kuisha.",
+    "anomalyCronHint": "Muhtasari mmoja kwa kila dirisha kwa kila shule. Panga POST /automations/anomaly-digest/run kila wiki kwa cron ya nje."
   },
   "selfDocs": {
     "title": "Nyaraka zangu",

@@ -68,9 +68,16 @@ notifications and master data (zero data duplication).
   fr/en/es/sw templates) compiling window grades (avg /20), absences/lates and
   outstanding fees; threshold alerts ride along (`parent.alert.average`,
   `parent.alert.absences`); idempotent per window (NotificationHistory
-  lookback). Second card on the Automations page. All help-documented
-  (4-locale) + tested. Next: remaining Phase-2 features (rentrée wizard,
-  teacher/student/recruiter automations) increment by increment.
+  lookback). Second card on the Automations page. (D1) **Suivi des absences +
+  brief anomalies** — `services/absence_followup.py` (parent message per
+  unfollowed ABSENT row, parent-language notif + SMS, once per Attendance via
+  NotificationHistory source tracking) and `services/anomaly_digest.py`
+  (deterministic staff brief: absence spike vs previous window, unpaid ratio,
+  class-size imbalance; one brief per window). Cards 3-4 on the Automations
+  page + generic `/automations/notifications/history?event_type=`. All
+  help-documented (4-locale) + tested. Next: remaining Phase-2 features
+  (rentrée wizard, teacher/student/recruiter automations) increment by
+  increment.
 
 - **Production hardening pass (security audit)**: removed the baked-in default
   passwords (AdmissionEnrollmentCreate schema default + frontend pre-filled

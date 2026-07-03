@@ -833,7 +833,21 @@
     "digestRecipient": "Parent",
     "digestSubject": "Subject",
     "digestBadge": "Digest",
-    "digestAlertBadge": "Alert"
+    "digestAlertBadge": "Alert",
+    "absenceFollowup": "Absence follow-up",
+    "absenceFollowupHint": "Auto-drafts and sends the parent message when a student is marked absent: notification in the parent's language + SMS when a phone is on file. Each absence is followed up only once.",
+    "followupDays": "Window (days)",
+    "followupNotified": "Parents notified",
+    "followupCronHint": "Idempotent: an absence already followed up is skipped. Run after class or schedule POST /automations/absence-followup/run daily via an external cron.",
+    "anomalyDigest": "Anomaly brief",
+    "anomalyDigestHint": "Detects the school's weak signals over the window: absence spike vs the previous period, unpaid ratio above the threshold, class-size imbalance. The brief is notified to the administrator.",
+    "anomalyUnpaidThreshold": "Unpaid threshold (%)",
+    "anomalyCount": "Anomalies",
+    "anomalyAbsences": "Absences (window)",
+    "anomalyUnpaid": "Unpaid ratio",
+    "anomalyClassSizes": "Headcount min\u2013max",
+    "anomalyCooldown": "A brief was already generated for this window \u2014 try again after the period ends.",
+    "anomalyCronHint": "One brief per window per school. Schedule POST /automations/anomaly-digest/run weekly via an external cron."
   },
   "selfDocs": {
     "title": "My documents",

@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from .. import audit, database, models, schemas, security
-from ..services import fee_reminders, parent_digest
+from ..services import absence_followup, anomaly_digest, fee_reminders, parent_digest
 
 router = APIRouter(prefix="/automations", tags=["Automations"])
 
@@ -123,6 +123,75 @@ def parent_digest_history(
         .filter(
             models.NotificationHistory.school_id == resolved,
             models.NotificationHistory.event_type.in_(["parent.digest", "parent.alert.average", "parent.alert.absences"]),
+        )
+        .order_by(models.NotificationHistory.id.desc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        schemas.ParentDigestNotificationResponse(
+            id=row.id, event_type=row.event_type, recipient_name=row.recipient_name,
+            subject=row.subject, message=row.message, created_at=row.created_at,
+        )
+        for row in rows
+    ]
+
+
+@router.post("/absence-followup/run", response_model=schemas.AbsenceFollowupRunResult)
+def run_absence_followup(
+    days: int = Query(2, ge=1, le=31),
+    school_id: Optional[int] = None,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """Send the parent message for every recent unfollowed absence (notification
+    in the parent's language + SMS when a parent phone is on file). Each
+    Attendance row is followed up at most once — safe to re-run after class or
+    daily via cron."""
+    _ensure_admin(current_user)
+    resolved = _school_id(current_user, school_id)
+    summary = absence_followup.run_absence_followup(db, resolved, current_user, days=days)
+    audit.record_audit(db, action="automation.absence_followup.run", current_user=current_user, entity_type="school", entity_id=resolved, details=summary)
+    db.commit()
+    return summary
+
+
+@router.post("/anomaly-digest/run", response_model=schemas.AnomalyDigestRunResult)
+def run_anomaly_digest(
+    days: int = Query(7, ge=1, le=31),
+    unpaid_threshold: float = Query(0.3, ge=0, le=1),
+    school_id: Optional[int] = None,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """Compute the window's operational anomalies (absence spike, unpaid ratio,
+    class-size imbalance) and record the brief to the administrator. One digest
+    per window per school — safe to cron weekly."""
+    _ensure_admin(current_user)
+    resolved = _school_id(current_user, school_id)
+    summary = anomaly_digest.run_anomaly_digest(db, resolved, current_user, days=days, unpaid_threshold=unpaid_threshold)
+    audit.record_audit(db, action="automation.anomaly_digest.run", current_user=current_user, entity_type="school", entity_id=resolved, details=summary)
+    db.commit()
+    return summary
+
+
+@router.get("/notifications/history", response_model=List[schemas.ParentDigestNotificationResponse])
+def automation_notification_history(
+    event_type: str = Query(..., min_length=3, max_length=64),
+    limit: int = Query(50, ge=1, le=200),
+    school_id: Optional[int] = None,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """Generic history for automation-recorded notifications (absence.followup,
+    anomaly.digest, …) so each Automations card can show what was sent."""
+    _ensure_admin(current_user)
+    resolved = _school_id(current_user, school_id)
+    rows = (
+        db.query(models.NotificationHistory)
+        .filter(
+            models.NotificationHistory.school_id == resolved,
+            models.NotificationHistory.event_type == event_type,
         )
         .order_by(models.NotificationHistory.id.desc())
         .limit(limit)

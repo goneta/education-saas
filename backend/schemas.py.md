@@ -65,3 +65,4 @@ The schema catalog includes enrollment, transfer, academic-year closure, tempora
 - Security: AdmissionEnrollmentCreate.password no longer has a baked-in default; omitted -> server generates a strong credential returned once.
 - `FeeReminderRunResult` / `FeeReminderResponse` (automation A).
 - `ParentDigestRunResult` + `ParentDigestNotificationResponse` (automation C run summary + history rows).
+- `AbsenceFollowupRunResult` + `AnomalyDigestRunResult` (automation D run summaries).

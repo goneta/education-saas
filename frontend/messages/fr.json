@@ -833,7 +833,21 @@
     "digestRecipient": "Parent",
     "digestSubject": "Sujet",
     "digestBadge": "R\u00e9sum\u00e9",
-    "digestAlertBadge": "Alerte"
+    "digestAlertBadge": "Alerte",
+    "absenceFollowup": "Suivi des absences",
+    "absenceFollowupHint": "R\u00e9dige et envoie automatiquement le message au parent quand un \u00e9l\u00e8ve est not\u00e9 absent : notification dans la langue du parent + SMS si un t\u00e9l\u00e9phone est enregistr\u00e9. Chaque absence n'est suivie qu'une seule fois.",
+    "followupDays": "Fen\u00eatre (jours)",
+    "followupNotified": "Parents pr\u00e9venus",
+    "followupCronHint": "Idempotent : une absence d\u00e9j\u00e0 suivie est ignor\u00e9e. Lancez apr\u00e8s les cours ou planifiez POST /automations/absence-followup/run chaque jour via un cron externe.",
+    "anomalyDigest": "Brief anomalies",
+    "anomalyDigestHint": "D\u00e9tecte les signaux faibles de l'\u00e9tablissement sur la p\u00e9riode : pic d'absences vs p\u00e9riode pr\u00e9c\u00e9dente, ratio d'impay\u00e9s au-dessus du seuil, d\u00e9s\u00e9quilibre des effectifs entre classes. Le brief est notifi\u00e9 \u00e0 l'administrateur.",
+    "anomalyUnpaidThreshold": "Seuil impay\u00e9s (%)",
+    "anomalyCount": "Anomalies",
+    "anomalyAbsences": "Absences (p\u00e9riode)",
+    "anomalyUnpaid": "Ratio impay\u00e9s",
+    "anomalyClassSizes": "Effectifs min\u2013max",
+    "anomalyCooldown": "Un brief a d\u00e9j\u00e0 \u00e9t\u00e9 g\u00e9n\u00e9r\u00e9 sur cette fen\u00eatre \u2014 r\u00e9essayez apr\u00e8s la fin de la p\u00e9riode.",
+    "anomalyCronHint": "Un seul brief par fen\u00eatre et par \u00e9tablissement. Planifiez POST /automations/anomaly-digest/run chaque semaine via un cron externe."
   },
   "selfDocs": {
     "title": "Mes documents",
