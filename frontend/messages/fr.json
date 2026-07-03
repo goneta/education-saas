@@ -74,7 +74,8 @@
     "myPayslips": "Mes bulletins",
     "leave": "Cong\u00e9s",
     "announcements": "Annonces",
-    "integrations": "API & Int\u00e9grations"
+    "integrations": "API & Int\u00e9grations",
+    "automations": "Automatisations"
   },
   "layout": {
     "previewTitle": "Apercu du contenu genere par l'IA",
@@ -792,5 +793,30 @@
     "copied": "Copi\u00e9",
     "copy": "Copier",
     "docsLink": "Consulter la documentation de l'API"
+  },
+  "automations": {
+    "title": "Automatisations",
+    "subtitle": "Ex\u00e9cutions d'automatisation en un clic \u2014 r\u00e9-ex\u00e9cutables sans doublon (anti-spam int\u00e9gr\u00e9) et planifiables via un cron externe.",
+    "feeReminders": "Relances des impay\u00e9s",
+    "feeRemindersHint": "Analyse les frais en retard et envoie des relances progressives : aimable, puis ferme (apr\u00e8s le seuil de niveau 2), puis urgente avec escalade vers l'administration (niveau 3). Les parents avec un t\u00e9l\u00e9phone enregistr\u00e9 re\u00e7oivent aussi un SMS.",
+    "level2Days": "Relance ferme apr\u00e8s (jours)",
+    "level3Days": "Urgente + escalade apr\u00e8s (jours)",
+    "cooldownDays": "D\u00e9lai entre deux relances (jours)",
+    "runNow": "Lancer maintenant",
+    "running": "Ex\u00e9cution\u2026",
+    "resultScanned": "analys\u00e9s",
+    "resultReminded": "relanc\u00e9s",
+    "resultEscalated": "escalad\u00e9s",
+    "resultSms": "SMS programm\u00e9s",
+    "resultSkipped": "ignor\u00e9s (d\u00e9lai/pay\u00e9s/non \u00e9chus)",
+    "history": "Relances r\u00e9centes",
+    "student": "\u00c9l\u00e8ve",
+    "fee": "Frais",
+    "levelCol": "Niveau",
+    "outstanding": "Reste d\u00fb",
+    "channels": "Canaux",
+    "date": "Date",
+    "noHistory": "Aucune relance envoy\u00e9e pour le moment.",
+    "cronHint": "Pour la planifier, appelez POST /automations/fee-reminders/run depuis un cron externe avec un jeton administrateur."
   }
 }

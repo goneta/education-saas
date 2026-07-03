@@ -74,7 +74,8 @@
     "myPayslips": "My payslips",
     "leave": "Leave",
     "announcements": "Announcements",
-    "integrations": "API & Integrations"
+    "integrations": "API & Integrations",
+    "automations": "Automations"
   },
   "layout": {
     "previewTitle": "AI Generated Content Preview",
@@ -792,5 +793,30 @@
     "copied": "Copied",
     "copy": "Copy",
     "docsLink": "Read the API documentation"
+  },
+  "automations": {
+    "title": "Automations",
+    "subtitle": "One-click automation runs \u2014 safe to re-run (anti-spam built in) and schedulable via external cron.",
+    "feeReminders": "Unpaid-fee reminders",
+    "feeRemindersHint": "Scans overdue fees and sends escalating reminders: gentle, then firm (after the level-2 threshold), then urgent with admin escalation (level 3). Parents with a phone on file also get a queued SMS.",
+    "level2Days": "Firm reminder after (days)",
+    "level3Days": "Urgent + escalation after (days)",
+    "cooldownDays": "Cooldown between reminders (days)",
+    "runNow": "Run now",
+    "running": "Running\u2026",
+    "resultScanned": "scanned",
+    "resultReminded": "reminded",
+    "resultEscalated": "escalated",
+    "resultSms": "SMS queued",
+    "resultSkipped": "skipped (cooldown/paid/not due)",
+    "history": "Recent reminders",
+    "student": "Student",
+    "fee": "Fee",
+    "levelCol": "Level",
+    "outstanding": "Outstanding",
+    "channels": "Channels",
+    "date": "Date",
+    "noHistory": "No reminder sent yet.",
+    "cronHint": "To schedule it, call POST /automations/fee-reminders/run from an external cron with an admin token."
   }
 }

@@ -2893,6 +2893,29 @@ class ApiKeyCreated(ApiKeyResponse):
     api_key: str  # plaintext, returned only once at creation
 
 
+class FeeReminderRunResult(BaseModel):
+    scanned: int
+    reminded: int
+    escalated: int
+    skipped_cooldown: int
+    skipped_not_due: int
+    skipped_paid: int
+    sms_queued: int
+
+
+class FeeReminderResponse(BaseModel):
+    id: int
+    fee_id: int
+    fee_title: Optional[str] = None
+    student_name: Optional[str] = None
+    level: int
+    outstanding_amount: float
+    channels: List[str] = []
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class WebhookDeliveryResponse(BaseModel):
     id: int
     endpoint_id: int

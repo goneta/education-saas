@@ -45,6 +45,7 @@ import {
     Building2,
     DoorOpen,
     Webhook,
+    BellRing,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -182,6 +183,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/ai-credits`, label: t("aiCredits"), icon: CreditCard },
                 { href: `/${locale}/dashboard/levels`, label: t("schoolLevels"), icon: GraduationCap },
                 { href: `/${locale}/dashboard/extensibility`, label: t("integrations"), icon: Webhook },
+                { href: `/${locale}/dashboard/automations`, label: t("automations"), icon: BellRing },
                 { href: `/${locale}/dashboard/settings`, label: t("settings"), icon: Settings },
             ]
         }

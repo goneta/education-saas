@@ -74,7 +74,8 @@
     "myPayslips": "Risiti zangu",
     "leave": "Likizo",
     "announcements": "Matangazo",
-    "integrations": "API na Muunganisho"
+    "integrations": "API na Muunganisho",
+    "automations": "Otomatiki"
   },
   "layout": {
     "previewTitle": "Hakiki ya maudhui yaliyotengenezwa na AI",
@@ -792,5 +793,30 @@
     "copied": "Imenakiliwa",
     "copy": "Nakili",
     "docsLink": "Soma nyaraka za API"
+  },
+  "automations": {
+    "title": "Otomatiki",
+    "subtitle": "Uendeshaji wa otomatiki kwa mbofyo mmoja \u2014 salama kurudia (kinga ya barua taka) na unaweza kupangwa kwa cron ya nje.",
+    "feeReminders": "Vikumbusho vya ada ambazo hazijalipwa",
+    "feeRemindersHint": "Huchunguza ada zilizochelewa na kutuma vikumbusho vya hatua kwa hatua: pole, kisha kali (baada ya kizingiti cha ngazi 2), kisha ya dharura na kupelekwa kwa utawala (ngazi 3). Wazazi wenye simu pia hupokea SMS.",
+    "level2Days": "Kikumbusho kikali baada ya (siku)",
+    "level3Days": "Dharura + kupeleka juu baada ya (siku)",
+    "cooldownDays": "Muda kati ya vikumbusho (siku)",
+    "runNow": "Endesha sasa",
+    "running": "Inaendesha\u2026",
+    "resultScanned": "zilizochunguzwa",
+    "resultReminded": "zilizokumbushwa",
+    "resultEscalated": "zilizopelekwa juu",
+    "resultSms": "SMS zilizopangwa",
+    "resultSkipped": "zilizorukwa (muda/zilizolipwa/hazijafika)",
+    "history": "Vikumbusho vya hivi karibuni",
+    "student": "Mwanafunzi",
+    "fee": "Ada",
+    "levelCol": "Ngazi",
+    "outstanding": "Baki",
+    "channels": "Njia",
+    "date": "Tarehe",
+    "noHistory": "Hakuna kikumbusho kilichotumwa bado.",
+    "cronHint": "Kupanga, ita POST /automations/fee-reminders/run kutoka cron ya nje na tokeni ya msimamizi."
   }
 }

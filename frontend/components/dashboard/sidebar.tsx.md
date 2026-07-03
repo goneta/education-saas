@@ -31,3 +31,4 @@
 - #1 UI-less features: Gestion gains Congés (`/hr/leave`) + Annonces (`/communication`); Teacher menu gains Congés (self-service).
 - System section gains "API & Integrations" (`/dashboard/extensibility`).
 - Security: the quick account-creation form no longer pre-fills a hardcoded default password.
+- System section gains "Automatisations" (`/dashboard/automations`).

@@ -50,3 +50,4 @@ The application registers the `/site` router for the public marketing-site conte
 - Registers the `/personnel` router (#7).
 - Registers the `/finance/payroll` router (#7 Payroll).
 - Registers the `/api/v1` public partner API router.
+- Registers the `/automations` router.

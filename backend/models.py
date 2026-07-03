@@ -2534,6 +2534,24 @@ class BudgetForecast(Base):
     created_by = relationship("User")
 
 
+class FeeReminder(Base):
+    """Anti-spam + escalation tracking for the unpaid-fee reminder automation:
+    one row per reminder actually sent for a fee (level 1 gentle, 2 firm,
+    3 urgent + admin escalation). The runner skips fees reminded within the
+    cooldown window."""
+    __tablename__ = "fee_reminders"
+    id = Column(Integer, primary_key=True, index=True)
+    fee_id = Column(Integer, ForeignKey("fees.id"), nullable=False, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=True, index=True)
+    level = Column(Integer, nullable=False, default=1)  # 1 | 2 | 3
+    outstanding_amount = Column(Float, nullable=False, default=0)
+    channels = Column(JSON, nullable=True)  # e.g. ["notification", "sms"]
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    fee = relationship("Fee")
+
+
 class SmsMessage(Base):
     __tablename__ = "sms_messages"
 

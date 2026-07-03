@@ -579,6 +579,33 @@ const HELP_SECTIONS: HelpSection[] = [
         },
     },
     {
+        id: "automations",
+        title: { fr: "Automatisations", en: "Automations", es: "Automatizaciones", sw: "Otomatiki" },
+        icon: Wand2,
+        purpose: {
+            fr: "Exécuter en un clic les automatisations de l'établissement — à commencer par la relance des impayés avec escalade progressive. Chaque exécution est idempotente (anti-spam intégré) et peut être planifiée via un cron externe.",
+            en: "Run the school's automations in one click — starting with unpaid-fee reminders with progressive escalation. Every run is idempotent (built-in anti-spam) and can be scheduled via an external cron.",
+            es: "Ejecutar con un clic las automatizaciones del centro — empezando por los recordatorios de impagos con escalado progresivo. Cada ejecución es idempotente (anti-spam integrado) y puede programarse con un cron externo.",
+            sw: "Endesha otomatiki za shule kwa mbofyo mmoja — kuanzia vikumbusho vya ada ambazo hazijalipwa na kupanda hatua kwa hatua. Kila uendeshaji ni salama kurudiwa (kinga ya barua taka) na unaweza kupangwa kwa cron ya nje.",
+        },
+        steps: [
+            { fr: "Ouvrez Système → Automatisations.", en: "Open System → Automations.", es: "Abra Sistema → Automatizaciones.", sw: "Fungua Mfumo → Otomatiki." },
+            { fr: "Réglez les seuils : relance ferme après N jours, urgente + escalade après M jours, délai minimal entre deux relances.", en: "Set the thresholds: firm reminder after N days, urgent + escalation after M days, minimum cooldown between reminders.", es: "Ajuste los umbrales: recordatorio firme tras N días, urgente + escalado tras M días, espera mínima entre recordatorios.", sw: "Weka vizingiti: kikumbusho kikali baada ya siku N, dharura + kupeleka juu baada ya siku M, muda wa chini kati ya vikumbusho." },
+            { fr: "Cliquez sur « Lancer maintenant » : chaque frais en retard reçoit une notification élève et, si un téléphone parent est enregistré, un SMS en file d'attente.", en: "Click “Run now”: every overdue fee gets a student notification and, when a parent phone is on file, a queued SMS.", es: "Haga clic en «Ejecutar ahora»: cada tasa vencida genera una notificación al alumno y, si hay teléfono del padre, un SMS en cola.", sw: "Bofya “Endesha sasa”: kila ada iliyochelewa hupata arifa ya mwanafunzi na, ikiwa simu ya mzazi imehifadhiwa, SMS iliyopangwa." },
+            { fr: "Consultez le résumé (analysés, relancés, escaladés, SMS) et l'historique des relances envoyées.", en: "Review the summary (scanned, reminded, escalated, SMS) and the history of sent reminders.", es: "Revise el resumen (analizados, recordados, escalados, SMS) y el historial de recordatorios.", sw: "Kagua muhtasari (zilizochunguzwa, zilizokumbushwa, zilizopelekwa juu, SMS) na historia ya vikumbusho." },
+        ],
+        fields: [
+            { name: { fr: "Niveaux d'escalade", en: "Escalation levels", es: "Niveles de escalado", sw: "Ngazi za kupanda" }, type: { fr: "Automatique", en: "Automatic", es: "Automático", sw: "Otomatiki" }, expected: { fr: "N1 aimable, N2 ferme, N3 urgente + notification à l'administrateur.", en: "L1 gentle, L2 firm, L3 urgent + administrator notification.", es: "N1 amable, N2 firme, N3 urgente + notificación al administrador.", sw: "N1 pole, N2 kali, N3 dharura + arifa kwa msimamizi." }, validation: { fr: "Calculé à partir des jours de retard et des seuils configurés.", en: "Computed from days overdue and the configured thresholds.", es: "Calculado según los días de retraso y los umbrales.", sw: "Huhesabiwa kutoka siku za kuchelewa na vizingiti." } },
+            { name: { fr: "Anti-spam", en: "Anti-spam", es: "Anti-spam", sw: "Kinga ya barua taka" }, type: { fr: "Automatique", en: "Automatic", es: "Automático", sw: "Otomatiki" }, expected: { fr: "Un frais déjà relancé récemment, ou déjà relancé à ce niveau, est ignoré.", en: "A fee reminded recently, or already reminded at that level, is skipped.", es: "Una tasa recordada recientemente, o ya recordada en ese nivel, se omite.", sw: "Ada iliyokumbushwa hivi karibuni, au tayari kwa ngazi hiyo, hurukwa." }, validation: { fr: "L'exécution peut donc être répétée ou planifiée sans doublons.", en: "The run can therefore be repeated or scheduled without duplicates.", es: "La ejecución puede repetirse o programarse sin duplicados.", sw: "Uendeshaji unaweza kurudiwa au kupangwa bila nakala." } },
+        ],
+        result: {
+            fr: "Les familles reçoivent des rappels progressifs et traçables, les impayés critiques remontent à l'administration, et l'historique complet reste consultable.",
+            en: "Families receive progressive, traceable reminders, critical arrears escalate to the administration, and the full history stays reviewable.",
+            es: "Las familias reciben recordatorios progresivos y trazables, los impagos críticos escalan a la administración y el historial completo queda consultable.",
+            sw: "Familia hupokea vikumbusho vya hatua kwa hatua vinavyofuatilika, madeni makubwa hupelekwa kwa utawala, na historia kamili hubaki inapatikana.",
+        },
+    },
+    {
         id: "leave",
         title: { fr: "Congés et absences", en: "Leave and absences", es: "Permisos y ausencias", sw: "Likizo na kutohudhuria" },
         icon: BriefcaseBusiness,

@@ -63,3 +63,4 @@ The schema catalog includes enrollment, transfer, academic-year closure, tempora
 - `StaffAssignment*` schemas (#3 personnel establishment history over `SchoolMembership`).
 - `WebhookDeliveryResponse` + minimal `Public*` DTOs for the partner API v1.
 - Security: AdmissionEnrollmentCreate.password no longer has a baked-in default; omitted -> server generates a strong credential returned once.
+- `FeeReminderRunResult` / `FeeReminderResponse` (automation A).

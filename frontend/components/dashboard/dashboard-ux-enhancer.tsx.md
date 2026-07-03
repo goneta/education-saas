@@ -38,3 +38,4 @@
 - cmd.exe /c "cd frontend&& npx eslint components/<path>"; npm run build for shared/layout changes
 - MODULE_BY_PATH maps the new routes to help sections so the context-aware Help button opens the right doc: /levels→levels, /buildings|/rooms→facilities, /personnel→personnel, /finance/payroll|/finance/my-payslips→payroll (before the generic /finance/ catch).
 - MODULE_BY_PATH maps /hr/leave→leave and /dashboard/communication→announcements (#1).
+- MODULE_BY_PATH maps /dashboard/automations -> automations help section.

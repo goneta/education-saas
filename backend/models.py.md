@@ -54,3 +54,4 @@ Grades, attendance, assignment submissions, internships, fees, invoices, registr
 - `Building.description` column (#5 buildings management).
 - `StaffProfile` (#7 Personnel scolaire): employment metadata on a User (department, job_title, additional_roles JSON, status); distinct from `StaffContract`.
 - `SalaryProfile` + `PayrollRecord` breakdown columns (#7 Payroll, all nullable). Engine in `services/payroll.py`; API in `routers/payroll.py`.
+- `FeeReminder` (automation A): per-send tracking for the unpaid-fee reminder runner.

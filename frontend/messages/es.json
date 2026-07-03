@@ -74,7 +74,8 @@
     "myPayslips": "Mis n\u00f3minas",
     "leave": "Permisos",
     "announcements": "Anuncios",
-    "integrations": "API e integraciones"
+    "integrations": "API e integraciones",
+    "automations": "Automatizaciones"
   },
   "layout": {
     "previewTitle": "Vista previa del contenido generado por IA",
@@ -792,5 +793,30 @@
     "copied": "Copiado",
     "copy": "Copiar",
     "docsLink": "Ver la documentaci\u00f3n de la API"
+  },
+  "automations": {
+    "title": "Automatizaciones",
+    "subtitle": "Ejecuciones de automatizaci\u00f3n con un clic \u2014 seguras de repetir (anti-spam integrado) y programables con cron externo.",
+    "feeReminders": "Recordatorios de impagos",
+    "feeRemindersHint": "Analiza las tasas vencidas y env\u00eda recordatorios progresivos: amable, luego firme (tras el umbral de nivel 2), luego urgente con escalado a la administraci\u00f3n (nivel 3). Los padres con tel\u00e9fono registrado reciben tambi\u00e9n un SMS.",
+    "level2Days": "Recordatorio firme tras (d\u00edas)",
+    "level3Days": "Urgente + escalado tras (d\u00edas)",
+    "cooldownDays": "Espera entre recordatorios (d\u00edas)",
+    "runNow": "Ejecutar ahora",
+    "running": "Ejecutando\u2026",
+    "resultScanned": "analizados",
+    "resultReminded": "recordados",
+    "resultEscalated": "escalados",
+    "resultSms": "SMS en cola",
+    "resultSkipped": "omitidos (espera/pagados/no vencidos)",
+    "history": "Recordatorios recientes",
+    "student": "Alumno",
+    "fee": "Tasa",
+    "levelCol": "Nivel",
+    "outstanding": "Pendiente",
+    "channels": "Canales",
+    "date": "Fecha",
+    "noHistory": "Ning\u00fan recordatorio enviado todav\u00eda.",
+    "cronHint": "Para programarlo, llame a POST /automations/fee-reminders/run desde un cron externo con un token de administrador."
   }
 }
