@@ -2553,6 +2553,33 @@ class BudgetForecast(Base):
     created_by = relationship("User")
 
 
+class DocumentSignature(Base):
+    """In-house cryptographic e-signature over a generated document.
+
+    The signature is an HMAC-SHA256 (keyed from the platform secret) over the
+    document id, reference, the SHA-256 of its canonical content, the signer
+    and the signing timestamp. `content_hash` freezes the document at signing
+    time, so any later mutation of the payload is detected as tampering during
+    verification. One signature per (document, signer)."""
+    __tablename__ = "document_signatures"
+
+    id = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey("generated_documents.id"), nullable=False, index=True)
+    signer_user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    signer_name = Column(String, nullable=True)
+    signer_role = Column(String, nullable=True)
+    content_hash = Column(String, nullable=False)
+    signature = Column(String, nullable=False)
+    signed_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    document = relationship("GeneratedDocument")
+    signer = relationship("User")
+
+    __table_args__ = (
+        UniqueConstraint("document_id", "signer_user_id", name="_document_signer_uc"),
+    )
+
+
 class FeeReminder(Base):
     """Anti-spam + escalation tracking for the unpaid-fee reminder automation:
     one row per reminder actually sent for a fee (level 1 gentle, 2 firm,

@@ -24,3 +24,4 @@ and payment receipts. Backed by `/self-documents/*`.
 
 - `cmd.exe /c "cd frontend&& npx eslint app/[locale]/dashboard/my-documents/page.tsx"`
 - Backend contract: `python -m pytest backend/test_self_documents.py`.
+- E-signature: history table gains a signature column (Sign button -> POST /self-documents/{id}/sign; green badge with signer + hover code once signed); valid signatures print on the document as a "Signe electroniquement par X - code" block above the manual signature area.

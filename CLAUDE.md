@@ -140,8 +140,20 @@ notifications and master data (zero data duplication).
   the scan; teacher-confirmed upsert with scale/roster 422 guards;
   credit-gated with an image surcharge. Teacher page
   `/dashboard/grade-scan` (camera capture, review table, unmatched/missing
-  lists). All help-documented (4-locale) + tested (vision mocked in tests).
-  Phase-2 CLOSED except e-signature (no infra) — NOT-READY, never faked.
+  lists). (D11) **E-signature (in-house)** — `services/esignature.py` +
+  `DocumentSignature` (migration 0048): HMAC-SHA256 keyed from a
+  domain-separated derivation of SECRET_KEY over
+  document|reference|content-hash|signer|timestamp; SHA-256 content hash
+  freezes the document at signing (later mutation ⇒ `tampered`), forged
+  signature ⇒ `authentic=False`; one signature per (document, signer), 409 on
+  re-sign; student or linked parent sign self-service documents
+  (`POST /self-documents/{id}/sign`), signatures ride `/mine` +
+  `/verify/{reference}` and print as a verified block with a XXXX-XXXX-XXXX
+  code. Integrity/authenticity signature bound to the platform account — not
+  an eIDAS-qualified signature. **Phase-2 fully CLOSED (19/19).** AI provider
+  order: OpenAI + Anthropic primary; OpenRouter, Manus, Genspark fallback
+  (Genspark/Manus serve only once an OpenAI-compatible *_BASE_URL is
+  supplied).
 
 - **Production hardening pass (security audit)**: removed the baked-in default
   passwords (AdmissionEnrollmentCreate schema default + frontend pre-filled

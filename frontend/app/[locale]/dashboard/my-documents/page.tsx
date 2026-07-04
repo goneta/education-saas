@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
-import { BadgeCheck, FileCheck2, FileText, Printer, Receipt, RefreshCw } from "lucide-react"
+import { BadgeCheck, FileCheck2, FileSignature, FileText, Printer, Receipt, RefreshCw } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button"
 
 interface Child { student_id: number; full_name?: string | null; registration_number?: string | null }
 interface PaymentRow { payment_id: number; fee_title?: string | null; amount: number; payment_date?: string | null; method?: string | null; receipt_number?: string | null }
-interface DocRow { id: number; reference: string; doc_type?: string | null; title?: string | null; created_at: string; payload?: DocPayload | null }
+interface SignatureInfo { id: number; signer_name?: string | null; signer_role?: string | null; signed_at?: string | null; code: string; valid: boolean; tampered: boolean }
+interface DocRow { id: number; reference: string; doc_type?: string | null; title?: string | null; created_at: string; payload?: DocPayload | null; signatures?: SignatureInfo[] }
 interface DocPayload {
     reference: string
     doc_type: string
@@ -22,7 +23,7 @@ interface DocPayload {
     payment?: { fee_title?: string | null; amount?: number; method?: string | null; payment_date?: string | null; receipt_number?: string | null; fee_amount?: number; outstanding_after?: number }
 }
 
-function printDocument(payload: DocPayload, bodyText: string, verifyHint: string) {
+function printDocument(payload: DocPayload, bodyText: string, verifyHint: string, signatures: SignatureInfo[] = [], signedByLabel = "") {
     const win = window.open("", "_blank", "width=820,height=1000")
     if (!win) return
     const s = payload.student || {}
@@ -56,6 +57,11 @@ function printDocument(payload: DocPayload, bodyText: string, verifyHint: string
         </table>
         ${paymentBlock}
         <p style="margin-top:40px;font-size:14px">Fait le ${issued}</p>
+        ${signatures.filter(s => s.valid).map(s => `
+        <div style="margin-top:18px;border:1px solid #D1D5DB;border-radius:8px;padding:10px 14px;font-size:12px">
+            <p style="margin:2px 0;font-weight:600">✓ ${signedByLabel} ${s.signer_name || ""} — ${s.signed_at ? new Date(s.signed_at).toLocaleString() : ""}</p>
+            <p style="margin:2px 0;color:#6B7280">Code de signature : ${s.code}</p>
+        </div>`).join("")}
         <div style="margin-top:56px;display:flex;justify-content:space-between;align-items:flex-end">
             <div style="font-size:11px;color:#6B7280">
                 <p style="margin:2px 0">Réf. ${payload.reference}</p>
@@ -128,8 +134,22 @@ export default function MyDocumentsPage() {
     }
 
     const reprint = (doc: DocRow) => {
-        if (doc.payload) printDocument(doc.payload, bodyFor(doc.payload.doc_type, doc.payload), t("verifyHint"))
+        if (doc.payload) printDocument(doc.payload, bodyFor(doc.payload.doc_type, doc.payload), t("verifyHint"), doc.signatures || [], t("signedBy"))
     }
+
+    const sign = async (doc: DocRow) => {
+        if (!headers) return
+        setBusy(`sign-${doc.id}`); setError(null)
+        try {
+            const res = await fetch(`${API_BASE_URL}/self-documents/${doc.id}/sign`, { method: "POST", headers })
+            if (!res.ok) { setError((await res.json().catch(() => ({}))).detail || "—"); return }
+            void loadData()
+        } finally {
+            setBusy(null)
+        }
+    }
+
+    const mySignature = (doc: DocRow) => (doc.signatures || []).find(s => s.valid)
 
     const docTypeLabel = (type?: string | null) =>
         type === "receipt" ? t("receiptTitle") : type === "attestation" ? t("attestationTitle") : t("certificateTitle")
@@ -214,13 +234,24 @@ export default function MyDocumentsPage() {
                 <CardContent>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
-                            <thead><tr className="border-b border-[#E5E7EB] text-[#6B7280] dark:border-[#3b4248]"><th className="px-3 py-2">{t("docType")}</th><th className="px-3 py-2">{t("reference")}</th><th className="px-3 py-2">{t("date")}</th><th className="px-3 py-2"></th></tr></thead>
+                            <thead><tr className="border-b border-[#E5E7EB] text-[#6B7280] dark:border-[#3b4248]"><th className="px-3 py-2">{t("docType")}</th><th className="px-3 py-2">{t("reference")}</th><th className="px-3 py-2">{t("date")}</th><th className="px-3 py-2">{t("signatureCol")}</th><th className="px-3 py-2"></th></tr></thead>
                             <tbody>
-                                {docs.length === 0 ? <tr><td colSpan={4} className="px-3 py-6 text-center text-[#6B7280]">{t("noDocuments")}</td></tr> : docs.map(d => (
+                                {docs.length === 0 ? <tr><td colSpan={5} className="px-3 py-6 text-center text-[#6B7280]">{t("noDocuments")}</td></tr> : docs.map(d => (
                                     <tr key={d.id} className="border-b border-[#F0F1F3] dark:border-[#2a3035]">
                                         <td className="px-3 py-2 font-medium">{docTypeLabel(d.doc_type)}</td>
                                         <td className="px-3 py-2 font-mono text-xs">{d.reference}</td>
                                         <td className="px-3 py-2">{new Date(d.created_at).toLocaleString()}</td>
+                                        <td className="px-3 py-2">
+                                            {mySignature(d) ? (
+                                                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800" title={mySignature(d)!.code}>
+                                                    ✓ {mySignature(d)!.signer_name}
+                                                </span>
+                                            ) : (
+                                                <Button size="sm" variant="outline" onClick={() => sign(d)} disabled={busy !== null}>
+                                                    {busy === `sign-${d.id}` ? <RefreshCw className="mr-1 h-3 w-3 animate-spin" /> : <FileSignature className="mr-1 h-3 w-3" />} {t("sign")}
+                                                </Button>
+                                            )}
+                                        </td>
                                         <td className="px-3 py-2 text-right">
                                             <Button size="sm" variant="outline" onClick={() => reprint(d)}><Printer className="mr-1 h-3 w-3" /> {t("reprint")}</Button>
                                         </td>

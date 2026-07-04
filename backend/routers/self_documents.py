@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from .. import audit, database, models, security
+from ..services import esignature
 
 router = APIRouter(prefix="/self-documents", tags=["Self-service documents"])
 
@@ -226,9 +227,46 @@ def my_documents(student_id: Optional[int] = None, limit: int = Query(50, ge=1, 
     )
     return [
         {"id": r.id, "reference": r.reference, "doc_type": (r.content or {}).get("doc_type"),
-         "title": r.title, "created_at": r.generated_at, "payload": r.content}
+         "title": r.title, "created_at": r.generated_at, "payload": r.content,
+         "signatures": esignature.signatures_for(db, r)}
         for r in rows
     ]
+
+
+def _self_service_document(db: Session, document_id: int) -> models.GeneratedDocument:
+    document = db.query(models.GeneratedDocument).filter(
+        models.GeneratedDocument.id == document_id,
+        models.GeneratedDocument.source_type == SOURCE_TYPE,
+    ).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document introuvable.")
+    return document
+
+
+@router.post("/{document_id}/sign")
+def sign_document(document_id: int, db: Session = Depends(database.get_db), current_user: models.User = Depends(security.get_current_user)):
+    """E-sign one of your self-service documents: an HMAC signature over the
+    document's frozen content, bound to your account — verifiable and
+    tamper-evident via /verify/{reference}. The student of the document or a
+    linked parent may sign; one signature per signer."""
+    document = _self_service_document(db, document_id)
+    allowed = False
+    if document.student_id:
+        profile = db.query(models.StudentProfile).filter(models.StudentProfile.id == document.student_id).first()
+        if profile and profile.user_id == current_user.id:
+            allowed = True
+        elif current_user.role == models.UserRole.PARENT:
+            link = db.query(models.ParentStudentLink).filter(
+                models.ParentStudentLink.parent_user_id == current_user.id,
+                models.ParentStudentLink.student_id == document.student_id,
+            ).first()
+            allowed = bool(link)
+    if not allowed:
+        raise HTTPException(status_code=403, detail="Seuls l'élève du document ou un parent rattaché peuvent le signer.")
+    info = esignature.sign_document(db, document, current_user)
+    audit.record_audit(db, action="self_document.signed", current_user=current_user, entity_type="generated_document", entity_id=document.reference or document.id)
+    db.commit()
+    return info
 
 
 @router.get("/verify/{reference}")
@@ -245,4 +283,5 @@ def verify_document(reference: str, db: Session = Depends(database.get_db), curr
         "valid": True, "doc_type": payload.get("doc_type"), "issued_at": row.generated_at,
         "school_name": (payload.get("school") or {}).get("name"),
         "student_name": (payload.get("student") or {}).get("full_name"),
+        "signatures": esignature.signatures_for(db, row),
     }

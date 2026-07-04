@@ -909,7 +909,11 @@
     "reprint": "Chapisha tena",
     "noPayments": "Hakuna malipo yaliyothibitishwa.",
     "noDocuments": "Hakuna hati iliyotengenezwa bado.",
-    "verifyHint": "Uhalisia unaweza kuthibitishwa shuleni kwa kutumia rejea hii."
+    "verifyHint": "Uhalisia unaweza kuthibitishwa shuleni kwa kutumia rejea hii.",
+    "signatureCol": "Sahihi ya kielektroniki",
+    "sign": "Saini",
+    "signedBy": "Imesainiwa kielektroniki na",
+    "signHint": "Sahihi ya kielektroniki huganda maudhui ya hati (mabadiliko yoyote ya baadaye hugunduliwa) na huchapishwa na msimbo unaothibitishika."
   },
   "studyPlan": {
     "title": "Ratiba yangu ya marudio",

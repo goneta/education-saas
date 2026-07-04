@@ -56,3 +56,4 @@ Grades, attendance, assignment submissions, internships, fees, invoices, registr
 - `SalaryProfile` + `PayrollRecord` breakdown columns (#7 Payroll, all nullable). Engine in `services/payroll.py`; API in `routers/payroll.py`.
 - `FeeReminder` (automation A): per-send tracking for the unpaid-fee reminder runner.
 - `RecruiterSavedSearch` (automation D): recruiter-scoped candidate criteria + last_run_at watermark; `JobOffer.screening_questions` JSON stores the AI questionnaire.
+- `DocumentSignature`: in-house e-signature rows (HMAC over frozen content hash + signer + timestamp; unique per document+signer). Service: services/esignature.py.

@@ -909,7 +909,11 @@
     "reprint": "Reimprimir",
     "noPayments": "Ning\u00fan pago confirmado.",
     "noDocuments": "Ning\u00fan documento generado por el momento.",
-    "verifyHint": "Autenticidad verificable ante el centro con esta referencia."
+    "verifyHint": "Autenticidad verificable ante el centro con esta referencia.",
+    "signatureCol": "Firma electr\u00f3nica",
+    "sign": "Firmar",
+    "signedBy": "Firmado electr\u00f3nicamente por",
+    "signHint": "La firma electr\u00f3nica congela el contenido del documento (cualquier modificaci\u00f3n posterior se detecta) y se imprime con un c\u00f3digo verificable."
   },
   "studyPlan": {
     "title": "Mi plan de repaso",

@@ -909,7 +909,11 @@
     "reprint": "Reprint",
     "noPayments": "No confirmed payment.",
     "noDocuments": "No document generated yet.",
-    "verifyHint": "Authenticity verifiable with the institution using this reference."
+    "verifyHint": "Authenticity verifiable with the institution using this reference.",
+    "signatureCol": "E-signature",
+    "sign": "Sign",
+    "signedBy": "Electronically signed by",
+    "signHint": "The e-signature freezes the document content (any later modification is detected) and prints with a verifiable code."
   },
   "studyPlan": {
     "title": "My revision planner",

@@ -38,3 +38,4 @@ school office from repetitive document requests.
 
 - `python -m pytest backend/test_self_documents.py`
 - Import smoke check: `python -c "import backend.main"`.
+- E-signature: `POST /self-documents/{id}/sign` (document's student or linked parent only, 409 on double-sign); `/mine` and `/verify/{reference}` now include the signatures with live authenticity + tamper checks.
