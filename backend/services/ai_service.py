@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 
 from .. import crypto_utils, models
+from ..database import ENV_FILE, ENV_PRODUCTION_FILE
 
 try:
     from openai import OpenAI
@@ -15,9 +16,10 @@ except ImportError:  # pragma: no cover - depends on deployment dependencies
     OpenAI = None
 
 logger = logging.getLogger(__name__)
-load_dotenv()
+# Root-anchored env files (same source as backend.database) — never CWD-relative.
+load_dotenv(ENV_FILE)
 if os.getenv("APP_ENV") == "production":
-    load_dotenv(".env.production", override=True)
+    load_dotenv(ENV_PRODUCTION_FILE, override=True)
 
 
 class AIResponse(TypedDict):

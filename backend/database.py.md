@@ -23,3 +23,4 @@
 
 - python -m py_compile backend\models.py backend\schemas.py backend\main.py; python -m pytest backend when relevant
 - Env loading: `.env` first; `.env.production` (override) when APP_ENV=production; NEW fallback — when APP_ENV is unset and only `.env.production` exists at the root (typical prod host without an exported APP_ENV), it is loaded as the env source so AI provider keys / DATABASE_URL work out of the box.
+- Env files are ROOT-ANCHORED (PROJECT_ROOT/ENV_FILE/ENV_PRODUCTION_FILE from Path(__file__)): the previous CWD-relative load_dotenv made `uvicorn backend.main:app` resolve a different SECRET_KEY (401 on PM2-minted JWTs) and fall back to sqlite instead of the production DATABASE_URL when launched from another directory. Every launch mode now loads the same files.

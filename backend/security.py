@@ -9,10 +9,12 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from . import models, schemas, database
 
-# Configuration
+# Configuration — importing `database` above already loaded the root-anchored
+# env files, so the key below is identical in every launch mode (PM2, systemd,
+# manual uvicorn from any working directory).
 SECRET_KEY = os.getenv("SECRET_KEY") or os.getenv("JWT_SECRET_KEY") or "fallback_secret_key"
 if SECRET_KEY == "fallback_secret_key" and (
-    os.getenv("APP_ENV") == "production" or os.path.exists(".env.production")
+    os.getenv("APP_ENV") == "production" or database.ENV_PRODUCTION_FILE.exists()
 ):
     # A host that ships .env.production is a production host even if APP_ENV was
     # not exported — never run it on the well-known fallback signing key.
