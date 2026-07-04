@@ -156,6 +156,71 @@ def list_teachers(
     return teachers
 
 
+@router.get("/diagnostics")
+def list_teachers_diagnostics(
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    """Explain an empty teacher list: resolved context + stage-by-stage counts
+    of the EXACT filters `GET /teachers` applies, and where teaching-role users
+    actually live. Admin tool for production triage — read-only."""
+    rbac.require_permission(current_user, "teachers:view", db)
+    if current_user.role not in (models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN, models.UserRole.DIRECTION):
+        raise HTTPException(status_code=403, detail="Réservé à l'administration.")
+    ctx = school_context.resolve_context(db, current_user)
+    teaching_roles = [models.UserRole.TEACHER, models.UserRole.TRAINER, models.UserRole.INSTRUCTOR]
+
+    teaching_users_total = db.query(models.User).filter(
+        models.User.deleted_at == None,  # noqa: E711
+        models.User.role.in_(teaching_roles),
+    ).count()
+    school_match = db.query(models.User).filter(
+        models.User.deleted_at == None,  # noqa: E711
+        models.User.role.in_(teaching_roles),
+        models.User.school_id == ctx.school_id,
+    ).count()
+    assignment_match = db.query(models.TeacherAssignment).filter(
+        models.TeacherAssignment.is_active == True,  # noqa: E712
+        or_(
+            models.TeacherAssignment.school_model_assignment_id == ctx.school_model_assignment_id,
+            and_(
+                models.TeacherAssignment.school_model_assignment_id == None,  # noqa: E711
+                models.TeacherAssignment.school_id == ctx.school_id,
+            ),
+        ),
+    ).count()
+    final_count = len(list_teachers(skip=0, limit=100000, school_id=None, current_user=current_user, db=db))
+
+    teacher_school_ids = [row[0] for row in (
+        db.query(models.User.school_id)
+        .filter(models.User.deleted_at == None, models.User.role.in_(teaching_roles))  # noqa: E711
+        .distinct().limit(20).all()
+    )]
+
+    hints = []
+    if final_count == 0 and teaching_users_total > 0 and school_match == 0 and assignment_match == 0:
+        hints.append("Des enseignants existent mais aucun n'a users.school_id égal à l'établissement du contexte actif ni d'affectation active correspondante (voir teacher_user_school_ids). Corrigez le contexte actif (sélecteur d'établissement) ou les données.")
+    if teaching_users_total == 0:
+        hints.append("Aucun user actif avec un rôle enseignant (teacher/trainer/instructor). Si les lignes ont été insérées en SQL brut, vérifiez la casse du rôle : SQLAlchemy stocke le NOM de l'énumération (TEACHER), pas la valeur (teacher).")
+
+    return {
+        "active_context": {
+            "organization_id": ctx.organization_id,
+            "school_id": ctx.school_id,
+            "school_model_assignment_id": ctx.school_model_assignment_id,
+            "academic_year_id": ctx.academic_year_id,
+        },
+        "stages": {
+            "teaching_role_users_total": teaching_users_total,
+            "user_school_matches_context": school_match,
+            "active_assignments_matching_context": assignment_match,
+            "final_list_count": final_count,
+        },
+        "teacher_user_school_ids": teacher_school_ids,
+        "hints": hints,
+    }
+
+
 @router.get("/lookup")
 def lookup_teacher(
     email: str,

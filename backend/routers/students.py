@@ -252,6 +252,93 @@ def list_students(
     students = query.order_by(models.User.full_name.asc(), models.User.id.asc()).offset(skip).limit(limit).all()
     return students
 
+
+@router.get("/diagnostics")
+def list_students_diagnostics(
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    """Explain an empty student list: the resolved context plus stage-by-stage
+    counts of the EXACT filters `GET /students` applies, and where the school's
+    student data actually lives (schools/model-assignments). Admin tool for
+    production triage — read-only."""
+    rbac.require_permission(current_user, "students:view", db)
+    if current_user.role not in (models.UserRole.SUPER_ADMIN, models.UserRole.SCHOOL_ADMIN, models.UserRole.DIRECTION):
+        raise HTTPException(status_code=403, detail="Réservé à l'administration.")
+    ctx = school_context.resolve_context(db, current_user)
+
+    profiles_total = db.query(models.StudentProfile).count()
+    base = (
+        db.query(models.User)
+        .join(models.StudentProfile, models.StudentProfile.user_id == models.User.id)
+        .filter(models.User.deleted_at == None)  # noqa: E711
+    )
+    users_with_profile = base.count()
+    school_match = base.filter(models.User.school_id == ctx.school_id).count()
+    sma_match = base.filter(
+        models.User.school_id == ctx.school_id,
+        or_(
+            models.StudentProfile.school_model_assignment_id == ctx.school_model_assignment_id,
+            models.StudentProfile.school_model_assignment_id == None,  # noqa: E711
+        ),
+    ).count()
+    enrollment_filters = [
+        models.StudentEnrollment.school_id == ctx.school_id,
+        models.StudentEnrollment.school_model_assignment_id == ctx.school_model_assignment_id,
+        models.StudentEnrollment.enrollment_status.in_(["active", "transferred_in"]),
+    ]
+    if ctx.academic_year_id:
+        enrollment_filters.append(models.StudentEnrollment.academic_year_id == ctx.academic_year_id)
+    enrollment_match = db.query(models.StudentEnrollment).filter(*enrollment_filters).count()
+    final_count = len(list_students(skip=0, limit=100000, class_id=None, school_id=None, search=None, current_user=current_user, db=db))
+
+    student_school_ids = [row[0] for row in (
+        db.query(models.User.school_id)
+        .join(models.StudentProfile, models.StudentProfile.user_id == models.User.id)
+        .filter(models.User.deleted_at == None)  # noqa: E711
+        .distinct().limit(20).all()
+    )]
+    profile_sma_ids = [row[0] for row in db.query(models.StudentProfile.school_model_assignment_id).distinct().limit(20).all()]
+    school_smas = [row[0] for row in db.query(models.SchoolModelAssignment.id).filter(
+        models.SchoolModelAssignment.school_id == ctx.school_id,
+        models.SchoolModelAssignment.is_active == True,  # noqa: E712
+    ).all()]
+    preference = db.query(models.UserPreference).filter(models.UserPreference.user_id == current_user.id).first()
+
+    hints = []
+    if final_count == 0 and users_with_profile > 0:
+        if school_match == 0:
+            hints.append("Aucun élève n'a users.school_id égal à l'établissement du contexte actif — les élèves vivent sous un autre établissement (voir student_user_school_ids) ou school_id est NULL. Corrigez le contexte actif (sélecteur d'établissement) ou les données.")
+        elif sma_match == 0 and enrollment_match == 0:
+            hints.append("Les élèves appartiennent au bon établissement mais leurs profils sont épinglés à un AUTRE modèle d'établissement que le contexte actif (voir profile_sma_ids vs active_context). Changez de modèle dans le sélecteur ou corrigez student_profiles.school_model_assignment_id.")
+    if profiles_total > 0 and users_with_profile == 0:
+        hints.append("Des student_profiles existent mais aucun user actif ne les porte (user_id invalide ou deleted_at renseigné).")
+    if profiles_total == 0:
+        hints.append("Aucune ligne dans student_profiles : les élèves n'existent que dans users (import SQL manuel ?). La liste joint users↔student_profiles — créez les profils manquants.")
+
+    return {
+        "active_context": {
+            "organization_id": ctx.organization_id,
+            "school_id": ctx.school_id,
+            "school_model_assignment_id": ctx.school_model_assignment_id,
+            "academic_year_id": ctx.academic_year_id,
+        },
+        "preference_active_sma_id": preference.active_school_model_assignment_id if preference else None,
+        "school_active_sma_ids": school_smas,
+        "stages": {
+            "student_profiles_total": profiles_total,
+            "active_users_with_profile": users_with_profile,
+            "user_school_matches_context": school_match,
+            "profile_sma_matches_context": sma_match,
+            "enrollment_rows_matching_context": enrollment_match,
+            "final_list_count": final_count,
+        },
+        "student_user_school_ids": student_school_ids,
+        "profile_sma_ids": profile_sma_ids,
+        "hints": hints,
+    }
+
+
 @router.get("/{student_id}", response_model=schemas.StudentResponse)
 def get_student(
     student_id: int,
