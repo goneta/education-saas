@@ -5,3 +5,4 @@
 ## Maintenance Notes
 - Add a page by adding a `DOC_PAGES` entry and listing its slug under a `DOC_GROUPS` item. Inline text supports `code`, **bold** and [label](/path) (internal links auto-prefixed with the locale).
 - api-webhooks page documents the real partner API (X-API-Key auth, /api/v1 endpoints table, webhook event types, delivery/retry semantics); the timetable-engine integration callout corrected (transport pickup recalculation marked roadmap, not shipped).
+- New "Automations" Features group: `automations` (the full 19-feature suite by user group, shared principles - real data, idempotent, credit-gated, never faked; cron endpoints; AI provider order OpenAI+Anthropic primary / OpenRouter+Manus+Genspark fallback) and `esignature` (self-service documents + in-house cryptographic e-signature with the eIDAS scope note).

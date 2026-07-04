@@ -46,6 +46,10 @@ export const DOC_GROUPS: DocGroup[] = [
         { slug: "transport-fleet", label: "Fleet, drivers & routes" },
         { slug: "transport-boarding", label: "Boarding, GPS & safety" },
     ]},
+    { tab: "Features", title: "Automations", items: [
+        { slug: "automations", label: "Automation suite" },
+        { slug: "esignature", label: "E-signature & documents" },
+    ]},
     { tab: "Features", title: "Communication & HR", items: [
         { slug: "announcements", label: "Announcements" },
         { slug: "leave", label: "Leave management" },
@@ -65,6 +69,74 @@ export const DOC_GROUPS: DocGroup[] = [
 const P = (...blocks: DocBlock[]) => blocks
 
 export const DOC_PAGES: Record<string, DocPage> = {
+    "automations": {
+        slug: "automations", label: "Automation suite", breadcrumb: "Features / Automations",
+        title: "Automation suite",
+        description: "19 automations across every user group — school staff, teachers, students, parents, recruiters and job-seekers — built on the platform's real data, idempotent by design and credit-gated when AI is involved.",
+        blocks: P(
+            { k: "p", text: "TeducAI ships a complete automation program. Every automation follows the same principles: it works on **real data** (never invented), it is **idempotent** (safe to re-run manually or from a cron — anti-spam tracking prevents any double-send), AI generations are **credit-gated** on the caller's wallet, and anything that needs a decision or credentials refuses honestly instead of faking a result." },
+            { k: "h2", text: "School staff & administrators" },
+            { k: "table", headers: ["Automation", "What it does"], rows: [
+                ["Rentrée wizard", "One flow rolls the academic year over: preview first (nothing written), then run — students promoted level→level into the least-filled classes, leavers archived with history kept, fee schedules cloned onto the new year. The same year can never be rolled over twice."],
+                ["Fee reminders", "Scans overdue fees and sends escalating reminders (gentle → firm → urgent + admin escalation) with SMS to the parent phone. Cooldown + level tracking make re-runs safe."],
+                ["Self-service documents", "Students and parents generate certificats de scolarité, attestations and payment receipts themselves — unique verifiable references, print-ready, no staff involvement."],
+                ["Anomaly brief", "A per-window operational brief: absence spike vs the previous period, unpaid ratio above threshold, class-size imbalance — delivered to the administrator."],
+            ]},
+            { k: "h2", text: "Teachers" },
+            { k: "table", headers: ["Automation", "What it does"], rows: [
+                ["Grade entry by photo", "Photograph a marked list; a vision provider (OpenAI/Anthropic) transcribes name–score pairs, deterministically matched onto the class roster with confidence badges. Nothing is saved until the teacher reviews and confirms."],
+                ["Sequence builder", "A whole term's lesson plan generated in one AI call, calibrated on the pair's REAL weekly timetable slots × the term's weeks — refused when no slots exist."],
+                ["AI remediation", "After an assessment, every student below the threshold receives a personalized practice set (3–5 progressive exercises grounded in their score and the teacher's comment), delivered as a notification. Re-runs only serve newly graded students."],
+                ["Absence follow-up", "Each unfollowed absence triggers the parent message (notification in the parent's language + SMS when a phone is on file) — exactly once per absence."],
+            ]},
+            { k: "h2", text: "Students & pupils" },
+            { k: "table", headers: ["Automation", "What it does"], rows: [
+                ["Revision planner", "Built from the student's real timetable, upcoming assessments and unsubmitted homework: spaced revision slots at D-5 (overview), D-2 (practice) and D-1 (final review)."],
+                ["Homework reminders", "Spaced nudges at D-7 / D-3 / D-1 to students who have not submitted — one reminder per bucket per student."],
+                ["Explain my grade", "An AI walk-through of any of the student's own grades: class average, best score, rank, a reading of the teacher's comment and concrete improvement tips, in the student's language."],
+            ]},
+            { k: "h2", text: "Parents" },
+            { k: "table", headers: ["Automation", "What it does"], rows: [
+                ["Weekly child digest", "One notification per (parent, child) in the PARENT'S language compiling the week's grades, absences and payments due."],
+                ["Threshold alerts", "Instant alerts riding the digest: average below the bar, repeated absences."],
+                ["One-tap actions", "Straight from the notification bell: justify an absence (flips it to excused, teacher notified), pay a fee (finance deep-link), and e-sign documents — see [E-signature](/docs/esignature)."],
+            ]},
+            { k: "h2", text: "Recruiters & job-seekers (TeducAI Emploi)" },
+            { k: "table", headers: ["Automation", "What it does"], rows: [
+                ["Candidate matching + reasons", "CVs ranked against an offer by the deterministic match engine; a per-candidate AI explanation grounded strictly in the match details."],
+                ["Saved-search agents", "Stored criteria re-scored against CVs updated since the last run — only NEW matching graduates are notified. Cron-friendly run-all endpoint."],
+                ["Screening questionnaires", "An AI questionnaire per offer (knowledge, scenario, motivation) stored on the offer for reuse."],
+                ["CV auto-refresh", "The student's real academic record flows into their CV on demand."],
+                ["Gap analysis", "Deterministic offer-vs-profile diff (missing skills, languages, experience) + AI advice on acquiring each missing item."],
+                ["AI cover letters", "Drafts grounded strictly in the CV's real data — the prompt forbids inventing diplomas or employers."],
+            ]},
+            { k: "h2", text: "Running and scheduling" },
+            { k: "p", text: "Staff automations live on the **System → Automations** page (thresholds, run-now, result summaries, per-run history). Every runner is idempotent, so an external cron can hit the endpoints directly:" },
+            { k: "code", lang: "bash", code: "POST /automations/fee-reminders/run\nPOST /automations/parent-digest/run\nPOST /automations/absence-followup/run\nPOST /automations/anomaly-digest/run\nPOST /automations/homework-reminders/run\nPOST /employment/recruiter/saved-searches/run-all" },
+            { k: "h2", text: "AI providers" },
+            { k: "p", text: "AI-backed automations route through the platform provider layer: **OpenAI and Anthropic are the primary providers**; OpenRouter, Manus and Genspark act as fallbacks in that order. Keys go in `.env.production` (auto-registered at startup) or in **System → AI providers** (stored encrypted). Vision features (grade entry by photo) require a vision-capable model and refuse with an explicit error when no provider is reachable — results are never fabricated." },
+            { k: "callout", tone: "note", title: "Credits", text: "Every AI generation checks and debits the caller's AI-credit wallet — see [AI credits](/docs/ai-credits)." },
+        ),
+    },
+
+    "esignature": {
+        slug: "esignature", label: "E-signature & documents", breadcrumb: "Features / Automations",
+        title: "E-signature & self-service documents",
+        description: "Families generate official documents themselves and sign them electronically — cryptographically verifiable and tamper-evident, with no external signing provider.",
+        blocks: P(
+            { k: "h2", text: "Self-service documents" },
+            { k: "p", text: "From **Mes documents**, a student (or a parent for a linked child) generates a certificat de scolarité, an attestation de fréquentation or a payment receipt in one click. Each document carries a unique reference (CERT-…, ATT-…, REC-…), prints with the school header and can be re-displayed identically forever — the full payload is stored at generation time." },
+            { k: "h2", text: "How the e-signature works" },
+            { k: "ol", items: [
+                "When a signer clicks **Sign**, the document's content is canonicalized and hashed (SHA-256) — this freezes exactly what was signed.",
+                "The signature itself is an HMAC-SHA256, keyed from a domain-separated derivation of the platform secret, over the document id, reference, content hash, signer and timestamp.",
+                "Verification recomputes both: a signature mismatch means the signature row was forged; a content-hash mismatch means the document was modified after signing (tampering).",
+            ]},
+            { k: "p", text: "The document's student and a linked parent can each sign once. Valid signatures print on the document as a verified block with a short code (XXXX-XXXX-XXXX), and the by-reference verification endpoint returns every signature with live authenticity and integrity checks." },
+            { k: "callout", tone: "warn", title: "Scope", text: "This is an integrity/authenticity signature bound to the authenticated platform account — a full audit trail of who signed what and when, with tamper evidence. It is not a qualified electronic signature in the eIDAS sense." },
+        ),
+    },
+
     intro: {
         slug: "intro", label: "Intro to TeducAI", breadcrumb: "Guides / Getting started",
         title: "Intro to TeducAI",
