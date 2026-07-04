@@ -25,3 +25,4 @@
 
 - python -m py_compile backend\services\ai_provider_bootstrap.py; python -m pytest backend/test_ai_provider_bootstrap.py
 - Anthropic spec now defaults base_url to https://api.anthropic.com/v1/ (its OpenAI-compatible endpoint), so ANTHROPIC_API_KEY alone activates chat + vision without extra config.
+- Provider decision encoded in PROVIDER_SPECS order: OpenAI + Anthropic PRIMARY, then fallbacks OpenRouter, Manus, Genspark (new GENSPARK_API_KEY/GENSPARK_BASE_URL/GENSPARK_MODEL spec; no default base_url - serves only once an OpenAI-compatible gateway URL is supplied, never faked), then Gemini/Grok. Env-seeded rows now re-align their priority on every refresh so order changes reach existing deployments.

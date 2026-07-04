@@ -6,11 +6,15 @@ it directly — no manual UI entry required. Rows seeded from the environment ar
 tagged `account_label = "env"` and are kept in sync with the env on every boot;
 providers created in the UI (any other label) are never touched.
 
-OpenAI-compatible base URLs are used where the provider offers one (OpenRouter,
-Gemini, xAI). Anthropic and Manus have no official OpenAI-compatible chat
-endpoint, so they are seeded (visible/configurable) but only serve chat when an
-OpenAI-compatible `*_BASE_URL` is supplied; otherwise the priority fallback
-moves on to the next provider.
+OpenAI-compatible base URLs are used where the provider offers one (Anthropic,
+OpenRouter, Gemini, xAI). Manus and Genspark have no official OpenAI-compatible
+chat endpoint, so they are seeded (visible/configurable) but only serve chat
+when an OpenAI-compatible `*_BASE_URL` is supplied; otherwise the priority
+fallback moves on to the next provider.
+
+Platform provider decision: OpenAI and Anthropic are the PRIMARY providers;
+OpenRouter, Manus and Genspark are FALLBACK providers (tried in that order when
+the primaries fail or are unconfigured). The spec order below encodes this.
 """
 
 import logging
@@ -25,7 +29,9 @@ logger = logging.getLogger(__name__)
 
 ENV_LABEL = "env"
 
-# Order defines default priority (lower = tried first).
+# Order defines default priority (lower = tried first):
+# primaries (OpenAI, Anthropic) then fallbacks (OpenRouter, Manus, Genspark),
+# then the remaining optional providers.
 PROVIDER_SPECS = [
     {
         "type": "openai", "name": "OpenAI",
@@ -34,10 +40,34 @@ PROVIDER_SPECS = [
         "model_env": "OPENAI_MODEL", "default_model": "gpt-4.1-mini",
     },
     {
+        # Anthropic exposes an OpenAI-compatible endpoint at /v1, so the shared
+        # OpenAI-SDK client (chat + vision) works out of the box with just
+        # ANTHROPIC_API_KEY set.
+        "type": "anthropic", "name": "Anthropic Claude",
+        "key_envs": ["ANTHROPIC_API_KEY"],
+        "base_url_env": "ANTHROPIC_BASE_URL", "default_base_url": "https://api.anthropic.com/v1/",
+        "model_env": "ANTHROPIC_MODEL", "default_model": "claude-3-5-sonnet-latest",
+    },
+    {
         "type": "openrouter", "name": "OpenRouter",
         "key_envs": ["OPENROUTER_API_KEY"],
         "base_url_env": "OPENROUTER_BASE_URL", "default_base_url": "https://openrouter.ai/api/v1",
         "model_env": "OPENROUTER_MODEL", "default_model": "openrouter/auto",
+    },
+    {
+        "type": "manus", "name": "Manus",
+        "key_envs": ["MANUS_API_KEY"],
+        "base_url_env": "MANUS_BASE_URL", "default_base_url": None,
+        "model_env": "MANUS_MODEL", "default_model": None,
+    },
+    {
+        # Genspark has no public OpenAI-compatible endpoint: the row is seeded
+        # from GENSPARK_API_KEY but only serves requests once an
+        # OpenAI-compatible GENSPARK_BASE_URL is supplied — never faked.
+        "type": "genspark", "name": "Genspark AI",
+        "key_envs": ["GENSPARK_API_KEY"],
+        "base_url_env": "GENSPARK_BASE_URL", "default_base_url": None,
+        "model_env": "GENSPARK_MODEL", "default_model": None,
     },
     {
         "type": "gemini", "name": "Google Gemini",
@@ -50,21 +80,6 @@ PROVIDER_SPECS = [
         "key_envs": ["XAI_API_KEY", "GROK_API_KEY"],
         "base_url_env": "XAI_BASE_URL", "default_base_url": "https://api.x.ai/v1",
         "model_env": "XAI_MODEL", "default_model": "grok-2-latest",
-    },
-    {
-        # Anthropic exposes an OpenAI-compatible endpoint at /v1, so the shared
-        # OpenAI-SDK client (chat + vision) works out of the box with just
-        # ANTHROPIC_API_KEY set.
-        "type": "anthropic", "name": "Anthropic Claude",
-        "key_envs": ["ANTHROPIC_API_KEY"],
-        "base_url_env": "ANTHROPIC_BASE_URL", "default_base_url": "https://api.anthropic.com/v1/",
-        "model_env": "ANTHROPIC_MODEL", "default_model": "claude-3-5-sonnet-latest",
-    },
-    {
-        "type": "manus", "name": "Manus",
-        "key_envs": ["MANUS_API_KEY"],
-        "base_url_env": "MANUS_BASE_URL", "default_base_url": None,
-        "model_env": "MANUS_MODEL", "default_model": None,
     },
 ]
 
@@ -124,6 +139,9 @@ def bootstrap_providers_from_env(db: Session) -> dict:
             row.base_url = base_url
             row.default_model = model
             row.is_active = True
+            # Keep env-seeded rows aligned with the spec order so priority
+            # changes (primary vs fallback) take effect on existing deployments.
+            row.priority = 10 + index
             updated += 1
     if created or updated:
         db.commit()

@@ -25,3 +25,4 @@
 
 - python -m py_compile backend\services\<module>.py; run targeted backend tests when available
 - `generate_vision_response(prompt, image_base64, mime_type, db)`: multimodal call through the same OpenAI-SDK clients (OpenAI directly; Anthropic via its OpenAI-compatible /v1 base_url). NO local fallback - raises RuntimeError when no vision provider is reachable so callers surface an honest 503 (grade OCR consumes this). Requires a vision-capable default_model.
+- Provider-type allowlist includes "genspark"; the requires-base_url set is now {claude, manus, genspark} (anthropic/gemini carry OpenAI-compatible defaults from the bootstrap).

@@ -115,9 +115,9 @@ class AIService:
             raise RuntimeError("missing API key (DB and environment)")
         if not OpenAI:
             raise RuntimeError("openai package unavailable")
-        if provider_type not in {"openai", "openrouter", "grok", "custom", "manus", "claude", "anthropic", "gemini"}:
+        if provider_type not in {"openai", "openrouter", "grok", "custom", "manus", "genspark", "claude", "anthropic", "gemini"}:
             raise RuntimeError(f"unsupported provider type {provider.provider_type}")
-        if provider_type in {"claude", "anthropic", "gemini", "manus"} and not provider.base_url:
+        if provider_type in {"claude", "manus", "genspark"} and not provider.base_url:
             raise RuntimeError("provider requires an OpenAI-compatible base_url or a dedicated adapter")
         client_kwargs: Dict[str, Any] = {"api_key": api_key}
         if provider.base_url:
@@ -147,7 +147,7 @@ class AIService:
                         api_key = env_api_key_for(provider_type)
                     if not api_key:
                         continue
-                    if provider_type in {"claude", "anthropic", "gemini", "manus"} and not provider.base_url:
+                    if provider_type in {"claude", "manus", "genspark"} and not provider.base_url:
                         continue
                     client_kwargs: Dict[str, Any] = {"api_key": api_key}
                     if provider.base_url:
