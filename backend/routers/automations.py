@@ -6,13 +6,13 @@ manually from the Automations page or by an external cron hitting the endpoint.
 
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from .. import audit, database, models, schemas, security
 from datetime import datetime
 
-from ..services import absence_followup, anomaly_digest, automation, fee_reminders, grade_explainer, parent_digest, remediation, rentree, sequence_builder, student_planner
+from ..services import absence_followup, anomaly_digest, automation, fee_reminders, grade_explainer, grade_ocr, parent_digest, remediation, rentree, sequence_builder, student_planner
 
 router = APIRouter(prefix="/automations", tags=["Automations"])
 
@@ -375,6 +375,50 @@ def sequence_run(
     audit.record_audit(db, action="automation.sequence.run", current_user=current_user, entity_type="class", entity_id=class_id, details={"subject_id": subject_id, "term_id": term_id})
     db.commit()
     return result
+
+
+@router.post("/grade-ocr/{assessment_id}/scan")
+async def grade_ocr_scan(
+    assessment_id: int,
+    photo: UploadFile = File(...),
+    school_id: Optional[int] = None,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """Grade-entry autopilot: photograph a marked list → a vision provider
+    (OpenAI/Anthropic) transcribes (name, score) pairs, fuzzy-matched onto the
+    assessment's real roster. Returns PROPOSALS for confirmation — nothing is
+    saved here. 503 when no vision provider is configured (never faked)."""
+    if current_user.role not in EDUCATOR_ROLES:
+        raise HTTPException(status_code=403, detail="Réservé aux enseignants et à l'administration.")
+    resolved = _school_id(current_user, school_id)
+    image_bytes = await photo.read()
+    result = grade_ocr.scan_grade_sheet(
+        db, assessment_id, resolved, current_user,
+        image_bytes=image_bytes, mime_type=photo.content_type or "",
+    )
+    audit.record_audit(db, action="automation.grade_ocr.scanned", current_user=current_user, entity_type="assessment", entity_id=assessment_id, details={"proposals": len(result["proposals"]), "unmatched": len(result["unmatched"])})
+    db.commit()
+    return result
+
+
+@router.post("/grade-ocr/{assessment_id}/confirm", response_model=schemas.GradeOcrConfirmResult)
+def grade_ocr_confirm(
+    assessment_id: int,
+    payload: schemas.GradeOcrConfirmRequest,
+    school_id: Optional[int] = None,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """Teacher-confirmed save of the scanned scores (upsert per student,
+    range-checked against the assessment's max score)."""
+    if current_user.role not in EDUCATOR_ROLES:
+        raise HTTPException(status_code=403, detail="Réservé aux enseignants et à l'administration.")
+    resolved = _school_id(current_user, school_id)
+    summary = grade_ocr.confirm_grades(db, assessment_id, resolved, current_user, entries=payload.entries)
+    audit.record_audit(db, action="automation.grade_ocr.confirmed", current_user=current_user, entity_type="assessment", entity_id=assessment_id, details=summary)
+    db.commit()
+    return summary
 
 
 @router.post("/absence/{attendance_id}/justify")

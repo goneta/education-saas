@@ -52,9 +52,12 @@ PROVIDER_SPECS = [
         "model_env": "XAI_MODEL", "default_model": "grok-2-latest",
     },
     {
+        # Anthropic exposes an OpenAI-compatible endpoint at /v1, so the shared
+        # OpenAI-SDK client (chat + vision) works out of the box with just
+        # ANTHROPIC_API_KEY set.
         "type": "anthropic", "name": "Anthropic Claude",
         "key_envs": ["ANTHROPIC_API_KEY"],
-        "base_url_env": "ANTHROPIC_BASE_URL", "default_base_url": None,
+        "base_url_env": "ANTHROPIC_BASE_URL", "default_base_url": "https://api.anthropic.com/v1/",
         "model_env": "ANTHROPIC_MODEL", "default_model": "claude-3-5-sonnet-latest",
     },
     {

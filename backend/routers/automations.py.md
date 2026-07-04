@@ -13,3 +13,4 @@
 - Automation D (5/n): `GET /explain-grade/grades` + `POST /explain-grade/{grade_id}/run?language=` — student/parent AI grade walk-through; shared `_student_or_linked_child` resolver now serves both study-plan and explain-grade.
 - Automation D (6/n): `GET /sequence/options` + `POST /sequence/run` (class_id, subject_id, term_id, topic, language) — EDUCATOR_ROLES; term sequence anchored to real timetable slots (422 without slots), credit-gated, persisted as a teacher notification.
 - Automation D (parent one-tap): `POST /absence/{attendance_id}/justify` — linked-parent-only; flips ABSENT/LATE to EXCUSED with a traceable remark, notifies the recorder (`absence.justified`), 409 when already excused/present.
+- Automation D (grade OCR): `POST /grade-ocr/{assessment_id}/scan` (multipart photo -> transcription proposals mapped to the roster, nothing saved; 503 without a vision provider) + `POST /grade-ocr/{assessment_id}/confirm` (teacher-reviewed upsert) - EDUCATOR_ROLES.

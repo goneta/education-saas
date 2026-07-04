@@ -82,7 +82,8 @@
     "studyPlan": "Revision planner",
     "remediation": "AI remediation",
     "explainGrade": "Explain my grade",
-    "sequenceBuilder": "AI sequence"
+    "sequenceBuilder": "AI sequence",
+    "gradeScan": "Grades by photo"
   },
   "layout": {
     "previewTitle": "AI Generated Content Preview",
@@ -976,5 +977,27 @@
     "slotsInfo": "{slots} slot(s) per week ({minutes} weekly minutes) from the timetable.",
     "creditsHint": "Generation consumes your AI credits and the sequence is also kept in your notifications.",
     "resultStats": "{slots} session(s)/week over {weeks} week(s) \u2014 about {sessions} sessions in total."
+  },
+  "gradeOcr": {
+    "title": "Grade entry by photo",
+    "subtitle": "Photograph your handwritten mark list: the AI (OpenAI/Anthropic) transcribes the name\u2013score pairs and maps them onto the class's real roster. Nothing is saved before your confirmation.",
+    "scanTitle": "Scan a mark list",
+    "scanHint": "Pick the assessment then take (or upload) the photo. JPG, PNG, WebP \u2014 8 MB max.",
+    "assessment": "Assessment",
+    "noAssessments": "No recent assessment.",
+    "takePhoto": "Take / upload photo",
+    "scanning": "Analyzing\u2026",
+    "providerHint": "Requires an active vision AI provider (OpenAI or Anthropic, key configured in System \u2192 AI). Each scan consumes AI credits.",
+    "reviewHint": "Review every proposal before saving \u2014 scale /{max}, model: {model}.",
+    "student": "Student (class roster)",
+    "extractedName": "Name read on the photo",
+    "confidence": "Match",
+    "existing": "Existing score",
+    "score": "Score",
+    "noProposals": "No readable name\u2013score pair could be mapped onto the class.",
+    "unmatched": "Read but not matched",
+    "missing": "Students without a score on the photo",
+    "confirm": "Confirm and save",
+    "savedSummary": "{created} grade(s) created, {updated} updated."
   }
 }

@@ -41,3 +41,4 @@
 - The employment help section now covers the three recruiter automations (match reasons, screening questionnaire, saved-search agents) - French legacy-section style.
 - The employment help section now also covers the job-seeker automations (CV refresh, gap analysis, AI cover letter) - French legacy-section style.
 - The automations absence-followup step now documents the parent one-tap actions (justify from the bell, pay deep-link) - 4-locale.
+- HELP_SECTIONS documents `gradeOcr` (4-locale): photo -> vision transcription -> deterministic roster matching -> teacher-confirmed save; OpenAI/Anthropic vision provider requirement spelled out.

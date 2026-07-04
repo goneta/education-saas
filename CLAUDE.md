@@ -128,10 +128,20 @@ notifications and master data (zero data duplication).
   `absence.justified`, 409 si déjà excusée) ; la cloche de notifications du
   header propose « Justifier l'absence » sur les `absence.followup` non lues
   et « Payer maintenant » (deep-link finance) sur fee.reminder/parent.digest
-  (clés app.justifyAbsence/app.payFee, 4-locale). All help-documented +
-  tested. Phase-2 CLOSED except: grade-entry OCR (needs a vision-provider
-  decision + credentials) and e-signature (no infra) — both NOT-READY, never
-  faked.
+  (clés app.justifyAbsence/app.payFee, 4-locale). (D10) **Saisie de notes
+  par photo (OCR)** — provider decision: OpenAI + Anthropic.
+  `ai_service.generate_vision_response` (multimodal via the shared
+  OpenAI-SDK clients; Anthropic spec now defaults base_url to its
+  OpenAI-compatible /v1, so ANTHROPIC_API_KEY alone activates chat+vision);
+  NO local fallback — 503 when no vision provider is reachable, never
+  faked. `services/grade_ocr.py`: transcription-only prompt (strict JSON,
+  skip unreadable), deterministic roster matching (accent/word-order-
+  insensitive difflib, threshold 0.55, confidence shown), NOTHING saved by
+  the scan; teacher-confirmed upsert with scale/roster 422 guards;
+  credit-gated with an image surcharge. Teacher page
+  `/dashboard/grade-scan` (camera capture, review table, unmatched/missing
+  lists). All help-documented (4-locale) + tested (vision mocked in tests).
+  Phase-2 CLOSED except e-signature (no infra) — NOT-READY, never faked.
 
 - **Production hardening pass (security audit)**: removed the baked-in default
   passwords (AdmissionEnrollmentCreate schema default + frontend pre-filled

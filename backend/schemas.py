@@ -3009,6 +3009,21 @@ class HomeworkReminderRunResult(BaseModel):
     skipped_submitted: int
 
 
+class GradeOcrConfirmEntry(BaseModel):
+    student_id: int
+    score: float
+
+
+class GradeOcrConfirmRequest(BaseModel):
+    entries: List[GradeOcrConfirmEntry] = Field(min_length=1)
+
+
+class GradeOcrConfirmResult(BaseModel):
+    assessment_id: int
+    created: int
+    updated: int
+
+
 class WebhookDeliveryResponse(BaseModel):
     id: int
     endpoint_id: int

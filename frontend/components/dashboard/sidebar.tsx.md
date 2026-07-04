@@ -37,3 +37,4 @@
 - Automation D: Teacher menu gains "Remediation IA" (`/dashboard/remediation`, GraduationCap) after Grades.
 - Automation D: Student and Parent menus gain "Explique ma note" (`/dashboard/explain-grade`, HelpCircle).
 - Automation D: Teacher menu gains "Sequence IA" (`/dashboard/sequence-builder`, BookOpen) after Remediation.
+- Automation D: Teacher menu gains "Notes par photo" (`/dashboard/grade-scan`, ScanLine) after Grades.

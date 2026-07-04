@@ -82,7 +82,8 @@
     "studyPlan": "Planning de r\u00e9vision",
     "remediation": "Rem\u00e9diation IA",
     "explainGrade": "Explique ma note",
-    "sequenceBuilder": "S\u00e9quence IA"
+    "sequenceBuilder": "S\u00e9quence IA",
+    "gradeScan": "Notes par photo"
   },
   "layout": {
     "previewTitle": "Apercu du contenu genere par l'IA",
@@ -976,5 +977,27 @@
     "slotsInfo": "{slots} cr\u00e9neau(x) par semaine ({minutes} min hebdomadaires) d'apr\u00e8s l'emploi du temps.",
     "creditsHint": "La g\u00e9n\u00e9ration consomme vos cr\u00e9dits IA et la s\u00e9quence est aussi conserv\u00e9e dans vos notifications.",
     "resultStats": "{slots} s\u00e9ance(s)/semaine sur {weeks} semaine(s) \u2014 environ {sessions} s\u00e9ances au total."
+  },
+  "gradeOcr": {
+    "title": "Saisie de notes par photo",
+    "subtitle": "Photographiez votre liste de notes manuscrite : l'IA (OpenAI/Anthropic) transcrit les paires nom\u2013note et les rapproche de la liste r\u00e9elle de la classe. Rien n'est enregistr\u00e9 avant votre confirmation.",
+    "scanTitle": "Scanner une liste de notes",
+    "scanHint": "Choisissez l'\u00e9valuation puis prenez la photo (ou importez-la). Formats JPG, PNG, WebP \u2014 8 Mo max.",
+    "assessment": "\u00c9valuation",
+    "noAssessments": "Aucune \u00e9valuation r\u00e9cente.",
+    "takePhoto": "Photographier / importer",
+    "scanning": "Analyse en cours\u2026",
+    "providerHint": "N\u00e9cessite un fournisseur IA vision actif (OpenAI ou Anthropic, cl\u00e9 configur\u00e9e dans Syst\u00e8me \u2192 IA). Chaque scan consomme des cr\u00e9dits IA.",
+    "reviewHint": "V\u00e9rifiez chaque proposition avant d'enregistrer \u2014 bar\u00e8me /{max}, mod\u00e8le : {model}.",
+    "student": "\u00c9l\u00e8ve (liste de classe)",
+    "extractedName": "Nom lu sur la photo",
+    "confidence": "Correspondance",
+    "existing": "Note existante",
+    "score": "Note",
+    "noProposals": "Aucune paire nom\u2013note lisible n'a pu \u00eatre rapproch\u00e9e de la classe.",
+    "unmatched": "Lus mais non rapproch\u00e9s",
+    "missing": "\u00c9l\u00e8ves sans note sur la photo",
+    "confirm": "Confirmer et enregistrer",
+    "savedSummary": "{created} note(s) cr\u00e9\u00e9e(s), {updated} mise(s) \u00e0 jour."
   }
 }

@@ -208,6 +208,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/education/timetable`, label: t("timetable"), icon: Calendar },
                 { href: `/${locale}/dashboard/education/pedagogy`, label: t("pedagogy"), icon: GraduationCap },
                 { href: `/${locale}/dashboard/grades/assessments`, label: t("grades"), icon: ClipboardCheck },
+                { href: `/${locale}/dashboard/grade-scan`, label: t("gradeScan"), icon: ScanLine },
                 { href: `/${locale}/dashboard/remediation`, label: t("remediation"), icon: GraduationCap },
                 { href: `/${locale}/dashboard/sequence-builder`, label: t("sequenceBuilder"), icon: BookOpen },
                 { href: `/${locale}/dashboard/documents`, label: t("documents"), icon: FileText },

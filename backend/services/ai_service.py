@@ -194,6 +194,47 @@ class AIService:
                 continue
         return None
 
+    def generate_vision_response(self, prompt: str, image_base64: str, mime_type: str, db: Session) -> Dict[str, Any]:
+        """Call the first active provider with an image (OpenAI-compatible
+        multimodal content parts — works for OpenAI directly and for Anthropic
+        through its OpenAI-compatible /v1 endpoint).
+
+        Vision has NO local fallback: when no vision-capable provider is
+        reachable a RuntimeError is raised, so callers can surface an honest
+        503 instead of fabricating an OCR result. Requires a vision-capable
+        `default_model` on the provider (e.g. gpt-4.1-mini/gpt-4o for OpenAI,
+        claude-3-5-sonnet for Anthropic)."""
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{image_base64}"}},
+                ],
+            }
+        ]
+        failures: list[str] = []
+        for client, model in self._iter_clients(db):
+            try:
+                response = client.chat.completions.create(model=model, messages=messages)
+                content = response.choices[0].message.content or ""
+                usage = getattr(response, "usage", None)
+                return {
+                    "content": content,
+                    "model_name": model,
+                    "prompt_tokens": getattr(usage, "prompt_tokens", None) if usage else None,
+                    "completion_tokens": getattr(usage, "completion_tokens", None) if usage else None,
+                }
+            except Exception as exc:  # pragma: no cover - external provider failure path
+                logger.warning("Vision provider failed; trying next provider", exc_info=True)
+                failures.append(str(exc))
+                continue
+        raise RuntimeError(
+            "No vision-capable AI provider is reachable. Configure OpenAI (OPENAI_API_KEY) "
+            "or Anthropic (ANTHROPIC_API_KEY) with a vision-capable model."
+            + (f" Last errors: {'; '.join(failures[:2])}" if failures else "")
+        )
+
     def _call_openai(self, message: str, user_context: Dict[str, Any]) -> AIResponse:
         return self._call_openai_client(self.client, self.model, message, user_context)
 

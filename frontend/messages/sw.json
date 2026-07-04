@@ -82,7 +82,8 @@
     "studyPlan": "Ratiba ya marudio",
     "remediation": "Marekebisho ya AI",
     "explainGrade": "Eleza alama yangu",
-    "sequenceBuilder": "Mfululizo wa AI"
+    "sequenceBuilder": "Mfululizo wa AI",
+    "gradeScan": "Alama kwa picha"
   },
   "layout": {
     "previewTitle": "Hakiki ya maudhui yaliyotengenezwa na AI",
@@ -976,5 +977,27 @@
     "slotsInfo": "Vipindi {slots} kwa wiki (dakika {minutes} kwa wiki) kutoka kwa ratiba.",
     "creditsHint": "Utengenezaji hutumia salio lako la AI na mfululizo pia huhifadhiwa kwenye arifa zako.",
     "resultStats": "Vipindi {slots}/wiki kwa wiki {weeks} \u2014 takriban vipindi {sessions} kwa jumla."
+  },
+  "gradeOcr": {
+    "title": "Kuweka alama kwa picha",
+    "subtitle": "Piga picha ya orodha yako ya alama iliyoandikwa kwa mkono: AI (OpenAI/Anthropic) hunakili jozi za jina\u2013alama na kuzioanisha na orodha halisi ya darasa. Hakuna kinachohifadhiwa kabla ya uthibitisho wako.",
+    "scanTitle": "Changanua orodha ya alama",
+    "scanHint": "Chagua mtihani kisha piga (au pakia) picha. JPG, PNG, WebP \u2014 upeo 8 MB.",
+    "assessment": "Mtihani",
+    "noAssessments": "Hakuna mtihani wa hivi karibuni.",
+    "takePhoto": "Piga / pakia picha",
+    "scanning": "Inachanganua\u2026",
+    "providerHint": "Inahitaji mtoa huduma wa AI wa kuona aliye hai (OpenAI au Anthropic, ufunguo umewekwa kwenye Mfumo \u2192 AI). Kila uchanganuzi hutumia salio la AI.",
+    "reviewHint": "Kagua kila pendekezo kabla ya kuhifadhi \u2014 kipimo /{max}, modeli: {model}.",
+    "student": "Mwanafunzi (orodha ya darasa)",
+    "extractedName": "Jina lililosomwa kwenye picha",
+    "confidence": "Ulinganifu",
+    "existing": "Alama iliyopo",
+    "score": "Alama",
+    "noProposals": "Hakuna jozi ya jina\u2013alama inayosomeka iliyoweza kuoanishwa na darasa.",
+    "unmatched": "Zilizosomwa lakini hazikuoanishwa",
+    "missing": "Wanafunzi wasio na alama kwenye picha",
+    "confirm": "Thibitisha na uhifadhi",
+    "savedSummary": "Alama {created} zimeundwa, {updated} zimesasishwa."
   }
 }

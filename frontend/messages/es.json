@@ -82,7 +82,8 @@
     "studyPlan": "Plan de repaso",
     "remediation": "Remediaci\u00f3n IA",
     "explainGrade": "Explica mi nota",
-    "sequenceBuilder": "Secuencia IA"
+    "sequenceBuilder": "Secuencia IA",
+    "gradeScan": "Notas por foto"
   },
   "layout": {
     "previewTitle": "Vista previa del contenido generado por IA",
@@ -976,5 +977,27 @@
     "slotsInfo": "{slots} franja(s) por semana ({minutes} min semanales) seg\u00fan el horario.",
     "creditsHint": "La generaci\u00f3n consume sus cr\u00e9ditos de IA y la secuencia tambi\u00e9n se conserva en sus notificaciones.",
     "resultStats": "{slots} sesi\u00f3n(es)/semana durante {weeks} semana(s) \u2014 unas {sessions} sesiones en total."
+  },
+  "gradeOcr": {
+    "title": "Registro de notas por foto",
+    "subtitle": "Fotograf\u00ede su lista de notas manuscrita: la IA (OpenAI/Anthropic) transcribe los pares nombre\u2013nota y los asocia a la lista real de la clase. Nada se guarda antes de su confirmaci\u00f3n.",
+    "scanTitle": "Escanear una lista de notas",
+    "scanHint": "Elija la evaluaci\u00f3n y tome (o suba) la foto. JPG, PNG, WebP \u2014 m\u00e1x. 8 MB.",
+    "assessment": "Evaluaci\u00f3n",
+    "noAssessments": "Ninguna evaluaci\u00f3n reciente.",
+    "takePhoto": "Fotografiar / subir",
+    "scanning": "Analizando\u2026",
+    "providerHint": "Requiere un proveedor de IA con visi\u00f3n activo (OpenAI o Anthropic, clave configurada en Sistema \u2192 IA). Cada escaneo consume cr\u00e9ditos de IA.",
+    "reviewHint": "Revise cada propuesta antes de guardar \u2014 baremo /{max}, modelo: {model}.",
+    "student": "Alumno (lista de clase)",
+    "extractedName": "Nombre le\u00eddo en la foto",
+    "confidence": "Coincidencia",
+    "existing": "Nota existente",
+    "score": "Nota",
+    "noProposals": "Ning\u00fan par nombre\u2013nota legible pudo asociarse a la clase.",
+    "unmatched": "Le\u00eddos pero no asociados",
+    "missing": "Alumnos sin nota en la foto",
+    "confirm": "Confirmar y guardar",
+    "savedSummary": "{created} nota(s) creada(s), {updated} actualizada(s)."
   }
 }

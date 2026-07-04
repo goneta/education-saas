@@ -24,3 +24,4 @@
 ## Verification
 
 - python -m py_compile backend\services\ai_provider_bootstrap.py; python -m pytest backend/test_ai_provider_bootstrap.py
+- Anthropic spec now defaults base_url to https://api.anthropic.com/v1/ (its OpenAI-compatible endpoint), so ANTHROPIC_API_KEY alone activates chat + vision without extra config.

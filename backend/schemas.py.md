@@ -69,3 +69,4 @@ The schema catalog includes enrollment, transfer, academic-year closure, tempora
 - Rentree schemas: `RentreePreview` (+`RentreePromotionLine`), `RentreeRunRequest`, `RentreeRunResult`.
 - `HomeworkReminderRunResult` (automation D homework-nudge summary).
 - `RecruiterSavedSearchCreate` / `RecruiterSavedSearchResponse` (automation D recruiter agents).
+- Grade OCR schemas: `GradeOcrConfirmEntry`/`GradeOcrConfirmRequest`/`GradeOcrConfirmResult`.
