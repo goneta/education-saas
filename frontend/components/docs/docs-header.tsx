@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { Braces, Menu, Monitor, ChevronDown, Sparkles } from "lucide-react"
 import { DOC_TABS } from "@/lib/docs/content"
+import { docsUi, getTabLabel } from "@/lib/docs/registry"
 
 const LANGUAGES: { code: string; label: string }[] = [
     { code: "fr", label: "Français" },
@@ -60,7 +61,7 @@ export function DocsHeader({ locale, activeTab, onTab, onMenu }: {
                     {DOC_TABS.map(tab => (
                         <button key={tab} onClick={() => onTab(tab)}
                             className={`flex items-center gap-1 rounded-full px-3.5 py-1.5 text-[14px] font-medium transition ${activeTab === tab ? "bg-[#F1F3F5] text-[#0F172A] dark:bg-[#252b30] dark:text-white" : "text-[#475569] hover:text-[#0F172A] dark:text-[#c7d0da] dark:hover:text-white"}`}>
-                            {tab}
+                            {getTabLabel(tab, locale)}
                             {tab === "Resources" && <ChevronDown className="h-3.5 w-3.5 opacity-60" />}
                         </button>
                     ))}
@@ -68,7 +69,7 @@ export function DocsHeader({ locale, activeTab, onTab, onMenu }: {
 
                 <div className="ml-auto flex items-center gap-1 sm:gap-3">
                     <a href="#api" className="hidden items-center gap-1.5 text-[14px] text-[#475569] hover:text-[#0F172A] sm:flex dark:text-[#c7d0da] dark:hover:text-white">
-                        <Braces className="h-4 w-4" /> API reference
+                        <Braces className="h-4 w-4" /> {docsUi("apiReference", locale)}
                     </a>
                     <button className="hidden rounded-lg p-2 text-[#475569] hover:bg-[#F1F3F5] sm:block dark:text-[#c7d0da] dark:hover:bg-[#252b30]" aria-label="Display mode"><Monitor className="h-4 w-4" /></button>
 
@@ -90,7 +91,7 @@ export function DocsHeader({ locale, activeTab, onTab, onMenu }: {
                     </div>
 
                     <Link href={`/${locale}/dashboard`} className="flex items-center gap-1.5 rounded-full bg-[#0F172A] px-4 py-1.5 text-[14px] font-medium text-white hover:bg-[#0F172A]/90 dark:bg-white dark:text-[#0F172A] dark:hover:bg-white/90">
-                        <Monitor className="h-3.5 w-3.5" /> Console
+                        <Monitor className="h-3.5 w-3.5" /> {docsUi("console", locale)}
                     </Link>
                 </div>
             </div>

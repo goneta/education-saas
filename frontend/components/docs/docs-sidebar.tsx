@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Search, ChevronDown, Building2 } from "lucide-react"
-import { DOC_GROUPS, DOC_PAGES } from "@/lib/docs/content"
+import { docsUi, getDocGroups, getDocPages } from "@/lib/docs/registry"
 
 export function DocsSidebar({ locale, activeTab, activeSlug, onNavigate }: {
     locale: string
@@ -30,13 +30,14 @@ export function DocsSidebar({ locale, activeTab, activeSlug, onNavigate }: {
     }, [])
 
     const groups = useMemo(() => {
-        const inTab = DOC_GROUPS.filter(g => g.tab === activeTab)
+        const pages = getDocPages(locale)
+        const inTab = getDocGroups(locale).filter(g => g.tab === activeTab)
         const q = query.trim().toLowerCase()
         if (!q) return inTab
         return inTab
-            .map(g => ({ ...g, items: g.items.filter(it => it.label.toLowerCase().includes(q) || (DOC_PAGES[it.slug]?.description || "").toLowerCase().includes(q)) }))
+            .map(g => ({ ...g, items: g.items.filter(it => it.label.toLowerCase().includes(q) || (pages[it.slug]?.description || "").toLowerCase().includes(q)) }))
             .filter(g => g.items.length > 0)
-    }, [activeTab, query])
+    }, [activeTab, query, locale])
 
     return (
         <div className="flex h-full flex-col">
@@ -47,7 +48,7 @@ export function DocsSidebar({ locale, activeTab, activeSlug, onNavigate }: {
                         ref={searchRef}
                         value={query}
                         onChange={e => setQuery(e.target.value)}
-                        placeholder="Search…"
+                        placeholder={docsUi("search", locale)}
                         className="h-10 w-full rounded-xl border border-[#E5E7EB] bg-white pl-9 pr-12 text-sm text-[#0F172A] outline-none focus:border-[#0F766E] dark:border-[#3b4248] dark:bg-[#1c2227] dark:text-white"
                     />
                     <kbd className="absolute right-3 top-1/2 -translate-y-1/2 rounded border border-[#E5E7EB] px-1.5 py-0.5 text-[11px] text-[#94A3B8] dark:border-[#3b4248]">⌘K</kbd>
@@ -73,7 +74,7 @@ export function DocsSidebar({ locale, activeTab, activeSlug, onNavigate }: {
                         </ul>
                     </div>
                 ))}
-                {groups.length === 0 && <p className="px-3 text-sm text-[#94A3B8]">No results.</p>}
+                {groups.length === 0 && <p className="px-3 text-sm text-[#94A3B8]">{docsUi("noResults", locale)}</p>}
             </nav>
 
             <div className="border-t border-[#E5E7EB] p-3 dark:border-[#3b4248]">

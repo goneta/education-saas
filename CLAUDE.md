@@ -50,6 +50,17 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
+- **Docs site full French localization**: the public docs body was English-only
+  (the language dropdown only swapped the URL locale + chrome, never the content).
+  Introduced a locale-aware resolver: `lib/docs/content.ts` (English) is the
+  source-of-truth/fallback, `lib/docs/content.fr.ts` holds the full French
+  translation of all 26 pages + groups + tab labels + chrome strings, and
+  `lib/docs/registry.ts` merges per-locale over English (per-page EN fallback,
+  same graceful-fallback pattern as the Help Center). All `components/docs/*`
+  now resolve via `getDocPage/getDocGroups/getTabLabel/docsUi`; group `tab`
+  fields stay English (identity keys). es/sw fall back to English until their
+  `content.<locale>.ts` is added.
+
 - **Automation program (Phase 2, increment by increment)**: (A) **Relances
   impayés** — idempotent runner (`services/fee_reminders.py` + `/automations/
   fee-reminders/run|history`): scans overdue fees, 3 escalation levels (N1

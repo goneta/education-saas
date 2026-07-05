@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Copy, Check, ChevronDown } from "lucide-react"
 import { DocBlocks } from "@/components/docs/doc-blocks"
 import type { DocPage } from "@/lib/docs/content"
+import { docsUi } from "@/lib/docs/registry"
 
 function toMarkdown(page: DocPage): string {
     const lines: string[] = [`# ${page.title}`, "", page.description, ""]
@@ -34,7 +35,7 @@ export function DocsContent({ page, locale }: { page: DocPage; locale: string })
                 <h1 className="text-[34px] font-bold leading-tight tracking-tight text-[#0F172A] dark:text-white">{page.title}</h1>
                 <div className="hidden shrink-0 items-center rounded-lg border border-[#E5E7EB] dark:border-[#3b4248] sm:flex">
                     <button onClick={copy} className="flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium text-[#475569] hover:text-[#0F172A] dark:text-[#c7d0da] dark:hover:text-white">
-                        {copied ? <Check className="h-3.5 w-3.5 text-[#0F766E]" /> : <Copy className="h-3.5 w-3.5" />} {copied ? "Copied" : "Copy page"}
+                        {copied ? <Check className="h-3.5 w-3.5 text-[#0F766E]" /> : <Copy className="h-3.5 w-3.5" />} {copied ? docsUi("copied", locale) : docsUi("copyPage", locale)}
                     </button>
                     <span className="border-l border-[#E5E7EB] px-2 py-1.5 text-[#94A3B8] dark:border-[#3b4248]"><ChevronDown className="h-3.5 w-3.5" /></span>
                 </div>
