@@ -81,7 +81,7 @@ export default function MyAssignmentsPage() {
         <button key={a.id} onClick={() => openAssignment(a)} className="w-full rounded-xl border border-[#E5E7EB] p-3 text-left hover:bg-[#F6F7F9] dark:border-[#3b4248] dark:hover:bg-[#2a3035]">
             <div className="flex items-center justify-between gap-2">
                 <span className="font-medium">{a.title}</span>
-                <span className="text-xs text-[#6B7280]">{t(`types.${a.assignment_type}`)}</span>
+                <span className="text-xs text-[#6B7280]">{t(`types.${a.assignment_type}` as "types.devoir")}</span>
             </div>
             <div className="mt-1 flex items-center justify-between text-xs text-[#6B7280]">
                 <span>{a.due_date ? `${t("dueDate")}: ${new Date(a.due_date).toLocaleDateString()}` : ""}</span>
@@ -106,7 +106,7 @@ export default function MyAssignmentsPage() {
                 <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><BookOpenCheck className="h-4 w-4" /> {open.title}</CardTitle>
-                        <p className="text-sm text-[#6B7280] dark:text-[#c7d0da]">{t(`types.${open.assignment_type}`)} · {open.mode === "paper" ? t("modePaper") : t("modeOnline")} · /{open.max_score}</p>
+                        <p className="text-sm text-[#6B7280] dark:text-[#c7d0da]">{t(`types.${open.assignment_type}` as "types.devoir")} · {open.mode === "paper" ? t("modePaper") : t("modeOnline")} · /{open.max_score}</p>
                         {open.instructions && <p className="text-sm text-[#374151] dark:text-[#c7d0da]">{open.instructions}</p>}
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -153,7 +153,7 @@ export default function MyAssignmentsPage() {
                 <div className="grid gap-4 lg:grid-cols-3">
                     {([["todo", grouped.todo], ["done", grouped.done], ["graded", grouped.graded]] as [string, Assignment[]][]).map(([k, list]) => (
                         <Card key={k} className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
-                            <CardHeader><CardTitle className="flex items-center gap-2 text-base"><ClipboardList className="h-4 w-4" /> {t(`bucket.${k}`)} ({list.length})</CardTitle></CardHeader>
+                            <CardHeader><CardTitle className="flex items-center gap-2 text-base"><ClipboardList className="h-4 w-4" /> {t(`bucket.${k}` as "bucket.todo")} ({list.length})</CardTitle></CardHeader>
                             <CardContent className="space-y-2">
                                 {list.length === 0 ? <p className="py-4 text-center text-sm text-[#6B7280]">{t("nothing")}</p> : list.map(card)}
                             </CardContent>

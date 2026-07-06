@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useTranslations, useLocale } from "next-intl"
 import { useSearchParams } from "next/navigation"
 import type { ComponentType } from "react"
-import { BookOpen, BrainCircuit, BriefcaseBusiness, CheckCircle2, CircleHelp, CreditCard, FileText, GraduationCap, MessageSquareText, Search, Settings, Smartphone, Users, Wand2 } from "lucide-react"
+import { BookOpen, BrainCircuit, BriefcaseBusiness, CheckCircle2, CircleHelp, ClipboardCheck, CreditCard, FileText, GraduationCap, MessageSquareText, Search, Settings, Smartphone, Users, Wand2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 // A help string is either plain French (legacy, falls back) or fully localized.

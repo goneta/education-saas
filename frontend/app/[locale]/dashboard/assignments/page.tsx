@@ -99,7 +99,7 @@ export default function AssignmentsPage() {
 
     const statusBadge = (status: string) => {
         const map: Record<string, string> = { draft: "bg-gray-100 text-gray-700", published: "bg-blue-100 text-blue-800", closed: "bg-gray-100 text-gray-700", submitted: "bg-amber-100 text-amber-800", graded: "bg-emerald-100 text-emerald-800", absent: "bg-red-100 text-red-800", late: "bg-orange-100 text-orange-800", returned: "bg-emerald-100 text-emerald-800" }
-        return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${map[status] || "bg-gray-100 text-gray-700"}`}>{t(`status.${status}`)}</span>
+        return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${map[status] || "bg-gray-100 text-gray-700"}`}>{t(`status.${status}` as "status.draft")}</span>
     }
 
     return (
@@ -115,7 +115,7 @@ export default function AssignmentsPage() {
                 <CardContent className="space-y-4">
                     <div className="grid gap-3 md:grid-cols-3">
                         <label className="text-xs text-[#6B7280]">{t("titleField")}<input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="apple-input mt-1 w-full" /></label>
-                        <label className="text-xs text-[#6B7280]">{t("type")}<select value={form.assignment_type} onChange={e => setForm({ ...form, assignment_type: e.target.value })} className="apple-select mt-1 w-full">{TYPES.map(x => <option key={x} value={x}>{t(`types.${x}`)}</option>)}</select></label>
+                        <label className="text-xs text-[#6B7280]">{t("type")}<select value={form.assignment_type} onChange={e => setForm({ ...form, assignment_type: e.target.value })} className="apple-select mt-1 w-full">{TYPES.map(x => <option key={x} value={x}>{t(`types.${x}` as "types.devoir")}</option>)}</select></label>
                         <label className="text-xs text-[#6B7280]">{t("mode")}<select value={form.mode} onChange={e => setForm({ ...form, mode: e.target.value })} className="apple-select mt-1 w-full"><option value="online">{t("modeOnline")}</option><option value="paper">{t("modePaper")}</option></select></label>
                         <label className="text-xs text-[#6B7280]">{t("class")}<select value={form.class_id} onChange={e => setForm({ ...form, class_id: e.target.value })} className="apple-select mt-1 w-full"><option value="">—</option>{classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
                         <label className="text-xs text-[#6B7280]">{t("subject")}<select value={form.subject_id} onChange={e => setForm({ ...form, subject_id: e.target.value })} className="apple-select mt-1 w-full"><option value="">—</option>{subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
@@ -158,7 +158,7 @@ export default function AssignmentsPage() {
                                 {rows.length === 0 ? <tr><td colSpan={6} className="px-3 py-6 text-center text-[#6B7280]">{t("empty")}</td></tr> : rows.map(a => (
                                     <tr key={a.id} className="border-b border-[#F0F1F3] dark:border-[#2a3035]">
                                         <td className="px-3 py-2 font-medium">{a.title}{a.ai_generated && <Sparkles className="ml-1 inline h-3 w-3 text-[#0F766E]" />}</td>
-                                        <td className="px-3 py-2">{t(`types.${a.assignment_type}`)}</td>
+                                        <td className="px-3 py-2">{t(`types.${a.assignment_type}` as "types.devoir")}</td>
                                         <td className="px-3 py-2">{statusBadge(a.status)}</td>
                                         <td className="px-3 py-2">{a.stats ? `${a.stats.submitted}/${a.stats.students}` : "—"}</td>
                                         <td className="px-3 py-2">{a.stats?.average ?? "—"}</td>
