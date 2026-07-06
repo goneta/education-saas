@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, exists
 from sqlalchemy.orm import Session, selectinload
 from typing import List
 from datetime import datetime
@@ -126,24 +126,32 @@ def list_teachers(
     # assignment predates the model-assignment concept (NULL) fall back to their
     # home school + teaching role instead of silently disappearing.
     active_context = school_context.resolve_context(db, current_user)
-    assignment_match = and_(
-        models.TeacherAssignment.user_id == models.User.id,
-        models.TeacherAssignment.is_active == True,  # noqa: E712
-        or_(
-            models.TeacherAssignment.school_model_assignment_id == active_context.school_model_assignment_id,
-            and_(
-                models.TeacherAssignment.school_model_assignment_id == None,
-                models.TeacherAssignment.school_id == active_context.school_id,
-            ),
-        ),
-    )
     teaching_roles = [models.UserRole.TEACHER, models.UserRole.TRAINER, models.UserRole.INSTRUCTOR]
-    query = db.query(models.User).options(selectinload(models.User.teacher_profile)).outerjoin(
-        models.TeacherAssignment, assignment_match
-    ).filter(
-        models.User.deleted_at == None,
+    # A correlated EXISTS instead of an OUTER JOIN + DISTINCT: the join would
+    # emit one row per active assignment, so DISTINCT was needed to collapse
+    # them — but DISTINCT over the full User row fails on PostgreSQL because
+    # `User.address_structured` is a `json` column and `json` has no equality
+    # operator (only `jsonb` does). EXISTS yields no duplicate rows, so no
+    # DISTINCT is required and the query works on both SQLite and Postgres.
+    assignment_exists = (
+        db.query(models.TeacherAssignment.id)
+        .filter(
+            models.TeacherAssignment.user_id == models.User.id,
+            models.TeacherAssignment.is_active == True,  # noqa: E712
+            or_(
+                models.TeacherAssignment.school_model_assignment_id == active_context.school_model_assignment_id,
+                and_(
+                    models.TeacherAssignment.school_model_assignment_id == None,  # noqa: E711
+                    models.TeacherAssignment.school_id == active_context.school_id,
+                ),
+            ),
+        )
+        .exists()
+    )
+    query = db.query(models.User).options(selectinload(models.User.teacher_profile)).filter(
+        models.User.deleted_at == None,  # noqa: E711
         or_(
-            models.TeacherAssignment.id != None,
+            assignment_exists,
             and_(
                 models.User.school_id == active_context.school_id,
                 models.User.role.in_(teaching_roles),
@@ -151,8 +159,16 @@ def list_teachers(
         ),
     )
     if school_id and current_user.role == models.UserRole.SUPER_ADMIN:
-        query = query.filter(or_(models.TeacherAssignment.school_id == school_id, models.User.school_id == school_id))
-    teachers = query.distinct().order_by(models.User.full_name.asc(), models.User.id.asc()).offset(skip).limit(limit).all()
+        school_assignment_exists = (
+            db.query(models.TeacherAssignment.id)
+            .filter(
+                models.TeacherAssignment.user_id == models.User.id,
+                models.TeacherAssignment.school_id == school_id,
+            )
+            .exists()
+        )
+        query = query.filter(or_(school_assignment_exists, models.User.school_id == school_id))
+    teachers = query.order_by(models.User.full_name.asc(), models.User.id.asc()).offset(skip).limit(limit).all()
     return teachers
 
 

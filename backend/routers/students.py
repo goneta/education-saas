@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, exists
 from sqlalchemy.orm import Session, selectinload
 from typing import List
 from datetime import datetime
@@ -210,35 +210,45 @@ def list_students(
     # way into the list, but students without an enrollment row (legacy data,
     # imports, records created before the lifecycle module) must not silently
     # disappear — they fall back to their home school + model match.
-    enrollment_match = [
-        models.StudentEnrollment.student_global_profile_id == models.StudentGlobalProfile.id,
+    #
+    # A correlated EXISTS (resolved through the student's global profile) instead
+    # of an OUTER JOIN + DISTINCT: the enrollment join emits one row per matching
+    # enrollment, so DISTINCT was needed — but DISTINCT over the full User row
+    # fails on PostgreSQL because `User.address_structured` is a `json` column and
+    # `json` has no equality operator (only `jsonb` does). EXISTS yields no
+    # duplicate rows, so no DISTINCT is required and it works on SQLite + Postgres.
+    enrollment_filters = [
+        models.StudentGlobalProfile.student_profile_id == models.StudentProfile.id,
         models.StudentEnrollment.school_id == active_context.school_id,
         models.StudentEnrollment.school_model_assignment_id == active_context.school_model_assignment_id,
         models.StudentEnrollment.enrollment_status.in_(["active", "transferred_in"]),
     ]
     if active_context.academic_year_id:
-        enrollment_match.append(models.StudentEnrollment.academic_year_id == active_context.academic_year_id)
+        enrollment_filters.append(models.StudentEnrollment.academic_year_id == active_context.academic_year_id)
+    enrollment_exists = (
+        db.query(models.StudentEnrollment.id)
+        .join(
+            models.StudentGlobalProfile,
+            models.StudentGlobalProfile.id == models.StudentEnrollment.student_global_profile_id,
+        )
+        .filter(*enrollment_filters)
+        .exists()
+    )
     query = db.query(models.User).options(selectinload(models.User.student_profile)).join(
-        models.StudentProfile
-    ).outerjoin(
-        models.StudentGlobalProfile,
-        models.StudentGlobalProfile.student_profile_id == models.StudentProfile.id,
-    ).outerjoin(
-        models.StudentEnrollment,
-        and_(*enrollment_match),
+        models.StudentProfile, models.StudentProfile.user_id == models.User.id
     ).filter(
-        models.User.deleted_at == None,
+        models.User.deleted_at == None,  # noqa: E711
         or_(
-            models.StudentEnrollment.id != None,
+            enrollment_exists,
             and_(
                 models.User.school_id == active_context.school_id,
                 or_(
                     models.StudentProfile.school_model_assignment_id == active_context.school_model_assignment_id,
-                    models.StudentProfile.school_model_assignment_id == None,
+                    models.StudentProfile.school_model_assignment_id == None,  # noqa: E711
                 ),
             ),
         ),
-    ).distinct()
+    )
 
     if class_id:
         query = query.filter(models.StudentProfile.current_class_id == class_id)

@@ -26,3 +26,4 @@
 - python -m py_compile backend\routers\<module>.py; python -c "import backend.main as m; print(m.app.title)"
 - list_teachers is tolerant on read: the active-TeacherAssignment match is an OUTER join (also accepting assignments with NULL school_model_assignment_id in the active school); teachers without any assignment fall back to home school + teaching role. Adds the missing deleted_at filter. Fixes the production 200-[] empty list.
 - `GET /teachers/diagnostics` (admin-only, read-only): same triage for teachers — teaching-role user counts, school match, active assignment match, final count, distinct teacher school_ids, hints (including the raw-SQL enum-casing trap: the DB stores enum NAMES like TEACHER, not values like teacher).
+- List query uses a correlated EXISTS on TeacherAssignment instead of OUTER JOIN + DISTINCT (same PostgreSQL json-equality fix as students.py). Super-admin school_id filter also converted to an EXISTS.
