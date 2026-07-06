@@ -71,6 +71,46 @@ ProxyPass        /  http://127.0.0.1:3001/
 ProxyPassReverse /  http://127.0.0.1:3001/
 ```
 
+### Backend Python sous PM2 (interpreteur)
+
+PM2 choisit par defaut l'interpreteur **Node** pour un script sans extension
+reconnue. Or `venv/bin/uvicorn` est un script **Python** : lance tel quel, PM2
+l'execute avec Node et le process plante en boucle avec
+`SyntaxError: Invalid or unexpected token` sur la ligne `# -*- coding: utf-8 -*-`
+(la stack montre `node:internal/modules/cjs/loader`). Rien n'ecoute alors sur le
+port -> Apache renvoie 503. Il faut imposer l'interpreteur Python du venv.
+
+Ecosystem (`ecosystem.config.js`) :
+
+```js
+{
+  name: "teducai-backend",
+  cwd: "/var/www/html/education-saas",
+  script: "./venv/bin/uvicorn",
+  interpreter: "./venv/bin/python",   // sinon PM2 utilise Node
+  args: "backend.main:app --host 127.0.0.1 --port 8001",
+  env: { APP_ENV: "production" },
+}
+```
+
+Ou en CLI (recree proprement le process) :
+
+```bash
+cd /var/www/html/education-saas && source venv/bin/activate
+alembic upgrade head
+pm2 delete teducai-backend
+pm2 start ./venv/bin/python --name teducai-backend --interpreter none \
+  --cwd /var/www/html/education-saas \
+  -- -m uvicorn backend.main:app --host 127.0.0.1 --port 8001
+pm2 save
+```
+
+`--interpreter none` execute le binaire directement (`python -m uvicorn`), sans
+que PM2 ne tente Node. Chaque backend Python doit pointer sur SON port
+(TeducAI = 8001) et le frontend correspondant doit exporter
+`BACKEND_INTERNAL_URL=http://127.0.0.1:8001` pour ne pas retomber sur le backend
+d'une autre app (defaut `:8000`).
+
 ### Diagnostiquer un 503 "Service Unavailable"
 
 Un 503 avec `Server: Apache` et `Content-Type: text/html; charset=iso-8859-1`
