@@ -28,6 +28,7 @@ export const DOC_GROUPS: DocGroup[] = [
     { tab: "Features", title: "Academic management", items: [
         { slug: "students", label: "Students & enrollment" },
         { slug: "classes-levels", label: "Classes, levels & rooms" },
+        { slug: "assignments", label: "Homework & exercises" },
         { slug: "grades", label: "Grades & report cards" },
         { slug: "timetable-engine", label: "AI Timetable Engine" },
     ]},
@@ -243,6 +244,38 @@ export const DOC_PAGES: Record<string, DocPage> = {
                 "The classes list shows an **Nb Élèves** count with a **View** modal of the enrolled students; a class that still has students cannot be deleted.",
             ]},
             { k: "callout", tone: "warn", text: "Capacity and in-use guards return a clear `409` conflict instead of silently failing, so administrators always understand why an action was blocked." },
+        ),
+    },
+
+    "assignments": {
+        slug: "assignments", label: "Homework & exercises", breadcrumb: "Features / Academic management",
+        title: "Homework, exercises, corrections & assessment",
+        description: "A complete assignments module — creation (manual or AI, with an auto-generated answer key), online and paper delivery, submissions, manual and AI grading, a gradebook bridge, statistics and notifications — all inside TeducAI.",
+        blocks: P(
+            { k: "p", text: "The module runs the entire pedagogical loop on one platform, from creating a piece of work to correcting, marking and archiving it. It reuses the platform's classes, subjects, gradebook, notifications, AI credits and AI services (zero data duplication)." },
+            { k: "h2", text: "Creating assignments" },
+            { k: "p", text: "Teachers create eleven work types — homework, exercise, quiz, class test, assessment, exam, take-home, practical work, project, presentation and short quiz-test — either **manually** or with the **AI generator**." },
+            { k: "ul", items: [
+                "**AI generation** produces the questions AND the corrigé (answer key) from the subject, chapter, level, difficulty and question count — expected answers, explanations, per-question points and a rubric.",
+                "Mixed question types: MCQ, true/false, short/long answer, fill-in-the-blank, matching, ordering, calculation, problem, case study, programming, essay and reading comprehension.",
+                "Generation is credit-gated on the teacher's AI wallet; the teacher reviews and adjusts before publishing.",
+            ]},
+            { k: "h2", text: "Two delivery modes" },
+            { k: "table", headers: ["Mode", "How it works"], rows: [
+                ["Online", "Students answer inside TeducAI — autosave, resume after an interruption, and the copy locks after the due date (unless a late penalty is configured)."],
+                ["Paper", "The assignment is downloadable/printable; students complete it and hand it in physically for the teacher to grade."],
+            ]},
+            { k: "h2", text: "Assigning & submitting" },
+            { k: "p", text: "An assignment targets a whole class or a subset of students, with an open date, due date, attempt limit and optional late penalty. On publish, targeted students (and, on grading, their parents) are notified. Students submit online answers and/or file attachments." },
+            { k: "h2", text: "Grading" },
+            { k: "ul", items: [
+                "The **“Grade”** roster shows every student and who submitted, is late or is absent.",
+                "The teacher opens a copy, marks it by hand (score + feedback + annotations), or runs **AI grading** — the AI scores the copy against the answer key and returns a comment, detected errors, strengths, weaknesses and advice.",
+                "AI grading is always a **proposal**: the teacher confirms, edits or rejects the score. Late penalties are applied automatically.",
+            ]},
+            { k: "h2", text: "Gradebook, statistics & access" },
+            { k: "p", text: "“Push to gradebook” creates the matching assessment and posts the marks, feeding report cards, averages and statistics. Per-assignment stats show submitted/graded counts, class average, success rate and late count. The answer key is released to students by rule — never, after the due date, or immediately — while teachers always see it. Students and parents review the corrected copy, feedback and (when released) the corrigé." },
+            { k: "callout", tone: "note", title: "Foundation + roadmap", text: "This is the module's core (creation incl. AI + corrigé, online/paper modes, submissions, manual + AI grading, gradebook bridge, stats, notifications, access control). Roadmap: rich-media question editor, paper-scan OCR correction wired to this module (the [grade-scan](/docs/automations) OCR engine already exists), plagiarism / AI-answer detection, differentiated & variant generation, voice annotations, and the full analytics dashboards." },
         ),
     },
 

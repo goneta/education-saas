@@ -48,6 +48,7 @@ import {
     BellRing,
     FileCheck2,
     CalendarCheck,
+    ClipboardList,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -135,6 +136,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/education/timetable`, label: t("timetable"), icon: Calendar },
                 { href: `/${locale}/dashboard/education/pedagogy`, label: t("pedagogy"), icon: GraduationCap },
                 { href: `/${locale}/dashboard/education/internships`, label: t("internships"), icon: BriefcaseBusiness },
+                { href: `/${locale}/dashboard/assignments`, label: t("assignments"), icon: ClipboardList },
                 { href: `/${locale}/dashboard/grades/assessments`, label: t("grades"), icon: ClipboardCheck },
                 { href: `/${locale}/dashboard/library`, label: t("library"), icon: BookOpen },
                 { href: `/${locale}/dashboard/portal`, label: t("portal"), icon: Users },
@@ -207,6 +209,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/education/subjects`, label: t("subjects"), icon: BookOpen },
                 { href: `/${locale}/dashboard/education/timetable`, label: t("timetable"), icon: Calendar },
                 { href: `/${locale}/dashboard/education/pedagogy`, label: t("pedagogy"), icon: GraduationCap },
+                { href: `/${locale}/dashboard/assignments`, label: t("assignments"), icon: ClipboardList },
                 { href: `/${locale}/dashboard/grades/assessments`, label: t("grades"), icon: ClipboardCheck },
                 { href: `/${locale}/dashboard/grade-scan`, label: t("gradeScan"), icon: ScanLine },
                 { href: `/${locale}/dashboard/remediation`, label: t("remediation"), icon: GraduationCap },
@@ -237,6 +240,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
             title: t("academics"),
             items: [
                 { href: `/${locale}/dashboard/education/timetable`, label: t("timetable"), icon: Calendar },
+                { href: `/${locale}/dashboard/my-assignments`, label: t("myAssignments"), icon: ClipboardList },
                 { href: `/${locale}/dashboard/grades/assessments`, label: t("grades"), icon: ClipboardCheck },
                 { href: `/${locale}/dashboard/documents`, label: t("documents"), icon: FileText },
                 { href: `/${locale}/dashboard/my-documents`, label: t("myDocuments"), icon: FileCheck2 },
@@ -261,6 +265,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
             title: t("academics"),
             items: [
                 { href: `/${locale}/dashboard/portal`, label: t("portal"), icon: Users },
+                { href: `/${locale}/dashboard/my-assignments`, label: t("myAssignments"), icon: ClipboardList },
                 { href: `/${locale}/dashboard/grades/assessments`, label: t("grades"), icon: ClipboardCheck },
                 { href: `/${locale}/dashboard/documents`, label: t("documents"), icon: FileText },
                 { href: `/${locale}/dashboard/my-documents`, label: t("myDocuments"), icon: FileCheck2 },

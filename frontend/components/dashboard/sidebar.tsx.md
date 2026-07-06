@@ -38,3 +38,4 @@
 - Automation D: Student and Parent menus gain "Explique ma note" (`/dashboard/explain-grade`, HelpCircle).
 - Automation D: Teacher menu gains "Sequence IA" (`/dashboard/sequence-builder`, BookOpen) after Remediation.
 - Automation D: Teacher menu gains "Notes par photo" (`/dashboard/grade-scan`, ScanLine) after Grades.
+- Homework module: teacher/admin menus gain "Devoirs" (`/dashboard/assignments`, ClipboardList); student/parent menus gain "Mes devoirs" (`/dashboard/my-assignments`).

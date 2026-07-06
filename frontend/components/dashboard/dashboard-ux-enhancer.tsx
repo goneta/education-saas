@@ -48,6 +48,7 @@ const MODULE_BY_PATH: Array<[RegExp, string, string]> = [
     [/my-documents/, "selfDocs", "selfDocs"],
     [/study-plan/, "studyPlan", "studyPlan"],
     [/dashboard\/remediation/, "remediation", "remediation"],
+    [/dashboard\/assignments|my-assignments/, "assignments", "assignments"],
     [/explain-grade/, "explainGrade", "explainGrade"],
     [/sequence-builder/, "sequenceBuilder", "sequenceBuilder"],
     [/grade-scan/, "gradeOcr", "gradeOcr"],

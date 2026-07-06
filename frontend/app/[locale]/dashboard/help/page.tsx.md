@@ -43,3 +43,4 @@
 - The automations absence-followup step now documents the parent one-tap actions (justify from the bell, pay deep-link) - 4-locale.
 - HELP_SECTIONS documents `gradeOcr` (4-locale): photo -> vision transcription -> deterministic roster matching -> teacher-confirmed save; OpenAI/Anthropic vision provider requirement spelled out.
 - The selfDocs help section now documents the e-signature step (cryptographic freeze, tamper detection, verifiable code, student + linked parent each sign once) - 4-locale.
+- HELP_SECTIONS documents `assignments` (4-locale): full homework/exercise/correction/assessment loop (create incl. AI+corrigé, online/paper, grade manual+AI, gradebook, release rules).

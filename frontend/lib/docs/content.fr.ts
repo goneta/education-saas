@@ -43,6 +43,7 @@ export const DOC_GROUPS_FR: DocGroup[] = [
     { tab: "Features", title: "Gestion académique", items: [
         { slug: "students", label: "Élèves & inscriptions" },
         { slug: "classes-levels", label: "Classes, niveaux & salles" },
+        { slug: "assignments", label: "Devoirs & exercices" },
         { slug: "grades", label: "Notes & bulletins" },
         { slug: "timetable-engine", label: "Moteur d'emploi du temps IA" },
     ]},
@@ -256,6 +257,38 @@ export const DOC_PAGES_FR: Record<string, DocPage> = {
                 "La liste des classes affiche un compteur **Nb Élèves** avec une fenêtre **Voir** des élèves inscrits ; une classe qui a encore des élèves ne peut pas être supprimée.",
             ]},
             { k: "callout", tone: "warn", text: "Les garde-fous de capacité et d'utilisation renvoient un conflit `409` explicite plutôt qu'un échec silencieux, de sorte que les administrateurs comprennent toujours pourquoi une action a été bloquée." },
+        ),
+    },
+
+    "assignments": {
+        slug: "assignments", label: "Devoirs & exercices", breadcrumb: "Fonctionnalités / Gestion académique",
+        title: "Devoirs, exercices, corrections & évaluation",
+        description: "Un module de devoirs complet — création (manuelle ou IA, avec corrigé généré automatiquement), remise en ligne et sur papier, correction manuelle et par IA, pont vers le carnet de notes, statistiques et notifications — le tout dans TeducAI.",
+        blocks: P(
+            { k: "p", text: "Le module couvre tout le cycle pédagogique sur une seule plateforme, de la création d'un travail jusqu'à sa correction, sa notation et son archivage. Il réutilise les classes, matières, carnet de notes, notifications, crédits IA et services IA de la plateforme (zéro duplication de données)." },
+            { k: "h2", text: "Créer des devoirs" },
+            { k: "p", text: "Les enseignants créent onze types de travaux — devoir, exercice, quiz, contrôle, évaluation, examen, devoir maison, travail pratique, projet, exposé et interrogation — soit **manuellement**, soit avec le **générateur IA**." },
+            { k: "ul", items: [
+                "La **génération IA** produit les questions ET le corrigé à partir de la matière, du chapitre, du niveau, de la difficulté et du nombre de questions — réponses attendues, explications, points par question et barème.",
+                "Types de questions variés : QCM, vrai/faux, réponses courtes/longues, texte à trous, association, classement, calcul, problème, étude de cas, programmation, rédaction et compréhension de texte.",
+                "La génération consomme les crédits IA de l'enseignant ; il vérifie et ajuste avant de publier.",
+            ]},
+            { k: "h2", text: "Deux modes de réalisation" },
+            { k: "table", headers: ["Mode", "Fonctionnement"], rows: [
+                ["En ligne", "Les élèves répondent dans TeducAI — sauvegarde automatique, reprise après interruption, et la copie se verrouille après la date limite (sauf pénalité de retard configurée)."],
+                ["Papier", "Le devoir est téléchargeable/imprimable ; les élèves le réalisent et le remettent physiquement pour correction."],
+            ]},
+            { k: "h2", text: "Attribuer & remettre" },
+            { k: "p", text: "Un devoir cible une classe entière ou un sous-ensemble d'élèves, avec date d'ouverture, date limite, nombre de tentatives et pénalité de retard facultative. À la publication, les élèves ciblés (et, lors de la correction, leurs parents) sont notifiés. Les élèves remettent des réponses en ligne et/ou des fichiers joints." },
+            { k: "h2", text: "Correction" },
+            { k: "ul", items: [
+                "La liste **« Donner des notes »** montre chaque élève et qui a remis, qui est en retard ou absent.",
+                "L'enseignant ouvre une copie, la note à la main (note + commentaire + annotations) ou lance la **correction IA** — l'IA note la copie contre le corrigé et renvoie un commentaire, les erreurs détectées, points forts, points faibles et conseils.",
+                "La correction IA reste toujours une **proposition** : l'enseignant valide, modifie ou refuse la note. Les pénalités de retard sont appliquées automatiquement.",
+            ]},
+            { k: "h2", text: "Carnet de notes, statistiques & accès" },
+            { k: "p", text: "« Envoyer au carnet de notes » crée l'évaluation correspondante et y verse les notes, alimentant bulletins, moyennes et statistiques. Les stats par devoir montrent les remis/corrigés, la moyenne de classe, le taux de réussite et les retards. Le corrigé est diffusé aux élèves selon la règle — jamais, après la date limite, ou immédiat — l'enseignant le voyant toujours. Élèves et parents consultent la copie corrigée, le commentaire et (si diffusé) le corrigé." },
+            { k: "callout", tone: "note", title: "Fondation + feuille de route", text: "Voici le cœur du module (création dont IA + corrigé, modes en ligne/papier, remises, correction manuelle + IA, pont carnet de notes, stats, notifications, contrôle d'accès). Feuille de route : éditeur de questions multimédia, correction OCR des copies papier reliée à ce module (le moteur OCR [grade-scan](/docs/automations) existe déjà), détection de plagiat / de réponses IA, génération différenciée et de variantes, annotations vocales, et les tableaux de bord analytiques complets." },
         ),
     },
 

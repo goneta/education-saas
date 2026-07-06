@@ -57,3 +57,4 @@ Grades, attendance, assignment submissions, internships, fees, invoices, registr
 - `FeeReminder` (automation A): per-send tracking for the unpaid-fee reminder runner.
 - `RecruiterSavedSearch` (automation D): recruiter-scoped candidate criteria + last_run_at watermark; `JobOffer.screening_questions` JSON stores the AI questionnaire.
 - `DocumentSignature`: in-house e-signature rows (HMAC over frozen content hash + signer + timestamp; unique per document+signer). Service: services/esignature.py.
+- Assignment + AssignmentSubmission extended for the homework/exercise module (types, online/paper mode, content+answer_key JSON, scoring/targeting, submission answers/attachments/annotations/ai-grading). Column-only additions (migration 0050); workflow_status is a plain String (no enum-type change).

@@ -50,6 +50,33 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
+- **Homework / exercise / correction / evaluation module (foundation)**: a
+  full assignments module built on the EXISTING `Assignment` /
+  `AssignmentSubmission` tables (extended column-only in migration 0050;
+  `workflow_status` is a plain String so no Postgres enum-type change).
+  `services/assignments.py` + `routers/assignments.py` (`/assignments`):
+  11 work types, manual creation AND AI generation that also produces the
+  **corrigé** (answer key: expected answers, explanations, per-question
+  points, rubric — split into a student-safe `content` and the `answer_key`);
+  **online** (autosave, resume, lock-after-due unless late-penalty) and
+  **paper** modes; targeting a class or a student subset; submissions
+  (answers + attachments, attempts, late); grading manual AND by AI (AI
+  scores vs the answer key and returns comment/errors/strengths/weaknesses/
+  advice — always a proposal the teacher confirms/edits); answer-key release
+  control (never/after_due/immediate); a gradebook bridge
+  (`push-to-gradebook` creates/reuses an Assessment + upserts Grade rows);
+  per-assignment stats; notifications on publish/submit/grade to students +
+  linked parents. AI calls credit-gated; nothing faked. Teacher page
+  `/dashboard/assignments` (create + AI-generate + grading roster with manual/
+  AI grade + push-to-gradebook) and student/parent page
+  `/dashboard/my-assignments` (to-do/done/graded, online submit, corrected
+  copy + corrigé when released); sidebar + 4-locale i18n + help section +
+  docs page (EN+FR) + tests. **Roadmap (documented, NOT built):** rich-media
+  question editor, paper-scan OCR correction wired to this module (the
+  grade-scan OCR engine already exists), plagiarism / AI-answer detection,
+  differentiated & variant generation, voice annotations, full analytics
+  dashboards.
+
 - **Docs site full French localization**: the public docs body was English-only
   (the language dropdown only swapped the URL locale + chrome, never the content).
   Introduced a locale-aware resolver: `lib/docs/content.ts` (English) is the

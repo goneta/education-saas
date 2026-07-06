@@ -1473,6 +1473,23 @@ class Assignment(Base):
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    # Homework/exercise module (column-only additions; kept as plain String/JSON
+    # rather than SqEnum so no Postgres enum-type migration is needed).
+    assignment_type = Column(String, default="devoir", nullable=False, index=True)  # devoir|exercice|interrogation|controle|evaluation|examen|quiz|devoir_maison|tp|projet|expose
+    mode = Column(String, default="online", nullable=False)  # online | paper
+    content = Column(JSON, nullable=True)   # {"questions": [{type, prompt, options, points, ...}]}
+    answer_key = Column(JSON, nullable=True)  # corrigé: answers, explanations, rubric, skills
+    max_score = Column(Float, default=20, nullable=False)
+    open_at = Column(DateTime, nullable=True)
+    duration_minutes = Column(Integer, nullable=True)
+    max_attempts = Column(Integer, default=1, nullable=False)
+    late_penalty = Column(Float, default=0, nullable=False)  # points deducted for a late submission
+    allow_groups = Column(Boolean, default=False, nullable=False)
+    target_student_ids = Column(JSON, nullable=True)  # null = whole class; else a subset of student_profile ids
+    answer_key_release = Column(String, default="after_due", nullable=False)  # never | after_due | immediate
+    ai_generated = Column(Boolean, default=False, nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
     class_ = relationship("Class")
     subject = relationship("Subject")
     teacher = relationship("User")
@@ -1494,6 +1511,20 @@ class AssignmentSubmission(Base):
     feedback = Column(Text, nullable=True)
     submitted_at = Column(DateTime(timezone=True), server_default=func.now())
     graded_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Homework/exercise module (column-only additions). `workflow_status` is a
+    # plain String (draft|submitted|late|graded|returned) so the legacy
+    # SubmissionStatus enum stays untouched (no Postgres enum-type migration).
+    workflow_status = Column(String, default="draft", nullable=False, index=True)
+    answers = Column(JSON, nullable=True)         # online answers keyed by question id
+    attachment_urls = Column(JSON, nullable=True)  # list of uploaded file urls (multi-type submissions)
+    attempt_number = Column(Integer, default=1, nullable=False)
+    is_late = Column(Boolean, default=False, nullable=False)
+    ai_graded = Column(Boolean, default=False, nullable=False)
+    ai_feedback = Column(JSON, nullable=True)      # {score, strengths, weaknesses, errors, advice}
+    annotations = Column(JSON, nullable=True)      # teacher inline annotations
+    graded_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     assignment = relationship("Assignment", back_populates="submissions")
     student = relationship("StudentProfile")
