@@ -41,10 +41,18 @@ async def response_validation_exception_handler(request: Request, exc: ResponseV
     )
 START_TIME = time.time()
 
-# Configure CORS
+# Configure CORS.
+# The dev/e2e default allows the frontend on BOTH loopback hosts, because
+# `localhost` and `127.0.0.1` are distinct origins for CORS: Playwright serves
+# the app on http://127.0.0.1:3000 and calls the backend cross-origin, so a
+# `localhost`-only allow-list would block preflighted/credentialed requests
+# (e.g. GET /auth/me with the Authorization header) even though the simple
+# POST /auth/token still reaches the server. Production overrides this via
+# CORS_ALLOWED_ORIGINS and the wildcard guard below still applies.
+_DEFAULT_CORS_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000"
 cors_origins = [
     origin.strip()
-    for origin in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+    for origin in os.getenv("CORS_ALLOWED_ORIGINS", _DEFAULT_CORS_ORIGINS).split(",")
     if origin.strip()
 ]
 if os.getenv("APP_ENV") == "production" and "*" in cors_origins:
