@@ -36,6 +36,61 @@ Executer les migrations avant demarrage applicatif:
 python -m alembic upgrade head
 ```
 
+## Reverse proxy et frontend (chaine de requetes)
+
+En production, une requete d'API suit cette chaine :
+
+```
+Navigateur (https://teducai.com)
+  -> Apache :443  (reverse proxy TLS)
+    -> Next.js frontend :3001
+      -> reecriture Next  /api/backend/:path*  ->  BACKEND_INTERNAL_URL/:path*
+        -> FastAPI (uvicorn/PM2)  ex. http://127.0.0.1:8001
+```
+
+Le frontend appelle le backend en **same-origin** via le prefixe
+`/api/backend` (`NEXT_PUBLIC_API_URL` reste vide en production). Next reecrit
+ce prefixe vers `BACKEND_INTERNAL_URL` (defaut `http://127.0.0.1:8000`).
+
+**Variable critique du frontend (PM2/env du process Next) :**
+
+| Variable | Role | Valeur prod |
+| --- | --- | --- |
+| `BACKEND_INTERNAL_URL` | cible de la reecriture `/api/backend/*` | doit correspondre au port reel du backend, ex. `http://127.0.0.1:8001` |
+| `NEXT_PUBLIC_API_URL` | base API cote navigateur | **vide** en prod (utilise le proxy same-origin `/api/backend`) |
+
+Le defaut `:8000` est pour le dev/e2e ; si le backend tourne sur `:8001`,
+`BACKEND_INTERNAL_URL=http://127.0.0.1:8001` **doit** etre exporte dans l'env du
+process Next, sinon Next proxifie vers un port ou rien n'ecoute.
+
+Exemple de vhost Apache (proxy tout vers Next, qui reecrit ensuite l'API) :
+
+```apache
+ProxyPreserveHost On
+ProxyPass        /  http://127.0.0.1:3001/
+ProxyPassReverse /  http://127.0.0.1:3001/
+```
+
+### Diagnostiquer un 503 "Service Unavailable"
+
+Un 503 avec `Server: Apache` et `Content-Type: text/html; charset=iso-8859-1`
+est la page d'erreur **d'Apache** (pas de l'application) : l'upstream qu'Apache
+proxifie est injoignable. Cote navigateur cela donne
+`JSON.parse: unexpected character` car la reponse est du HTML, pas du JSON.
+
+```bash
+pm2 list                                   # frontend Next et backend up ?
+curl -i http://127.0.0.1:8001/health       # backend joignable sur son port ?
+curl -i http://127.0.0.1:3001/fr/login     # frontend Next repond ?
+curl -i http://127.0.0.1:3001/api/backend/health   # la reecriture Next atteint le backend ?
+sudo apachectl -S                          # vhosts + upstreams
+sudo tail -n 50 /var/log/apache2/error.log # mod_proxy logue le port injoignable (AH00957)
+```
+
+Causes frequentes : process backend arrete (`pm2 restart`), `BACKEND_INTERNAL_URL`
+absent ou pointant sur le mauvais port (`8000` au lieu de `8001`), ou vhost
+Apache proxifiant `/api/backend` directement vers un port backend errone.
+
 ## Sauvegardes
 
 - Sauvegarde PostgreSQL quotidienne avec retention minimale de 30 jours.
