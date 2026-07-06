@@ -231,7 +231,7 @@ function showRowDetails(row: HTMLTableRowElement) {
 
 function clickExistingAction(row: HTMLTableRowElement, patterns: RegExp[]) {
     const candidates = Array.from(row.querySelectorAll<HTMLButtonElement | HTMLAnchorElement>("button,a"))
-        .filter(element => !element.dataset.teducaiAction)
+        .filter(element => !element.dataset.teducaiAction && !element.dataset.teducaiIgnore)
     const target = candidates.find(element => patterns.some(pattern => pattern.test(`${element.textContent || ""} ${element.getAttribute("title") || ""} ${element.getAttribute("aria-label") || ""}`)))
     target?.click()
     return Boolean(target)
@@ -239,7 +239,7 @@ function clickExistingAction(row: HTMLTableRowElement, patterns: RegExp[]) {
 
 function hasExistingAction(row: HTMLTableRowElement, patterns: RegExp[]) {
     return Array.from(row.querySelectorAll<HTMLButtonElement | HTMLAnchorElement>("button,a"))
-        .filter(element => !element.dataset.teducaiAction)
+        .filter(element => !element.dataset.teducaiAction && !element.dataset.teducaiIgnore)
         .some(element => patterns.some(pattern => pattern.test(`${element.textContent || ""} ${element.getAttribute("title") || ""} ${element.getAttribute("aria-label") || ""}`)))
 }
 
@@ -264,7 +264,7 @@ function isCheckboxOnlyCell(cell: HTMLTableCellElement) {
 function isLegacyActionCell(cell: HTMLTableCellElement) {
     if (cell.dataset.teducaiActionCell) return false
     const buttons = Array.from(cell.querySelectorAll("button,a"))
-        .filter(element => !(element as HTMLElement).dataset.teducaiAction)
+        .filter(element => !(element as HTMLElement).dataset.teducaiAction && !(element as HTMLElement).dataset.teducaiIgnore)
     if (!buttons.length) return false
     const actionText = buttons.map(element => `${element.textContent || ""} ${element.getAttribute("title") || ""} ${element.getAttribute("aria-label") || ""}`).join(" ")
     return /view|afficher|edit|modifier|delete|supprimer|trash|print|imprimer|download|telecharger|télécharger/i.test(actionText)

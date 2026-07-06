@@ -45,3 +45,4 @@
 - MODULE_BY_PATH maps /explain-grade -> explainGrade help section.
 - MODULE_BY_PATH maps /sequence-builder -> sequenceBuilder help section.
 - MODULE_BY_PATH maps /grade-scan -> gradeOcr help section.
+- Action-detection helpers (isLegacyActionCell, clickExistingAction, hasExistingAction) now skip controls flagged `data-teducai-ignore`, so a data-cell control (e.g. the ProfileAvatar "Modifier la photo" button in the name cell) is no longer mistaken for a row action and the cell isn't hidden — fixes the students/teachers column shift.

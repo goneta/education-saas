@@ -83,6 +83,12 @@ export function ProfileAvatar({ userId, name, photoUrl, editable = true, onChang
                     event.stopPropagation()
                     inputRef.current?.click()
                 }}
+                // Marks this as a data-cell control, not a row action. The table
+                // enhancer scans button titles for "modifier"/"edit"/… to detect
+                // and HIDE legacy action cells; without this flag the avatar's
+                // "Modifier la photo de profil" title makes it hide the whole name
+                // cell, shifting every column left. See dashboard-ux-enhancer.
+                data-teducai-ignore="true"
                 className="group relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#E8EEF5] font-semibold text-[#334155] disabled:cursor-default dark:bg-[#343b41] dark:text-[#f4f7fb]"
                 title={editable ? "Modifier la photo de profil" : name}
             >

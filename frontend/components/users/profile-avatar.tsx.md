@@ -9,3 +9,4 @@
 ## Verification
 
 - Run targeted ESLint and the frontend build.
+- The avatar button carries `data-teducai-ignore="true"` so the table enhancer's action-cell detection skips it. Without it, the button title "Modifier la photo de profil" matched the enhancer's /modifier|edit|.../ action regex, so it hid the whole name cell and shifted every column left in the students/teachers lists.
