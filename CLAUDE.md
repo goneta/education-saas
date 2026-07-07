@@ -75,8 +75,13 @@ notifications and master data (zero data duplication).
   invoices/{id}/pdf` renders a real reportlab PDF (issuer/bill-to/tax-inclusive
   breakdown/totals + verifiable QR); `invoice_detail` + `render_invoice_pdf` in
   `services/billing.py`; the Billing-history "Download PDF" button streams it.
+  **Saved payment methods (shipped):** `BillingPaymentMethod` (migration 0052) +
+  `/billing/payment-methods` CRUD (add/update/set-default/remove); PCI-safe —
+  only brand/last4/expiry (+ optional gateway token) stored, never a PAN/CVV;
+  first method auto-default, default-promotion on removal, expiry-state badges;
+  the Payment methods tab is a real CRUD (`PaymentMethodsTab`).
   **Roadmap (documented, NOT built):** invoice email delivery, live usage
-  charts, saved payment-method card management UI, AI billing assistant —
+  charts, AI billing assistant —
   underlying data already exists.
 
 - **Homework / exercise / correction / evaluation module (foundation)**: a

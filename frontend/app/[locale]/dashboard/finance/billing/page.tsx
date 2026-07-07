@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useTranslations } from "next-intl"
 import {
     AlertTriangle, BadgePercent, CreditCard, Download, FileText,
-    Gauge, Landmark, ReceiptText, Settings2, ShieldCheck, Sparkles, Wallet,
+    Gauge, Landmark, Plus, ReceiptText, Settings2, ShieldCheck, Sparkles, Star, Trash2, Wallet,
 } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
@@ -39,6 +39,7 @@ interface Preferences { currency: string; timezone?: string | null; invoice_lang
 interface Tax { tax_type: string; tax_id?: string | null; business_number?: string | null; company_registration?: string | null; legal_name?: string | null; tax_rate: number; tax_exempt: boolean; billing_address?: Record<string, string> | null }
 interface AuditRow { id: number; action: string; entity_type?: string | null; details?: Record<string, unknown> | null; ip_address?: string | null; created_at?: string | null }
 interface Revenue { total_revenue: number; mrr: number; arr: number; total_schools: number; outstanding: number; failed_payments: number; revenue_by_country: { country: string; amount: number }[] }
+interface PaymentMethod { id: number; method_type: string; provider: string; nickname?: string | null; holder_name?: string | null; brand?: string | null; last4?: string | null; expiry_month?: number | null; expiry_year?: number | null; is_default: boolean; expiry_state: string }
 
 const PROVIDERS = ["CinetPay · Orange · Wave · MTN · Moov", "Djamo", "Stripe", "Visa", "Mastercard", "American Express", "PayPal", "Apple Pay", "Google Pay", "Bank transfer"]
 const STATUS_STYLES: Record<string, string> = {
@@ -284,19 +285,7 @@ export default function BillingPage() {
             )}
 
             {/* --- PAYMENT METHODS --- */}
-            {tab === "paymentMethods" && (
-                <Card className="rounded-2xl border border-[#E5E7EB] shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
-                    <CardHeader><CardTitle className="text-base">{t("payments.title")}</CardTitle></CardHeader>
-                    <CardContent className="space-y-4">
-                        <p className="text-sm text-[#6B7280] dark:text-[#c7d0da]">{t("payments.desc")}</p>
-                        <div>
-                            <p className="mb-2 text-xs font-semibold uppercase text-[#6B7280]">{t("payments.supported")}</p>
-                            <div className="flex flex-wrap gap-2">{PROVIDERS.map(p => <span key={p} className="rounded-lg border border-[#E5E7EB] px-2.5 py-1 text-xs dark:border-[#3b4248]">{p}</span>)}</div>
-                        </div>
-                        <Link href={`/${locale}/dashboard/account/payment-methods`}><Button variant="outline"><CreditCard className="mr-1 h-4 w-4" /> {t("payments.manageInAccount")}</Button></Link>
-                    </CardContent>
-                </Card>
-            )}
+            {tab === "paymentMethods" && <PaymentMethodsTab api={api} locale={locale} />}
 
             {/* --- INVOICES --- */}
             {tab === "invoices" && (
@@ -495,6 +484,113 @@ function PromotionsTab({ api, onRedeemed }: { api: (p: string, i?: RequestInit) 
                 ))}
             </CardContent>
         </Card>
+    )
+}
+
+const PROVIDER_OPTIONS = ["visa", "mastercard", "amex", "cinetpay", "djamo", "stripe", "paypal", "applepay", "googlepay", "bank"]
+
+function PaymentMethodsTab({ api, locale }: { api: (p: string, i?: RequestInit) => Promise<Record<string, unknown> | null>; locale: string }) {
+    const t = useTranslations("billing")
+    const emptyForm = { provider: "visa", method_type: "card", nickname: "", holder_name: "", last4: "", expiry_month: "", expiry_year: "", is_default: false }
+    const [methods, setMethods] = useState<PaymentMethod[]>([])
+    const [adding, setAdding] = useState(false)
+    const [busy, setBusy] = useState(false)
+    const [form, setForm] = useState(emptyForm)
+
+    const load = useCallback(async () => {
+        const d = await api("/payment-methods")
+        if (d) setMethods((d.methods as PaymentMethod[]) || [])
+    }, [api])
+    useEffect(() => { void load() }, [load])
+
+    const typeLabel: Record<string, string> = { card: t("payments.typeCard"), mobile_money: t("payments.typeMobile"), bank: t("payments.typeBank"), wallet: t("payments.typeWallet") }
+
+    const add = async () => {
+        setBusy(true)
+        const body = { ...form, brand: form.provider, expiry_month: form.expiry_month ? Number(form.expiry_month) : null, expiry_year: form.expiry_year ? Number(form.expiry_year) : null }
+        const d = await api("/payment-methods", { method: "POST", body: JSON.stringify(body) })
+        setBusy(false)
+        if (d) { setAdding(false); setForm(emptyForm); void load() }
+    }
+    const setDefault = async (id: number) => { await api(`/payment-methods/${id}/default`, { method: "POST" }); void load() }
+    const remove = async (id: number) => { if (!window.confirm(t("payments.confirmRemove"))) return; await api(`/payment-methods/${id}`, { method: "DELETE" }); void load() }
+
+    return (
+        <div className="space-y-4">
+            <Card className="rounded-2xl border border-[#E5E7EB] shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-base">{t("payments.saved")}</CardTitle>
+                    <Button size="sm" onClick={() => setAdding(v => !v)}><Plus className="mr-1 h-4 w-4" /> {t("payments.add")}</Button>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                    {adding && (
+                        <div className="space-y-3 rounded-xl border border-[#E5E7EB] p-4 dark:border-[#3b4248]">
+                            <p className="text-sm font-semibold">{t("payments.addTitle")}</p>
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                <label className="text-sm">{t("payments.provider")}
+                                    <select className="apple-select mt-1 w-full" value={form.provider} onChange={e => setForm({ ...form, provider: e.target.value })}>
+                                        {PROVIDER_OPTIONS.map(p => <option key={p} value={p} className="capitalize">{p}</option>)}
+                                    </select>
+                                </label>
+                                <label className="text-sm">{t("payments.methodType")}
+                                    <select className="apple-select mt-1 w-full" value={form.method_type} onChange={e => setForm({ ...form, method_type: e.target.value })}>
+                                        <option value="card">{t("payments.typeCard")}</option>
+                                        <option value="mobile_money">{t("payments.typeMobile")}</option>
+                                        <option value="bank">{t("payments.typeBank")}</option>
+                                        <option value="wallet">{t("payments.typeWallet")}</option>
+                                    </select>
+                                </label>
+                                <label className="text-sm">{t("payments.nickname")}<input className="apple-input mt-1 w-full" value={form.nickname} onChange={e => setForm({ ...form, nickname: e.target.value })} /></label>
+                                <label className="text-sm">{t("payments.holder")}<input className="apple-input mt-1 w-full" value={form.holder_name} onChange={e => setForm({ ...form, holder_name: e.target.value })} /></label>
+                                <label className="text-sm">{t("payments.last4")}<input className="apple-input mt-1 w-full" maxLength={4} inputMode="numeric" value={form.last4} onChange={e => setForm({ ...form, last4: e.target.value.replace(/\D/g, "").slice(0, 4) })} /></label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <label className="text-sm">{t("payments.expMonth")}<input className="apple-input mt-1 w-full" inputMode="numeric" value={form.expiry_month} onChange={e => setForm({ ...form, expiry_month: e.target.value.replace(/\D/g, "").slice(0, 2) })} /></label>
+                                    <label className="text-sm">{t("payments.expYear")}<input className="apple-input mt-1 w-full" inputMode="numeric" value={form.expiry_year} onChange={e => setForm({ ...form, expiry_year: e.target.value.replace(/\D/g, "").slice(0, 4) })} /></label>
+                                </div>
+                            </div>
+                            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_default} onChange={e => setForm({ ...form, is_default: e.target.checked })} /> {t("payments.setDefault")}</label>
+                            <p className="text-xs text-[#6B7280]">{t("payments.secureNote")}</p>
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => { setAdding(false); setForm(emptyForm) }}>{t("cancel")}</Button>
+                                <Button className="bg-black text-white hover:bg-black/90" disabled={busy || !form.provider} onClick={add}>{t("payments.save")}</Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {methods.length === 0 && !adding ? (
+                        <p className="py-4 text-sm text-[#6B7280]">{t("payments.noMethods")}</p>
+                    ) : methods.map(m => (
+                        <div key={m.id} className="flex flex-col gap-2 rounded-xl border border-[#E5E7EB] p-3 sm:flex-row sm:items-center sm:justify-between dark:border-[#3b4248]">
+                            <div className="flex items-center gap-3">
+                                <span className="rounded-lg bg-[#F1F3F5] p-2 dark:bg-[#2a3035]"><CreditCard className="h-5 w-5" /></span>
+                                <div>
+                                    <p className="font-medium capitalize">{m.nickname || m.brand || m.provider}{m.last4 && <span className="ml-2 font-mono text-sm text-[#6B7280]">•••• {m.last4}</span>}</p>
+                                    <p className="text-xs text-[#6B7280]">
+                                        {typeLabel[m.method_type] || m.method_type}
+                                        {m.expiry_month && m.expiry_year ? ` · ${String(m.expiry_month).padStart(2, "0")}/${m.expiry_year}` : ""}
+                                        {m.is_default && <span className="ml-2 rounded-full bg-black px-2 py-0.5 text-[10px] font-medium text-white dark:bg-white dark:text-black">{t("payments.default")}</span>}
+                                        {m.expiry_state === "expired" && <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700">{t("payments.expired")}</span>}
+                                        {m.expiry_state === "expiring_soon" && <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">{t("payments.expiringSoon")}</span>}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex gap-1">
+                                {!m.is_default && <Button variant="outline" size="sm" onClick={() => setDefault(m.id)}><Star className="mr-1 h-3.5 w-3.5" /> {t("payments.setDefault")}</Button>}
+                                <Button variant="outline" size="sm" onClick={() => remove(m.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                            </div>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border border-[#E5E7EB] shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
+                <CardContent className="space-y-3 p-5">
+                    <p className="text-xs font-semibold uppercase text-[#6B7280]">{t("payments.supported")}</p>
+                    <div className="flex flex-wrap gap-2">{PROVIDERS.map(p => <span key={p} className="rounded-lg border border-[#E5E7EB] px-2.5 py-1 text-xs dark:border-[#3b4248]">{p}</span>)}</div>
+                    <Link href={`/${locale}/dashboard/account/payment-methods`}><Button variant="outline" size="sm"><CreditCard className="mr-1 h-4 w-4" /> {t("payments.manageInAccount")}</Button></Link>
+                </CardContent>
+            </Card>
+        </div>
     )
 }
 

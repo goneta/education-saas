@@ -3791,3 +3791,28 @@ class BillingAuditResponse(BaseModel):
     created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PaymentMethodCreate(BaseModel):
+    provider: str
+    method_type: str = "card"
+    nickname: Optional[str] = None
+    holder_name: Optional[str] = None
+    brand: Optional[str] = None
+    last4: Optional[str] = None
+    expiry_month: Optional[int] = None
+    expiry_year: Optional[int] = None
+    billing_address: Optional[dict] = None
+    gateway_token: Optional[str] = None
+    is_default: bool = False
+
+
+class PaymentMethodUpdate(BaseModel):
+    nickname: Optional[str] = None
+    holder_name: Optional[str] = None
+    brand: Optional[str] = None
+    last4: Optional[str] = None
+    expiry_month: Optional[int] = None
+    expiry_year: Optional[int] = None
+    billing_address: Optional[dict] = None
+    is_default: Optional[bool] = None

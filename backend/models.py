@@ -3383,6 +3383,39 @@ class BillingPromoRedemption(Base):
     user = relationship("User")
 
 
+class BillingPaymentMethod(Base):
+    """A saved payment method for a school.
+
+    PCI-safe by construction: we store only display metadata (brand, last four
+    digits, expiry) plus an optional gateway token reference — never the full
+    PAN, CVV or any sensitive number. The actual charge always goes through the
+    centralized Payment Service against the tokenised method.
+    """
+
+    __tablename__ = "billing_payment_methods"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    method_type = Column(String, default="card", nullable=False)  # card/mobile_money/bank/wallet
+    provider = Column(String, nullable=False)  # visa/mastercard/amex/cinetpay/djamo/stripe/paypal/bank…
+    nickname = Column(String, nullable=True)
+    holder_name = Column(String, nullable=True)
+    brand = Column(String, nullable=True)
+    last4 = Column(String, nullable=True)  # last 4 digits ONLY
+    expiry_month = Column(Integer, nullable=True)
+    expiry_year = Column(Integer, nullable=True)
+    billing_address = Column(JSON, nullable=True)
+    gateway_token = Column(String, nullable=True)  # opaque token from the gateway, no PAN
+    is_default = Column(Boolean, default=False, nullable=False)
+    status = Column(String, default="active", nullable=False, index=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    school = relationship("School")
+    created_by = relationship("User")
+
+
 class AIUsageLog(Base):
     __tablename__ = "ai_usage_logs"
 

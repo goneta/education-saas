@@ -186,6 +186,57 @@ def test_invoice_detail_and_pdf():
     assert exc.value.status_code == 404
 
 
+def test_payment_methods_crud_and_default_promotion():
+    db = _session()
+    school = _school(db)
+    admin = _user(db, school)
+
+    # First method becomes default automatically; last4 sanitized to 4 digits.
+    m1 = R.add_payment_method(schemas.PaymentMethodCreate(provider="visa", brand="Visa",
+         last4="4242 4242 4242 4242", expiry_month=12, expiry_year=2030, nickname="Main"),
+         school_id=None, db=db, current_user=admin)
+    assert m1["is_default"] is True
+    assert m1["last4"] == "4242"
+
+    m2 = R.add_payment_method(schemas.PaymentMethodCreate(provider="cinetpay", method_type="mobile_money",
+         nickname="Wave"), school_id=None, db=db, current_user=admin)
+    assert m2["is_default"] is False
+
+    # Set m2 default -> m1 loses default.
+    R.set_default_payment_method(m2["id"], school_id=None, db=db, current_user=admin)
+    listed = R.list_payment_methods(school_id=None, db=db, current_user=admin)["methods"]
+    by_id = {m["id"]: m for m in listed}
+    assert by_id[m2["id"]]["is_default"] is True
+    assert by_id[m1["id"]]["is_default"] is False
+    assert listed[0]["is_default"] is True  # default sorted first
+
+    # Update nickname.
+    upd = R.update_payment_method(m1["id"], schemas.PaymentMethodUpdate(nickname="Backup"),
+         school_id=None, db=db, current_user=admin)
+    assert upd["nickname"] == "Backup"
+
+    # Remove the default (m2) -> the remaining method is promoted to default.
+    R.remove_payment_method(m2["id"], school_id=None, db=db, current_user=admin)
+    remaining = R.list_payment_methods(school_id=None, db=db, current_user=admin)["methods"]
+    assert len(remaining) == 1
+    assert remaining[0]["id"] == m1["id"]
+    assert remaining[0]["is_default"] is True
+
+    # Unknown method -> 404.
+    with pytest.raises(HTTPException) as exc:
+        R.set_default_payment_method(999999, school_id=None, db=db, current_user=admin)
+    assert exc.value.status_code == 404
+
+
+def test_payment_method_expiry_state():
+    db = _session()
+    school = _school(db)
+    admin = _user(db, school)
+    expired = R.add_payment_method(schemas.PaymentMethodCreate(provider="visa", last4="1111",
+              expiry_month=1, expiry_year=2020), school_id=None, db=db, current_user=admin)
+    assert expired["expiry_state"] == "expired"
+
+
 def test_rbac_teacher_blocked_super_admin_revenue():
     db = _session()
     school = _school(db)

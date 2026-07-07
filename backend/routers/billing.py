@@ -243,6 +243,65 @@ def get_audit(school_id: Optional[int] = None, limit: int = 100,
     return billing.list_audit(db, school_id=resolved, limit=limit)
 
 
+# --- Saved payment methods ---------------------------------------------------
+
+@router.get("/payment-methods")
+def list_payment_methods(school_id: Optional[int] = None, db: Session = Depends(database.get_db),
+                         current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manage(current_user)
+    resolved = _school_id(current_user, school_id)
+    return {"methods": billing.list_payment_methods(db, resolved)}
+
+
+@router.post("/payment-methods")
+def add_payment_method(payload: schemas.PaymentMethodCreate, school_id: Optional[int] = None,
+                       db: Session = Depends(database.get_db),
+                       current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manage(current_user)
+    resolved = _school_id(current_user, school_id)
+    method = billing.add_payment_method(db, resolved, payload.model_dump(exclude_unset=True), current_user)
+    db.commit()
+    return billing.serialize_method(method)
+
+
+@router.patch("/payment-methods/{method_id}")
+def update_payment_method(method_id: int, payload: schemas.PaymentMethodUpdate, school_id: Optional[int] = None,
+                          db: Session = Depends(database.get_db),
+                          current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manage(current_user)
+    resolved = _school_id(current_user, school_id)
+    method = billing.update_payment_method(db, resolved, method_id, payload.model_dump(exclude_unset=True), current_user)
+    if not method:
+        raise HTTPException(status_code=404, detail="Moyen de paiement introuvable.")
+    db.commit()
+    return billing.serialize_method(method)
+
+
+@router.post("/payment-methods/{method_id}/default")
+def set_default_payment_method(method_id: int, school_id: Optional[int] = None,
+                               db: Session = Depends(database.get_db),
+                               current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manage(current_user)
+    resolved = _school_id(current_user, school_id)
+    method = billing.set_default_payment_method(db, resolved, method_id, current_user)
+    if not method:
+        raise HTTPException(status_code=404, detail="Moyen de paiement introuvable.")
+    db.commit()
+    return billing.serialize_method(method)
+
+
+@router.delete("/payment-methods/{method_id}")
+def remove_payment_method(method_id: int, school_id: Optional[int] = None,
+                          db: Session = Depends(database.get_db),
+                          current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manage(current_user)
+    resolved = _school_id(current_user, school_id)
+    if not billing.remove_payment_method(db, resolved, method_id, current_user):
+        raise HTTPException(status_code=404, detail="Moyen de paiement introuvable.")
+    db.commit()
+    return {"removed": True}
+
+
 # --- Super-admin -------------------------------------------------------------
 
 @router.get("/admin/revenue")

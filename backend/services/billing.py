@@ -625,3 +625,144 @@ def render_invoice_pdf(detail: dict) -> bytes:
     c.showPage()
     c.save()
     return buf.getvalue()
+
+
+# --- Saved payment methods ---------------------------------------------------
+# PCI-safe: only display metadata (brand/last4/expiry) + an optional gateway
+# token are stored. A raw card number is never accepted or persisted.
+
+def _digits4(value: Optional[str]) -> Optional[str]:
+    if not value:
+        return None
+    digits = "".join(ch for ch in str(value) if ch.isdigit())
+    return digits[-4:] if digits else None
+
+
+def _method_expiry_state(m: models.BillingPaymentMethod) -> str:
+    if not m.expiry_month or not m.expiry_year:
+        return "ok"
+    now = datetime.now(timezone.utc)
+    exp = (int(m.expiry_year), int(m.expiry_month))
+    cur = (now.year, now.month)
+    if exp < cur:
+        return "expired"
+    months_left = (exp[0] - cur[0]) * 12 + (exp[1] - cur[1])
+    return "expiring_soon" if months_left <= 2 else "ok"
+
+
+def serialize_method(m: models.BillingPaymentMethod) -> dict:
+    return {
+        "id": m.id,
+        "method_type": m.method_type,
+        "provider": m.provider,
+        "nickname": m.nickname,
+        "holder_name": m.holder_name,
+        "brand": m.brand,
+        "last4": m.last4,
+        "expiry_month": m.expiry_month,
+        "expiry_year": m.expiry_year,
+        "billing_address": m.billing_address,
+        "is_default": m.is_default,
+        "status": m.status,
+        "expiry_state": _method_expiry_state(m),
+    }
+
+
+def list_payment_methods(db: Session, school_id: int) -> list[dict]:
+    rows = (
+        db.query(models.BillingPaymentMethod)
+        .filter(models.BillingPaymentMethod.school_id == school_id,
+                models.BillingPaymentMethod.status == "active")
+        .order_by(models.BillingPaymentMethod.is_default.desc(),
+                  models.BillingPaymentMethod.created_at.desc())
+        .all()
+    )
+    return [serialize_method(m) for m in rows]
+
+
+def _active_methods(db: Session, school_id: int):
+    return db.query(models.BillingPaymentMethod).filter(
+        models.BillingPaymentMethod.school_id == school_id,
+        models.BillingPaymentMethod.status == "active",
+    )
+
+
+def add_payment_method(db: Session, school_id: int, data: dict, user: models.User) -> models.BillingPaymentMethod:
+    existing = _active_methods(db, school_id).count()
+    make_default = bool(data.get("is_default")) or existing == 0
+    if make_default:
+        _active_methods(db, school_id).update({models.BillingPaymentMethod.is_default: False})
+    method = models.BillingPaymentMethod(
+        school_id=school_id,
+        method_type=data.get("method_type") or "card",
+        provider=data["provider"],
+        nickname=data.get("nickname"),
+        holder_name=data.get("holder_name"),
+        brand=data.get("brand"),
+        last4=_digits4(data.get("last4")),
+        expiry_month=data.get("expiry_month"),
+        expiry_year=data.get("expiry_year"),
+        billing_address=data.get("billing_address"),
+        gateway_token=data.get("gateway_token"),
+        is_default=make_default,
+        created_by_id=user.id,
+    )
+    db.add(method)
+    db.flush()
+    record_audit(db, action="billing.payment_method.added", current_user=user,
+                 entity_type="billing_payment_method", entity_id=method.id,
+                 details={"provider": method.provider, "last4": method.last4, "default": make_default})
+    return method
+
+
+def _get_method(db: Session, school_id: int, method_id: int) -> Optional[models.BillingPaymentMethod]:
+    return _active_methods(db, school_id).filter(models.BillingPaymentMethod.id == method_id).first()
+
+
+def update_payment_method(db: Session, school_id: int, method_id: int, data: dict, user: models.User) -> Optional[models.BillingPaymentMethod]:
+    method = _get_method(db, school_id, method_id)
+    if not method:
+        return None
+    for field in ("nickname", "holder_name", "brand", "expiry_month", "expiry_year", "billing_address"):
+        if field in data and data[field] is not None:
+            setattr(method, field, data[field])
+    if data.get("last4") is not None:
+        method.last4 = _digits4(data.get("last4"))
+    if data.get("is_default"):
+        _active_methods(db, school_id).update({models.BillingPaymentMethod.is_default: False})
+        method.is_default = True
+    record_audit(db, action="billing.payment_method.updated", current_user=user,
+                 entity_type="billing_payment_method", entity_id=method.id, details={"school_id": school_id})
+    db.flush()
+    return method
+
+
+def set_default_payment_method(db: Session, school_id: int, method_id: int, user: models.User) -> Optional[models.BillingPaymentMethod]:
+    method = _get_method(db, school_id, method_id)
+    if not method:
+        return None
+    _active_methods(db, school_id).update({models.BillingPaymentMethod.is_default: False})
+    method.is_default = True
+    record_audit(db, action="billing.payment_method.default", current_user=user,
+                 entity_type="billing_payment_method", entity_id=method.id, details={"school_id": school_id})
+    db.flush()
+    return method
+
+
+def remove_payment_method(db: Session, school_id: int, method_id: int, user: models.User) -> bool:
+    method = _get_method(db, school_id, method_id)
+    if not method:
+        return False
+    was_default = method.is_default
+    method.status = "removed"
+    method.is_default = False
+    db.flush()
+    if was_default:
+        promoted = _active_methods(db, school_id).order_by(
+            models.BillingPaymentMethod.created_at.desc()).first()
+        if promoted:
+            promoted.is_default = True
+    record_audit(db, action="billing.payment_method.removed", current_user=user,
+                 entity_type="billing_payment_method", entity_id=method_id, details={"school_id": school_id})
+    db.flush()
+    return True

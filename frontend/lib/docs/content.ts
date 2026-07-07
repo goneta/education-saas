@@ -290,7 +290,7 @@ export const DOC_PAGES: Record<string, DocPage> = {
             { k: "table", headers: ["Tab", "What it does"], rows: [
                 ["Overview", "Current plan (name, price, cycle, status, renewal), credit balance, auto-recharge status, quick access and recent activity. Super-Admins also see revenue KPIs (MRR/ARR, outstanding, failed payments)."],
                 ["Subscription", "Plan catalog (Starter / Professional / Enterprise / Custom) with included credits, storage, users, schools and support level; switching routes through the existing subscription-change flow (with checkout when a provider is set)."],
-                ["Payment methods", "Supported providers (CinetPay — Orange/Wave/MTN/Moov, Djamo, Stripe, Visa, Mastercard, Amex, PayPal, Apple/Google Pay, bank transfer) with a deep link to manage saved methods."],
+                ["Payment methods", "Save, nickname, set-default and remove payment methods (card / mobile-money / bank / wallet) across all supported providers (CinetPay — Orange/Wave/MTN/Moov, Djamo, Stripe, Visa, Mastercard, Amex, PayPal, Apple/Google Pay, bank transfer), with expiry warnings. PCI-safe: only the brand, last 4 digits and expiry are stored — never the full card number."],
                 ["Billing history / Transactions", "Invoices and transactions projected from platform payments, with status badges, filtering, CSV export and one-click invoice PDF download (a real reportlab-generated PDF with issuer, bill-to, tax breakdown, totals and a verifiable QR reference)."],
                 ["Credits / Usage", "Credit balance and consumption (credits used, AI tokens, estimated cost, credits purchased); the credit store opens the AI credits page."],
                 ["Promotions", "Enter a coupon, promo, gift or referral code — validated then redeemed; credit-type codes top up the school wallet immediately."],
@@ -299,7 +299,7 @@ export const DOC_PAGES: Record<string, DocPage> = {
             ]},
             { k: "h2", text: "Security" },
             { k: "p", text: "Billing management is restricted to admin, direction and accounting roles; revenue analytics and promo-code authoring are Super-Admin only. Every mutation is audit-logged and school-scoped." },
-            { k: "callout", tone: "note", title: "Foundation + roadmap", text: "Shipped: the unified page and API (overview, subscription switching, preferences, tax, auto-recharge config, promo validate/redeem, projected invoices/transactions, usage, audit, super-admin revenue) plus one-click invoice PDF download. Roadmap: invoice e-mail delivery, live usage charts, saved payment-method card management UI, and the AI billing assistant — the underlying data already exists in TeducAI." },
+            { k: "callout", tone: "note", title: "Foundation + roadmap", text: "Shipped: the unified page and API (overview, subscription switching, preferences, tax, auto-recharge config, promo validate/redeem, projected invoices/transactions, usage, audit, super-admin revenue) plus one-click invoice PDF download and full saved payment-method management. Roadmap: invoice e-mail delivery, live usage charts, and the AI billing assistant — the underlying data already exists in TeducAI." },
         ),
     },
 
