@@ -3254,6 +3254,135 @@ class SchoolAICreditAllocation(Base):
     updated_by = relationship("User", foreign_keys=[updated_by_id])
 
 
+# --- Enterprise Billing & Subscription configuration -------------------------
+# These tables hold the *configuration* that the unified Billing module layers
+# on top of the existing money infrastructure (SchoolSubscription, AIWallet,
+# PlatformPayment, AICreditTransaction, AuditLog). No money data is duplicated:
+# subscriptions, wallets, payments and the audit trail stay in their own tables.
+
+
+class BillingPreference(Base):
+    """Per-school billing preferences (currency, invoice language, reminders)."""
+
+    __tablename__ = "billing_preferences"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, unique=True, index=True)
+    currency = Column(String, default="FCFA", nullable=False)
+    timezone = Column(String, nullable=True)
+    invoice_language = Column(String, default="fr", nullable=False)
+    email_invoices = Column(Boolean, default=True, nullable=False)
+    payment_reminders = Column(Boolean, default=True, nullable=False)
+    renewal_reminders = Column(Boolean, default=True, nullable=False)
+    auto_renew = Column(Boolean, default=True, nullable=False)
+    invoice_recipients = Column(JSON, nullable=True)  # list[str] extra emails
+    notification_channels = Column(JSON, nullable=True)  # {email,sms,push,inapp: bool}
+    updated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    school = relationship("School")
+    updated_by = relationship("User")
+
+
+class BillingTaxProfile(Base):
+    """Per-school tax identity (VAT/GST/Sales tax) + billing / shipping address."""
+
+    __tablename__ = "billing_tax_profiles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, unique=True, index=True)
+    tax_type = Column(String, default="vat", nullable=False)  # vat/gst/sales_tax/none
+    tax_id = Column(String, nullable=True)  # VAT / GST number
+    business_number = Column(String, nullable=True)
+    company_registration = Column(String, nullable=True)
+    legal_name = Column(String, nullable=True)
+    tax_rate = Column(Float, default=0, nullable=False)  # percent
+    tax_exempt = Column(Boolean, default=False, nullable=False)
+    billing_address = Column(JSON, nullable=True)
+    shipping_address = Column(JSON, nullable=True)
+    updated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    school = relationship("School")
+    updated_by = relationship("User")
+
+
+class WalletAutoRecharge(Base):
+    """Auto-recharge configuration for an AI credit wallet (one per wallet)."""
+
+    __tablename__ = "wallet_auto_recharges"
+
+    id = Column(Integer, primary_key=True, index=True)
+    wallet_id = Column(Integer, ForeignKey("ai_wallets.id"), nullable=False, unique=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    enabled = Column(Boolean, default=False, nullable=False, index=True)
+    threshold_credits = Column(Integer, default=0, nullable=False)  # trigger when balance <= this
+    recharge_credits = Column(Integer, default=0, nullable=False)  # credits added per recharge
+    recharge_amount = Column(Float, default=0, nullable=False)  # currency amount per recharge
+    currency = Column(String, nullable=True)
+    monthly_max_amount = Column(Float, nullable=True)  # hard monthly ceiling
+    pack_id = Column(Integer, ForeignKey("ai_credit_packs.id"), nullable=True)
+    payment_provider = Column(String, nullable=True)
+    month_anchor = Column(String, nullable=True)  # 'YYYY-MM' for the rolling monthly spend
+    month_spent_amount = Column(Float, default=0, nullable=False)
+    last_recharge_at = Column(DateTime(timezone=True), nullable=True)
+    updated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    wallet = relationship("AIWallet")
+    school = relationship("School")
+    pack = relationship("AICreditPack")
+    updated_by = relationship("User")
+
+
+class BillingPromoCode(Base):
+    """Coupon / promo / gift / referral code redeemable against billing."""
+
+    __tablename__ = "billing_promo_codes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String, nullable=False, unique=True, index=True)
+    kind = Column(String, default="coupon", nullable=False)  # coupon/promo/gift/referral
+    description = Column(String, nullable=True)
+    discount_type = Column(String, default="percent", nullable=False)  # percent/amount/credits
+    discount_value = Column(Float, default=0, nullable=False)
+    currency = Column(String, nullable=True)
+    applies_to = Column(String, default="any", nullable=False)  # any/subscription/credits
+    max_redemptions = Column(Integer, nullable=True)  # null = unlimited
+    per_school_limit = Column(Integer, default=1, nullable=True)
+    redeemed_count = Column(Integer, default=0, nullable=False)
+    starts_at = Column(DateTime(timezone=True), nullable=True)
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    created_by = relationship("User")
+
+
+class BillingPromoRedemption(Base):
+    """One redemption of a promo code by a school/user."""
+
+    __tablename__ = "billing_promo_redemptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    promo_id = Column(Integer, ForeignKey("billing_promo_codes.id"), nullable=False, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    context = Column(String, nullable=True)  # subscription/credits/manual
+    amount_discounted = Column(Float, default=0, nullable=False)
+    credits_granted = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    promo = relationship("BillingPromoCode")
+    school = relationship("School")
+    user = relationship("User")
+
+
 class AIUsageLog(Base):
     __tablename__ = "ai_usage_logs"
 

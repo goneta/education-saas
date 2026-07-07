@@ -3650,3 +3650,144 @@ class StartupWizardRequest(BaseModel):
     end_date: datetime
     template: Optional[str] = None
     create_defaults: bool = True
+
+
+# --- Enterprise Billing module ----------------------------------------------
+
+class BillingPreferenceUpdate(BaseModel):
+    currency: Optional[str] = None
+    timezone: Optional[str] = None
+    invoice_language: Optional[str] = None
+    email_invoices: Optional[bool] = None
+    payment_reminders: Optional[bool] = None
+    renewal_reminders: Optional[bool] = None
+    auto_renew: Optional[bool] = None
+    invoice_recipients: Optional[List[str]] = None
+    notification_channels: Optional[dict] = None
+
+
+class BillingPreferenceResponse(BaseModel):
+    id: int
+    school_id: int
+    currency: str
+    timezone: Optional[str] = None
+    invoice_language: str
+    email_invoices: bool
+    payment_reminders: bool
+    renewal_reminders: bool
+    auto_renew: bool
+    invoice_recipients: Optional[List[str]] = None
+    notification_channels: Optional[dict] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class BillingTaxUpdate(BaseModel):
+    tax_type: Optional[str] = None
+    tax_id: Optional[str] = None
+    business_number: Optional[str] = None
+    company_registration: Optional[str] = None
+    legal_name: Optional[str] = None
+    tax_rate: Optional[float] = None
+    tax_exempt: Optional[bool] = None
+    billing_address: Optional[dict] = None
+    shipping_address: Optional[dict] = None
+
+
+class BillingTaxResponse(BaseModel):
+    id: int
+    school_id: int
+    tax_type: str
+    tax_id: Optional[str] = None
+    business_number: Optional[str] = None
+    company_registration: Optional[str] = None
+    legal_name: Optional[str] = None
+    tax_rate: float
+    tax_exempt: bool
+    billing_address: Optional[dict] = None
+    shipping_address: Optional[dict] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AutoRechargeUpdate(BaseModel):
+    enabled: Optional[bool] = None
+    threshold_credits: Optional[int] = None
+    recharge_credits: Optional[int] = None
+    recharge_amount: Optional[float] = None
+    currency: Optional[str] = None
+    monthly_max_amount: Optional[float] = None
+    pack_id: Optional[int] = None
+    payment_provider: Optional[str] = None
+
+
+class AutoRechargeResponse(BaseModel):
+    id: int
+    wallet_id: int
+    school_id: Optional[int] = None
+    enabled: bool
+    threshold_credits: int
+    recharge_credits: int
+    recharge_amount: float
+    currency: Optional[str] = None
+    monthly_max_amount: Optional[float] = None
+    pack_id: Optional[int] = None
+    payment_provider: Optional[str] = None
+    last_recharge_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PromoValidateRequest(BaseModel):
+    code: str
+    context: str = "any"
+    base_amount: float = 0.0
+
+
+class PromoCodeCreate(BaseModel):
+    code: str
+    kind: str = "coupon"
+    description: Optional[str] = None
+    discount_type: str = "percent"
+    discount_value: float = 0
+    currency: Optional[str] = None
+    applies_to: str = "any"
+    max_redemptions: Optional[int] = None
+    per_school_limit: Optional[int] = 1
+    starts_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    is_active: bool = True
+
+
+class PromoCodeResponse(BaseModel):
+    id: int
+    code: str
+    kind: str
+    description: Optional[str] = None
+    discount_type: str
+    discount_value: float
+    currency: Optional[str] = None
+    applies_to: str
+    max_redemptions: Optional[int] = None
+    per_school_limit: Optional[int] = None
+    redeemed_count: int
+    starts_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    is_active: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class BillingAuditResponse(BaseModel):
+    id: int
+    action: str
+    entity_type: Optional[str] = None
+    entity_id: Optional[str] = None
+    details: Optional[dict] = None
+    ip_address: Optional[str] = None
+    actor_id: Optional[int] = None
+    created_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)

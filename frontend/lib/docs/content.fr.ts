@@ -56,6 +56,7 @@ export const DOC_GROUPS_FR: DocGroup[] = [
         { slug: "fees-payments", label: "Frais & paiements" },
         { slug: "cash-payments", label: "Paiements en espèces & crédits IA" },
         { slug: "payroll", label: "Paie" },
+        { slug: "billing", label: "Facturation & abonnements" },
     ]},
     { tab: "Features", title: "Transport intelligent", items: [
         { slug: "transport-overview", label: "Vue d'ensemble" },
@@ -289,6 +290,29 @@ export const DOC_PAGES_FR: Record<string, DocPage> = {
             { k: "h2", text: "Carnet de notes, statistiques & accès" },
             { k: "p", text: "« Envoyer au carnet de notes » crée l'évaluation correspondante et y verse les notes, alimentant bulletins, moyennes et statistiques. Les stats par devoir montrent les remis/corrigés, la moyenne de classe, le taux de réussite et les retards. Le corrigé est diffusé aux élèves selon la règle — jamais, après la date limite, ou immédiat — l'enseignant le voyant toujours. Élèves et parents consultent la copie corrigée, le commentaire et (si diffusé) le corrigé." },
             { k: "callout", tone: "note", title: "Fondation + feuille de route", text: "Voici le cœur du module (création dont IA + corrigé, modes en ligne/papier, remises, correction manuelle + IA, pont carnet de notes, stats, notifications, contrôle d'accès). Feuille de route : éditeur de questions multimédia, correction OCR des copies papier reliée à ce module (le moteur OCR [grade-scan](/docs/automations) existe déjà), détection de plagiat / de réponses IA, génération différenciée et de variantes, annotations vocales, et les tableaux de bord analytiques complets." },
+        ),
+    },
+
+    "billing": {
+        slug: "billing", label: "Facturation & abonnements", breadcrumb: "Fonctionnalités / Finance",
+        title: "Facturation & gestion des abonnements",
+        description: "Une page Facturation d'entreprise unique pour le forfait TeducAI, les crédits IA, les factures, la consommation, les promotions, la fiscalité et l'audit — une surface unifiée au-dessus de l'infrastructure d'abonnements, de crédits et de paiements de la plateforme.",
+        blocks: P(
+            { k: "p", text: "Le module Facturation (Finance → Billing) réunit les abonnements des établissements, les crédits IA et les paiements de la plateforme dans un tableau de bord de type Stripe/OpenAI. Il ne réimplémente pas la gestion de l'argent : c'est une surface unifiée au-dessus du moteur d'abonnements existant, des portefeuilles de crédits IA et du Service de paiement centralisé (zéro duplication de données)." },
+            { k: "h2", text: "Onglets" },
+            { k: "table", headers: ["Onglet", "Rôle"], rows: [
+                ["Aperçu", "Forfait actuel (nom, prix, cycle, statut, renouvellement), solde de crédits, statut de recharge automatique, accès rapide et activité récente. Le Super-Admin voit aussi les indicateurs de revenu (MRR/ARR, impayés, paiements échoués)."],
+                ["Abonnement", "Catalogue de forfaits (Starter / Professional / Enterprise / Custom) avec crédits inclus, stockage, utilisateurs, établissements et niveau de support ; le changement passe par le flux d'abonnement existant (avec paiement lorsqu'un fournisseur est défini)."],
+                ["Moyens de paiement", "Fournisseurs pris en charge (CinetPay — Orange/Wave/MTN/Moov, Djamo, Stripe, Visa, Mastercard, Amex, PayPal, Apple/Google Pay, virement) avec un lien profond pour gérer les moyens enregistrés."],
+                ["Historique / Transactions", "Factures et transactions projetées depuis les paiements de la plateforme, avec badges de statut, filtres et export CSV."],
+                ["Crédits / Consommation", "Solde de crédits et consommation (crédits utilisés, jetons IA, coût estimé, crédits achetés) ; la boutique de crédits ouvre la page des crédits IA."],
+                ["Promotions", "Saisir un code coupon, promo, cadeau ou parrainage — vérifié puis appliqué ; les codes de type crédits rechargent immédiatement le portefeuille de l'établissement."],
+                ["Préférences / TVA & Fiscalité", "Devise, fuseau horaire, langue des factures, envoi par e-mail, rappels de paiement/renouvellement, renouvellement automatique et destinataires ; identité TVA/GST/taxe, taux, exonération et adresse de facturation."],
+                ["Journaux d'audit", "Chaque action de facturation (préférences, fiscalité, recharge automatique, promo, changement d'abonnement, paiement) avec l'auteur et l'horodatage."],
+            ]},
+            { k: "h2", text: "Sécurité" },
+            { k: "p", text: "La gestion de la facturation est réservée aux rôles administration, direction et comptabilité ; les analyses de revenu et la création de codes promo sont réservées au Super-Admin. Chaque modification est auditée et cloisonnée par établissement." },
+            { k: "callout", tone: "note", title: "Socle + feuille de route", text: "Livré : la page et l'API unifiées (aperçu, changement d'abonnement, préférences, fiscalité, configuration de recharge automatique, vérification/application de promo, factures/transactions projetées, consommation, audit, revenu super-admin). Feuille de route : PDF/impression/e-mail des factures, graphiques de consommation en direct, gestion des cartes enregistrées, et l'assistant de facturation IA — les données sous-jacentes existent déjà dans TeducAI." },
         ),
     },
 

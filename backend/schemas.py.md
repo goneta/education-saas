@@ -70,3 +70,4 @@ The schema catalog includes enrollment, transfer, academic-year closure, tempora
 - `HomeworkReminderRunResult` (automation D homework-nudge summary).
 - `RecruiterSavedSearchCreate` / `RecruiterSavedSearchResponse` (automation D recruiter agents).
 - Grade OCR schemas: `GradeOcrConfirmEntry`/`GradeOcrConfirmRequest`/`GradeOcrConfirmResult`.
+- Billing schemas: `BillingPreferenceUpdate/Response`, `BillingTaxUpdate/Response`, `AutoRechargeUpdate/Response`, `PromoValidateRequest`, `PromoCodeCreate/Response`, `BillingAuditResponse`.

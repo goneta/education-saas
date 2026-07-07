@@ -171,6 +171,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
             title: t("finance"),
             items: [
                 { href: `/${locale}/dashboard/finance`, label: t("finance"), icon: CreditCard },
+                { href: `/${locale}/dashboard/finance/billing`, label: t("billing"), icon: WalletCards },
                 { href: `/${locale}/dashboard/finance/payroll`, label: t("payroll"), icon: Receipt },
                 { href: `/${locale}/dashboard/finance/fees`, label: t("fees"), icon: CreditCard },
                 { href: `/${locale}/dashboard/finance/reports`, label: t("reports"), icon: BarChart3 },

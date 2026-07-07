@@ -50,6 +50,31 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
+- **Enterprise Billing & Subscription module (foundation)**: a unified
+  **Finance → Billing** page (`/dashboard/finance/billing`) — a Stripe-/OpenAI-
+  style dashboard that is a *surface over the EXISTING money infra*, not a new
+  money system (zero duplication). Reuses `SchoolSubscription`
+  (`/system/subscription/change`), `AIWallet`/`PlatformPayment`/
+  `AICreditTransaction` (`/ai_billing`) and `AuditLog`. New config tables only
+  (migration 0051, new tables): `BillingPreference`, `BillingTaxProfile`,
+  `WalletAutoRecharge`, `BillingPromoCode`, `BillingPromoRedemption`.
+  `services/billing.py` + `routers/billing.py` (`/billing`): overview
+  aggregation, plan catalog (Starter/Professional/Enterprise/Custom mirroring
+  `SUBSCRIPTION_PRICES`), preferences, tax identity, auto-recharge config, promo
+  validate/redeem (credits-type codes top up the school wallet + write an
+  AICreditTransaction), invoices & transactions **projected** from
+  `PlatformPayment`, usage (via `ai_credits.usage_summary`), billing-scoped
+  audit, and Super-Admin revenue (MRR/ARR/outstanding/failed/by-country).
+  RBAC: manage = admin/direction/accounting; revenue + promo authoring =
+  Super-Admin only; every mutation audited (`billing.*`). Frontend page has 11
+  tabs (Overview, Subscription, Payment methods, Billing history, Credits,
+  Usage, Transactions, Promotions, Preferences, Tax & VAT, Audit) + CSV export;
+  `billing` i18n namespace (FR/EN full, es/sw fall back to EN), sidebar Finance →
+  Billing, docs page (EN+FR) + help section (4-locale) + DOX + tests
+  (`test_billing.py`, 10 green). **Roadmap (documented, NOT built):** invoice
+  PDF/print/email, live usage charts, saved payment-method card management UI,
+  AI billing assistant — underlying data already exists.
+
 - **Homework / exercise / correction / evaluation module (foundation)**: a
   full assignments module built on the EXISTING `Assignment` /
   `AssignmentSubmission` tables (extended column-only in migration 0050;

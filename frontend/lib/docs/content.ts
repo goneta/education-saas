@@ -41,6 +41,7 @@ export const DOC_GROUPS: DocGroup[] = [
         { slug: "fees-payments", label: "Fees & payments" },
         { slug: "cash-payments", label: "Cash payments & AI credits" },
         { slug: "payroll", label: "Payroll" },
+        { slug: "billing", label: "Billing & subscriptions" },
     ]},
     { tab: "Features", title: "Smart Transport", items: [
         { slug: "transport-overview", label: "Overview" },
@@ -276,6 +277,29 @@ export const DOC_PAGES: Record<string, DocPage> = {
             { k: "h2", text: "Gradebook, statistics & access" },
             { k: "p", text: "“Push to gradebook” creates the matching assessment and posts the marks, feeding report cards, averages and statistics. Per-assignment stats show submitted/graded counts, class average, success rate and late count. The answer key is released to students by rule — never, after the due date, or immediately — while teachers always see it. Students and parents review the corrected copy, feedback and (when released) the corrigé." },
             { k: "callout", tone: "note", title: "Foundation + roadmap", text: "This is the module's core (creation incl. AI + corrigé, online/paper modes, submissions, manual + AI grading, gradebook bridge, stats, notifications, access control). Roadmap: rich-media question editor, paper-scan OCR correction wired to this module (the [grade-scan](/docs/automations) OCR engine already exists), plagiarism / AI-answer detection, differentiated & variant generation, voice annotations, and the full analytics dashboards." },
+        ),
+    },
+
+    "billing": {
+        slug: "billing", label: "Billing & subscriptions", breadcrumb: "Features / Finance",
+        title: "Billing & subscription management",
+        description: "One enterprise Billing page for the TeducAI plan, AI credits, invoices, usage, promotions, tax and audit — a unified surface over the platform's subscription, credit and payment infrastructure.",
+        blocks: P(
+            { k: "p", text: "The Billing module (Finance → Billing) brings school subscriptions, AI credits and platform payments into a single Stripe-/OpenAI-style dashboard. It does not re-implement money handling: it is a unified surface over the existing subscription engine, AI credit wallets and the centralized Payment Service (zero data duplication)." },
+            { k: "h2", text: "Tabs" },
+            { k: "table", headers: ["Tab", "What it does"], rows: [
+                ["Overview", "Current plan (name, price, cycle, status, renewal), credit balance, auto-recharge status, quick access and recent activity. Super-Admins also see revenue KPIs (MRR/ARR, outstanding, failed payments)."],
+                ["Subscription", "Plan catalog (Starter / Professional / Enterprise / Custom) with included credits, storage, users, schools and support level; switching routes through the existing subscription-change flow (with checkout when a provider is set)."],
+                ["Payment methods", "Supported providers (CinetPay — Orange/Wave/MTN/Moov, Djamo, Stripe, Visa, Mastercard, Amex, PayPal, Apple/Google Pay, bank transfer) with a deep link to manage saved methods."],
+                ["Billing history / Transactions", "Invoices and transactions projected from platform payments, with status badges, filtering and CSV export."],
+                ["Credits / Usage", "Credit balance and consumption (credits used, AI tokens, estimated cost, credits purchased); the credit store opens the AI credits page."],
+                ["Promotions", "Enter a coupon, promo, gift or referral code — validated then redeemed; credit-type codes top up the school wallet immediately."],
+                ["Preferences / Tax & VAT", "Currency, timezone, invoice language, e-mail invoices, payment/renewal reminders, auto-renew and recipients; VAT/GST/Sales-tax identity, tax rate, exemption and billing address."],
+                ["Audit logs", "Every billing action (preferences, tax, auto-recharge, promo redemption, subscription change, payment) with actor and timestamp."],
+            ]},
+            { k: "h2", text: "Security" },
+            { k: "p", text: "Billing management is restricted to admin, direction and accounting roles; revenue analytics and promo-code authoring are Super-Admin only. Every mutation is audit-logged and school-scoped." },
+            { k: "callout", tone: "note", title: "Foundation + roadmap", text: "Shipped: the unified page and API (overview, subscription switching, preferences, tax, auto-recharge config, promo validate/redeem, projected invoices/transactions, usage, audit, super-admin revenue). Roadmap: invoice PDF/print/e-mail, live usage charts, saved payment-method card management UI, and the AI billing assistant — the underlying data already exists in TeducAI." },
         ),
     },
 
