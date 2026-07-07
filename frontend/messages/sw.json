@@ -1217,7 +1217,15 @@
       "today": "Today",
       "week": "Week",
       "month": "Month",
-      "year": "Year"
+      "year": "Year",
+      "requests": "Requests",
+      "spend": "Spend",
+      "byModule": "Credits by module",
+      "trend": "Trend",
+      "noData": "No usage in this period yet.",
+      "d7": "7 days",
+      "d30": "30 days",
+      "d90": "90 days"
     },
     "credits": {
       "title": "Buy credits",

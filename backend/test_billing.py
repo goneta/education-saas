@@ -271,6 +271,34 @@ def test_billing_assistant_grounds_on_real_data(monkeypatch):
     assert db.query(models.AIUsageLog).count() >= 1
 
 
+def test_usage_timeseries_buckets_by_day():
+    db = _session()
+    school = _school(db)
+    admin = _user(db, school)
+    db.add(models.AIUsageLog(school_id=school.id, module_name="chat", credits_charged=10,
+                             total_tokens=500, estimated_cost=1.5, status="successful"))
+    db.add(models.AIUsageLog(school_id=school.id, module_name="chat", credits_charged=5,
+                             total_tokens=200, estimated_cost=0.5, status="successful"))
+    db.add(models.AIUsageLog(school_id=school.id, module_name="ai_learning", credits_charged=7,
+                             total_tokens=300, estimated_cost=0.7, status="successful"))
+    db.add(models.PlatformPayment(reference="TS-1", school_id=school.id, payment_type="credit_purchase",
+                                  amount=25000, currency="FCFA", provider="stripe", status="successful",
+                                  beneficiary_entity="platform", credits_amount=500))
+    db.commit()
+
+    out = R.get_usage_timeseries(days=30, school_id=None, db=db, current_user=admin)
+    assert len(out["series"]) == 30  # continuous x-axis
+    assert out["totals"]["credits"] == 22
+    assert out["totals"]["requests"] == 3
+    assert out["totals"]["tokens"] == 1000
+    assert out["totals"]["spend"] == 25000
+    # Today's bucket carries the activity.
+    today = [b for b in out["series"] if b["credits"] > 0]
+    assert today and today[-1]["credits"] == 22
+    mods = {m["module"]: m["credits"] for m in out["by_module"]}
+    assert mods["chat"] == 15 and mods["ai_learning"] == 7
+
+
 def test_billing_assistant_empty_question_no_ai():
     db = _session()
     school = _school(db)

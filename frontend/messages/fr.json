@@ -1217,7 +1217,15 @@
       "today": "Aujourd'hui",
       "week": "Semaine",
       "month": "Mois",
-      "year": "Année"
+      "year": "Année",
+      "requests": "Requêtes",
+      "spend": "Dépenses",
+      "byModule": "Crédits par module",
+      "trend": "Tendance",
+      "noData": "Aucune consommation sur cette période.",
+      "d7": "7 jours",
+      "d30": "30 jours",
+      "d90": "90 jours"
     },
     "credits": {
       "title": "Acheter des crédits",

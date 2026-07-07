@@ -40,6 +40,8 @@ interface Tax { tax_type: string; tax_id?: string | null; business_number?: stri
 interface AuditRow { id: number; action: string; entity_type?: string | null; details?: Record<string, unknown> | null; ip_address?: string | null; created_at?: string | null }
 interface Revenue { total_revenue: number; mrr: number; arr: number; total_schools: number; outstanding: number; failed_payments: number; revenue_by_country: { country: string; amount: number }[] }
 interface PaymentMethod { id: number; method_type: string; provider: string; nickname?: string | null; holder_name?: string | null; brand?: string | null; last4?: string | null; expiry_month?: number | null; expiry_year?: number | null; is_default: boolean; expiry_state: string }
+interface UsagePoint { date: string; credits: number; tokens: number; requests: number; cost: number; spend: number }
+interface UsageTimeseries { days: number; series: UsagePoint[]; by_module: { module: string; credits: number }[]; totals: { credits: number; tokens: number; requests: number; cost: number; spend: number } }
 
 const PROVIDERS = ["CinetPay · Orange · Wave · MTN · Moov", "Djamo", "Stripe", "Visa", "Mastercard", "American Express", "PayPal", "Apple Pay", "Google Pay", "Bank transfer"]
 const STATUS_STYLES: Record<string, string> = {
@@ -321,15 +323,7 @@ export default function BillingPage() {
             )}
 
             {/* --- USAGE --- */}
-            {tab === "usage" && overview && (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {[["balance", overview.wallet.balance_credits], ["creditsUsed", overview.usage.credits_used], ["tokens", overview.usage.tokens_used], ["creditsSold", overview.usage.credits_sold], ["estimatedCost", overview.usage.estimated_cost]].map(([k, v]) => (
-                        <Card key={String(k)} className="rounded-2xl border border-[#E5E7EB] shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
-                            <CardContent className="p-5"><p className="text-xs uppercase text-[#6B7280]">{t(`usage.${k}` as "usage.balance")}</p><p className="mt-1 text-2xl font-bold">{k === "estimatedCost" ? fmtMoney(Number(v)) : new Intl.NumberFormat(locale).format(Number(v))}</p></CardContent>
-                        </Card>
-                    ))}
-                </div>
-            )}
+            {tab === "usage" && <UsageTab api={api} locale={locale} fmtMoney={fmtMoney} />}
 
             {/* --- TRANSACTIONS --- */}
             {tab === "transactions" && (
@@ -631,6 +625,102 @@ function PaymentMethodsTab({ api, locale }: { api: (p: string, i?: RequestInit) 
                     <p className="text-xs font-semibold uppercase text-[#6B7280]">{t("payments.supported")}</p>
                     <div className="flex flex-wrap gap-2">{PROVIDERS.map(p => <span key={p} className="rounded-lg border border-[#E5E7EB] px-2.5 py-1 text-xs dark:border-[#3b4248]">{p}</span>)}</div>
                     <Link href={`/${locale}/dashboard/account/payment-methods`}><Button variant="outline" size="sm"><CreditCard className="mr-1 h-4 w-4" /> {t("payments.manageInAccount")}</Button></Link>
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
+
+function LineChart({ points, color }: { points: number[]; color: string }) {
+    const w = 600, h = 150, pad = 10
+    const max = Math.max(1, ...points)
+    const step = points.length > 1 ? (w - 2 * pad) / (points.length - 1) : 0
+    const coords = points.map((v, i) => [pad + i * step, h - pad - (v / max) * (h - 2 * pad)] as const)
+    const line = coords.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ")
+    const lastX = (pad + (points.length - 1) * step).toFixed(1)
+    const area = `${line} L${lastX},${h - pad} L${pad},${h - pad} Z`
+    return (
+        <svg viewBox={`0 0 ${w} ${h}`} className="h-40 w-full" preserveAspectRatio="none">
+            <path d={area} fill={color} opacity={0.12} />
+            <path d={line} fill="none" stroke={color} strokeWidth={2} vectorEffect="non-scaling-stroke" />
+        </svg>
+    )
+}
+
+const USAGE_METRICS = [
+    { k: "credits", label: "creditsUsed", pick: (b: UsagePoint) => b.credits, color: "#2563eb", money: false },
+    { k: "tokens", label: "tokens", pick: (b: UsagePoint) => b.tokens, color: "#7c3aed", money: false },
+    { k: "requests", label: "requests", pick: (b: UsagePoint) => b.requests, color: "#0891b2", money: false },
+    { k: "spend", label: "spend", pick: (b: UsagePoint) => b.spend, color: "#059669", money: true },
+] as const
+
+function UsageTab({ api, locale, fmtMoney }: { api: (p: string, i?: RequestInit) => Promise<Record<string, unknown> | null>; locale: string; fmtMoney: (n: number) => string }) {
+    const t = useTranslations("billing")
+    const [data, setData] = useState<UsageTimeseries | null>(null)
+    const [days, setDays] = useState(30)
+    const [metric, setMetric] = useState<string>("credits")
+
+    useEffect(() => {
+        void (async () => { const d = await api(`/usage/timeseries?days=${days}`); if (d) setData(d as unknown as UsageTimeseries) })()
+    }, [api, days])
+
+    const active = USAGE_METRICS.find(m => m.k === metric) || USAGE_METRICS[0]
+    const nf = new Intl.NumberFormat(locale)
+    const modMax = Math.max(1, ...(data?.by_module || []).map(m => m.credits))
+
+    return (
+        <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex gap-1">
+                    {USAGE_METRICS.map(m => (
+                        <button key={m.k} onClick={() => setMetric(m.k)} className={`rounded-full px-3 py-1 text-xs font-medium transition ${metric === m.k ? "bg-black text-white dark:bg-white dark:text-black" : "border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F6F7F9] dark:border-[#3b4248] dark:hover:bg-[#2a3035]"}`}>{t(`usage.${m.label}` as "usage.creditsUsed")}</button>
+                    ))}
+                </div>
+                <div className="flex gap-1">
+                    {([[7, "d7"], [30, "d30"], [90, "d90"]] as [number, string][]).map(([n, k]) => (
+                        <button key={String(n)} onClick={() => setDays(Number(n))} className={`rounded-full px-3 py-1 text-xs font-medium transition ${days === n ? "bg-black text-white dark:bg-white dark:text-black" : "border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F6F7F9] dark:border-[#3b4248] dark:hover:bg-[#2a3035]"}`}>{t(`usage.${k}` as "usage.d30")}</button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Total cards */}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {([["creditsUsed", data?.totals.credits, false], ["tokens", data?.totals.tokens, false], ["requests", data?.totals.requests, false], ["spend", data?.totals.spend, true]] as [string, number | undefined, boolean][]).map(([k, v, money]) => (
+                    <Card key={k} className="rounded-2xl border border-[#E5E7EB] shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
+                        <CardContent className="p-5"><p className="text-xs uppercase text-[#6B7280]">{t(`usage.${k}` as "usage.creditsUsed")}</p><p className="mt-1 text-2xl font-bold">{money ? fmtMoney(v || 0) : nf.format(v || 0)}</p></CardContent>
+                    </Card>
+                ))}
+            </div>
+
+            {/* Trend chart */}
+            <Card className="rounded-2xl border border-[#E5E7EB] shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
+                <CardHeader><CardTitle className="text-base">{t("usage.trend")} · {t(`usage.${active.label}` as "usage.creditsUsed")}</CardTitle></CardHeader>
+                <CardContent>
+                    {data && data.series.some(b => active.pick(b) > 0) ? (
+                        <>
+                            <LineChart points={data.series.map(active.pick)} color={active.color} />
+                            <div className="mt-1 flex justify-between text-[10px] text-[#94A3B8]">
+                                <span>{data.series[0]?.date}</span>
+                                <span>{data.series[data.series.length - 1]?.date}</span>
+                            </div>
+                        </>
+                    ) : <p className="py-8 text-center text-sm text-[#6B7280]">{t("usage.noData")}</p>}
+                </CardContent>
+            </Card>
+
+            {/* By module */}
+            <Card className="rounded-2xl border border-[#E5E7EB] shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
+                <CardHeader><CardTitle className="text-base">{t("usage.byModule")}</CardTitle></CardHeader>
+                <CardContent className="space-y-2">
+                    {data && data.by_module.length ? data.by_module.map(m => (
+                        <div key={m.module} className="flex items-center gap-3 text-sm">
+                            <span className="w-32 shrink-0 truncate capitalize text-[#374151] dark:text-[#c7d0da]">{m.module.replace(/_/g, " ")}</span>
+                            <div className="h-3 flex-1 overflow-hidden rounded-full bg-[#F1F3F5] dark:bg-[#2a3035]">
+                                <div className="h-full rounded-full bg-[#2563eb]" style={{ width: `${(m.credits / modMax) * 100}%` }} />
+                            </div>
+                            <span className="w-16 shrink-0 text-right font-medium">{nf.format(m.credits)}</span>
+                        </div>
+                    )) : <p className="py-4 text-center text-sm text-[#6B7280]">{t("usage.noData")}</p>}
                 </CardContent>
             </Card>
         </div>

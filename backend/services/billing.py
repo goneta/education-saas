@@ -867,3 +867,75 @@ def billing_assistant(db: Session, school_id: int, current_user: models.User, qu
         "last_month_spend": context["last_month_spend"],
         "wallet_balance_credits": context["wallet_balance_credits"],
     }}
+
+
+# --- Usage time-series (for charts) ------------------------------------------
+# Per-day AI usage (credits, tokens, requests, cost) + spend, plus a by-module
+# breakdown, over a window. Bucketed in Python for SQLite/Postgres portability.
+
+def usage_timeseries(db: Session, school_id: int, *, days: int = 30) -> dict:
+    from datetime import timedelta
+
+    days = max(1, min(int(days or 30), 365))
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=days - 1)
+    cutoff_day = cutoff.date()
+
+    logs = (
+        db.query(models.AIUsageLog)
+        .filter(models.AIUsageLog.school_id == school_id,
+                models.AIUsageLog.created_at >= cutoff)
+        .all()
+    )
+    payments = (
+        db.query(models.PlatformPayment)
+        .filter(models.PlatformPayment.school_id == school_id,
+                models.PlatformPayment.status == "successful",
+                models.PlatformPayment.created_at >= cutoff)
+        .all()
+    )
+
+    # Pre-seed every day in the window so the chart x-axis is continuous.
+    buckets: dict[str, dict] = {}
+    for i in range(days):
+        d = (cutoff_day + timedelta(days=i)).isoformat()
+        buckets[d] = {"date": d, "credits": 0, "tokens": 0, "requests": 0, "cost": 0.0, "spend": 0.0}
+
+    by_module: dict[str, int] = {}
+    for log in logs:
+        created = log.created_at
+        if not created:
+            continue
+        key = created.date().isoformat()
+        b = buckets.get(key)
+        if b is None:
+            continue
+        b["credits"] += int(log.credits_charged or 0)
+        b["tokens"] += int(log.total_tokens or 0)
+        b["requests"] += 1
+        b["cost"] += float(log.estimated_cost or 0)
+        mod = log.module_name or "other"
+        by_module[mod] = by_module.get(mod, 0) + int(log.credits_charged or 0)
+
+    for p in payments:
+        created = p.created_at
+        if not created:
+            continue
+        key = created.date().isoformat()
+        b = buckets.get(key)
+        if b is not None:
+            b["spend"] += float(p.amount or 0)
+
+    series = [buckets[k] for k in sorted(buckets)]
+    top_modules = sorted(
+        ({"module": m, "credits": c} for m, c in by_module.items()),
+        key=lambda x: x["credits"], reverse=True,
+    )[:6]
+    totals = {
+        "credits": sum(b["credits"] for b in series),
+        "tokens": sum(b["tokens"] for b in series),
+        "requests": sum(b["requests"] for b in series),
+        "cost": round(sum(b["cost"] for b in series), 2),
+        "spend": round(sum(b["spend"] for b in series), 2),
+    }
+    return {"days": days, "series": series, "by_module": top_modules, "totals": totals}

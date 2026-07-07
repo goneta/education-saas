@@ -86,8 +86,12 @@ notifications and master data (zero data duplication).
   wallet, this-vs-last-month spend, outstanding/failed, recent transactions,
   plan catalog) via `ai_service.generate_response_from_config`, credit-gated;
   Overview-tab `BillingAssistant` panel with suggested-question chips.
-  **Roadmap (documented, NOT built):** invoice email delivery, live usage
-  charts —
+  **Live usage charts (shipped):** `GET /billing/usage/timeseries` +
+  `usage_timeseries` (per-day credits/tokens/requests/cost/spend, gap-free
+  window, top-6 by-module); the Usage tab (`UsageTab`) renders a metric toggle,
+  a 7/30/90-day period toggle, a dependency-free inline-SVG `LineChart` trend
+  and a by-module bar chart.
+  **Roadmap (documented, NOT built):** invoice email delivery —
   underlying data already exists.
 
 - **Homework / exercise / correction / evaluation module (foundation)**: a

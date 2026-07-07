@@ -233,6 +233,15 @@ def get_usage(school_id: Optional[int] = None, db: Session = Depends(database.ge
     return {"summary": summary, "balance_credits": wallet.balance_credits}
 
 
+@router.get("/usage/timeseries")
+def get_usage_timeseries(days: int = 30, school_id: Optional[int] = None,
+                         db: Session = Depends(database.get_db),
+                         current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manage(current_user)
+    resolved = _school_id(current_user, school_id)
+    return billing.usage_timeseries(db, resolved, days=days)
+
+
 @router.get("/audit", response_model=List[schemas.BillingAuditResponse])
 def get_audit(school_id: Optional[int] = None, limit: int = 100,
               db: Session = Depends(database.get_db),

@@ -292,7 +292,7 @@ export const DOC_PAGES: Record<string, DocPage> = {
                 ["Subscription", "Plan catalog (Starter / Professional / Enterprise / Custom) with included credits, storage, users, schools and support level; switching routes through the existing subscription-change flow (with checkout when a provider is set)."],
                 ["Payment methods", "Save, nickname, set-default and remove payment methods (card / mobile-money / bank / wallet) across all supported providers (CinetPay — Orange/Wave/MTN/Moov, Djamo, Stripe, Visa, Mastercard, Amex, PayPal, Apple/Google Pay, bank transfer), with expiry warnings. PCI-safe: only the brand, last 4 digits and expiry are stored — never the full card number."],
                 ["Billing history / Transactions", "Invoices and transactions projected from platform payments, with status badges, filtering, CSV export and one-click invoice PDF download (a real reportlab-generated PDF with issuer, bill-to, tax breakdown, totals and a verifiable QR reference)."],
-                ["Credits / Usage", "Credit balance and consumption (credits used, AI tokens, estimated cost, credits purchased); the credit store opens the AI credits page."],
+                ["Credits / Usage", "Credit balance and consumption with live charts: a per-day trend (credits, AI tokens, requests or spend) over 7/30/90 days plus a credits-by-module breakdown; the credit store opens the AI credits page."],
                 ["Promotions", "Enter a coupon, promo, gift or referral code — validated then redeemed; credit-type codes top up the school wallet immediately."],
                 ["Preferences / Tax & VAT", "Currency, timezone, invoice language, e-mail invoices, payment/renewal reminders, auto-renew and recipients; VAT/GST/Sales-tax identity, tax rate, exemption and billing address."],
                 ["Audit logs", "Every billing action (preferences, tax, auto-recharge, promo redemption, subscription change, payment) with actor and timestamp."],
@@ -300,7 +300,7 @@ export const DOC_PAGES: Record<string, DocPage> = {
             ]},
             { k: "h2", text: "Security" },
             { k: "p", text: "Billing management is restricted to admin, direction and accounting roles; revenue analytics and promo-code authoring are Super-Admin only. Every mutation is audit-logged and school-scoped." },
-            { k: "callout", tone: "note", title: "Foundation + roadmap", text: "Shipped: the unified page and API (overview, subscription switching, preferences, tax, auto-recharge config, promo validate/redeem, projected invoices/transactions, usage, audit, super-admin revenue) plus one-click invoice PDF download, full saved payment-method management and an AI billing assistant grounded in your real data. Roadmap: invoice e-mail delivery and live usage charts — the underlying data already exists in TeducAI." },
+            { k: "callout", tone: "note", title: "Foundation + roadmap", text: "Shipped: the unified page and API (overview, subscription switching, preferences, tax, auto-recharge config, promo validate/redeem, projected invoices/transactions, usage, audit, super-admin revenue) plus one-click invoice PDF download, full saved payment-method management, an AI billing assistant grounded in your real data, and live usage charts. Roadmap: invoice e-mail delivery — the underlying data already exists in TeducAI." },
         ),
     },
 
