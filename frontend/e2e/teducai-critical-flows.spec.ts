@@ -396,7 +396,10 @@ async function loginThroughUi(page: Page, auth: AuthContext) {
 
 async function expectTextOnPage(page: Page, path: string, text: string) {
   await page.goto(`/${LOCALE}${path}`);
-  await expect(page.getByText(text, { exact: false }).first()).toBeVisible();
+  // Scope to a VISIBLE match: getByText also matches hidden <option> items inside a
+  // <select> (e.g. a class filter dropdown), which Playwright reports as "hidden".
+  // `.and(:visible)` keeps only rendered elements so we assert the real on-page copy.
+  await expect(page.getByText(text, { exact: false }).and(page.locator(":visible")).first()).toBeVisible();
 }
 
 test.describe('TeducAI critical end-to-end school workflows', () => {

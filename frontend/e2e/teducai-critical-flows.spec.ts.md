@@ -25,3 +25,4 @@
 
 - cmd.exe /c "cd frontend&& npx playwright test" when environment is available
 - `loginThroughUi` locates the login form by stable ids (`#email`/`#password`) and a structural `button[type="submit"]` scoped to `form:has(#password)` — never by the translated submit label, which is brittle across locales/builds.
+- `expectTextOnPage` intersects the text locator with `page.locator(":visible")` (`.and(...)`) before asserting `toBeVisible()`, because `getByText` can resolve to a hidden `<option>` inside a `<select>` (e.g. the class filter dropdown on `/dashboard/education/classes`) which Playwright reports as `hidden`. The `:visible` filter still fails correctly if the seeded record never renders on the page.
