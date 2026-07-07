@@ -12,3 +12,4 @@
 - `python -m pytest backend/test_billing.py` (10 tests, all green).
 - Invoice PDF test: `test_invoice_detail_and_pdf` verifies detail assembly (tax-inclusive breakdown, customer tax id), a valid %PDF response with attachment filename, and 404 for unknown/cross-school invoices.
 - Payment-method tests: `test_payment_methods_crud_and_default_promotion` (auto-default, last4 sanitize, set-default unsets others, remove promotes newest, 404) and `test_payment_method_expiry_state`.
+- AI assistant tests: `test_billing_assistant_grounds_on_real_data` (mocked AI; prompt carries real subscription + spend data; usage recorded) and `test_billing_assistant_empty_question_no_ai`.

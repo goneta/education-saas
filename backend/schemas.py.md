@@ -72,3 +72,4 @@ The schema catalog includes enrollment, transfer, academic-year closure, tempora
 - Grade OCR schemas: `GradeOcrConfirmEntry`/`GradeOcrConfirmRequest`/`GradeOcrConfirmResult`.
 - Billing schemas: `BillingPreferenceUpdate/Response`, `BillingTaxUpdate/Response`, `AutoRechargeUpdate/Response`, `PromoValidateRequest`, `PromoCodeCreate/Response`, `BillingAuditResponse`.
 - Payment-method schemas: `PaymentMethodCreate`, `PaymentMethodUpdate`.
+- `BillingAssistantRequest` (billing assistant question + optional language).

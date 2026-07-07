@@ -766,3 +766,104 @@ def remove_payment_method(db: Session, school_id: int, method_id: int, user: mod
                  entity_type="billing_payment_method", entity_id=method_id, details={"school_id": school_id})
     db.flush()
     return True
+
+
+# --- AI billing assistant ----------------------------------------------------
+# Answers a school's billing questions grounded STRICTLY in that school's real
+# billing data (subscription, wallet, usage, spend, transactions, plan catalog).
+# Credit-gated on the caller's AI wallet, like every other AI feature.
+
+def _assistant_context(db: Session, school_id: int) -> dict:
+    sub = current_subscription(db, school_id)
+    plan_meta = _plan_by_key(sub.plan if sub else "free") or _plan_by_key("free")
+    wallet = ai_credits.get_or_create_wallet(db, "school", None, school_id)
+    usage = ai_credits.usage_summary(db, school_id=school_id)
+    auto = get_auto_recharge(db, wallet, create=False)
+
+    paid = db.query(models.PlatformPayment).filter(
+        models.PlatformPayment.school_id == school_id,
+        models.PlatformPayment.status == "successful",
+    ).all()
+    now = datetime.now(timezone.utc)
+    cur_key = (now.year, now.month)
+    prev_year, prev_month = (now.year, now.month - 1) if now.month > 1 else (now.year - 1, 12)
+    prev_key = (prev_year, prev_month)
+    month_spend, prev_spend = 0.0, 0.0
+    for p in paid:
+        created = p.created_at
+        if not created:
+            continue
+        key = (created.year, created.month)
+        if key == cur_key:
+            month_spend += float(p.amount or 0)
+        elif key == prev_key:
+            prev_spend += float(p.amount or 0)
+
+    outstanding = db.query(models.PlatformPayment).filter(
+        models.PlatformPayment.school_id == school_id,
+        models.PlatformPayment.status.in_(["pending", "pending_payment"]),
+    ).count()
+    failed = db.query(models.PlatformPayment).filter(
+        models.PlatformPayment.school_id == school_id,
+        models.PlatformPayment.status == "failed",
+    ).count()
+
+    recent = list_transactions(db, school_id, limit=8)
+    catalog = [
+        {"name": p["name"], "monthly": p["monthly"], "credits": p["credits"]}
+        for p in PLAN_CATALOG if not p.get("contact_sales")
+    ]
+    return {
+        "subscription": {
+            "plan": plan_meta["name"] if plan_meta else (sub.plan if sub else "free"),
+            "amount": float(sub.amount) if sub else 0,
+            "cycle": sub.billing_cycle if sub else "monthly",
+            "status": sub.status if sub else "active",
+            "currency": (sub.currency if sub else None) or "FCFA",
+        },
+        "wallet_balance_credits": wallet.balance_credits,
+        "usage": usage,
+        "this_month_spend": round(month_spend, 2),
+        "last_month_spend": round(prev_spend, 2),
+        "outstanding_count": outstanding,
+        "failed_count": failed,
+        "auto_recharge_enabled": bool(auto.enabled) if auto else False,
+        "recent_transactions": [
+            {"desc": t["description"], "amount": t["amount"], "status": t["status"]}
+            for t in recent
+        ],
+        "plan_catalog": catalog,
+    }
+
+
+BILLING_ASSISTANT_SUGGESTIONS = [
+    "why_higher", "estimate_next", "cheaper_plan", "why_failed", "last_year",
+]
+
+
+def billing_assistant(db: Session, school_id: int, current_user: models.User, question: str, *, language: str = "fr") -> dict:
+    from .ai_service import ai_service
+
+    question = (question or "").strip()
+    if not question:
+        return {"answer": ""}
+    context = _assistant_context(db, school_id)
+    import json as _json
+    prompt = (
+        f"You are the TeducAI billing assistant for a school. Answer the user's question in {language}, "
+        "concisely and factually, using ONLY the billing data provided below. Do not invent numbers. "
+        "If the data does not contain the answer, say so plainly and suggest where in the Billing page to "
+        "look. When asked to compare spend, use this_month_spend vs last_month_spend. When asked to "
+        "recommend a cheaper plan, compare the current subscription against plan_catalog. All money is in "
+        f"the currency shown. Billing data (JSON):\n{_json.dumps(context, default=str)}\n\n"
+        f"User question: {question}"
+    )
+    ai_credits.ensure_credits(db, current_user, ai_credits.estimate_credits(prompt))
+    result = ai_service.generate_response_from_config(prompt, {"module": "billing_assistant"}, db)
+    answer = result.get("data") or result.get("message") or ""
+    ai_credits.record_usage(db, current_user, prompt, answer, "billing_assistant", "assistant")
+    return {"answer": answer, "context_summary": {
+        "this_month_spend": context["this_month_spend"],
+        "last_month_spend": context["last_month_spend"],
+        "wallet_balance_credits": context["wallet_balance_credits"],
+    }}

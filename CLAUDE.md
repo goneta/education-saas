@@ -80,8 +80,14 @@ notifications and master data (zero data duplication).
   only brand/last4/expiry (+ optional gateway token) stored, never a PAN/CVV;
   first method auto-default, default-promotion on removal, expiry-state badges;
   the Payment methods tab is a real CRUD (`PaymentMethodsTab`).
+  **AI billing assistant (shipped):** `POST /billing/assistant` +
+  `billing_assistant`/`_assistant_context` in `services/billing.py` answer
+  billing questions grounded STRICTLY in the school's real data (subscription,
+  wallet, this-vs-last-month spend, outstanding/failed, recent transactions,
+  plan catalog) via `ai_service.generate_response_from_config`, credit-gated;
+  Overview-tab `BillingAssistant` panel with suggested-question chips.
   **Roadmap (documented, NOT built):** invoice email delivery, live usage
-  charts, AI billing assistant —
+  charts —
   underlying data already exists.
 
 - **Homework / exercise / correction / evaluation module (foundation)**: a

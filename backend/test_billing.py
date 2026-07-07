@@ -237,6 +237,49 @@ def test_payment_method_expiry_state():
     assert expired["expiry_state"] == "expired"
 
 
+def test_billing_assistant_grounds_on_real_data(monkeypatch):
+    from backend.services.ai_service import ai_service
+    db = _session()
+    school = _school(db)
+    admin = _user(db, school)
+    # Caller needs AI credits (ensure_credits gate).
+    wallet = ai_credits.wallet_for_user(db, admin)
+    wallet.balance_credits = 1000
+    db.add(models.SchoolSubscription(school_id=school.id, plan="pro", billing_cycle="monthly",
+                                     amount=99000, currency="FCFA", status="active"))
+    db.add(models.PlatformPayment(reference="P-A", school_id=school.id, payment_type="subscription",
+                                  amount=99000, currency="FCFA", provider="stripe", status="successful",
+                                  beneficiary_entity="platform"))
+    db.commit()
+
+    captured = {}
+
+    def fake_ai(prompt, config, dbsession):
+        captured["prompt"] = prompt
+        captured["module"] = config.get("module")
+        return {"data": "Your spend is stable this month."}
+
+    monkeypatch.setattr(ai_service, "generate_response_from_config", fake_ai)
+    out = R.ask_assistant(schemas.BillingAssistantRequest(question="Why is my bill higher?", language="en"),
+                          school_id=None, db=db, current_user=admin)
+    assert out["answer"] == "Your spend is stable this month."
+    # The prompt must carry the school's REAL billing data, not invented values.
+    assert captured["module"] == "billing_assistant"
+    assert "Professional" in captured["prompt"] or "pro" in captured["prompt"]
+    assert "this_month_spend" in captured["prompt"]
+    # A usage row was recorded (credit-gated call happened).
+    assert db.query(models.AIUsageLog).count() >= 1
+
+
+def test_billing_assistant_empty_question_no_ai():
+    db = _session()
+    school = _school(db)
+    admin = _user(db, school)
+    out = R.ask_assistant(schemas.BillingAssistantRequest(question="   "),
+                          school_id=None, db=db, current_user=admin)
+    assert out["answer"] == ""
+
+
 def test_rbac_teacher_blocked_super_admin_revenue():
     db = _session()
     school = _school(db)

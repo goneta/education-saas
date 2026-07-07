@@ -3816,3 +3816,8 @@ class PaymentMethodUpdate(BaseModel):
     expiry_year: Optional[int] = None
     billing_address: Optional[dict] = None
     is_default: Optional[bool] = None
+
+
+class BillingAssistantRequest(BaseModel):
+    question: str
+    language: Optional[str] = None

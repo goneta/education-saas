@@ -296,10 +296,11 @@ export const DOC_PAGES: Record<string, DocPage> = {
                 ["Promotions", "Enter a coupon, promo, gift or referral code — validated then redeemed; credit-type codes top up the school wallet immediately."],
                 ["Preferences / Tax & VAT", "Currency, timezone, invoice language, e-mail invoices, payment/renewal reminders, auto-renew and recipients; VAT/GST/Sales-tax identity, tax rate, exemption and billing address."],
                 ["Audit logs", "Every billing action (preferences, tax, auto-recharge, promo redemption, subscription change, payment) with actor and timestamp."],
+                ["AI billing assistant", "Ask questions about your bill, usage, invoices or plan (\"why is my bill higher?\", \"recommend a cheaper plan\", \"why did my payment fail?\") — answered strictly from your school's real billing data, credit-gated on your AI wallet."],
             ]},
             { k: "h2", text: "Security" },
             { k: "p", text: "Billing management is restricted to admin, direction and accounting roles; revenue analytics and promo-code authoring are Super-Admin only. Every mutation is audit-logged and school-scoped." },
-            { k: "callout", tone: "note", title: "Foundation + roadmap", text: "Shipped: the unified page and API (overview, subscription switching, preferences, tax, auto-recharge config, promo validate/redeem, projected invoices/transactions, usage, audit, super-admin revenue) plus one-click invoice PDF download and full saved payment-method management. Roadmap: invoice e-mail delivery, live usage charts, and the AI billing assistant — the underlying data already exists in TeducAI." },
+            { k: "callout", tone: "note", title: "Foundation + roadmap", text: "Shipped: the unified page and API (overview, subscription switching, preferences, tax, auto-recharge config, promo validate/redeem, projected invoices/transactions, usage, audit, super-admin revenue) plus one-click invoice PDF download, full saved payment-method management and an AI billing assistant grounded in your real data. Roadmap: invoice e-mail delivery and live usage charts — the underlying data already exists in TeducAI." },
         ),
     },
 

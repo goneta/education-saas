@@ -1298,6 +1298,21 @@
       "outstanding": "Outstanding",
       "failedPayments": "Failed payments",
       "byCountry": "Revenue by country"
+    },
+    "assistant": {
+      "title": "Billing assistant",
+      "subtitle": "Ask about your bill, usage, invoices or plan — answered from your real billing data.",
+      "placeholder": "Ask a billing question…",
+      "ask": "Ask",
+      "thinking": "Analyzing your billing data…",
+      "creditNote": "Answers use your AI credits.",
+      "suggestions": {
+        "why_higher": "Why is my bill higher this month?",
+        "estimate_next": "Estimate next month's costs",
+        "cheaper_plan": "Recommend a cheaper plan",
+        "why_failed": "Why did my payment fail?",
+        "last_year": "Show my spending trend"
+      }
     }
   }
 }

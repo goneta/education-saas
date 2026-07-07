@@ -5,8 +5,8 @@ import { useParams } from "next/navigation"
 import Link from "next/link"
 import { useTranslations } from "next-intl"
 import {
-    AlertTriangle, BadgePercent, CreditCard, Download, FileText,
-    Gauge, Landmark, Plus, ReceiptText, Settings2, ShieldCheck, Sparkles, Star, Trash2, Wallet,
+    AlertTriangle, BadgePercent, Bot, CreditCard, Download, FileText,
+    Gauge, Landmark, Plus, ReceiptText, Send, Settings2, ShieldCheck, Sparkles, Star, Trash2, Wallet,
 } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
@@ -246,6 +246,8 @@ export default function BillingPage() {
                             ) : <p className="py-3 text-sm text-[#6B7280]">{t("overview.noActivity")}</p>}
                         </CardContent>
                     </Card>
+                    {/* AI billing assistant */}
+                    <BillingAssistant api={api} locale={locale} />
                 </div>
             )}
 
@@ -482,6 +484,47 @@ function PromotionsTab({ api, onRedeemed }: { api: (p: string, i?: RequestInit) 
                         {t(`promotions.reason.${String(result.reason)}` as "promotions.reason.not_found")}
                     </div>
                 ))}
+            </CardContent>
+        </Card>
+    )
+}
+
+const ASSISTANT_SUGGESTIONS = ["why_higher", "estimate_next", "cheaper_plan", "why_failed", "last_year"] as const
+
+function BillingAssistant({ api, locale }: { api: (p: string, i?: RequestInit) => Promise<Record<string, unknown> | null>; locale: string }) {
+    const t = useTranslations("billing")
+    const [question, setQuestion] = useState("")
+    const [answer, setAnswer] = useState<string | null>(null)
+    const [busy, setBusy] = useState(false)
+
+    const ask = async (q: string) => {
+        if (!q.trim() || busy) return
+        setBusy(true); setAnswer(null); setQuestion(q)
+        const d = await api("/assistant", { method: "POST", body: JSON.stringify({ question: q, language: locale }) })
+        setBusy(false)
+        if (d) setAnswer(String(d.answer || ""))
+    }
+
+    return (
+        <Card className="rounded-2xl border border-[#E5E7EB] shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base"><Bot className="h-4 w-4" /> {t("assistant.title")}</CardTitle>
+                <p className="text-sm text-[#6B7280] dark:text-[#c7d0da]">{t("assistant.subtitle")}</p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                    {ASSISTANT_SUGGESTIONS.map(k => {
+                        const label = t(`assistant.suggestions.${k}` as "assistant.suggestions.why_higher")
+                        return <button key={k} disabled={busy} onClick={() => ask(label)} className="rounded-full border border-[#E5E7EB] px-3 py-1 text-xs transition hover:bg-[#F6F7F9] disabled:opacity-50 dark:border-[#3b4248] dark:hover:bg-[#2a3035]">{label}</button>
+                    })}
+                </div>
+                <div className="flex gap-2">
+                    <input className="apple-input flex-1" value={question} onChange={e => setQuestion(e.target.value)} onKeyDown={e => { if (e.key === "Enter") ask(question) }} placeholder={t("assistant.placeholder")} />
+                    <Button className="bg-black text-white hover:bg-black/90" disabled={busy || !question.trim()} onClick={() => ask(question)}><Send className="mr-1 h-4 w-4" /> {t("assistant.ask")}</Button>
+                </div>
+                {busy && <p className="text-sm text-[#6B7280]">{t("assistant.thinking")}</p>}
+                {answer && <div className="whitespace-pre-wrap rounded-xl border border-[#E5E7EB] bg-[#F8FAFC] p-3 text-sm text-[#111827] dark:border-[#3b4248] dark:bg-[#252b30] dark:text-[#eef3f8]">{answer}</div>}
+                <p className="text-xs text-[#94A3B8]">{t("assistant.creditNote")}</p>
             </CardContent>
         </Card>
     )

@@ -1298,6 +1298,21 @@
       "outstanding": "Impayés",
       "failedPayments": "Paiements échoués",
       "byCountry": "Revenu par pays"
+    },
+    "assistant": {
+      "title": "Assistant de facturation",
+      "subtitle": "Posez une question sur votre facture, votre consommation, vos factures ou votre forfait — la réponse s'appuie sur vos données réelles.",
+      "placeholder": "Posez une question de facturation…",
+      "ask": "Demander",
+      "thinking": "Analyse de vos données de facturation…",
+      "creditNote": "Les réponses utilisent vos crédits IA.",
+      "suggestions": {
+        "why_higher": "Pourquoi ma facture est-elle plus élevée ce mois-ci ?",
+        "estimate_next": "Estimer les coûts du mois prochain",
+        "cheaper_plan": "Recommander un forfait moins cher",
+        "why_failed": "Pourquoi mon paiement a-t-il échoué ?",
+        "last_year": "Montrer ma tendance de dépenses"
+      }
     }
   }
 }

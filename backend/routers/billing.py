@@ -302,6 +302,20 @@ def remove_payment_method(method_id: int, school_id: Optional[int] = None,
     return {"removed": True}
 
 
+# --- AI billing assistant ----------------------------------------------------
+
+@router.post("/assistant")
+def ask_assistant(payload: schemas.BillingAssistantRequest, school_id: Optional[int] = None,
+                  db: Session = Depends(database.get_db),
+                  current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manage(current_user)
+    resolved = _school_id(current_user, school_id)
+    result = billing.billing_assistant(db, resolved, current_user, payload.question,
+                                       language=payload.language or "fr")
+    db.commit()
+    return result
+
+
 # --- Super-admin -------------------------------------------------------------
 
 @router.get("/admin/revenue")
