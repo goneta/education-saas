@@ -117,6 +117,21 @@ export default function BillingPage() {
         } finally { setBusy(false) }
     }
 
+    const downloadPdf = async (id: number, number: string) => {
+        if (!token) return
+        setBusy(true)
+        try {
+            const res = await fetch(`${API_BASE_URL}/billing/invoices/${id}/pdf`, { headers: { Authorization: `Bearer ${token}` } })
+            if (!res.ok) { setError(t("error")); return }
+            const blob = await res.blob()
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement("a")
+            a.href = url; a.download = `invoice-${number}.pdf`; a.click()
+            URL.revokeObjectURL(url)
+            setError(null)
+        } finally { setBusy(false) }
+    }
+
     const badge = (status: string) => (
         <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[status] || "bg-slate-100 text-slate-600"}`}>
             {t(`status.${status}` as "status.active")}
@@ -296,7 +311,7 @@ export default function BillingPage() {
                             <td className="px-4 py-3 font-semibold">{fmtMoney(x.amount, x.currency)}</td>
                             <td className="px-4 py-3 capitalize">{x.provider}</td>
                             <td className="px-4 py-3">{badge(x.status)}</td>
-                            <td className="px-4 py-3"><Button variant="outline" size="sm" disabled title={t("comingSoon")}><Download className="mr-1 h-3.5 w-3.5" /> {t("invoices.download")}</Button></td>
+                            <td className="px-4 py-3"><Button variant="outline" size="sm" disabled={busy} onClick={() => downloadPdf(x.id, x.number)}><Download className="mr-1 h-3.5 w-3.5" /> {t("invoices.download")}</Button></td>
                         </tr>
                     )}
                 />

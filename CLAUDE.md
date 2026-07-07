@@ -71,9 +71,13 @@ notifications and master data (zero data duplication).
   Usage, Transactions, Promotions, Preferences, Tax & VAT, Audit) + CSV export;
   `billing` i18n namespace (FR/EN full, es/sw fall back to EN), sidebar Finance →
   Billing, docs page (EN+FR) + help section (4-locale) + DOX + tests
-  (`test_billing.py`, 10 green). **Roadmap (documented, NOT built):** invoice
-  PDF/print/email, live usage charts, saved payment-method card management UI,
-  AI billing assistant — underlying data already exists.
+  (`test_billing.py`, 10 green). **Invoice PDF (shipped):** `GET /billing/
+  invoices/{id}/pdf` renders a real reportlab PDF (issuer/bill-to/tax-inclusive
+  breakdown/totals + verifiable QR); `invoice_detail` + `render_invoice_pdf` in
+  `services/billing.py`; the Billing-history "Download PDF" button streams it.
+  **Roadmap (documented, NOT built):** invoice email delivery, live usage
+  charts, saved payment-method card management UI, AI billing assistant —
+  underlying data already exists.
 
 - **Homework / exercise / correction / evaluation module (foundation)**: a
   full assignments module built on the EXISTING `Assignment` /

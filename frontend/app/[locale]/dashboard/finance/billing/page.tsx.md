@@ -16,3 +16,4 @@
 ## Verification
 - Frontend build unavailable in sandbox — verified by inspection (brace/paren balance,
   all icons imported, all dynamic `t()` keys cast, i18n key parity across 4 locales).
+- Invoice PDF: the Billing-history "Download PDF" button now fetches `/billing/invoices/{id}/pdf` as a blob (bearer auth) and triggers a real .pdf download (reportlab-generated server-side). No longer a placeholder.

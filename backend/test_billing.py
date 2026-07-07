@@ -154,6 +154,38 @@ def test_invoices_projected_from_platform_payments():
     assert len(only_paid) == 1
 
 
+def test_invoice_detail_and_pdf():
+    db = _session()
+    school = _school(db)
+    admin = _user(db, school)
+    # Give the school a VAT profile so the invoice shows tax.
+    R.put_tax(schemas.BillingTaxUpdate(tax_type="vat", tax_id="CI-VAT-1", tax_rate=18.0),
+              school_id=None, db=db, current_user=admin)
+    pay = models.PlatformPayment(reference="SUB-9", school_id=school.id, payment_type="subscription",
+                                 amount=118000, currency="FCFA", provider="stripe", status="successful",
+                                 beneficiary_entity="platform", metadata_json={"plan": "pro"})
+    db.add(pay); db.commit()
+
+    detail = R.get_invoice_detail(pay.id, school_id=None, db=db, current_user=admin)
+    assert detail["number"] == "SUB-9"
+    assert detail["status"] == "paid"
+    assert detail["customer"]["tax_id"] == "CI-VAT-1"
+    # Tax-inclusive: 118000 total @18% -> tax 18000, subtotal 100000.
+    assert round(detail["tax_amount"]) == 18000
+    assert round(detail["subtotal"]) == 100000
+    assert detail["total"] == 118000
+
+    resp = R.get_invoice_pdf(pay.id, school_id=None, db=db, current_user=admin)
+    assert resp.media_type == "application/pdf"
+    assert resp.body[:4] == b"%PDF"
+    assert "SUB-9" in resp.headers["Content-Disposition"]
+
+    # Unknown / cross-school invoice -> 404.
+    with pytest.raises(HTTPException) as exc:
+        R.get_invoice_detail(999999, school_id=None, db=db, current_user=admin)
+    assert exc.value.status_code == 404
+
+
 def test_rbac_teacher_blocked_super_admin_revenue():
     db = _session()
     school = _school(db)

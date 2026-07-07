@@ -16,3 +16,4 @@
 - Every mutation records an audit row via `audit.record_audit` (action prefix `billing.`).
 ## Verification
 - `python -m pytest backend/test_billing.py`
+- Invoice PDF: `invoice_detail(db, school_id, payment_id)` assembles a full invoice (issuer=TeducAI, customer=school + tax profile, line items, subtotal/discount/tax-inclusive breakdown, total, status, QR reference); `render_invoice_pdf(detail)` renders a real PDF via reportlab (pure-Python, already in requirements). PLATFORM_ISSUER holds the vendor block.

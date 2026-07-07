@@ -426,3 +426,202 @@ def revenue_summary(db: Session) -> dict:
         "failed_payments": failed,
         "revenue_by_country": [{"country": c or "—", "amount": float(a)} for c, a in by_country_rows],
     }
+
+
+# --- Invoice detail + PDF ----------------------------------------------------
+# The platform (TeducAI) is the vendor; the school is the customer. An invoice
+# is one PlatformPayment rendered as a proper document. Tax is derived from the
+# school's BillingTaxProfile (treated as tax-inclusive on the charged amount).
+
+PLATFORM_ISSUER = {
+    "name": "TeducAI",
+    "tagline": "AI-first education platform",
+    "email": "billing@teducai.com",
+    "website": "teducai.com",
+}
+
+
+def invoice_detail(db: Session, school_id: int, payment_id: int) -> dict:
+    payment = (
+        db.query(models.PlatformPayment)
+        .filter(models.PlatformPayment.id == payment_id, models.PlatformPayment.school_id == school_id)
+        .first()
+    )
+    if not payment:
+        return {}
+    school = db.query(models.School).filter(models.School.id == school_id).first()
+    tax = get_tax(db, school_id, create=False)
+    projected = _payment_to_invoice(payment)
+    total = float(payment.amount or 0)
+    meta = payment.metadata_json or {}
+    discount = float(meta.get("discount") or 0)
+    rate = float(tax.tax_rate) if (tax and not tax.tax_exempt) else 0.0
+    # Amount charged is tax-inclusive: back out the tax portion.
+    net = total - discount
+    tax_amount = round(net - net / (1 + rate / 100.0), 2) if rate else 0.0
+    subtotal = round(net - tax_amount, 2)
+    return {
+        "issuer": PLATFORM_ISSUER,
+        "customer": {
+            "name": school.name if school else "-",
+            "address": (school.formatted_address or school.address) if school else None,
+            "email": school.email if school else None,
+            "phone": school.phone if school else None,
+            "registration_number": school.registration_number if school else None,
+            "country_code": school.country_code if school else None,
+            "tax_id": tax.tax_id if tax else None,
+            "legal_name": tax.legal_name if tax else None,
+            "business_number": tax.business_number if tax else None,
+            "tax_exempt": bool(tax.tax_exempt) if tax else False,
+        },
+        "number": projected["number"],
+        "date": payment.created_at,
+        "status": projected["status"],
+        "provider": payment.provider,
+        "currency": payment.currency,
+        "line_items": [{
+            "description": projected["description"],
+            "credits": payment.credits_amount or 0,
+            "quantity": 1,
+            "unit_price": subtotal,
+            "amount": subtotal,
+        }],
+        "subtotal": subtotal,
+        "discount": discount,
+        "tax_rate": rate,
+        "tax_amount": tax_amount,
+        "total": total,
+        "verify_reference": payment.reference,
+    }
+
+
+def _money(n: float, currency: str) -> str:
+    return f"{n:,.0f} {currency}" if abs(n) >= 1000 else f"{n:,.2f} {currency}"
+
+
+def render_invoice_pdf(detail: dict) -> bytes:
+    """Render an invoice dict to a real PDF (reportlab, pure-Python)."""
+    import io
+
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import mm
+    from reportlab.pdfgen import canvas as pdfcanvas
+    from reportlab.graphics.barcode import qr
+    from reportlab.graphics.shapes import Drawing
+    from reportlab.graphics import renderPDF
+
+    buf = io.BytesIO()
+    c = pdfcanvas.Canvas(buf, pagesize=A4)
+    w, h = A4
+    cur = detail.get("currency") or "FCFA"
+    left, right = 20 * mm, w - 20 * mm
+    y = h - 25 * mm
+
+    issuer = detail.get("issuer", {})
+    customer = detail.get("customer", {})
+
+    # Header - issuer + INVOICE title
+    c.setFillColorRGB(0.06, 0.06, 0.06)
+    c.setFont("Helvetica-Bold", 22)
+    c.drawString(left, y, str(issuer.get("name", "TeducAI")))
+    c.setFont("Helvetica", 9)
+    c.setFillColorRGB(0.45, 0.45, 0.45)
+    c.drawString(left, y - 6 * mm, str(issuer.get("tagline", "")))
+    c.drawString(left, y - 10 * mm, f"{issuer.get('email','')}  -  {issuer.get('website','')}")
+    c.setFillColorRGB(0.06, 0.06, 0.06)
+    c.setFont("Helvetica-Bold", 20)
+    c.drawRightString(right, y, "INVOICE")
+    c.setFont("Helvetica", 10)
+    c.setFillColorRGB(0.35, 0.35, 0.35)
+    c.drawRightString(right, y - 6 * mm, f"#{detail.get('number','')}")
+    date = detail.get("date")
+    date_str = date.strftime("%Y-%m-%d") if hasattr(date, "strftime") else str(date or "")
+    c.drawRightString(right, y - 11 * mm, date_str)
+
+    # Status pill
+    status = str(detail.get("status", "")).upper()
+    pill = {"PAID": (0.06, 0.5, 0.3), "PENDING": (0.7, 0.5, 0.05), "FAILED": (0.7, 0.15, 0.15)}.get(status, (0.4, 0.4, 0.4))
+    c.setFillColorRGB(*pill)
+    c.roundRect(right - 30 * mm, y - 20 * mm, 30 * mm, 6 * mm, 3, fill=1, stroke=0)
+    c.setFillColorRGB(1, 1, 1)
+    c.setFont("Helvetica-Bold", 8)
+    c.drawCentredString(right - 15 * mm, y - 18.2 * mm, status)
+
+    # Bill-to block
+    y -= 32 * mm
+    c.setFillColorRGB(0.45, 0.45, 0.45)
+    c.setFont("Helvetica-Bold", 8)
+    c.drawString(left, y, "BILL TO")
+    c.setFillColorRGB(0.1, 0.1, 0.1)
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(left, y - 6 * mm, str(customer.get("legal_name") or customer.get("name") or "-"))
+    c.setFont("Helvetica", 9)
+    c.setFillColorRGB(0.35, 0.35, 0.35)
+    line = y - 11 * mm
+    for txt in [customer.get("address"), customer.get("email"),
+                (f"Reg. {customer.get('registration_number')}" if customer.get("registration_number") else None),
+                (f"Tax ID {customer.get('tax_id')}" if customer.get("tax_id") else None)]:
+        if txt:
+            c.drawString(left, line, str(txt))
+            line -= 5 * mm
+
+    # Line-items table
+    y = line - 8 * mm
+    c.setFillColorRGB(0.95, 0.96, 0.97)
+    c.rect(left, y - 2 * mm, right - left, 8 * mm, fill=1, stroke=0)
+    c.setFillColorRGB(0.3, 0.3, 0.3)
+    c.setFont("Helvetica-Bold", 9)
+    c.drawString(left + 2 * mm, y, "DESCRIPTION")
+    c.drawRightString(right - 35 * mm, y, "CREDITS")
+    c.drawRightString(right - 2 * mm, y, "AMOUNT")
+    y -= 10 * mm
+    c.setFont("Helvetica", 10)
+    c.setFillColorRGB(0.1, 0.1, 0.1)
+    for item in detail.get("line_items", []):
+        c.drawString(left + 2 * mm, y, str(item.get("description", "")))
+        c.drawRightString(right - 35 * mm, y, str(item.get("credits") or "-"))
+        c.drawRightString(right - 2 * mm, y, _money(float(item.get("amount", 0)), cur))
+        y -= 8 * mm
+
+    # Totals
+    c.setStrokeColorRGB(0.85, 0.85, 0.85)
+    c.line(right - 70 * mm, y, right, y)
+    y -= 7 * mm
+    rows = [("Subtotal", detail.get("subtotal", 0))]
+    if detail.get("discount"):
+        rows.append(("Discount", -float(detail.get("discount", 0))))
+    if detail.get("tax_amount"):
+        rows.append((f"Tax ({detail.get('tax_rate', 0):g}%)", detail.get("tax_amount", 0)))
+    c.setFont("Helvetica", 10)
+    c.setFillColorRGB(0.35, 0.35, 0.35)
+    for label, val in rows:
+        c.drawString(right - 70 * mm, y, label)
+        c.drawRightString(right, y, _money(float(val), cur))
+        y -= 6 * mm
+    c.setFont("Helvetica-Bold", 13)
+    c.setFillColorRGB(0.06, 0.06, 0.06)
+    c.drawString(right - 70 * mm, y - 2 * mm, "TOTAL")
+    c.drawRightString(right, y - 2 * mm, _money(float(detail.get("total", 0)), cur))
+
+    # QR code (encodes the verifiable reference) + payment method
+    qr_widget = qr.QrCodeWidget(str(detail.get("verify_reference", "")))
+    bounds = qr_widget.getBounds()
+    qw, qh = bounds[2] - bounds[0], bounds[3] - bounds[1]
+    size = 26 * mm
+    d = Drawing(size, size, transform=[size / qw, 0, 0, size / qh, 0, 0])
+    d.add(qr_widget)
+    renderPDF.draw(d, c, left, 22 * mm)
+    c.setFont("Helvetica", 8)
+    c.setFillColorRGB(0.5, 0.5, 0.5)
+    c.drawString(left, 20 * mm, f"Ref: {detail.get('verify_reference','')}")
+    c.drawString(left + size + 6 * mm, 40 * mm, f"Payment method: {detail.get('provider','') or '-'}")
+    c.drawString(left + size + 6 * mm, 35 * mm, "Thank you for using TeducAI.")
+
+    # Footer
+    c.setFont("Helvetica", 7)
+    c.setFillColorRGB(0.6, 0.6, 0.6)
+    c.drawCentredString(w / 2, 12 * mm, f"{issuer.get('name','TeducAI')} - {issuer.get('website','')} - Generated by TeducAI Billing")
+
+    c.showPage()
+    c.save()
+    return buf.getvalue()

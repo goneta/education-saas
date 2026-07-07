@@ -14,6 +14,7 @@ are Super-Admin only. Every mutation is audit-logged (see services/billing.py).
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from .. import database, models, schemas, security
@@ -181,6 +182,33 @@ def get_invoices(school_id: Optional[int] = None, status: Optional[str] = None, 
     _ensure_manage(current_user)
     resolved = _school_id(current_user, school_id)
     return {"invoices": billing.list_invoices(db, resolved, status=status, limit=limit)}
+
+
+@router.get("/invoices/{payment_id}")
+def get_invoice_detail(payment_id: int, school_id: Optional[int] = None,
+                       db: Session = Depends(database.get_db),
+                       current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manage(current_user)
+    resolved = _school_id(current_user, school_id)
+    detail = billing.invoice_detail(db, resolved, payment_id)
+    if not detail:
+        raise HTTPException(status_code=404, detail="Facture introuvable.")
+    return detail
+
+
+@router.get("/invoices/{payment_id}/pdf")
+def get_invoice_pdf(payment_id: int, school_id: Optional[int] = None,
+                    db: Session = Depends(database.get_db),
+                    current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manage(current_user)
+    resolved = _school_id(current_user, school_id)
+    detail = billing.invoice_detail(db, resolved, payment_id)
+    if not detail:
+        raise HTTPException(status_code=404, detail="Facture introuvable.")
+    pdf = billing.render_invoice_pdf(detail)
+    filename = f"invoice-{detail.get('number', payment_id)}.pdf"
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 
 
 @router.get("/transactions")

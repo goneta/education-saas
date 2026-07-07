@@ -15,3 +15,4 @@
 - Delegates all logic to `services/billing.py`; every write commits + audits.
 ## Verification
 - `python -m pytest backend/test_billing.py`
+- Invoice PDF endpoints: `GET /billing/invoices/{payment_id}` (JSON detail, 404 if not this school's) and `GET /billing/invoices/{payment_id}/pdf` (Streaminged `application/pdf`, Content-Disposition attachment). Management-role + school-scoped like the rest.
