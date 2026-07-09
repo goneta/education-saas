@@ -1205,7 +1205,11 @@
       "actions": "Actions",
       "view": "View",
       "download": "Download PDF",
-      "empty": "No invoices yet."
+      "empty": "No invoices yet.",
+      "email": "Email",
+      "emailPrompt": "Send this invoice to (comma-separated e-mails; leave blank for the billing recipients):",
+      "emailSent": "Invoice e-mailed.",
+      "emailNotConfigured": "E-mail service is not configured yet."
     },
     "usage": {
       "title": "Usage",

@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useTranslations } from "next-intl"
 import {
     AlertTriangle, BadgePercent, Bot, CreditCard, Download, FileText,
-    Gauge, Landmark, Plus, ReceiptText, Send, Settings2, ShieldCheck, Sparkles, Star, Trash2, Wallet,
+    Gauge, Landmark, Mail, Plus, ReceiptText, Send, Settings2, ShieldCheck, Sparkles, Star, Trash2, Wallet,
 } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
@@ -132,6 +132,17 @@ export default function BillingPage() {
             a.href = url; a.download = `invoice-${number}.pdf`; a.click()
             URL.revokeObjectURL(url)
             setError(null)
+        } finally { setBusy(false) }
+    }
+
+    const emailInvoice = async (id: number) => {
+        const input = window.prompt(t("invoices.emailPrompt"), "")
+        if (input === null) return
+        const recipients = input.split(",").map(s => s.trim()).filter(Boolean)
+        setBusy(true)
+        try {
+            const d = await api(`/invoices/${id}/email`, { method: "POST", body: JSON.stringify({ recipients: recipients.length ? recipients : null }) })
+            if (d) flash(t("invoices.emailSent"))
         } finally { setBusy(false) }
     }
 
@@ -304,7 +315,10 @@ export default function BillingPage() {
                             <td className="px-4 py-3 font-semibold">{fmtMoney(x.amount, x.currency)}</td>
                             <td className="px-4 py-3 capitalize">{x.provider}</td>
                             <td className="px-4 py-3">{badge(x.status)}</td>
-                            <td className="px-4 py-3"><Button variant="outline" size="sm" disabled={busy} onClick={() => downloadPdf(x.id, x.number)}><Download className="mr-1 h-3.5 w-3.5" /> {t("invoices.download")}</Button></td>
+                            <td className="px-4 py-3"><div className="flex gap-1">
+                                <Button variant="outline" size="sm" disabled={busy} onClick={() => downloadPdf(x.id, x.number)}><Download className="mr-1 h-3.5 w-3.5" /> {t("invoices.download")}</Button>
+                                <Button variant="outline" size="sm" disabled={busy} onClick={() => emailInvoice(x.id)}><Mail className="mr-1 h-3.5 w-3.5" /> {t("invoices.email")}</Button>
+                            </div></td>
                         </tr>
                     )}
                 />

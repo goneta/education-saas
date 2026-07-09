@@ -14,3 +14,4 @@
 - Payment-method tests: `test_payment_methods_crud_and_default_promotion` (auto-default, last4 sanitize, set-default unsets others, remove promotes newest, 404) and `test_payment_method_expiry_state`.
 - AI assistant tests: `test_billing_assistant_grounds_on_real_data` (mocked AI; prompt carries real subscription + spend data; usage recorded) and `test_billing_assistant_empty_question_no_ai`.
 - Usage-chart test: `test_usage_timeseries_buckets_by_day` (continuous 30-day series, totals, today bucket, by-module breakdown).
+- Invoice e-mail tests: `test_email_invoice_sends_pdf_to_recipients` (mailer mocked; PDF attached; audit), `_not_configured_returns_503`, `_no_recipient_returns_400`.

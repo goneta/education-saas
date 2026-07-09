@@ -3821,3 +3821,7 @@ class PaymentMethodUpdate(BaseModel):
 class BillingAssistantRequest(BaseModel):
     question: str
     language: Optional[str] = None
+
+
+class InvoiceEmailRequest(BaseModel):
+    recipients: Optional[List[str]] = None

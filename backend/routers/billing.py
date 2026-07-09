@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from .. import database, models, schemas, security
 from ..services import ai_credits, billing
+from ..services import email_service
 
 router = APIRouter(prefix="/billing", tags=["Billing"])
 
@@ -194,6 +195,28 @@ def get_invoice_detail(payment_id: int, school_id: Optional[int] = None,
     if not detail:
         raise HTTPException(status_code=404, detail="Facture introuvable.")
     return detail
+
+
+@router.post("/invoices/{payment_id}/email")
+def email_invoice(payment_id: int, payload: schemas.InvoiceEmailRequest, school_id: Optional[int] = None,
+                  db: Session = Depends(database.get_db),
+                  current_user: models.User = Depends(security.get_current_user)):
+    _ensure_manage(current_user)
+    resolved = _school_id(current_user, school_id)
+    if not email_service.is_configured():
+        raise HTTPException(status_code=503, detail="Service e-mail non configuré (SMTP).")
+    try:
+        result = billing.email_invoice(db, resolved, payment_id, current_user, recipients=payload.recipients)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Aucun destinataire. Ajoutez une adresse ou un destinataire de facturation.")
+    except email_service.EmailNotConfigured:
+        raise HTTPException(status_code=503, detail="Service e-mail non configuré (SMTP).")
+    except email_service.EmailSendError as exc:
+        raise HTTPException(status_code=502, detail=f"Échec d'envoi de l'e-mail: {exc}")
+    if not result:
+        raise HTTPException(status_code=404, detail="Facture introuvable.")
+    db.commit()
+    return result
 
 
 @router.get("/invoices/{payment_id}/pdf")

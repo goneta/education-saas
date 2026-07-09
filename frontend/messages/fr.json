@@ -1205,7 +1205,11 @@
       "actions": "Actions",
       "view": "Voir",
       "download": "Télécharger le PDF",
-      "empty": "Aucune facture pour l'instant."
+      "empty": "Aucune facture pour l'instant.",
+      "email": "Envoyer",
+      "emailPrompt": "Envoyer cette facture à (e-mails séparés par des virgules ; laissez vide pour les destinataires de facturation) :",
+      "emailSent": "Facture envoyée par e-mail.",
+      "emailNotConfigured": "Le service e-mail n'est pas encore configuré."
     },
     "usage": {
       "title": "Consommation",

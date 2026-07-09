@@ -939,3 +939,68 @@ def usage_timeseries(db: Session, school_id: int, *, days: int = 30) -> dict:
         "spend": round(sum(b["spend"] for b in series), 2),
     }
     return {"days": days, "series": series, "by_module": top_modules, "totals": totals}
+
+
+# --- Invoice e-mail delivery -------------------------------------------------
+# Renders the invoice PDF (reuses render_invoice_pdf) and e-mails it as an
+# attachment via the SMTP mailer. Recipients default to the school's billing
+# invoice_recipients + the school e-mail. Never fakes: if SMTP is unconfigured
+# the caller gets a clear 503.
+
+def _invoice_recipients(db: Session, school_id: int) -> list[str]:
+    recipients: list[str] = []
+    pref = get_preferences(db, school_id, create=False)
+    if pref and pref.invoice_recipients:
+        recipients.extend([r for r in pref.invoice_recipients if r])
+    school = db.query(models.School).filter(models.School.id == school_id).first()
+    if school and school.email:
+        recipients.append(school.email)
+    # De-duplicate, case-insensitive, keep order.
+    seen, out = set(), []
+    for r in recipients:
+        r = (r or "").strip()
+        if r and r.lower() not in seen:
+            seen.add(r.lower())
+            out.append(r)
+    return out
+
+
+def email_invoice(db: Session, school_id: int, payment_id: int, user: models.User,
+                  *, recipients: Optional[list] = None) -> dict:
+    from . import email_service
+
+    detail = invoice_detail(db, school_id, payment_id)
+    if not detail:
+        return {}
+    to = [r.strip() for r in (recipients or []) if r and r.strip()] or _invoice_recipients(db, school_id)
+    if not to:
+        raise ValueError("no_recipient")
+
+    pdf = render_invoice_pdf(detail)
+    school_name = detail.get("customer", {}).get("name") or "TeducAI"
+    number = detail.get("number", "")
+    cur = detail.get("currency") or ""
+    total = detail.get("total", 0)
+    subject = f"Invoice {number} - {school_name}"
+    text = (
+        f"Dear {school_name},\n\n"
+        f"Please find attached invoice {number} for a total of {total:,.0f} {cur}.\n"
+        f"Status: {str(detail.get('status','')).upper()}.\n\n"
+        "You can verify this document with the QR code / reference on the invoice.\n\n"
+        "Thank you for using TeducAI.\n"
+    )
+    html = (
+        f"<p>Dear <b>{school_name}</b>,</p>"
+        f"<p>Please find attached invoice <b>{number}</b> for a total of "
+        f"<b>{total:,.0f} {cur}</b> (status: {str(detail.get('status','')).upper()}).</p>"
+        "<p>You can verify this document with the QR code / reference printed on the invoice.</p>"
+        "<p>Thank you for using TeducAI.</p>"
+    )
+    result = email_service.send_email(
+        to, subject, text, html_body=html,
+        attachments=[(f"invoice-{number}.pdf", pdf, "application", "pdf")],
+    )
+    record_audit(db, action="billing.invoice.emailed", current_user=user,
+                 entity_type="platform_payment", entity_id=payment_id,
+                 details={"number": number, "recipients": result["recipients"]})
+    return result

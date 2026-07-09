@@ -308,6 +308,67 @@ def test_billing_assistant_empty_question_no_ai():
     assert out["answer"] == ""
 
 
+def test_email_invoice_sends_pdf_to_recipients(monkeypatch):
+    from backend.services import email_service
+    db = _session()
+    school = _school(db)
+    admin = _user(db, school)
+    R.put_preferences(schemas.BillingPreferenceUpdate(invoice_recipients=["cfo@x.com"]),
+                      school_id=None, db=db, current_user=admin)
+    pay = models.PlatformPayment(reference="EM-1", school_id=school.id, payment_type="subscription",
+                                 amount=99000, currency="FCFA", provider="stripe", status="successful",
+                                 beneficiary_entity="platform", metadata_json={"plan": "pro"})
+    db.add(pay); db.commit()
+
+    captured = {}
+    monkeypatch.setattr(email_service, "is_configured", lambda: True)
+
+    def fake_send(to, subject, text, html_body=None, attachments=None):
+        captured["to"] = to; captured["subject"] = subject
+        captured["att"] = list(attachments or [])
+        return {"sent": True, "recipients": to}
+
+    monkeypatch.setattr(email_service, "send_email", fake_send)
+    out = R.email_invoice(pay.id, schemas.InvoiceEmailRequest(), school_id=None, db=db, current_user=admin)
+    assert out["sent"] is True
+    assert "cfo@x.com" in captured["to"]
+    # A real PDF was attached.
+    fname, content, maintype, subtype = captured["att"][0]
+    assert fname.endswith(".pdf") and content[:4] == b"%PDF" and (maintype, subtype) == ("application", "pdf")
+    assert db.query(models.AuditLog).filter(models.AuditLog.action == "billing.invoice.emailed").count() == 1
+
+
+def test_email_invoice_not_configured_returns_503(monkeypatch):
+    from backend.services import email_service
+    db = _session()
+    school = _school(db)
+    admin = _user(db, school)
+    pay = models.PlatformPayment(reference="EM-2", school_id=school.id, payment_type="subscription",
+                                 amount=99000, currency="FCFA", provider="stripe", status="successful",
+                                 beneficiary_entity="platform")
+    db.add(pay); db.commit()
+    monkeypatch.setattr(email_service, "is_configured", lambda: False)
+    with pytest.raises(HTTPException) as exc:
+        R.email_invoice(pay.id, schemas.InvoiceEmailRequest(), school_id=None, db=db, current_user=admin)
+    assert exc.value.status_code == 503
+
+
+def test_email_invoice_no_recipient_returns_400(monkeypatch):
+    from backend.services import email_service
+    db = _session()
+    school = _school(db)  # no school.email, no billing recipients
+    admin = _user(db, school)
+    pay = models.PlatformPayment(reference="EM-3", school_id=school.id, payment_type="subscription",
+                                 amount=99000, currency="FCFA", provider="stripe", status="successful",
+                                 beneficiary_entity="platform")
+    db.add(pay); db.commit()
+    monkeypatch.setattr(email_service, "is_configured", lambda: True)
+    monkeypatch.setattr(email_service, "send_email", lambda *a, **k: {"sent": True, "recipients": []})
+    with pytest.raises(HTTPException) as exc:
+        R.email_invoice(pay.id, schemas.InvoiceEmailRequest(recipients=[]), school_id=None, db=db, current_user=admin)
+    assert exc.value.status_code == 400
+
+
 def test_rbac_teacher_blocked_super_admin_revenue():
     db = _session()
     school = _school(db)

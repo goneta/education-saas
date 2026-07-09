@@ -19,3 +19,4 @@
 - Payment-method CRUD: `GET/POST /billing/payment-methods`, `PATCH/DELETE /billing/payment-methods/{id}`, `POST /billing/payment-methods/{id}/default`. Management-role + school-scoped; every mutation audited (billing.payment_method.*).
 - AI assistant: `POST /billing/assistant` {question, language?} -> {answer, context_summary}. Management-role + school-scoped, credit-gated on the caller's AI wallet.
 - Usage charts: `GET /billing/usage/timeseries?days=` -> {days, series, by_module, totals}. Management-role + school-scoped; days clamped to 1-365.
+- Invoice e-mail: `POST /billing/invoices/{id}/email` {recipients?} — 503 if SMTP unconfigured, 400 if no recipient, 502 on send failure. Management-role + school-scoped.

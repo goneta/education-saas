@@ -91,8 +91,13 @@ notifications and master data (zero data duplication).
   window, top-6 by-module); the Usage tab (`UsageTab`) renders a metric toggle,
   a 7/30/90-day period toggle, a dependency-free inline-SVG `LineChart` trend
   and a by-module bar chart.
-  **Roadmap (documented, NOT built):** invoice email delivery —
-  underlying data already exists.
+  **Invoice e-mail (shipped):** `POST /billing/invoices/{id}/email` renders the
+  invoice PDF and sends it as an attachment via `services/email_service.py`
+  (provider-agnostic SMTP from env; Gmail/Workspace STARTTLS 587 default;
+  `EmailNotConfigured`→503, never faked); recipients default to billing
+  `invoice_recipients` + school e-mail; Billing-history "Email" button. SMTP
+  secrets live only in the git-ignored `.env` (verified live-send OK).
+  **All four former billing roadmap items are now built.**
 
 - **Homework / exercise / correction / evaluation module (foundation)**: a
   full assignments module built on the EXISTING `Assignment` /
@@ -326,5 +331,8 @@ notifications and master data (zero data duplication).
 
 Live payment operability (real keys/webhook secrets), WhatsApp/voice/video providers,
 real‑time GPS push (MQTT/WebSocket) + facial recognition + native mobile apps,
-async webhook sender/GraphQL/marketplace/SDK, PDF/Excel export, Docker/K8s/HA/tracing
+async webhook sender/GraphQL/marketplace/SDK, Docker/K8s/HA/tracing
 and the 100k‑users/300ms load targets. See `SPEC.md` §5.
+**Now available:** transactional e-mail via `services/email_service.py` (SMTP from
+env; Gmail/Workspace) — used for invoice delivery; other modules can reuse it.
+Server-side PDF generation via reportlab is live for invoices.
