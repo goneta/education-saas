@@ -185,30 +185,52 @@ function tableHeaders(row: HTMLTableRowElement) {
     return headers.filter(header => !["", "Actions", "Action"].includes(header))
 }
 
-function exportRow(row: HTMLTableRowElement, format: "csv" | "xlsx" | "pdf") {
-    const headers = tableHeaders(row)
-    const values = rowCells(row)
+// Export ALL provided rows into a SINGLE document. Building one file/print
+// window per call (instead of one per row) is what makes multi-selection
+// exports keep every selected row — previously N per-row downloads collided to
+// one file and N print popups were blocked to one, so only the first row
+// appeared. Reads the rendered cells, so active filters, sort order, visible
+// columns and current formatting are all preserved.
+function exportRows(rows: HTMLTableRowElement[], format: "csv" | "xlsx" | "pdf") {
+    if (!rows.length) return
+    const headers = tableHeaders(rows[0])
+    const rowsValues = rows.map(rowCells)
     if (format === "pdf") {
-        const html = `<html><head><title>TeducAI</title><style>body{font-family:system-ui;padding:24px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ddd;padding:8px;text-align:left}</style></head><body><h1>Détail TeducAI</h1><table>${values.map((value, index) => `<tr><th>${escapeHtml(headers[index] || `Champ ${index + 1}`)}</th><td>${escapeHtml(value)}</td></tr>`).join("")}</table></body></html>`
+        const thead = `<tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join("")}</tr>`
+        const tbody = rowsValues.map(values => `<tr>${values.map(v => `<td>${escapeHtml(v)}</td>`).join("")}</tr>`).join("")
+        const html = `<html><head><title>TeducAI</title><style>body{font-family:system-ui;padding:24px}h1{font-size:18px}table{border-collapse:collapse;width:100%;font-size:12px}td,th{border:1px solid #ddd;padding:6px 8px;text-align:left}thead th{background:#f3f4f6}</style></head><body><h1>TeducAI — ${rows.length} élément(s)</h1><table><thead>${thead}</thead><tbody>${tbody}</tbody></table></body></html>`
         const printWindow = window.open("", "_blank")
-        printWindow?.document.write(html)
-        printWindow?.document.close()
-        printWindow?.print()
+        if (!printWindow) return
+        printWindow.document.write(html)
+        printWindow.document.close()
+        printWindow.focus()
+        printWindow.print()
         return
     }
     const separator = format === "csv" ? "," : "\t"
-    const content = [headers.join(separator), values.map(value => `"${value.replace(/"/g, '""')}"`).join(separator)].join("\n")
-    const blob = new Blob([content], { type: format === "csv" ? "text/csv;charset=utf-8" : "application/vnd.ms-excel;charset=utf-8" })
+    const quote = (value: string) => `"${value.replace(/"/g, '""')}"`
+    const lines = [headers.map(quote).join(separator)]
+    rowsValues.forEach(values => lines.push(values.map(quote).join(separator)))
+    const content = lines.join("\n")
+    const blob = new Blob(["﻿" + content], { type: format === "csv" ? "text/csv;charset=utf-8" : "application/vnd.ms-excel;charset=utf-8" })
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement("a")
     anchor.href = url
-    anchor.download = `teducai-row.${format === "xlsx" ? "xls" : format}`
+    anchor.download = `teducai-export-${rows.length}.${format === "xlsx" ? "xls" : format}`
     anchor.click()
     URL.revokeObjectURL(url)
 }
 
+function exportRow(row: HTMLTableRowElement, format: "csv" | "xlsx" | "pdf") {
+    exportRows([row], format)
+}
+
+function printRows(rows: HTMLTableRowElement[]) {
+    exportRows(rows, "pdf")
+}
+
 function printRow(row: HTMLTableRowElement) {
-    exportRow(row, "pdf")
+    exportRows([row], "pdf")
 }
 
 function showRowDetails(row: HTMLTableRowElement) {
@@ -797,8 +819,8 @@ export function DashboardUxEnhancer() {
     }
 
     const bulkRows = () => Array.from(document.querySelectorAll<HTMLInputElement>("main [data-teducai-row-select]:checked")).map(input => input.closest("tr")).filter(Boolean) as HTMLTableRowElement[]
-    const bulkExport = (format: "pdf" | "csv" | "xlsx") => bulkRows().forEach(row => exportRow(row, format))
-    const bulkPrint = () => bulkRows().forEach(printRow)
+    const bulkExport = (format: "pdf" | "csv" | "xlsx") => exportRows(bulkRows(), format)
+    const bulkPrint = () => printRows(bulkRows())
     const bulkDelete = () => {
         if (!can("delete")) return
         setConfirmBulkDelete(true)
