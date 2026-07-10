@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
+import logging
 import os
 from dataclasses import dataclass
 from typing import Any, Optional
 
 import httpx
+
+logger = logging.getLogger("teducai.payment_gateway")
 
 
 @dataclass
@@ -76,6 +81,10 @@ def _cinetpay_checkout(
     if not token or not merchant:
         return CheckoutSession(None, None, "pending_configuration", {"message": "CinetPay credentials are not configured"})
     notify_url = os.getenv("CINETPAY_NOTIFY_URL", "")
+    # Channels are dynamically configurable: ALL (default) exposes every method
+    # CinetPay enables on the merchant account (Orange, MTN, Moov, Wave, cards…);
+    # narrower values: MOBILE_MONEY, CREDIT_CARD, WALLET.
+    channels = os.getenv("CINETPAY_CHANNELS", "ALL")
     payload = {
         "apikey": token,
         "site_id": merchant,
@@ -86,8 +95,12 @@ def _cinetpay_checkout(
         "return_url": success_url,
         "cancel_url": cancel_url,
         "notify_url": notify_url,
-        "channels": "MOBILE_MONEY",
+        "channels": channels,
         "metadata": reference,
+        # Card payments require a customer block; CinetPay ignores it for
+        # mobile money, so generic values keep every channel available.
+        "customer_name": "TeducAI",
+        "customer_surname": "Client",
     }
     if network:
         payload["payment_method"] = network
@@ -139,6 +152,86 @@ def _djamo_checkout(
         "redirect_required",
         payload,
     )
+
+
+# --- CinetPay server-side verification & webhook authenticity -----------------
+# CinetPay's integration contract: NEVER trust the notify callback body alone.
+# The authoritative source of truth is POST /v2/payment/check — every status
+# transition must be confirmed there before money-side effects run. This also
+# neutralises forged/replayed notifications even when no HMAC secret is set.
+
+CINETPAY_STATUS_MAP = {
+    "ACCEPTED": "successful",
+    "REFUSED": "failed",
+    "CANCELLED": "failed",
+    "WAITING_FOR_CUSTOMER": "pending",
+    "PENDING": "pending",
+}
+
+# Field order defined by CinetPay for the x-token HMAC over the notify form.
+CINETPAY_HMAC_FIELDS = (
+    "cpm_site_id", "cpm_trans_id", "cpm_trans_date", "cpm_amount", "cpm_currency",
+    "signature", "payment_method", "cel_phone_num", "cpm_phone_prefixe",
+    "cpm_language", "cpm_version", "cpm_payment_config", "cpm_page_action",
+    "cpm_custom", "cpm_designation", "cpm_error_message",
+)
+
+
+def cinetpay_check_transaction(reference: str) -> tuple[str, dict[str, Any]]:
+    """Verify a transaction directly with CinetPay (`/v2/payment/check`).
+
+    Returns ``(status, payload)`` where status is one of
+    successful / failed / pending / unknown. ``unknown`` means the gateway
+    could not be reached or credentials are missing — callers must NOT apply
+    any state change on ``unknown``.
+    """
+    token = os.getenv("CINETPAY_API_KEY", "")
+    merchant = os.getenv("CINETPAY_SITE_ID", "")
+    if not token or not merchant:
+        return "unknown", {"message": "CinetPay credentials are not configured"}
+    endpoint = os.getenv(
+        "CINETPAY_CHECK_URL",
+        os.getenv("CINETPAY_API_URL", "https://api-checkout.cinetpay.com/v2/payment").rstrip("/") + "/check",
+    )
+    try:
+        response = httpx.post(
+            endpoint,
+            json={"apikey": token, "site_id": merchant, "transaction_id": reference},
+            timeout=20,
+        )
+    except httpx.HTTPError as exc:
+        logger.warning("CinetPay check unreachable for %s: %s", reference, exc)
+        return "unknown", {"message": f"gateway unreachable: {exc.__class__.__name__}"}
+    payload = _response_json(response)
+    data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+    raw_status = str((data or {}).get("status") or "").upper()
+    code = str(payload.get("code") or "")
+    if raw_status in CINETPAY_STATUS_MAP:
+        return CINETPAY_STATUS_MAP[raw_status], payload
+    if code == "600" or response.status_code >= 500:
+        return "unknown", payload
+    # 662 = WAITING_CUSTOMER_TO_VALIDATE, 623/627 style codes = not found/failed.
+    if code in {"662", "623"}:
+        return "pending", payload
+    logger.info("CinetPay check for %s returned code=%s status=%s", reference, code, raw_status or "-")
+    return "unknown", payload
+
+
+def verify_cinetpay_token(x_token: Optional[str], form: dict[str, Any]) -> bool:
+    """Validate the `x-token` HMAC (SHA-256) CinetPay sends with each notify.
+
+    Returns True when the token matches, or when no CINETPAY_SECRET_KEY is
+    configured (the check API remains the authoritative gate either way).
+    Returns False on mismatch — callers must reject with 403.
+    """
+    secret = os.getenv("CINETPAY_SECRET_KEY", "")
+    if not secret:
+        return True  # not configured: rely on cinetpay_check_transaction
+    if not x_token:
+        return False
+    data = "".join(str(form.get(field, "") or "") for field in CINETPAY_HMAC_FIELDS)
+    expected = hmac.new(secret.encode(), data.encode(), hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, x_token.strip())
 
 
 def create_checkout_session(

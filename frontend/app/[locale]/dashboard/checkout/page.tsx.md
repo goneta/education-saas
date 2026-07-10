@@ -27,3 +27,4 @@
 ## Verification
 
 - `cmd.exe /c "cd frontend&& npx eslint app/[locale]/dashboard/checkout/page.tsx"`
+- Checkout success/cancel URLs now point to /dashboard/payments/status (server-side verified result) instead of the invoices list.

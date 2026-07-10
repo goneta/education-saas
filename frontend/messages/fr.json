@@ -1371,5 +1371,18 @@
     "graduationDate": "Date de diplomation",
     "generateBtn": "Générer le PDF",
     "error": "Une erreur est survenue."
+  },
+  "payStatus": {
+    "title": "Statut du paiement",
+    "reference": "Référence",
+    "checking": "Vérification de votre paiement auprès de l'opérateur…",
+    "pending": "Paiement en attente — confirmation en cours. Si vous avez validé sur votre téléphone, cela peut prendre un instant.",
+    "successful": "Paiement réussi. Merci !",
+    "failed": "Paiement échoué ou annulé. Aucun montant n'a été débité.",
+    "recheck": "Vérifier à nouveau",
+    "retry": "Réessayer le paiement",
+    "receipts": "Mes reçus & factures",
+    "enterRef": "Saisissez une référence de paiement (ex. SCH-…, TPL-…, SUB-…)",
+    "unknown": "L'opérateur est injoignable. Réessayez dans un instant."
   }
 }

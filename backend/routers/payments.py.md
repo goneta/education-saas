@@ -15,3 +15,4 @@
 ## Verification
 
 - `python -m pytest backend/test_payment_service.py`
+- CinetPay endpoints: `POST /payments/cinetpay/notify` (public, form or JSON; optional x-token HMAC 403 on mismatch; ALWAYS re-verifies with /v2/payment/check before applying — replay/forgery safe; 503 when gateway unreachable so CinetPay retries; routes SCH- refs to apply_school_payment and TPL-/SUB- to apply_platform_payment; stores gateway payload in metadata_json.gateway_check) and `POST /payments/{reference}/refresh` (authenticated gateway-backed re-verify + idempotent apply; payer or same-school manager; 400 for non-CinetPay).

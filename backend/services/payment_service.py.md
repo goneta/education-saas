@@ -15,3 +15,4 @@
 ## Verification
 
 - `python -m pytest backend/test_payment_service.py`
+- `apply_platform_payment(db, payment, status=..., provider_reference=..., extra_metadata=...)`: the single idempotent confirmation path for PlatformPayment (credit purchases -> ai_credits.apply_platform_payment_success; subscriptions -> activation + School flags). Shared by the legacy platform webhook and the CinetPay notify endpoint; never downgrades a confirmed payment.

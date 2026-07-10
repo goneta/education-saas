@@ -9,14 +9,17 @@ webhooks or authorized manual reconciliation) and updates the owning business
 module through `services/payment_service.py`.
 """
 
+import logging
 import os
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from .. import database, models, schemas, security
-from ..services import payment_service
+from ..services import payment_gateway, payment_service
+
+logger = logging.getLogger("teducai.payments")
 
 router = APIRouter(prefix="/payments", tags=["Payment Service"])
 
@@ -77,6 +80,114 @@ def payment_webhook(
     )
     db.commit()
     return {"reference": payment.reference, "status": payment.status, "applied": applied}
+
+
+def _find_payment(db: Session, reference: str):
+    """Resolve a reference to its owning row: school-side (SCH-…) or
+    platform-side (TPL-/SUB-/… PlatformPayment). Returns (kind, payment)."""
+    school_payment = db.query(models.SchoolPayment).filter(models.SchoolPayment.reference == reference).first()
+    if school_payment:
+        return "school", school_payment
+    platform_payment = db.query(models.PlatformPayment).filter(models.PlatformPayment.reference == reference).first()
+    if platform_payment:
+        return "platform", platform_payment
+    return None, None
+
+
+def _apply_verified_status(db: Session, kind: str, payment, status: str,
+                           provider_reference: Optional[str], payload: dict,
+                           current_user: Optional[models.User] = None) -> bool:
+    """Apply a gateway-VERIFIED status through the shared idempotent appliers,
+    persisting the gateway payload for reconciliation."""
+    if kind == "school":
+        applied = payment_service.apply_school_payment(
+            db, payment, status=status, provider_reference=provider_reference, current_user=current_user
+        )
+        payment.metadata_json = {**(payment.metadata_json or {}), "gateway_check": payload}
+        return applied
+    return payment_service.apply_platform_payment(
+        db, payment, status=status, provider_reference=provider_reference,
+        extra_metadata={"gateway_check": payload},
+    )
+
+
+@router.post("/cinetpay/notify")
+async def cinetpay_notify(request: Request, x_token: Optional[str] = Header(default=None),
+                          db: Session = Depends(database.get_db)):
+    """CinetPay-native notification endpoint (set as `notify_url`).
+
+    Security model:
+    1. The `x-token` HMAC-SHA256 (CINETPAY_SECRET_KEY) is validated when
+       configured — a forged notification is rejected with 403.
+    2. The notification body is NEVER trusted for the status. The transaction
+       is re-verified server-side against `/v2/payment/check` and only that
+       verified status is applied — this defeats forgery AND replay: replaying
+       an old notify simply re-checks the gateway and hits the idempotent
+       no-op path.
+    3. Status application goes through the shared idempotent Payment Service,
+       so duplicate deliveries can never double-credit an invoice or wallet.
+    Returns 503 when the gateway is unreachable so CinetPay retries later.
+    """
+    content_type = (request.headers.get("content-type") or "").lower()
+    if "application/json" in content_type:
+        raw = await request.json()
+        form = raw if isinstance(raw, dict) else {}
+    else:
+        form = dict(await request.form())
+    reference = str(form.get("cpm_trans_id") or form.get("transaction_id") or "").strip()
+    if not reference:
+        raise HTTPException(status_code=400, detail="Missing transaction reference")
+
+    if not payment_gateway.verify_cinetpay_token(x_token, form):
+        logger.warning("CinetPay notify rejected: bad x-token for %s", reference)
+        raise HTTPException(status_code=403, detail="Invalid webhook signature")
+
+    kind, payment = _find_payment(db, reference)
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment introuvable")
+    if getattr(payment, "provider", "") != "cinetpay":
+        raise HTTPException(status_code=400, detail="Payment is not a CinetPay transaction")
+
+    status, payload = payment_gateway.cinetpay_check_transaction(reference)
+    if status == "unknown":
+        # Do not guess: ask CinetPay to redeliver once the gateway answers.
+        raise HTTPException(status_code=503, detail="Gateway verification unavailable, retry later")
+
+    provider_reference = str(
+        (payload.get("data") or {}).get("operator_id")
+        or form.get("cpm_payid") or form.get("payment_token") or ""
+    ) or None
+    applied = _apply_verified_status(db, kind, payment, status, provider_reference, payload)
+    db.commit()
+    logger.info("CinetPay notify %s -> %s (applied=%s)", reference, status, applied)
+    return {"reference": reference, "status": payment.status, "applied": applied}
+
+
+@router.post("/{reference}/refresh")
+def refresh_payment(reference: str,
+                    current_user: models.User = Depends(security.get_current_user),
+                    db: Session = Depends(database.get_db)):
+    """Gateway-backed status refresh: re-verify the transaction with the
+    provider and apply the VERIFIED result idempotently. Used by the checkout
+    return page (polling), payers retrying, and cashiers reconciling — unlike
+    `/verify`, this never blindly marks success."""
+    kind, payment = _find_payment(db, reference)
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment introuvable")
+    is_manager = current_user.role in MANAGER_ROLES
+    is_payer = getattr(payment, "payer_user_id", None) == current_user.id
+    same_school = getattr(payment, "school_id", None) == current_user.school_id
+    if not (is_payer or (is_manager and (same_school or current_user.role == models.UserRole.SUPER_ADMIN))):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    if payment.provider != "cinetpay":
+        raise HTTPException(status_code=400, detail="Refresh is only available for CinetPay payments")
+
+    status, payload = payment_gateway.cinetpay_check_transaction(reference)
+    if status == "unknown":
+        raise HTTPException(status_code=503, detail="Gateway verification unavailable, retry later")
+    applied = _apply_verified_status(db, kind, payment, status, None, payload, current_user=current_user)
+    db.commit()
+    return {"reference": reference, "status": payment.status, "applied": applied, "kind": kind}
 
 
 @router.post("/{reference}/verify")

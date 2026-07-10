@@ -1371,5 +1371,18 @@
     "graduationDate": "Graduation date",
     "generateBtn": "Generate PDF",
     "error": "Something went wrong."
+  },
+  "payStatus": {
+    "title": "Payment status",
+    "reference": "Reference",
+    "checking": "Verifying your payment with the provider…",
+    "pending": "Payment pending — waiting for confirmation. If you validated on your phone, this can take a moment.",
+    "successful": "Payment successful. Thank you!",
+    "failed": "Payment failed or was cancelled. No amount was charged.",
+    "recheck": "Check again",
+    "retry": "Try the payment again",
+    "receipts": "My receipts & invoices",
+    "enterRef": "Enter a payment reference (e.g. SCH-…, TPL-…, SUB-…)",
+    "unknown": "The provider could not be reached. Try again in a moment."
   }
 }

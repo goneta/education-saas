@@ -19,3 +19,4 @@
 ## Verification
 
 - `python -m py_compile backend\services\payment_gateway.py`
+- CinetPay completion: channels configurable via CINETPAY_CHANNELS (default ALL = every method enabled on the merchant account: Orange/MTN/Moov/Wave/cards); checkout payload carries a generic customer block so card channels stay available. NEW `cinetpay_check_transaction(reference)` (server-side /v2/payment/check verification; ACCEPTED->successful, REFUSED/CANCELLED->failed, WAITING/PENDING->pending, unreachable->unknown = apply NOTHING) and `verify_cinetpay_token(x_token, form)` (HMAC-SHA256 over the CinetPay field order with CINETPAY_SECRET_KEY; passes when no secret is configured because the check API remains the authoritative gate).

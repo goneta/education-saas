@@ -50,6 +50,34 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
+- **CinetPay payment gateway — production completion**: no SDK added (the
+  PyPI/npm `cinetpay-*` packages are v0.1.x; the existing
+  `services/payment_gateway.py` already speaks the checkout REST API v2
+  directly — completing it in place kept zero duplication). New:
+  `cinetpay_check_transaction` (server-side `/v2/payment/check` verification;
+  unreachable → "unknown" = apply nothing) and `verify_cinetpay_token`
+  (HMAC-SHA256 x-token per CinetPay field order, CINETPAY_SECRET_KEY);
+  channels configurable via `CINETPAY_CHANNELS` (default ALL —
+  Orange/MTN/Moov/Wave/cards per merchant account).
+  `payment_service.apply_platform_payment` is now the single idempotent
+  confirmation path for PlatformPayment (credits + subscription activation),
+  shared by the legacy platform webhook (delegated) and the NEW
+  CinetPay-native `POST /payments/cinetpay/notify` (public; optional HMAC 403;
+  **always re-verifies with the check API before applying** → forgery/replay
+  safe; 503 when gateway unreachable so CinetPay retries; SCH-→
+  apply_school_payment / TPL-,SUB-→ apply_platform_payment; gateway payload
+  kept in metadata_json.gateway_check). `POST /payments/{ref}/refresh`:
+  authenticated gateway-backed re-verify (checkout return page polling, payer
+  retry, cashier reconciliation). Frontend: `/dashboard/payments/status`
+  (?transaction_id= from CinetPay return or ?ref=) with checking/pending
+  (7s poll)/success/failure states; checkout success/cancel URLs point there;
+  `payStatus` i18n (FR/EN, es/sw→EN). Env (examples updated): CINETPAY_API_KEY,
+  CINETPAY_SITE_ID, CINETPAY_SECRET_KEY, CINETPAY_API_URL, CINETPAY_CHECK_URL,
+  CINETPAY_CHANNELS, CINETPAY_NOTIFY_URL (API_PASSWORD is the transfer/payout
+  API — not used by checkout). Tests `test_cinetpay.py` (8 green) +
+  payment_service/gateway suites green. Live-key smoke test on production
+  remains a manual step (set NOTIFY_URL + SITE_ID/SECRET_KEY in the panel).
+
 - **Diploma & certificate template module (Scolarité)**: per-school,
   multi-tenant `DocumentTemplate` (migration 0054): kind (diploma/certificate),
   {{placeholder}} title/body, optional uploaded background, extensible

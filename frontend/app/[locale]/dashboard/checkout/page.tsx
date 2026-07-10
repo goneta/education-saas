@@ -144,8 +144,10 @@ export default function CheckoutPage() {
             body: JSON.stringify({
                 provider,
                 mobile_money_network: provider === "cinetpay" ? network : undefined,
-                success_url: `${window.location.origin}/${locale}/dashboard/account/invoices`,
-                cancel_url: `${window.location.origin}/${locale}/dashboard/checkout`,
+                // CinetPay appends ?transaction_id=… on return; the status page
+                // verifies the payment server-side and shows success/pending/failure.
+                success_url: `${window.location.origin}/${locale}/dashboard/payments/status`,
+                cancel_url: `${window.location.origin}/${locale}/dashboard/payments/status`,
             }),
         })
         if (res.ok) {

@@ -28,3 +28,4 @@
 ## Verification
 
 - python -m py_compile backend\routers\<module>.py; python -c "import backend.main as m; print(m.app.title)"
+- Platform webhook now delegates confirmation to payment_service.apply_platform_payment (shared with /payments/cinetpay/notify — zero duplication).

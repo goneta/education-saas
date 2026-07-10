@@ -7,7 +7,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .. import audit, crypto_utils, database, models, rbac, schemas, security
-from ..services import ai_credits, ai_credit_sync, payment_gateway, school_context as context_service
+from ..services import ai_credits, ai_credit_sync, payment_gateway, payment_service, school_context as context_service
 
 
 router = APIRouter(tags=["AI Credits & Payments"])
@@ -757,29 +757,14 @@ def platform_payment_webhook(payload: schemas.PlatformPaymentWebhook, x_teducai_
     payment = db.query(models.PlatformPayment).filter(models.PlatformPayment.reference == payload.reference).first()
     if not payment:
         raise HTTPException(status_code=404, detail="Platform payment not found")
-    payment.status = payload.status
-    payment.provider_reference = payload.provider_reference or payment.provider_reference
-    payment.metadata_json = {**(payment.metadata_json or {}), **(payload.metadata_json or {})}
-    if payload.status == "successful":
-        if payment.payment_type == "ai_credit_purchase":
-            ai_credits.apply_platform_payment_success(db, payment)
-        elif payment.payment_type == "subscription" and payment.school_id:
-            subscription = db.query(models.SchoolSubscription).filter(
-                models.SchoolSubscription.payment_reference == payment.reference,
-                models.SchoolSubscription.school_id == payment.school_id,
-            ).order_by(models.SchoolSubscription.id.desc()).first()
-            if subscription:
-                now = datetime.now(timezone.utc)
-                renewal = now + (timedelta(days=365) if subscription.billing_cycle == "yearly" else timedelta(days=30))
-                subscription.status = "active"
-                subscription.started_at = now
-                subscription.next_renewal_at = renewal
-                subscription.expires_at = renewal
-                school = db.query(models.School).filter(models.School.id == payment.school_id).first()
-                if school:
-                    school.subscription_plan = subscription.plan
-                    school.subscription_status = "active"
-                    school.current_billing_period_end = renewal
+    # Confirmation logic lives in the shared Payment Service so the CinetPay
+    # notify endpoint and this legacy webhook can never diverge.
+    payment_service.apply_platform_payment(
+        db, payment,
+        status=payload.status,
+        provider_reference=payload.provider_reference,
+        extra_metadata=payload.metadata_json,
+    )
     db.commit()
     db.refresh(payment)
     return payment

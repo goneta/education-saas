@@ -11,6 +11,7 @@ webhook in `ai_billing.py` so behaviour stays consistent and un-duplicated.
 No module should re-implement payment confirmation: call `apply_school_payment`.
 """
 
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -116,4 +117,73 @@ def apply_school_payment(
             source_id=payment.id,
             current_user=current_user,
         )
+    return True
+
+
+def apply_platform_payment(
+    db: Session,
+    payment: models.PlatformPayment,
+    *,
+    status: str,
+    provider_reference: Optional[str] = None,
+    extra_metadata: Optional[dict] = None,
+) -> bool:
+    """Idempotently apply a status to a PlatformPayment (credits/subscription).
+
+    Mirrors `apply_school_payment` for platform-side money: on the FIRST
+    transition to "successful" the credit wallet is topped up (via
+    `ai_credits.apply_platform_payment_success`, itself idempotent) or the
+    subscription is activated. Duplicate deliveries are safe no-ops. This is
+    the single confirmation path shared by the legacy platform webhook and the
+    CinetPay notify endpoint — no module re-implements it.
+    """
+    from . import ai_credits  # local import to avoid a service-layer cycle
+
+    if provider_reference:
+        payment.provider_reference = provider_reference
+    if extra_metadata:
+        payment.metadata_json = {**(payment.metadata_json or {}), **extra_metadata}
+
+    normalized = (status or "").lower()
+    if normalized != "successful":
+        if payment.status != "successful":  # never downgrade a confirmed payment
+            payment.status = normalized or payment.status
+        return False
+    if payment.status == "successful":
+        return False
+
+    payment.status = "successful"
+    if payment.payment_type == "ai_credit_purchase":
+        ai_credits.apply_platform_payment_success(db, payment)
+    elif payment.payment_type == "subscription" and payment.school_id:
+        subscription = (
+            db.query(models.SchoolSubscription)
+            .filter(
+                models.SchoolSubscription.payment_reference == payment.reference,
+                models.SchoolSubscription.school_id == payment.school_id,
+            )
+            .order_by(models.SchoolSubscription.id.desc())
+            .first()
+        )
+        if subscription:
+            now = datetime.now(timezone.utc)
+            renewal = now + (timedelta(days=365) if subscription.billing_cycle == "yearly" else timedelta(days=30))
+            subscription.status = "active"
+            subscription.started_at = now
+            subscription.next_renewal_at = renewal
+            subscription.expires_at = renewal
+            school = db.query(models.School).filter(models.School.id == payment.school_id).first()
+            if school:
+                school.subscription_plan = subscription.plan
+                school.subscription_status = "active"
+                school.current_billing_period_end = renewal
+
+    audit.record_audit(
+        db,
+        action="platform.payment.confirmed",
+        entity_type="platform_payment",
+        entity_id=payment.reference,
+        details={"amount": payment.amount, "currency": payment.currency,
+                 "provider": payment.provider, "payment_type": payment.payment_type},
+    )
     return True
