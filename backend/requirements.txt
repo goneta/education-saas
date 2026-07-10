@@ -18,3 +18,4 @@ qrcode[pil]
 boto3
 redis
 openpyxl
+pypdf

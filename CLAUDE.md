@@ -50,6 +50,30 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
+- **Diploma & certificate template module (Scolarité)**: per-school,
+  multi-tenant `DocumentTemplate` (migration 0054): kind (diploma/certificate),
+  {{placeholder}} title/body, optional uploaded background, extensible
+  `fields_config`, one default per (school, kind) — first created auto-defaults.
+  `services/document_templates.py`: CRUD/duplicate/set-default; field engine
+  resolving {{student_name}}/{{matricule}}/{{school_name}}/{{course}} (current
+  class)/{{academic_year}} (current year)/{{graduation_date}}/{{certificate_
+  number}}+{{diploma_number}} (auto DIP-/CERT-)/{{director_name}}/{{signature}}/
+  {{school_logo}}/{{qr_code}}/{{issue_date}} from REAL data (overrides win,
+  unknown override keys substitutable → extensible); reportlab A4-landscape
+  renderer — PNG/JPG backgrounds full-page, PDF backgrounds merged via pypdf
+  (now in requirements), DOCX stored but rendered with the standard layout
+  (never faked). `generate` registers in `DocumentRegistry`
+  (document_type=diploma|certificate, spec payload) and stamps the top-right
+  authenticity QR → verifiable at the public `/verify/{uuid}` page. Router
+  `/document-templates` (list/create/patch/delete, duplicate, default,
+  background upload via file_storage, placeholders, watermarked sample preview
+  — never registered, generate); RBAC admin/direction, school-scoped, audited.
+  Frontend Scolarité page `/dashboard/education/document-templates` (cards,
+  placeholder chips, upload, preview, generate panel using
+  `/students`→student_profile.id), sidebar entry, `docTemplates` i18n (FR/EN
+  full, es/sw→EN), docs page (EN+FR), DOX, tests
+  (`test_document_templates.py`, 5 green).
+
 - **Universal document QR authentication + public verification (foundation)**:
   a cross-cutting authenticity layer. New `DocumentRegistry` table (migration
   0053): public `uuid`, `document_type`, type-specific `payload`, SHA-256

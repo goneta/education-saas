@@ -30,6 +30,7 @@ export const DOC_GROUPS: DocGroup[] = [
         { slug: "classes-levels", label: "Classes, levels & rooms" },
         { slug: "assignments", label: "Homework & exercises" },
         { slug: "grades", label: "Grades & report cards" },
+        { slug: "diploma-templates", label: "Diploma & certificate templates" },
         { slug: "timetable-engine", label: "AI Timetable Engine" },
     ]},
     { tab: "Features", title: "AI platform", items: [
@@ -594,6 +595,26 @@ export const DOC_PAGES: Record<string, DocPage> = {
                 "**Parent** — lists each child, switches between them, and reviews the child's full record (grades, documents, payments, report cards, certificates).",
             ]},
             { k: "callout", tone: "tip", text: "Writes are role-gated server-side, so hiding a menu is defense-in-depth rather than the only control." },
+        ),
+    },
+
+    "diploma-templates": {
+        slug: "diploma-templates", label: "Diploma & certificate templates", breadcrumb: "Features / Academic management",
+        title: "Diploma & certificate templates",
+        description: "Each school designs its own diplomas and certificates, then generates QR-verified, print-ready PDFs from real student data.",
+        blocks: P(
+            { k: "p", text: "The module (Scolarité → Diplômes & certificats) is fully multi-tenant: every school manages its own templates. A template combines a name, a document title, a body text carrying {{placeholder}} variables, and an optional uploaded background." },
+            { k: "h2", text: "Managing templates" },
+            { k: "ul", items: [
+                "Create, edit, duplicate, delete, activate/deactivate templates — one **default** per kind (diploma / certificate); the first template created becomes the default automatically.",
+                "Upload a background in **PDF, DOCX, PNG or JPG**. PNG/JPG are drawn as the full-page background; a PDF background is merged under the document; DOCX files are stored (kept downloadable) but rendered with the standard layout — honest limitation, since DOCX→PDF conversion needs desktop tooling.",
+                "Live **preview** renders the template with sample data and a PREVIEW watermark — nothing is registered.",
+            ]},
+            { k: "h2", text: "Dynamic fields" },
+            { k: "p", text: "The engine replaces {{student_name}}, {{matricule}}, {{school_name}}, {{training_name}}, {{course}}, {{academic_year}}, {{graduation_date}}, {{certificate_number}}, {{diploma_number}}, {{director_name}}, {{signature}}, {{school_logo}}, {{qr_code}} and {{issue_date}} with real data: the student's name and matricule, the current class, the active academic year, an auto-generated document number (DIP-/CERT-…), and any values provided at generation time. The system is extensible — unknown keys supplied as overrides are substituted too." },
+            { k: "h2", text: "Generation & authenticity" },
+            { k: "p", text: "Generation picks the requested template (or the school's default for the kind), resolves the fields for a real student, registers the document in the universal document registry and returns a print-ready A4 landscape PDF stamped with the top-right authenticity QR — scanning it (or opening /verify/{uuid}) confirms the document on the public verification page." },
+            { k: "callout", tone: "note", text: "Built on the [document QR & verification](/docs/document-verification) foundation — diplomas and certificates are verifiable exactly like invoices, with a type-specific payload (student, matricule, academic year, diploma/training name, number, dates)." },
         ),
     },
 

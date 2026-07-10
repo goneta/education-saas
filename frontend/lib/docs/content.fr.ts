@@ -45,6 +45,7 @@ export const DOC_GROUPS_FR: DocGroup[] = [
         { slug: "classes-levels", label: "Classes, niveaux & salles" },
         { slug: "assignments", label: "Devoirs & exercices" },
         { slug: "grades", label: "Notes & bulletins" },
+        { slug: "diploma-templates", label: "Modèles de diplômes & certificats" },
         { slug: "timetable-engine", label: "Moteur d'emploi du temps IA" },
     ]},
     { tab: "Features", title: "Plateforme IA", items: [
@@ -607,6 +608,26 @@ export const DOC_PAGES_FR: Record<string, DocPage> = {
                 "**Parent** — liste chaque enfant, bascule de l'un à l'autre et consulte le dossier complet de l'enfant (notes, documents, paiements, bulletins, certificats).",
             ]},
             { k: "callout", tone: "tip", text: "Les écritures sont protégées par rôle côté serveur, de sorte que masquer un menu relève de la défense en profondeur et non du seul contrôle." },
+        ),
+    },
+
+    "diploma-templates": {
+        slug: "diploma-templates", label: "Modèles de diplômes & certificats", breadcrumb: "Fonctionnalités / Gestion académique",
+        title: "Modèles de diplômes & certificats",
+        description: "Chaque établissement conçoit ses propres diplômes et certificats, puis génère des PDF prêts à imprimer, vérifiés par QR, à partir des données réelles des élèves.",
+        blocks: P(
+            { k: "p", text: "Le module (Scolarité → Diplômes & certificats) est entièrement multi-tenant : chaque établissement gère ses propres modèles. Un modèle combine un nom, un titre de document, un texte de corps portant des variables {{placeholder}}, et un fond importé facultatif." },
+            { k: "h2", text: "Gestion des modèles" },
+            { k: "ul", items: [
+                "Créer, modifier, dupliquer, supprimer, activer/désactiver des modèles — un **modèle par défaut** par type (diplôme / certificat) ; le premier modèle créé devient automatiquement le défaut.",
+                "Importer un fond en **PDF, DOCX, PNG ou JPG**. Les PNG/JPG sont dessinés en fond pleine page ; un fond PDF est fusionné sous le document ; les fichiers DOCX sont conservés (téléchargeables) mais rendus avec la mise en page standard — limite assumée, la conversion DOCX→PDF exigeant un outillage bureautique.",
+                "L'**aperçu** en direct rend le modèle avec des données d'exemple et un filigrane APERÇU — rien n'est enregistré.",
+            ]},
+            { k: "h2", text: "Champs dynamiques" },
+            { k: "p", text: "Le moteur remplace {{student_name}}, {{matricule}}, {{school_name}}, {{training_name}}, {{course}}, {{academic_year}}, {{graduation_date}}, {{certificate_number}}, {{diploma_number}}, {{director_name}}, {{signature}}, {{school_logo}}, {{qr_code}} et {{issue_date}} par des données réelles : le nom et le matricule de l'élève, la classe actuelle, l'année académique en cours, un numéro de document auto-généré (DIP-/CERT-…) et toute valeur fournie à la génération. Le système est extensible — les clés inconnues fournies en surcharge sont substituées aussi." },
+            { k: "h2", text: "Génération & authenticité" },
+            { k: "p", text: "La génération choisit le modèle demandé (ou le modèle par défaut de l'établissement pour le type), résout les champs pour un élève réel, enregistre le document dans le registre universel et renvoie un PDF A4 paysage prêt à imprimer, estampillé du QR d'authenticité en haut à droite — le scanner (ou ouvrir /verify/{uuid}) confirme le document sur la page publique de vérification." },
+            { k: "callout", tone: "note", text: "Construit sur le socle [QR & vérification des documents](/docs/document-verification) — diplômes et certificats sont vérifiables exactement comme les factures, avec une charge utile propre au type (élève, matricule, année académique, nom du diplôme/de la formation, numéro, dates)." },
         ),
     },
 

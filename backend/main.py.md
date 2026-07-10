@@ -55,3 +55,4 @@ The application registers the `/site` router for the public marketing-site conte
 - Registers the assignments router (/assignments) — homework/exercise module.
 - Registers the billing router (/billing) — enterprise Billing & Subscription module (unified surface over subscriptions + AI credits + platform payments).
 - Registers the public verify router (/verify/{uuid}) — universal document authentication.
+- Registers the document-templates router (/document-templates) — diploma & certificate template module.

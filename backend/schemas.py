@@ -3825,3 +3825,55 @@ class BillingAssistantRequest(BaseModel):
 
 class InvoiceEmailRequest(BaseModel):
     recipients: Optional[List[str]] = None
+
+
+# --- Diploma & certificate templates ------------------------------------------
+
+class DocumentTemplateCreate(BaseModel):
+    kind: str = "certificate"
+    name: str
+    description: Optional[str] = None
+    title_text: Optional[str] = None
+    body_text: Optional[str] = None
+    fields_config: Optional[dict] = None
+    is_default: bool = False
+
+
+class DocumentTemplateUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    title_text: Optional[str] = None
+    body_text: Optional[str] = None
+    fields_config: Optional[dict] = None
+    is_default: Optional[bool] = None
+    is_active: Optional[bool] = None
+
+
+class DocumentTemplateResponse(BaseModel):
+    id: int
+    school_id: int
+    kind: str
+    name: str
+    description: Optional[str] = None
+    title_text: Optional[str] = None
+    body_text: Optional[str] = None
+    background_type: Optional[str] = None
+    background_filename: Optional[str] = None
+    fields_config: Optional[dict] = None
+    is_default: bool
+    is_active: bool
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DocumentPreviewRequest(BaseModel):
+    overrides: Optional[dict] = None
+
+
+class DocumentGenerateRequest(BaseModel):
+    student_id: int
+    kind: Optional[str] = None  # required when template_id is absent
+    template_id: Optional[int] = None
+    overrides: Optional[dict] = None

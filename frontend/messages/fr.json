@@ -86,7 +86,8 @@
     "gradeScan": "Notes par photo",
     "assignments": "Devoirs",
     "myAssignments": "Mes devoirs",
-    "billing": "Facturation"
+    "billing": "Facturation",
+    "docTemplates": "Diplômes & certificats"
   },
   "layout": {
     "previewTitle": "Apercu du contenu genere par l'IA",
@@ -1326,5 +1327,49 @@
         "last_year": "Montrer ma tendance de dépenses"
       }
     }
+  },
+  "docTemplates": {
+    "title": "Modèles de Diplômes & Certificats",
+    "subtitle": "Concevez les diplômes et certificats de votre établissement, puis générez des documents vérifiés par QR à partir des données réelles des élèves.",
+    "newTemplate": "Nouveau modèle",
+    "editTemplate": "Modifier le modèle",
+    "kind": "Type",
+    "kinds": {
+      "diploma": "Diplôme",
+      "certificate": "Certificat"
+    },
+    "name": "Nom",
+    "description": "Description",
+    "titleText": "Titre du document",
+    "bodyText": "Texte du corps",
+    "bodyHint": "Utilisez des {{variables}} — elles sont remplacées par les données réelles à la génération.",
+    "placeholders": "Champs disponibles",
+    "background": "Fond",
+    "uploadBackground": "Importer un fond (PDF, DOCX, PNG, JPG)",
+    "backgroundNote": "Les fonds PNG/JPG et PDF sont rendus sous le document. Les fichiers DOCX sont conservés mais rendus avec la mise en page standard.",
+    "default": "Par défaut",
+    "setDefault": "Définir par défaut",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "activate": "Activer",
+    "deactivate": "Désactiver",
+    "preview": "Aperçu",
+    "duplicate": "Dupliquer",
+    "delete": "Supprimer",
+    "confirmDelete": "Supprimer ce modèle ?",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "saved": "Enregistré.",
+    "empty": "Aucun modèle pour l'instant. Créez le premier.",
+    "generate": "Générer un document",
+    "generateDesc": "Choisissez un élève et un modèle — le PDF intègre un QR d'authenticité vérifiable sur /verify.",
+    "student": "Élève",
+    "template": "Modèle",
+    "defaultTemplate": "Modèle par défaut de l'établissement",
+    "trainingName": "Nom de la formation / du diplôme",
+    "directorName": "Nom du directeur",
+    "graduationDate": "Date de diplomation",
+    "generateBtn": "Générer le PDF",
+    "error": "Une erreur est survenue."
   }
 }

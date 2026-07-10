@@ -74,3 +74,4 @@ The schema catalog includes enrollment, transfer, academic-year closure, tempora
 - Payment-method schemas: `PaymentMethodCreate`, `PaymentMethodUpdate`.
 - `BillingAssistantRequest` (billing assistant question + optional language).
 - `InvoiceEmailRequest` (optional recipients for invoice e-mail).
+- Document-template schemas: `DocumentTemplateCreate/Update/Response`, `DocumentPreviewRequest`, `DocumentGenerateRequest`.

@@ -9,6 +9,7 @@ import { normalizeLocale } from "@/lib/i18n"
 import { API_BASE_URL } from "@/lib/config"
 import { useAuth } from "@/contexts/auth-context"
 import {
+    Award,
     BookOpen,
     BriefcaseBusiness,
     BrainCircuit,
@@ -138,6 +139,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/education/internships`, label: t("internships"), icon: BriefcaseBusiness },
                 { href: `/${locale}/dashboard/assignments`, label: t("assignments"), icon: ClipboardList },
                 { href: `/${locale}/dashboard/grades/assessments`, label: t("grades"), icon: ClipboardCheck },
+                { href: `/${locale}/dashboard/education/document-templates`, label: t("docTemplates"), icon: Award },
                 { href: `/${locale}/dashboard/library`, label: t("library"), icon: BookOpen },
                 { href: `/${locale}/dashboard/portal`, label: t("portal"), icon: Users },
                 { href: `/${locale}/dashboard/documents`, label: t("documents"), icon: FileText },

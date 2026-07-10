@@ -3452,6 +3452,42 @@ class DocumentRegistry(Base):
     )
 
 
+class DocumentTemplate(Base):
+    """Per-school diploma / certificate template (multi-tenant).
+
+    A template is a named layout for generating diplomas or certificates: an
+    optional uploaded background (PDF/PNG/JPG rendered as the page background;
+    DOCX stored for download but rendered with the standard layout), a body
+    text carrying ``{{placeholder}}`` variables resolved from real student /
+    school data at generation time, and an extensible ``fields_config`` JSON.
+    One default per (school, kind); generation uses the default when no
+    template is specified. Generated documents are registered in
+    ``DocumentRegistry`` and stamped with the authenticity QR.
+    """
+
+    __tablename__ = "document_templates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    kind = Column(String, nullable=False, index=True)  # diploma | certificate
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    title_text = Column(String, nullable=True)  # big heading; {{placeholders}} allowed
+    body_text = Column(Text, nullable=True)  # main paragraph; {{placeholders}} allowed
+    background_path = Column(String, nullable=True)  # file_storage path
+    background_type = Column(String, nullable=True)  # pdf | docx | png | jpg
+    background_filename = Column(String, nullable=True)
+    fields_config = Column(JSON, nullable=True)  # extensible per-field options
+    is_default = Column(Boolean, default=False, nullable=False, index=True)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    school = relationship("School")
+    created_by = relationship("User")
+
+
 class AIUsageLog(Base):
     __tablename__ = "ai_usage_logs"
 
