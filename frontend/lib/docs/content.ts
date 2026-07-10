@@ -60,6 +60,7 @@ export const DOC_GROUPS: DocGroup[] = [
         { slug: "multi-tenant", label: "Institutions & context" },
         { slug: "roles-permissions", label: "Roles & permissions" },
         { slug: "personnel", label: "School staff" },
+        { slug: "document-verification", label: "Document QR & verification" },
         { slug: "help-center", label: "In-app Help Center" },
     ]},
     { tab: "Resources", title: "Developers", items: [
@@ -593,6 +594,20 @@ export const DOC_PAGES: Record<string, DocPage> = {
                 "**Parent** — lists each child, switches between them, and reviews the child's full record (grades, documents, payments, report cards, certificates).",
             ]},
             { k: "callout", tone: "tip", text: "Writes are role-gated server-side, so hiding a menu is defense-in-depth rather than the only control." },
+        ),
+    },
+
+    "document-verification": {
+        slug: "document-verification", label: "Document QR & verification", breadcrumb: "Admin / Platform & administration",
+        title: "Document QR authentication & verification",
+        description: "Every generated TeducAI document carries a QR code that encodes a verifiable JSON snapshot and a public verification URL, so anyone can confirm the document is authentic.",
+        blocks: P(
+            { k: "p", text: "TeducAI keeps a universal authenticity registry: when a document is generated (invoice, receipt, report card, certificate, diploma, payslip, …), a record is created with a public UUID, a content hash and a type-specific JSON snapshot. The document embeds a QR — top-right, without disturbing the layout — encoding that JSON plus a public verification URL." },
+            { k: "h2", text: "Verifying a document" },
+            { k: "p", text: "Scanning the QR (or opening /verify/{uuid}) resolves the public verification page, which shows whether the document is authentic, revoked or unknown, along with its main information — type, reference, institution, who it was issued to, generation date and status. The page is public and needs no login." },
+            { k: "h2", text: "What the QR encodes" },
+            { k: "p", text: "The JSON adapts to the document type. For an invoice it includes the school name, invoice number, customer name, generation date, who generated it, the document UUID and the verification URL; a report card adds student name/ID/matricule, academic year, class and term; a diploma adds the diploma name/number and graduation date; a payslip adds the employee, payroll number and month." },
+            { k: "callout", tone: "note", title: "How it stays trustworthy", text: "The registry stores a SHA-256 hash of the snapshot and a status flag; an institution can revoke a document, after which verification reports it as revoked. Registration is idempotent per source document, so re-downloading the same invoice keeps the same UUID. Wired first for invoices; other generators are being connected to the same registry." },
         ),
     },
 

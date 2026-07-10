@@ -54,3 +54,4 @@ The application registers the `/site` router for the public marketing-site conte
 - CORS default now allows BOTH http://localhost:3000 and http://127.0.0.1:3000 (they are distinct origins). Fixes the e2e login: Playwright serves the app on 127.0.0.1:3000 and calls the backend cross-origin, so a localhost-only allow-list let the simple POST /auth/token reach the server (logged 200) but blocked the preflighted GET /auth/me, so the browser fetch threw and login never redirected off /login. Production overrides via CORS_ALLOWED_ORIGINS; wildcard guard unchanged.
 - Registers the assignments router (/assignments) — homework/exercise module.
 - Registers the billing router (/billing) — enterprise Billing & Subscription module (unified surface over subscriptions + AI credits + platform payments).
+- Registers the public verify router (/verify/{uuid}) — universal document authentication.

@@ -75,6 +75,7 @@ export const DOC_GROUPS_FR: DocGroup[] = [
         { slug: "multi-tenant", label: "Établissements & contexte" },
         { slug: "roles-permissions", label: "Rôles & permissions" },
         { slug: "personnel", label: "Personnel de l'établissement" },
+        { slug: "document-verification", label: "QR & vérification des documents" },
         { slug: "help-center", label: "Centre d'aide intégré" },
     ]},
     { tab: "Resources", title: "Développeurs", items: [
@@ -606,6 +607,20 @@ export const DOC_PAGES_FR: Record<string, DocPage> = {
                 "**Parent** — liste chaque enfant, bascule de l'un à l'autre et consulte le dossier complet de l'enfant (notes, documents, paiements, bulletins, certificats).",
             ]},
             { k: "callout", tone: "tip", text: "Les écritures sont protégées par rôle côté serveur, de sorte que masquer un menu relève de la défense en profondeur et non du seul contrôle." },
+        ),
+    },
+
+    "document-verification": {
+        slug: "document-verification", label: "QR & vérification des documents", breadcrumb: "Administration / Plateforme & administration",
+        title: "Authentification des documents par QR & vérification",
+        description: "Chaque document généré par TeducAI porte un QR code qui encode un instantané JSON vérifiable et une URL publique de vérification, afin que quiconque puisse confirmer l'authenticité du document.",
+        blocks: P(
+            { k: "p", text: "TeducAI tient un registre d'authenticité universel : lorsqu'un document est généré (facture, reçu, bulletin, certificat, diplôme, bulletin de salaire…), un enregistrement est créé avec un UUID public, une empreinte de contenu et un instantané JSON propre au type. Le document intègre un QR — en haut à droite, sans dégrader la mise en page — encodant ce JSON ainsi qu'une URL publique de vérification." },
+            { k: "h2", text: "Vérifier un document" },
+            { k: "p", text: "Scanner le QR (ou ouvrir /verify/{uuid}) ouvre la page publique de vérification, qui indique si le document est authentique, révoqué ou inconnu, avec ses informations principales — type, référence, établissement, destinataire, date de génération et statut. La page est publique et ne nécessite aucune connexion." },
+            { k: "h2", text: "Contenu du QR" },
+            { k: "p", text: "Le JSON s'adapte au type de document. Pour une facture, il contient le nom de l'établissement, le numéro de facture, le nom du client, la date de génération, l'auteur, l'UUID du document et l'URL de vérification ; un bulletin ajoute le nom/ID/matricule de l'élève, l'année scolaire, la classe et le trimestre ; un diplôme ajoute le nom/numéro du diplôme et la date de diplomation ; un bulletin de salaire ajoute l'employé, le numéro de paie et le mois." },
+            { k: "callout", tone: "note", title: "Ce qui garantit la confiance", text: "Le registre stocke une empreinte SHA-256 de l'instantané et un statut ; un établissement peut révoquer un document, la vérification le signale alors comme révoqué. L'enregistrement est idempotent par document source : re-télécharger la même facture conserve le même UUID. Branché d'abord sur les factures ; les autres générateurs sont progressivement connectés au même registre." },
         ),
     },
 

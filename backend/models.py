@@ -3416,6 +3416,42 @@ class BillingPaymentMethod(Base):
     created_by = relationship("User")
 
 
+class DocumentRegistry(Base):
+    """Universal authenticity registry for every generated TeducAI document.
+
+    Cross-cutting layer, not a duplicate: each row REFERENCES an originating
+    record (source_type/source_id) and stores a verifiable snapshot (payload +
+    content_hash) plus a public UUID. Any generated PDF embeds a QR encoding the
+    type-specific JSON + the public verification URL (/verify/{uuid}).
+    """
+
+    __tablename__ = "document_registry"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, nullable=False, unique=True, index=True)
+    document_type = Column(String, nullable=False, index=True)  # invoice/report_card/certificate/diploma/payslip/...
+    title = Column(String, nullable=True)
+    reference = Column(String, nullable=True, index=True)  # human reference (INV-.., CERT-.., ...)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    issued_to_name = Column(String, nullable=True)
+    issued_to_id = Column(Integer, nullable=True)  # generic (student/user id), no FK to stay type-agnostic
+    payload = Column(JSON, nullable=True)  # type-specific fields shown in QR + verify page
+    content_hash = Column(String, nullable=True)  # sha256 of the canonical payload (integrity)
+    status = Column(String, default="valid", nullable=False, index=True)  # valid/revoked
+    source_type = Column(String, nullable=True, index=True)
+    source_id = Column(Integer, nullable=True, index=True)
+    issued_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    school = relationship("School")
+    issued_by = relationship("User")
+
+    __table_args__ = (
+        UniqueConstraint("source_type", "source_id", name="_document_registry_source_uc"),
+    )
+
+
 class AIUsageLog(Base):
     __tablename__ = "ai_usage_logs"
 

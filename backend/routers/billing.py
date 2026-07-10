@@ -194,6 +194,8 @@ def get_invoice_detail(payment_id: int, school_id: Optional[int] = None,
     detail = billing.invoice_detail(db, resolved, payment_id)
     if not detail:
         raise HTTPException(status_code=404, detail="Facture introuvable.")
+    billing.attach_registry(db, detail, resolved, current_user)
+    db.commit()
     return detail
 
 
@@ -228,6 +230,8 @@ def get_invoice_pdf(payment_id: int, school_id: Optional[int] = None,
     detail = billing.invoice_detail(db, resolved, payment_id)
     if not detail:
         raise HTTPException(status_code=404, detail="Facture introuvable.")
+    billing.attach_registry(db, detail, resolved, current_user)
+    db.commit()
     pdf = billing.render_invoice_pdf(detail)
     filename = f"invoice-{detail.get('number', payment_id)}.pdf"
     return Response(content=pdf, media_type="application/pdf",
