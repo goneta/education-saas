@@ -41,3 +41,4 @@
 - Homework module: teacher/admin menus gain "Devoirs" (`/dashboard/assignments`, ClipboardList); student/parent menus gain "Mes devoirs" (`/dashboard/my-assignments`).
 - Billing module: Finance menu gains "Billing" (`/dashboard/finance/billing`, WalletCards) right after the Finance root (admin/accountant/director menus).
 - Scolarité: admin menu gains "Diplômes & certificats" (`/dashboard/education/document-templates`, Award) after Notes.
+- AI Agents: admin System menu gains "Agents IA" (/dashboard/ai-agents, BrainCircuit) after AI command center. Role menus (teacher/student/parent) get their entries in a later increment; the page itself is role-safe (server filters capabilities).

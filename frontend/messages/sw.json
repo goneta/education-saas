@@ -87,7 +87,8 @@
     "assignments": "Kazi",
     "myAssignments": "Kazi zangu",
     "billing": "Billing",
-    "docTemplates": "Diplomas & certificates"
+    "docTemplates": "Diplomas & certificates",
+    "aiAgents": "AI Agents"
   },
   "layout": {
     "previewTitle": "Hakiki ya maudhui yaliyotengenezwa na AI",
@@ -1384,5 +1385,24 @@
     "receipts": "My receipts & invoices",
     "enterRef": "Enter a payment reference (e.g. SCH-…, TPL-…, SUB-…)",
     "unknown": "The provider could not be reached. Try again in a moment."
+  },
+  "aiAgents": {
+    "title": "AI Agents",
+    "subtitle": "Ask anything — the coordinator routes your question to the right specialist.",
+    "placeholder": "Ask your question…",
+    "send": "Send",
+    "thinking": "Thinking…",
+    "toolRunning": "Looking up data…",
+    "handoff": "Handed off to",
+    "you": "You",
+    "newChat": "New conversation",
+    "error": "Something went wrong.",
+    "noProvider": "No AI provider is configured. Ask your administrator.",
+    "agentsAvailable": "Available agents",
+    "suggested": {
+      "s1": "Summarize this student's recent grades",
+      "s2": "Which invoices are unpaid?",
+      "s3": "Explain fractions simply"
+    }
   }
 }

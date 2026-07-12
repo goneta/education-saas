@@ -87,7 +87,8 @@
     "assignments": "Devoirs",
     "myAssignments": "Mes devoirs",
     "billing": "Facturation",
-    "docTemplates": "Diplômes & certificats"
+    "docTemplates": "Diplômes & certificats",
+    "aiAgents": "Agents IA"
   },
   "layout": {
     "previewTitle": "Apercu du contenu genere par l'IA",
@@ -1384,5 +1385,24 @@
     "receipts": "Mes reçus & factures",
     "enterRef": "Saisissez une référence de paiement (ex. SCH-…, TPL-…, SUB-…)",
     "unknown": "L'opérateur est injoignable. Réessayez dans un instant."
+  },
+  "aiAgents": {
+    "title": "Agents IA",
+    "subtitle": "Posez votre question — le coordinateur la dirige vers le bon spécialiste.",
+    "placeholder": "Posez votre question…",
+    "send": "Envoyer",
+    "thinking": "Réflexion…",
+    "toolRunning": "Consultation des données…",
+    "handoff": "Transmis à",
+    "you": "Vous",
+    "newChat": "Nouvelle conversation",
+    "error": "Une erreur est survenue.",
+    "noProvider": "Aucun fournisseur IA n'est configuré. Contactez votre administrateur.",
+    "agentsAvailable": "Agents disponibles",
+    "suggested": {
+      "s1": "Résume les dernières notes de cet élève",
+      "s2": "Quelles factures sont impayées ?",
+      "s3": "Explique les fractions simplement"
+    }
   }
 }
