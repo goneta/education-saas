@@ -19,3 +19,4 @@
   runtime needs only openai + pydantic>=2.10<2.12 + griffe.
 ## Verification
 - `python -m pytest backend/test_agent_platform.py` (4 green).
+- Live E2E verified (2026-07-12): invalid OpenAI key (401) triggered automatic fallback to the OpenRouter registry provider; real streamed run completed with Coordinator→Academic handoff, search_students/lookup_grades/lookup_attendance tool executions on seeded data, 85 text deltas, credit deduction. Delta filter now passes ONLY ResponseTextDeltaEvent (function-call argument fragments previously leaked into the visible stream).

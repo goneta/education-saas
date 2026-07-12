@@ -276,6 +276,11 @@ async def stream_conversation(ctx: AgentContext, message: str,
             final_text = ""
             async for event in result.stream_events():
                 if event.type == "raw_response_event":
+                    # Only TEXT deltas reach the user: raw events also carry
+                    # function-call argument fragments (JSON chunks) that must
+                    # never render in the chat stream.
+                    if type(event.data).__name__ != "ResponseTextDeltaEvent":
+                        continue
                     delta = getattr(event.data, "delta", None)
                     if isinstance(delta, str) and delta:
                         final_text += delta
