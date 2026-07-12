@@ -19,3 +19,4 @@ boto3
 redis
 openpyxl
 pypdf
+openai-agents

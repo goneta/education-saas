@@ -50,6 +50,27 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
+- **AI Multi-Agent Platform (increment 1 — OpenAI Agents SDK foundation)**:
+  `services/agent_platform.py` + `routers/agent_platform.py` (`/agents`) on
+  `openai-agents` 0.18 (Agent/Runner, handoffs, function tools, streaming).
+  Coordinator + Academic + Student-Tutor + Finance agents; handoffs filtered
+  by caller role at graph-build time AND RBAC re-checked inside every tool;
+  4 tenant-scoped read tools (students/grades/attendance/invoices). Providers
+  come from the EXISTING `AIProvider` registry (priority order, decrypt_secret,
+  base_url → per-provider AsyncOpenAI client): `stream_conversation` retries
+  down the list on any provider failure = automatic multi-provider fallback;
+  env OPENAI_API_KEY works with an empty registry; no provider → clear error
+  (never faked). Credit-gated via ai_credits; SSE events
+  start/delta/tool/handoff/done(+history via to_input_list)/error;
+  `GET /agents/capabilities`. Tests `test_agent_platform.py` (4 green).
+  **Deploy note:** install `openai-agents` with `--no-deps` next to the pinned
+  fastapi 0.104 stack (its transitive mcp/starlette/pydantic pins clash;
+  runtime needs openai + pydantic>=2.10,<2.12 + griffe). **Roadmap (NOT
+  built):** remaining specialist agents (admin/transport/library/HR/comms/
+  analytics/content/knowledge-base), write-action tools, streaming chat UI,
+  role AI dashboards, voice, file/vision inputs, session memory store,
+  guardrails, per-model cost routing, provider health dashboard.
+
 - **CinetPay payment gateway — production completion**: no SDK added (the
   PyPI/npm `cinetpay-*` packages are v0.1.x; the existing
   `services/payment_gateway.py` already speaks the checkout REST API v2
