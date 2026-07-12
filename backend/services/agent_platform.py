@@ -30,8 +30,11 @@ logger = logging.getLogger("teducai.agent_platform")
 # Roles allowed to reach each specialist. The coordinator only exposes the
 # handoffs the caller's role is entitled to — RBAC happens at graph-build time
 # AND inside every tool (defence in depth).
-FINANCE_ROLES = {"super_admin", "school_admin", "director", "accountant", "cashier", "parent"}
-ACADEMIC_ROLES = {"super_admin", "school_admin", "director", "teacher", "student", "parent"}
+FINANCE_ROLES = {"super_admin", "school_admin", "admin", "direction", "director", "accountant", "cashier", "parent"}
+ACADEMIC_ROLES = {"super_admin", "school_admin", "admin", "direction", "director", "teacher", "student", "parent"}
+LIBRARY_ROLES = ACADEMIC_ROLES | {"staff", "secretary"}
+HR_ROLES = {"super_admin", "school_admin", "admin", "direction", "director", "staff", "teacher"}
+TRANSPORT_ROLES = {"super_admin", "school_admin", "admin", "direction", "director", "parent", "student", "staff"}
 
 
 @dataclass
@@ -181,7 +184,76 @@ def _tools():
                 "status": getattr(r.status, "value", str(r.status))} for r in rows]
         return json.dumps(out, ensure_ascii=False) if out else "No invoices found for this student."
 
-    return search_students, lookup_grades, lookup_attendance, lookup_invoices
+    @function_tool
+    def lookup_book_loans(ctx: RunContextWrapper[AgentContext], student_name: str) -> str:
+        """Library loans (book title, due date, status) for a member of the
+        caller's school, searched by name."""
+        c = ctx.context
+        if c.role not in LIBRARY_ROLES:
+            return "Access denied."
+        school_id = c.require_school()
+        q = (
+            c.db.query(models.Loan, models.Book, models.User)
+            .join(models.Book, models.Book.id == models.Loan.book_id)
+            .join(models.User, models.User.id == models.Loan.user_id)
+            .filter(models.User.school_id == school_id,
+                    models.User.full_name.ilike(f"%{student_name}%"))
+        )
+        if c.role in {"student", "pupil"}:
+            q = q.filter(models.User.id == c.user_id)
+        rows = q.order_by(models.Loan.id.desc()).limit(15).all()
+        out = [{"book": b.title, "borrower": u.full_name, "due": str(l.due_date),
+                "returned": str(l.return_date) if l.return_date else None,
+                "status": getattr(l.status, "value", str(l.status))} for l, b, u in rows]
+        return json.dumps(out, ensure_ascii=False) if out else "No library loans found."
+
+    @function_tool
+    def lookup_leave_requests(ctx: RunContextWrapper[AgentContext], staff_name: str) -> str:
+        """Leave requests (type, dates, status) for staff of the caller's school.
+        Non-admin staff only see their own requests."""
+        c = ctx.context
+        if c.role not in HR_ROLES:
+            return "Access denied."
+        school_id = c.require_school()
+        q = (
+            c.db.query(models.LeaveRequest, models.User)
+            .join(models.User, models.User.id == models.LeaveRequest.staff_user_id)
+            .filter(models.LeaveRequest.school_id == school_id,
+                    models.User.full_name.ilike(f"%{staff_name}%"))
+        )
+        if c.role in {"staff", "teacher"}:
+            q = q.filter(models.User.id == c.user_id)
+        rows = q.order_by(models.LeaveRequest.id.desc()).limit(15).all()
+        out = [{"staff": u.full_name, "type": r.leave_type, "from": str(r.start_date),
+                "to": str(r.end_date), "status": getattr(r.status, "value", str(r.status))}
+               for r, u in rows]
+        return json.dumps(out, ensure_ascii=False) if out else "No leave requests found."
+
+    @function_tool
+    def lookup_transport(ctx: RunContextWrapper[AgentContext], student_id: int) -> str:
+        """Transport assignment (route, pickup/dropoff stops) for a student of
+        the caller's school."""
+        c = ctx.context
+        if c.role not in TRANSPORT_ROLES:
+            return "Access denied."
+        school_id = c.require_school()
+        q = (
+            c.db.query(models.TransportAssignment)
+            .join(models.StudentProfile, models.StudentProfile.id == models.TransportAssignment.student_id)
+            .join(models.User, models.User.id == models.StudentProfile.user_id)
+            .filter(models.TransportAssignment.student_id == student_id,
+                    models.User.school_id == school_id,
+                    models.TransportAssignment.is_active.is_(True))
+        )
+        if c.role in {"student", "pupil"}:
+            q = q.filter(models.User.id == c.user_id)
+        rows = q.limit(5).all()
+        out = [{"route_id": r.route_id, "pickup": r.pickup_stop, "dropoff": r.dropoff_stop}
+               for r in rows]
+        return json.dumps(out, ensure_ascii=False) if out else "No active transport assignment."
+
+    return (search_students, lookup_grades, lookup_attendance, lookup_invoices,
+            lookup_book_loans, lookup_leave_requests, lookup_transport)
 
 
 # --- Agent graph ---------------------------------------------------------------
@@ -191,7 +263,8 @@ def build_agents(ctx: AgentContext, model):
     the caller's role may reach."""
     from agents import Agent
 
-    search_students, lookup_grades, lookup_attendance, lookup_invoices = _tools()
+    (search_students, lookup_grades, lookup_attendance, lookup_invoices,
+     lookup_book_loans, lookup_leave_requests, lookup_transport) = _tools()
     base = (
         f"You are part of TeducAI, a school management platform. Caller: {ctx.full_name} "
         f"(role: {ctx.role}, school #{ctx.school_id}). Reply in the caller's language "
@@ -222,18 +295,61 @@ def build_agents(ctx: AgentContext, model):
         tools=[search_students, lookup_invoices], model=model,
     )
 
+    library = Agent[AgentContext](
+        name="Library Agent",
+        handoff_description="Book loans, returns, due dates, library questions.",
+        instructions=base + " You are the librarian: look up loans, due dates and "
+        "returns; remind members politely about overdue books.",
+        tools=[lookup_book_loans], model=model,
+    )
+    hr = Agent[AgentContext](
+        name="HR Agent",
+        handoff_description="Staff leave requests, HR status questions.",
+        instructions=base + " You are the HR specialist: look up leave requests and "
+        "their status; explain the approval flow (admins decide).",
+        tools=[lookup_leave_requests], model=model,
+    )
+    transport = Agent[AgentContext](
+        name="Transport Agent",
+        handoff_description="School bus routes, pickup/dropoff stops for students.",
+        instructions=base + " You are the transport specialist: look up a student's "
+        "route and stops; direct route-change requests to the school administration.",
+        tools=[search_students, lookup_transport], model=model,
+    )
+
     specialists = []
     if ctx.role in ACADEMIC_ROLES:
         specialists += [academic, tutor]
     if ctx.role in FINANCE_ROLES:
         specialists.append(finance)
+    if ctx.role in LIBRARY_ROLES:
+        specialists.append(library)
+    if ctx.role in HR_ROLES:
+        specialists.append(hr)
+    if ctx.role in TRANSPORT_ROLES:
+        specialists.append(transport)
 
+    # Specialists are exposed BOTH ways: as handoffs (one specialist owns the
+    # reply) and as consult tools (agents-as-tools) so a multi-part question can
+    # gather answers from SEVERAL specialists and synthesize ONE response —
+    # pure handoffs honor only one transfer per hop, which the live E2E showed
+    # leaves the second half of a two-domain question unanswered.
+    consult_tools = [
+        s.as_tool(
+            tool_name=f"consult_{s.name.lower().replace(' ', '_')}",
+            tool_description=f"Ask the {s.name} a focused question and get its answer back: {s.handoff_description}",
+        )
+        for s in specialists
+    ]
     coordinator = Agent[AgentContext](
         name="TeducAI Coordinator",
-        instructions=base + " You are the coordinator: answer directly when trivial, "
-        "otherwise hand off to the right specialist. For multi-part questions, hand "
-        "off sequentially and combine what you learn into ONE final answer.",
-        handoffs=specialists, tools=[search_students] if ctx.role in ACADEMIC_ROLES else [],
+        instructions=base + " You are the coordinator. Single-domain questions: hand "
+        "off to that specialist. Multi-domain questions: use the consult_* tools to "
+        "ask EACH relevant specialist, then combine everything into ONE final answer "
+        "yourself. Never leave part of a question unanswered when a specialist for "
+        "it exists.",
+        handoffs=specialists,
+        tools=([search_students] if ctx.role in ACADEMIC_ROLES else []) + consult_tools,
         model=model,
     )
     return coordinator

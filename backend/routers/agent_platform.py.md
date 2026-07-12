@@ -9,3 +9,4 @@
   client-supplied).
 ## Verification
 - `python -m pytest backend/test_agent_platform.py`
+- Capabilities lists Library/HR/Transport agents per role.

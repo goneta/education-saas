@@ -42,6 +42,12 @@ def capabilities(current_user: models.User = Depends(security.get_current_user),
         agents += ["Academic Agent", "Student Tutor Agent"]
     if role in agent_platform.FINANCE_ROLES:
         agents.append("Finance Agent")
+    if role in agent_platform.LIBRARY_ROLES:
+        agents.append("Library Agent")
+    if role in agent_platform.HR_ROLES:
+        agents.append("HR Agent")
+    if role in agent_platform.TRANSPORT_ROLES:
+        agents.append("Transport Agent")
     providers = [p.name for p in agent_platform.provider_candidates(db)]
     return {"agents": agents, "providers_configured": len(providers) > 0}
 

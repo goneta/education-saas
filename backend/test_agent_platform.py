@@ -100,3 +100,29 @@ def test_stream_errors_cleanly_without_any_provider(monkeypatch):
     events = asyncio.get_event_loop().run_until_complete(collect())
     assert events[-1]["type"] == "error"
     assert "provider" in events[-1]["message"].lower()  # clear message, no fake answer
+
+
+def test_increment3_specialists_and_consult_tools():
+    db = _session()
+    school = _school(db)
+    fake_model = "gpt-4.1-mini"
+
+    # Admin gets every specialist, both as handoffs and as consult tools.
+    admin = _user(db, school, models.UserRole.SCHOOL_ADMIN)
+    coord = svc.build_agents(_ctx(db, admin), fake_model)
+    handoffs = {getattr(h, "agent_name", getattr(h, "name", "")) for h in coord.handoffs}
+    assert {"Academic Agent", "Finance Agent", "Library Agent", "HR Agent", "Transport Agent"} <= handoffs
+    tool_names = {getattr(t, "name", "") for t in coord.tools}
+    assert {"consult_academic_agent", "consult_finance_agent", "consult_library_agent",
+            "consult_hr_agent", "consult_transport_agent"} <= tool_names
+
+    # A student can consult transport/library but never finance or HR.
+    student = _user(db, school, models.UserRole.STUDENT)
+    coord2 = svc.build_agents(_ctx(db, student), fake_model)
+    tools2 = {getattr(t, "name", "") for t in coord2.tools}
+    assert "consult_transport_agent" in tools2 and "consult_library_agent" in tools2
+    assert "consult_finance_agent" not in tools2 and "consult_hr_agent" not in tools2
+
+    # Capabilities endpoint mirrors the same gating.
+    caps = R.capabilities(current_user=student, db=db)
+    assert "Transport Agent" in caps["agents"] and "HR Agent" not in caps["agents"]

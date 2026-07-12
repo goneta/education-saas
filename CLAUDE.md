@@ -65,9 +65,7 @@ notifications and master data (zero data duplication).
   `GET /agents/capabilities`. Tests `test_agent_platform.py` (4 green).
   **Deploy note:** install `openai-agents` with `--no-deps` next to the pinned
   fastapi 0.104 stack (its transitive mcp/starlette/pydantic pins clash;
-  runtime needs openai + pydantic>=2.10,<2.12 + griffe). **Roadmap (NOT
-  built):** remaining specialist agents (admin/transport/library/HR/comms/
-  analytics/content/knowledge-base), write-action tools, streaming chat UI,
+  runtime needs openai + pydantic>=2.10,<2.12 + griffe). **Increment 3 (shipped):** agents-as-tools collaboration (specialists doubled as consult_* tools; multi-domain questions answered in ONE combined reply — live-verified) + Library/HR/Transport agents with tenant-scoped tools. **Roadmap (NOT built):** admin/comms/analytics/content/knowledge-base agents, write-action tools,
   role AI dashboards, voice, file/vision inputs, session memory store,
   guardrails, per-model cost routing, provider health dashboard.
 
