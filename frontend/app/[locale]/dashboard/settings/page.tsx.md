@@ -29,3 +29,4 @@
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
 - Security: the user-creation form no longer pre-fills a hardcoded default password.
+- Method-first payment UX (CinetPay invisible): users now pick the actual method — Orange Money / MTN Mobile Money / Moov Money / Wave (mobile money, routed to provider "cinetpay" + mobile_money_network at submit time) or Stripe/Djamo/cash — the gateway name is never displayed as a payment option. Subscription payment select lists the four operators; submit maps them to payment_provider=cinetpay + mobile_money_network.

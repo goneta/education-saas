@@ -11,7 +11,7 @@ from sqlalchemy.pool import StaticPool
 
 from backend import database, models
 from backend.routers import payments as R
-from backend.services import payment_gateway
+from backend.services import payment_gateway, payment_service
 
 
 def _session():
@@ -197,6 +197,119 @@ def test_refresh_endpoint_gateway_backed(monkeypatch):
     with pytest.raises(HTTPException) as exc2:
         R.refresh_payment(cash.reference, current_user=cashier, db=db)
     assert exc2.value.status_code == 400
+
+
+def test_network_maps_to_cinetpay_channel(monkeypatch):
+    """The UI sends operator methods (orange_money/wave/…); the gateway maps
+    them to CinetPay channels — Wave rides WALLET, the rest MOBILE_MONEY —
+    and never leaks an invalid init param."""
+    captured = {}
+
+    class FakeResponse:
+        status_code = 200
+        def json(self): return {"code": "201", "data": {"payment_url": "https://pay", "payment_token": "tok"}}
+
+    def fake_post(endpoint, json=None, **kwargs):
+        captured["payload"] = json
+        return FakeResponse()
+
+    monkeypatch.setenv("CINETPAY_API_KEY", "k")
+    monkeypatch.setenv("CINETPAY_SITE_ID", "s")
+    monkeypatch.delenv("CINETPAY_CHANNELS", raising=False)
+    monkeypatch.setattr(payment_gateway.httpx, "post", fake_post)
+
+    for network, channel in [("orange_money", "MOBILE_MONEY"), ("mtn_money", "MOBILE_MONEY"),
+                             ("moov_money", "MOBILE_MONEY"), ("wave", "WALLET")]:
+        payment_gateway.create_checkout_session(
+            "cinetpay", "SCH-CH1", 5000, "FCFA", "Scolarité", "https://s", "https://c",
+            mobile_money_network=network,
+        )
+        assert captured["payload"]["channels"] == channel
+        assert "payment_method" not in captured["payload"]
+    # No method chosen -> configurable default (ALL).
+    payment_gateway.create_checkout_session(
+        "cinetpay", "SCH-CH2", 5000, "FCFA", "Scolarité", "https://s", "https://c")
+    assert captured["payload"]["channels"] == "ALL"
+
+
+def test_confirmation_generates_verifiable_receipt(monkeypatch):
+    """First successful confirmation auto-generates ONE receipt (GeneratedDocument
+    + DocumentRegistry QR record); replays never duplicate it."""
+    db = _session()
+    school = _school(db)
+    payer = _user(db, school, role=models.UserRole.PARENT)
+    payment = _school_payment(db, school)
+    payment.payer_user_id = payer.id
+    payment.metadata_json = {"mobile_money_network": "orange_money"}
+    db.commit()
+    monkeypatch.delenv("CINETPAY_SECRET_KEY", raising=False)
+    monkeypatch.setattr(payment_gateway, "cinetpay_check_transaction",
+                        lambda r: ("successful", {"code": "00", "data": {"status": "ACCEPTED"}}))
+    _notify(db, {"cpm_trans_id": payment.reference})
+    _notify(db, {"cpm_trans_id": payment.reference})  # replay
+
+    docs = db.query(models.GeneratedDocument).filter_by(source_type="school_payment", source_id=payment.id).all()
+    assert len(docs) == 1
+    assert docs[0].reference.startswith("REC-")
+    # Receipt shows the operator brand the payer chose, never the gateway name.
+    assert docs[0].content["payment"]["method"] == "Orange Money"
+    registry = db.query(models.DocumentRegistry).filter_by(source_type="school_payment", source_id=payment.id).all()
+    assert len(registry) == 1 and registry[0].status == "valid"
+    db.refresh(payment)
+    assert payment.metadata_json["receipt_reference"] == docs[0].reference
+    assert payment.metadata_json["receipt_verify_uuid"] == registry[0].uuid
+
+
+def test_refund_reverses_invoice_and_is_idempotent(monkeypatch):
+    db = _session()
+    school = _school(db)
+    admin = _user(db, school, role=models.UserRole.SCHOOL_ADMIN)
+    invoice = models.StudentInvoice(school_id=school.id, invoice_number=f"INV-{uuid.uuid4().hex[:6]}",
+                                    title="Scolarite T1", amount_due=50000, amount_paid=0,
+                                    remaining_balance=50000, status=models.StudentInvoiceStatus.UNPAID)
+    db.add(invoice); db.commit()
+    payment = _school_payment(db, school, invoice=invoice)
+    monkeypatch.delenv("CINETPAY_SECRET_KEY", raising=False)
+    monkeypatch.setattr(payment_gateway, "cinetpay_check_transaction",
+                        lambda r: ("successful", {"code": "00", "data": {"status": "ACCEPTED"}}))
+    _notify(db, {"cpm_trans_id": payment.reference})
+    db.refresh(invoice)
+    assert invoice.status == models.StudentInvoiceStatus.PAID
+
+    out = R.refund_payment(payment.reference, payload=None, current_user=admin, db=db)
+    assert out["status"] == "refunded" and out["applied"] is True
+    db.refresh(invoice)
+    assert invoice.amount_paid == 0 and invoice.remaining_balance == 50000
+    assert invoice.status == models.StudentInvoiceStatus.UNPAID
+    # The receipt is revoked so its QR verification now reports the reversal.
+    registry = db.query(models.DocumentRegistry).filter_by(source_type="school_payment", source_id=payment.id).first()
+    assert registry.status == "revoked"
+
+    # Idempotent: a second refund is a safe no-op.
+    out2 = R.refund_payment(payment.reference, payload=None, current_user=admin, db=db)
+    assert out2["applied"] is False
+    db.refresh(invoice)
+    assert invoice.amount_paid == 0
+
+    # Only a successful payment can be refunded.
+    pending = _school_payment(db, school)
+    with pytest.raises(HTTPException) as exc:
+        R.refund_payment(pending.reference, payload=None, current_user=admin, db=db)
+    assert exc.value.status_code == 409
+    # Cashiers cannot refund.
+    cashier = _user(db, school, role=models.UserRole.CASHIER)
+    with pytest.raises(HTTPException) as exc2:
+        R.refund_payment(payment.reference, payload=None, current_user=cashier, db=db)
+    assert exc2.value.status_code == 403
+
+
+def test_user_facing_method_labels():
+    """Users see operator brands or neutral families — never a gateway name."""
+    assert payment_service.user_facing_method("cinetpay", "orange_money") == "Orange Money"
+    assert payment_service.user_facing_method("cinetpay", "wave") == "Wave"
+    assert payment_service.user_facing_method("cinetpay", None) == "Mobile Money"
+    assert payment_service.user_facing_method("cash") == "Espèces"
+    assert "cinetpay" not in payment_service.user_facing_method("cinetpay", "mtn_money").lower()
 
 
 def test_check_transaction_status_mapping(monkeypatch):

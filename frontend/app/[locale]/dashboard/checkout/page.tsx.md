@@ -28,3 +28,4 @@
 
 - `cmd.exe /c "cd frontend&& npx eslint app/[locale]/dashboard/checkout/page.tsx"`
 - Checkout success/cancel URLs now point to /dashboard/payments/status (server-side verified result) instead of the invoices list.
+- Method-first payment UX (CinetPay invisible): users now pick the actual method — Orange Money / MTN Mobile Money / Moov Money / Wave (mobile money, routed to provider "cinetpay" + mobile_money_network at submit time) or Stripe/Djamo/cash — the gateway name is never displayed as a payment option.

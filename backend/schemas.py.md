@@ -75,3 +75,4 @@ The schema catalog includes enrollment, transfer, academic-year closure, tempora
 - `BillingAssistantRequest` (billing assistant question + optional language).
 - `InvoiceEmailRequest` (optional recipients for invoice e-mail).
 - Document-template schemas: `DocumentTemplateCreate/Update/Response`, `DocumentPreviewRequest`, `DocumentGenerateRequest`.
+- SchoolPaymentRefund (optional reason) for POST /payments/{reference}/refund; SchoolSubscriptionChange gains optional mobile_money_network (orange_money|wave|mtn_money|moov_money) so the settings page can pass the user-chosen operator through to the gateway channel.

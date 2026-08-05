@@ -24,3 +24,4 @@
 - python -m json.tool frontend\messages\<locale>.json; npm run build
 - Includes the `navigation` Smart Transport keys (smartTransport, transportDashboard, drivers, vehicles, routes, transportAssignments); keep parity across en/fr/es/sw.
 - `navigation.students` is the accented `Élèves` (consistent with the rest of the FR UI; fixes the stale `Elfes`/`Eleves` label).
+- checkout namespace: "cinetpay" key replaced by "mobileMoney" + "cards" section labels (operator brands are displayed literally, no gateway branding); site.paymentMethodsDescription lists operator brands.

@@ -29,7 +29,13 @@ interface Employee { user_id: number; full_name: string }
 const EMPLOYEE_TYPES = ["permanent", "contract", "vacataire", "consultant"]
 const PAY_TYPES = ["hourly", "daily", "weekly", "monthly"]
 const LINE_TYPES = ["allowance", "bonus", "overtime", "deduction", "advance"]
-const PAYMENT_METHODS = ["bank_transfer", "cash", "stripe", "cinetpay", "djamo"]
+// Mobile-money operators are listed by brand; the powering gateway is invisible.
+const PAYMENT_METHOD_LABELS: Record<string, string | null> = {
+    bank_transfer: null, cash: null,
+    orange_money: "Orange Money", mtn_money: "MTN Mobile Money",
+    moov_money: "Moov Money", wave: "Wave", stripe: "Stripe", djamo: "Djamo",
+}
+const PAYMENT_METHODS = Object.keys(PAYMENT_METHOD_LABELS)
 
 export default function PayrollPage() {
     const t = useTranslations("payroll")
@@ -250,7 +256,7 @@ export default function PayrollPage() {
                     <div className="w-full max-w-sm rounded-[20px] bg-white p-5 shadow-xl dark:bg-[#202528]" onClick={e => e.stopPropagation()}>
                         <div className="mb-3 flex items-center justify-between"><h3 className="font-semibold">{t("pay")} — {payFor.full_name || employeeName(payFor.staff_user_id)}</h3><button onClick={() => setPayFor(null)} aria-label={t("close")}><X className="h-4 w-4" /></button></div>
                         <div className="space-y-3">
-                            <select value={payForm.payment_method} onChange={e => setPayForm({ ...payForm, payment_method: e.target.value })} className="apple-select w-full">{PAYMENT_METHODS.map(m => <option key={m} value={m}>{["bank_transfer", "cash"].includes(m) ? t(m as "cash") : m}</option>)}</select>
+                            <select value={payForm.payment_method} onChange={e => setPayForm({ ...payForm, payment_method: e.target.value })} className="apple-select w-full">{PAYMENT_METHODS.map(m => <option key={m} value={m}>{PAYMENT_METHOD_LABELS[m] ?? t(m as "cash")}</option>)}</select>
                             <input value={payForm.payment_reference} onChange={e => setPayForm({ ...payForm, payment_reference: e.target.value })} placeholder={t("paymentReference")} className="apple-input w-full" />
                             <Button onClick={confirmPay} className="w-full bg-black text-white hover:bg-black/90">{t("confirmPay")} · {money(payFor.net_amount, payFor.currency)}</Button>
                         </div>

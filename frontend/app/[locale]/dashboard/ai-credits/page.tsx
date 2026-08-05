@@ -150,6 +150,10 @@ interface SchoolCreditAllocation {
     created_at: string
 }
 
+// Mobile-money methods are shown as first-class options; they all route to
+// the platform's mobile-money gateway (provider "cinetpay") at submit time.
+const MOBILE_MONEY_KEYS = ["orange_money", "mtn_money", "moov_money", "wave"]
+
 const statusColor: Record<string, string> = {
     successful: "text-emerald-700 bg-emerald-50",
     completed: "text-emerald-700 bg-emerald-50",
@@ -242,8 +246,9 @@ export default function AICreditsPage() {
         target_type: "both",
     })
     const [purchaseDialog, setPurchaseDialog] = useState<{ pack: AICreditPack; scope: "me" | "school" } | null>(null)
-    const [purchaseProvider, setPurchaseProvider] = useState("cinetpay")
-    const [purchaseNetwork, setPurchaseNetwork] = useState("orange_money")
+    // The selected key is a user-facing METHOD (operator brand or card rail);
+    // mobile-money keys are routed to the gateway invisibly at submit time.
+    const [purchaseProvider, setPurchaseProvider] = useState("orange_money")
     const [purchaseNote, setPurchaseNote] = useState("")
     const [purchaseLoading, setPurchaseLoading] = useState(false)
     const [manualPaymentForm, setManualPaymentForm] = useState({
@@ -351,8 +356,7 @@ export default function AICreditsPage() {
     }, [load])
 
     const openPurchase = (pack: AICreditPack, scope: "me" | "school") => {
-        setPurchaseProvider("cinetpay")
-        setPurchaseNetwork("orange_money")
+        setPurchaseProvider("orange_money")
         setPurchaseNote("")
         setPurchaseDialog({ pack, scope })
     }
@@ -372,9 +376,9 @@ export default function AICreditsPage() {
                 headers: { ...headers, "Content-Type": "application/json" },
                 body: JSON.stringify({
                     pack_id: purchaseDialog.pack.id,
-                    provider: purchaseProvider,
+                    provider: MOBILE_MONEY_KEYS.includes(purchaseProvider) ? "cinetpay" : purchaseProvider,
                     payment_method: purchaseProvider,
-                    mobile_money_network: purchaseProvider === "cinetpay" ? purchaseNetwork : undefined,
+                    mobile_money_network: MOBILE_MONEY_KEYS.includes(purchaseProvider) ? purchaseProvider : undefined,
                     note: purchaseNote || undefined,
                     success_url: `${window.location.origin}/${params.locale}/dashboard/ai-credits`,
                     cancel_url: `${window.location.origin}/${params.locale}/dashboard/ai-credits`,
@@ -657,10 +661,13 @@ export default function AICreditsPage() {
     }
 
     const purchaseMethods = [
-        { key: "cash", label: "Espèces", icon: Banknote },
+        { key: "orange_money", label: "Orange Money", icon: Smartphone },
+        { key: "mtn_money", label: "MTN Mobile Money", icon: Smartphone },
+        { key: "moov_money", label: "Moov Money", icon: Smartphone },
+        { key: "wave", label: "Wave", icon: Smartphone },
         { key: "stripe", label: "Stripe", icon: CreditCard },
         { key: "djamo", label: "Djamo", icon: CreditCard },
-        { key: "cinetpay", label: "CinetPay", icon: Smartphone },
+        { key: "cash", label: "Espèces", icon: Banknote },
         { key: "free", label: "Gratuit", icon: Gift },
     ]
 
@@ -1003,14 +1010,6 @@ export default function AICreditsPage() {
                                     </button>
                                 ))}
                             </div>
-                            {purchaseProvider === "cinetpay" && (
-                                <select className="apple-select" value={purchaseNetwork} onChange={event => setPurchaseNetwork(event.target.value)}>
-                                    <option value="orange_money">Orange Money</option>
-                                    <option value="wave">Wave</option>
-                                    <option value="mtn_money">MTN Money</option>
-                                    <option value="moov_money">Moov Money</option>
-                                </select>
-                            )}
                             {["cash", "free"].includes(purchaseProvider) && (
                                 <textarea
                                     className="apple-input min-h-24 py-3"

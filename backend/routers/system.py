@@ -677,7 +677,8 @@ def change_subscription(
             status="pending_payment",
             beneficiary_entity=ai_credits.beneficiary_for_region(school.country_code, None),
             credits_amount=0,
-            metadata_json={"plan": payload.plan, "billing_cycle": payload.billing_cycle},
+            metadata_json={"plan": payload.plan, "billing_cycle": payload.billing_cycle,
+                           "mobile_money_network": payload.mobile_money_network},
         )
         db.add(payment)
         db.flush()
@@ -688,6 +689,9 @@ def change_subscription(
                 amount=payment.amount,
                 currency=payment.currency,
                 title=f"Abonnement TeducAI {payload.plan.upper()}",
+                success_url=None,
+                cancel_url=None,
+                mobile_money_network=payload.mobile_money_network,
             )
             payment.provider_reference = checkout.provider_reference
             payment.status = checkout.status

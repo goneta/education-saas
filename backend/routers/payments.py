@@ -51,11 +51,14 @@ def _school_id(current_user: models.User) -> int:
 
 @router.get("/providers")
 def list_providers(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
-    """Payment providers enabled for the caller's institution."""
+    """Payment providers enabled for the caller's institution, plus the
+    user-facing method catalog (operator brands — the UI never shows a
+    gateway name)."""
     school_id = _school_id(current_user)
     return {
         "enabled": payment_service.enabled_providers(db, school_id),
         "supported": sorted(payment_service.SUPPORTED_PROVIDERS),
+        "methods": payment_service.MOBILE_MONEY_METHODS,
     }
 
 
@@ -190,6 +193,46 @@ def refresh_payment(reference: str,
     return {"reference": reference, "status": payment.status, "applied": applied, "kind": kind}
 
 
+REFUND_ROLES = {
+    models.UserRole.SUPER_ADMIN,
+    models.UserRole.SCHOOL_ADMIN,
+    models.UserRole.DIRECTION,
+    models.UserRole.ACCOUNTANT,
+}
+
+
+@router.post("/{reference}/refund")
+def refund_payment(
+    reference: str,
+    payload: Optional[schemas.SchoolPaymentRefund] = None,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    """Record the refund of a confirmed school payment (admin/direction/
+    accounting only, tenant-scoped). Reverses the invoice balance, revokes the
+    receipt and audits the reversal. The actual money return is executed at
+    the provider (CinetPay merchant panel for mobile money, cash drawer for
+    espèces) — this endpoint records that verified fact; it is idempotent."""
+    if current_user.role not in REFUND_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    school_id = _school_id(current_user)
+    payment = (
+        db.query(models.SchoolPayment)
+        .filter(models.SchoolPayment.reference == reference, models.SchoolPayment.school_id == school_id)
+        .first()
+    )
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment introuvable")
+    try:
+        applied = payment_service.refund_school_payment(
+            db, payment, current_user=current_user, reason=payload.reason if payload else None
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    db.commit()
+    return {"reference": payment.reference, "status": payment.status, "applied": applied}
+
+
 @router.post("/{reference}/verify")
 def manual_verify(
     reference: str,
@@ -227,6 +270,7 @@ def payment_status(
     )
     if not payment:
         raise HTTPException(status_code=404, detail="Payment introuvable")
+    metadata = payment.metadata_json or {}
     return {
         "reference": payment.reference,
         "status": payment.status,
@@ -235,4 +279,7 @@ def payment_status(
         "provider": payment.provider,
         "provider_reference": payment.provider_reference,
         "invoice_id": payment.invoice_id,
+        "method": payment_service.user_facing_method(payment.provider, metadata.get("mobile_money_network")),
+        "receipt_reference": metadata.get("receipt_reference"),
+        "receipt_verify_uuid": metadata.get("receipt_verify_uuid"),
     }

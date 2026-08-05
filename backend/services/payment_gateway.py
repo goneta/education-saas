@@ -20,6 +20,18 @@ class CheckoutSession:
     provider_payload: dict[str, Any]
 
 
+# User-facing mobile-money methods (the UI shows these, never a gateway name)
+# → the CinetPay checkout channel that carries them. Orange/MTN/Moov ride the
+# MOBILE_MONEY channel; Wave is a WALLET at CinetPay. The exact operator flow
+# is completed by the payer on the hosted page / their phone.
+CINETPAY_NETWORK_CHANNELS = {
+    "orange_money": "MOBILE_MONEY",
+    "mtn_money": "MOBILE_MONEY",
+    "moov_money": "MOBILE_MONEY",
+    "wave": "WALLET",
+}
+
+
 def _response_json(response: httpx.Response) -> dict[str, Any]:
     try:
         payload = response.json()
@@ -83,8 +95,12 @@ def _cinetpay_checkout(
     notify_url = os.getenv("CINETPAY_NOTIFY_URL", "")
     # Channels are dynamically configurable: ALL (default) exposes every method
     # CinetPay enables on the merchant account (Orange, MTN, Moov, Wave, cards…);
-    # narrower values: MOBILE_MONEY, CREDIT_CARD, WALLET.
+    # narrower values: MOBILE_MONEY, CREDIT_CARD, WALLET. When the payer picked
+    # a specific mobile-money method in OUR UI, narrow to its channel so the
+    # hosted page opens directly on that family.
     channels = os.getenv("CINETPAY_CHANNELS", "ALL")
+    if network:
+        channels = CINETPAY_NETWORK_CHANNELS.get(network, channels)
     payload = {
         "apikey": token,
         "site_id": merchant,
@@ -102,8 +118,6 @@ def _cinetpay_checkout(
         "customer_name": "TeducAI",
         "customer_surname": "Client",
     }
-    if network:
-        payload["payment_method"] = network
     response = httpx.post(endpoint, json=payload, timeout=20)
     response_payload = _response_json(response)
     if response.status_code >= 400:

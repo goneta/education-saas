@@ -49,9 +49,19 @@ export default function CheckoutPage() {
     const [cart, setCart] = useState<Cart>({ items: [], total: 0, currency: "FCFA" })
     const [packs, setPacks] = useState<AICreditPack[]>([])
     const [selectedPackId, setSelectedPackId] = useState<number | null>(null)
-    const [provider, setProvider] = useState("cinetpay")
-    const [network, setNetwork] = useState("orange_money")
+    // Users pick an actual payment method (operator brand); the gateway that
+    // powers mobile money stays an invisible implementation detail.
+    const [method, setMethod] = useState("orange_money")
     const [status, setStatus] = useState("")
+
+    const MOBILE_MONEY_METHODS = [
+        { key: "orange_money", label: "Orange Money" },
+        { key: "mtn_money", label: "MTN Mobile Money" },
+        { key: "moov_money", label: "Moov Money" },
+        { key: "wave", label: "Wave" },
+    ]
+    const isMobileMoney = MOBILE_MONEY_METHODS.some(m => m.key === method)
+    const provider = isMobileMoney ? "cinetpay" : method
 
     const loadCart = useCallback(() => {
         if (!token) return
@@ -143,7 +153,7 @@ export default function CheckoutPage() {
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({
                 provider,
-                mobile_money_network: provider === "cinetpay" ? network : undefined,
+                mobile_money_network: isMobileMoney ? method : undefined,
                 // CinetPay appends ?transaction_id=… on return; the status page
                 // verifies the payment server-side and shows success/pending/failure.
                 success_url: `${window.location.origin}/${locale}/dashboard/payments/status`,
@@ -200,19 +210,17 @@ export default function CheckoutPage() {
                 </section>
                 <aside className="rounded-[28px] border border-[#E5E7EB] bg-white p-6 dark:border-[#3b4248] dark:bg-[#202528]">
                     <h2 className="text-xl font-semibold">{t("payment")}</h2>
-                    <div className="mt-4 grid gap-3">
-                        <button type="button" onClick={() => setProvider("stripe")} className={`flex items-center gap-3 rounded-2xl border p-4 text-left ${provider === "stripe" ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black" : ""}`}><CreditCard className="h-5 w-5" />{t("stripe")}</button>
-                        <button type="button" onClick={() => setProvider("djamo")} className={`flex items-center gap-3 rounded-2xl border p-4 text-left ${provider === "djamo" ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black" : ""}`}><CreditCard className="h-5 w-5" />{t("djamo")}</button>
-                        <button type="button" onClick={() => setProvider("cinetpay")} className={`flex items-center gap-3 rounded-2xl border p-4 text-left ${provider === "cinetpay" ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black" : ""}`}><Smartphone className="h-5 w-5" />{t("cinetpay")}</button>
+                    <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-[#6B7280] dark:text-[#c7d0da]">{t("mobileMoney")}</p>
+                    <div className="mt-2 grid gap-3">
+                        {MOBILE_MONEY_METHODS.map(m => (
+                            <button key={m.key} type="button" onClick={() => setMethod(m.key)} className={`flex items-center gap-3 rounded-2xl border p-4 text-left ${method === m.key ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black" : ""}`}><Smartphone className="h-5 w-5" />{m.label}</button>
+                        ))}
                     </div>
-                    {provider === "cinetpay" && (
-                        <select className="apple-select mt-4" value={network} onChange={event => setNetwork(event.target.value)}>
-                            <option value="orange_money">Orange Money</option>
-                            <option value="wave">Wave</option>
-                            <option value="mtn_money">MTN Money</option>
-                            <option value="moov_money">Moov Money</option>
-                        </select>
-                    )}
+                    <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-[#6B7280] dark:text-[#c7d0da]">{t("cards")}</p>
+                    <div className="mt-2 grid gap-3">
+                        <button type="button" onClick={() => setMethod("stripe")} className={`flex items-center gap-3 rounded-2xl border p-4 text-left ${method === "stripe" ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black" : ""}`}><CreditCard className="h-5 w-5" />{t("stripe")}</button>
+                        <button type="button" onClick={() => setMethod("djamo")} className={`flex items-center gap-3 rounded-2xl border p-4 text-left ${method === "djamo" ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black" : ""}`}><CreditCard className="h-5 w-5" />{t("djamo")}</button>
+                    </div>
                     <div className="mt-6 space-y-2 border-t border-[#E5E7EB] pt-4 dark:border-[#3b4248]">
                         <div className="flex items-center justify-between"><span>Sous-total</span><strong>{subtotal.toLocaleString()} {currency}</strong></div>
                         <div className="flex items-center justify-between text-sm text-[#6B7280] dark:text-[#c7d0da]"><span>Taxes</span><span>{taxes.toLocaleString()} {currency}</span></div>

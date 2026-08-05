@@ -28,3 +28,4 @@
 ## Verification
 
 - python -m py_compile backend\routers\<module>.py; python -c "import backend.main as m; print(m.app.title)"
+- /subscription/change: passes mobile_money_network through to payment_gateway.create_checkout_session (and stores it in the PlatformPayment metadata); also fixed the latent TypeError — success_url/cancel_url are required positional params and were previously omitted on the paid-plan gateway path.

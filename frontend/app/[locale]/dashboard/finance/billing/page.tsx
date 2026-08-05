@@ -43,7 +43,7 @@ interface PaymentMethod { id: number; method_type: string; provider: string; nic
 interface UsagePoint { date: string; credits: number; tokens: number; requests: number; cost: number; spend: number }
 interface UsageTimeseries { days: number; series: UsagePoint[]; by_module: { module: string; credits: number }[]; totals: { credits: number; tokens: number; requests: number; cost: number; spend: number } }
 
-const PROVIDERS = ["CinetPay · Orange · Wave · MTN · Moov", "Djamo", "Stripe", "Visa", "Mastercard", "American Express", "PayPal", "Apple Pay", "Google Pay", "Bank transfer"]
+const PROVIDERS = ["Orange Money", "MTN Mobile Money", "Moov Money", "Wave", "Djamo", "Stripe", "Visa", "Mastercard", "American Express", "PayPal", "Apple Pay", "Google Pay", "Bank transfer"]
 const STATUS_STYLES: Record<string, string> = {
     active: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200",
     paid: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200",
@@ -538,7 +538,23 @@ function BillingAssistant({ api, locale }: { api: (p: string, i?: RequestInit) =
     )
 }
 
-const PROVIDER_OPTIONS = ["visa", "mastercard", "amex", "cinetpay", "djamo", "stripe", "paypal", "applepay", "googlepay", "bank"]
+// User-facing method brands: mobile-money operators are listed by name (the
+// gateway that powers them is never shown as a payment method).
+const PROVIDER_OPTIONS: { value: string; label: string }[] = [
+    { value: "visa", label: "Visa" },
+    { value: "mastercard", label: "Mastercard" },
+    { value: "amex", label: "American Express" },
+    { value: "orange_money", label: "Orange Money" },
+    { value: "mtn_money", label: "MTN Mobile Money" },
+    { value: "moov_money", label: "Moov Money" },
+    { value: "wave", label: "Wave" },
+    { value: "djamo", label: "Djamo" },
+    { value: "stripe", label: "Stripe" },
+    { value: "paypal", label: "PayPal" },
+    { value: "applepay", label: "Apple Pay" },
+    { value: "googlepay", label: "Google Pay" },
+    { value: "bank", label: "Bank" },
+]
 
 function PaymentMethodsTab({ api, locale }: { api: (p: string, i?: RequestInit) => Promise<Record<string, unknown> | null>; locale: string }) {
     const t = useTranslations("billing")
@@ -580,7 +596,7 @@ function PaymentMethodsTab({ api, locale }: { api: (p: string, i?: RequestInit) 
                             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                                 <label className="text-sm">{t("payments.provider")}
                                     <select className="apple-select mt-1 w-full" value={form.provider} onChange={e => setForm({ ...form, provider: e.target.value })}>
-                                        {PROVIDER_OPTIONS.map(p => <option key={p} value={p} className="capitalize">{p}</option>)}
+                                        {PROVIDER_OPTIONS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                                     </select>
                                 </label>
                                 <label className="text-sm">{t("payments.methodType")}

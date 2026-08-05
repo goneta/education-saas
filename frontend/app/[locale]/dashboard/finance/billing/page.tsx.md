@@ -21,3 +21,4 @@
 - AI billing assistant (`BillingAssistant`) on the Overview tab: suggested-question chips + free-text, POSTs /billing/assistant in the UI locale, renders the grounded answer. Uses the caller's AI credits.
 - Live usage charts: the Usage tab is now `UsageTab` - metric toggle (credits/tokens/requests/spend) + period toggle (7/30/90 days), total cards, a dependency-free inline-SVG `LineChart` trend, and a by-module credit bar chart. Fetches /billing/usage/timeseries.
 - Invoice e-mail: Billing-history rows gain an "Email" button (prompts for recipients, POSTs /billing/invoices/{id}/email; blank = billing recipients).
+- PROVIDERS marketing strip and PROVIDER_OPTIONS (saved payment-method brands) now list operator brands (Orange Money, MTN Mobile Money, Moov Money, Wave) with labeled options; no gateway name shown as a method.

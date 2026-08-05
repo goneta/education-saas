@@ -453,11 +453,14 @@ export default function FeesPage() {
                         <ExplainedField label="Mode de paiement" required help="Sélectionnez Espèces pour un encaissement reçu physiquement à la caisse. Le mode est conservé dans le journal et l'audit.">
                             <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm">
                                 <option value="cash">{tx(locale, "methodCash")}</option>
-                                <option value="mobile_money">Mobile Money</option>
+                                <option value="orange_money">Orange Money</option>
+                                <option value="mtn_money">MTN Mobile Money</option>
+                                <option value="moov_money">Moov Money</option>
+                                <option value="wave">Wave</option>
+                                <option value="mobile_money">Mobile Money (autre)</option>
                                 <option value="bank_transfer">{tx(locale, "methodBankTransfer")}</option>
                                 <option value="stripe">Stripe</option>
                                 <option value="djamo">Djamo</option>
-                                <option value="cinetpay">CinetPay</option>
                             </select>
                         </ExplainedField>
                         <ExplainedField label="Référence interne" help="Numéro de bordereau, référence Mobile Money ou identifiant interne permettant de rapprocher l'encaissement.">

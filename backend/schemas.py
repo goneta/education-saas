@@ -516,6 +516,10 @@ class SchoolPaymentWebhook(BaseModel):
     metadata_json: Optional[Dict[str, Any]] = None
 
 
+class SchoolPaymentRefund(BaseModel):
+    reason: Optional[str] = None
+
+
 class SchoolPaymentResponse(BaseModel):
     id: int
     reference: str
@@ -683,6 +687,7 @@ class SchoolSubscriptionChange(BaseModel):
     plan: str = Field(pattern="^(free|pro|max)$")
     billing_cycle: str = Field(default="monthly", pattern="^(monthly|yearly)$")
     payment_provider: Optional[str] = Field(default=None, pattern="^(cash|stripe|djamo|cinetpay|manual)$")
+    mobile_money_network: Optional[str] = Field(default=None, pattern="^(orange_money|wave|mtn_money|moov_money)$")
 
 
 class SchoolSubscriptionResponse(BaseModel):

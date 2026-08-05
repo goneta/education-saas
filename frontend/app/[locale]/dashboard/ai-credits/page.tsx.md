@@ -30,3 +30,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
+- Method-first payment UX (CinetPay invisible): users now pick the actual method — Orange Money / MTN Mobile Money / Moov Money / Wave (mobile money, routed to provider "cinetpay" + mobile_money_network at submit time) or Stripe/Djamo/cash — the gateway name is never displayed as a payment option. Purchase dialog method grid replaces the provider+network pair; the network select was removed.

@@ -50,6 +50,31 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
+- **CinetPay method-first UX + receipts/refunds (gateway invisible)**: users
+  now pick the ACTUAL payment method everywhere — Orange Money / MTN Mobile
+  Money / Moov Money / Wave (+ Stripe/Djamo/cash) — and "CinetPay" is never
+  displayed as a payment option (checkout, AI-credits purchase dialog,
+  subscription settings, fees cashier select, payroll pay dialog, billing
+  brands, help copy, 4-locale i18n). Backend: `CINETPAY_NETWORK_CHANNELS`
+  maps the chosen method to the checkout channel (orange/mtn/moov →
+  MOBILE_MONEY, wave → WALLET, none → CINETPAY_CHANNELS default; the invalid
+  `payment_method` init param removed); `GET /payments/providers` returns the
+  user-facing `methods` catalog; `SchoolSubscriptionChange` gains
+  `mobile_money_network` (also fixed the latent TypeError on the paid-plan
+  gateway path — success_url/cancel_url were omitted). School/platform money
+  stays strictly separated (SchoolPayment/SCH- → school books via
+  apply_school_payment; PlatformPayment/TPL-,SUB- → platform via
+  apply_platform_payment; same verify-first webhook). NEW automatic receipts:
+  first successful school-payment confirmation generates ONE verifiable
+  receipt (`generate_school_payment_receipt`: GeneratedDocument REC- +
+  DocumentRegistry QR → /verify/{uuid}, operator-brand method label,
+  replay-safe; refs stored in payment.metadata_json). NEW refunds:
+  `POST /payments/{reference}/refund` (admin/direction/accountant, NOT
+  cashier) → `refund_school_payment` reverses the invoice, revokes the
+  receipt, audits + notifies, idempotent (409 for never-successful); the
+  money return itself happens at the provider (no checkout-API refund
+  endpoint exists). Tests `test_cinetpay.py` now 12 green.
+
 - **AI Multi-Agent Platform (increment 1 — OpenAI Agents SDK foundation)**:
   `services/agent_platform.py` + `routers/agent_platform.py` (`/agents`) on
   `openai-agents` 0.18 (Agent/Runner, handoffs, function tools, streaming).

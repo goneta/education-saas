@@ -26,3 +26,4 @@
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
 - i18n: localized via tx()/PRODUCT_COPY (FR/EN/ES/SW); no hardcoded visible strings (brand names Stripe/Djamo/CinetPay/Mobile Money kept verbatim).
+- Manual payment method select now lists operator brands (Orange Money, MTN Mobile Money, Moov Money, Wave) instead of a gateway name; generic "Mobile Money (autre)" kept for other wallets.

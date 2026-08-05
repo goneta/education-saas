@@ -8,5 +8,10 @@
   gateway unreachable -> 503 (CinetPay retry); platform subscription activation via the shared
   applier; /refresh gateway-backed (cashier ok, cross-school 403, non-cinetpay 400); status
   mapping ACCEPTED/REFUSED/WAITING + network failure -> unknown.
+- Method-first UX + money records: network -> channel mapping (orange/mtn/moov -> MOBILE_MONEY,
+  wave -> WALLET, none -> ALL; no `payment_method` init param); first confirmation generates
+  exactly ONE verifiable receipt (GeneratedDocument REC- + DocumentRegistry, operator-brand
+  method label, replay-safe); refund reverses the invoice + revokes the receipt idempotently
+  (409 never-successful, 403 cashier); `user_facing_method` never leaks a gateway name.
 ## Verification
-- `python -m pytest backend/test_cinetpay.py` (8 green).
+- `python -m pytest backend/test_cinetpay.py` (12 green).

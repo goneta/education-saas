@@ -699,7 +699,7 @@ export default function SettingsPage() {
     const requestSubscriptionChange = (plan: keyof typeof SUBSCRIPTION_PLANS) => {
         setSubscriptionChoice(plan)
         setBillingCycle(subscription?.billing_cycle || "monthly")
-        setSubscriptionProvider(plan === "free" ? "manual" : "cinetpay")
+        setSubscriptionProvider(plan === "free" ? "manual" : "orange_money")
     }
 
     const updateSubscription = async () => {
@@ -712,7 +712,16 @@ export default function SettingsPage() {
             body: JSON.stringify({
                 plan: subscriptionChoice,
                 billing_cycle: billingCycle,
-                payment_provider: subscriptionChoice === "free" ? "manual" : subscriptionProvider,
+                // Mobile-money methods (operator brands) all route through the
+                // platform's mobile-money gateway; users never see its name.
+                payment_provider: subscriptionChoice === "free"
+                    ? "manual"
+                    : ["orange_money", "mtn_money", "moov_money", "wave"].includes(subscriptionProvider)
+                        ? "cinetpay"
+                        : subscriptionProvider,
+                mobile_money_network: ["orange_money", "mtn_money", "moov_money", "wave"].includes(subscriptionProvider) && subscriptionChoice !== "free"
+                    ? subscriptionProvider
+                    : undefined,
             }),
         })
         const data = await response.json().catch(() => null)
@@ -859,7 +868,10 @@ export default function SettingsPage() {
                             {subscriptionChoice !== "free" && (
                                 <ExplainedField label="Mode de paiement" help="Le plan payant reste en attente jusqu'à confirmation du fournisseur ou validation manuelle.">
                                     <select className="apple-select" value={subscriptionProvider} onChange={event => setSubscriptionProvider(event.target.value)}>
-                                        <option value="cinetpay">CinetPay</option>
+                                        <option value="orange_money">Orange Money</option>
+                                        <option value="mtn_money">MTN Mobile Money</option>
+                                        <option value="moov_money">Moov Money</option>
+                                        <option value="wave">Wave</option>
                                         <option value="stripe">Stripe</option>
                                         <option value="djamo">Djamo</option>
                                         <option value="cash">Espèces / validation manuelle</option>

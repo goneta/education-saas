@@ -11,6 +11,7 @@ webhook in `ai_billing.py` so behaviour stays consistent and un-duplicated.
 No module should re-implement payment confirmation: call `apply_school_payment`.
 """
 
+import uuid as _uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -22,6 +23,32 @@ from .automation import record_notification
 CASH = "cash"
 # Providers the platform's gateways know how to talk to (see payment_gateway.py).
 SUPPORTED_PROVIDERS = {"stripe", "cinetpay", "djamo", CASH}
+
+# User-facing payment methods. The UI displays THESE (operator brands), never
+# the gateway's name — CinetPay stays an invisible implementation detail.
+MOBILE_MONEY_METHODS = [
+    {"key": "orange_money", "label": "Orange Money", "provider": "cinetpay"},
+    {"key": "mtn_money", "label": "MTN Mobile Money", "provider": "cinetpay"},
+    {"key": "moov_money", "label": "Moov Money", "provider": "cinetpay"},
+    {"key": "wave", "label": "Wave", "provider": "cinetpay"},
+]
+_NETWORK_LABELS = {m["key"]: m["label"] for m in MOBILE_MONEY_METHODS}
+_PROVIDER_LABELS = {
+    "cinetpay": "Mobile Money",
+    "stripe": "Carte bancaire",
+    "djamo": "Djamo",
+    CASH: "Espèces",
+    "free": "Gratuit",
+}
+
+
+def user_facing_method(provider: Optional[str], network: Optional[str] = None) -> str:
+    """The label shown to users and printed on receipts: the operator brand
+    (Orange Money, MTN Mobile Money, Moov Money, Wave) when known, otherwise a
+    neutral family name — never the gateway's name."""
+    if network and network in _NETWORK_LABELS:
+        return _NETWORK_LABELS[network]
+    return _PROVIDER_LABELS.get((provider or "").lower(), provider or "—")
 
 
 def enabled_providers(db: Session, school_id: int) -> list[str]:
@@ -111,6 +138,166 @@ def apply_school_payment(
             event_type="finance.payment_confirmed",
             subject="Paiement confirmé",
             message=f"Paiement de {payment.amount} {payment.currency} confirmé ({payment.payment_type}).",
+            school_id=payment.school_id,
+            student_id=payment.student_id,
+            source_type="school_payment",
+            source_id=payment.id,
+            current_user=current_user,
+        )
+    generate_school_payment_receipt(db, payment, current_user=current_user)
+    return True
+
+
+def generate_school_payment_receipt(
+    db: Session, payment: models.SchoolPayment, *, current_user: Optional[models.User] = None
+) -> Optional[str]:
+    """Automatic receipt for a CONFIRMED school payment. Idempotent per payment
+    (one GeneratedDocument keyed on source_type/source_id), registered in the
+    universal DocumentRegistry so the receipt is QR-verifiable at /verify/{uuid}.
+    Returns the receipt reference (existing one on replay)."""
+    from . import document_registry  # local import: registry also imports models
+
+    existing = (
+        db.query(models.GeneratedDocument)
+        .filter(models.GeneratedDocument.source_type == "school_payment",
+                models.GeneratedDocument.source_id == payment.id)
+        .first()
+    )
+    if existing:
+        return existing.reference
+
+    school = db.query(models.School).filter(models.School.id == payment.school_id).first()
+    if not school:
+        return None
+    payer = db.query(models.User).filter(models.User.id == payment.payer_user_id).first() if payment.payer_user_id else None
+    student = (
+        db.query(models.StudentProfile).filter(models.StudentProfile.id == payment.student_id).first()
+        if payment.student_id else None
+    )
+    student_name = student.user.full_name if student and student.user else None
+    issued_to = student_name or (payer.full_name if payer else None)
+    network = (payment.metadata_json or {}).get("mobile_money_network")
+    method = user_facing_method(payment.provider, network)
+    reference = f"REC-{_uuid.uuid4().hex[:10].upper()}"
+    payload = {
+        "reference": reference,
+        "doc_type": "receipt",
+        "issued_at": datetime.now(timezone.utc).isoformat(),
+        "school": {"name": school.name, "address": school.address, "phone": school.phone,
+                   "email": school.email, "logo_url": school.logo_url},
+        "payer": {"full_name": payer.full_name if payer else None},
+        "student": {"full_name": student_name,
+                    "registration_number": student.registration_number if student else None},
+        "payment": {
+            "payment_reference": payment.reference,
+            "payment_type": payment.payment_type,
+            "amount": payment.amount,
+            "currency": payment.currency,
+            "method": method,
+            "provider_reference": payment.provider_reference,
+            "invoice_id": payment.invoice_id,
+        },
+    }
+    db.add(models.GeneratedDocument(
+        document_type=models.GeneratedDocumentType.RECEIPT,
+        title="Reçu de paiement",
+        reference=reference,
+        source_type="school_payment",
+        source_id=payment.id,
+        student_id=payment.student_id,
+        school_id=payment.school_id,
+        content=payload,
+        generated_by_id=current_user.id if current_user else payment.payer_user_id,
+    ))
+    registry = document_registry.register(
+        db,
+        document_type="receipt",
+        school_id=payment.school_id,
+        title="Reçu de paiement",
+        reference=reference,
+        issued_to_name=issued_to,
+        issued_to_id=payment.payer_user_id,
+        payload={
+            "School": school.name,
+            "Receipt Number": reference,
+            "Payment Reference": payment.reference,
+            "Amount": f"{payment.amount} {payment.currency}",
+            "Method": method,
+            "Date": document_registry.now_iso(),
+        },
+        source_type="school_payment",
+        source_id=payment.id,
+        issued_by=current_user,
+    )
+    payment.metadata_json = {
+        **(payment.metadata_json or {}),
+        "receipt_reference": reference,
+        "receipt_verify_uuid": registry.uuid,
+    }
+    return reference
+
+
+def refund_school_payment(
+    db: Session,
+    payment: models.SchoolPayment,
+    *,
+    current_user: models.User,
+    reason: Optional[str] = None,
+) -> bool:
+    """Idempotently refund a CONFIRMED school payment: reverse the invoice
+    balance, mark the payment refunded, revoke its receipt in the registry,
+    audit and notify. The money movement itself happens at the provider
+    (CinetPay merchant panel / cash drawer) — this records the verified
+    reversal in the school's books; it never calls the gateway.
+
+    Returns True when this call performed the refund; False when the payment
+    was already refunded. Raises ValueError when the payment was never
+    successful (nothing to refund)."""
+    if payment.status == "refunded":
+        return False
+    if payment.status != "successful":
+        raise ValueError("Only a successful payment can be refunded")
+
+    payment.status = "refunded"
+
+    if payment.invoice_id:
+        invoice = (
+            db.query(models.StudentInvoice)
+            .filter(models.StudentInvoice.id == payment.invoice_id,
+                    models.StudentInvoice.school_id == payment.school_id)
+            .first()
+        )
+        if invoice:
+            invoice.amount_paid = max((invoice.amount_paid or 0) - payment.amount, 0)
+            invoice.remaining_balance = max((invoice.amount_due or 0) - invoice.amount_paid, 0)
+            invoice.status = (
+                models.StudentInvoiceStatus.PAID if invoice.remaining_balance <= 0
+                else models.StudentInvoiceStatus.PARTIAL if invoice.amount_paid > 0
+                else models.StudentInvoiceStatus.UNPAID
+            )
+
+    receipt_uuid = (payment.metadata_json or {}).get("receipt_verify_uuid")
+    if receipt_uuid:
+        from . import document_registry
+
+        document_registry.revoke(db, receipt_uuid, current_user)
+
+    audit.record_audit(
+        db,
+        action="school.payment.refunded",
+        current_user=current_user,
+        entity_type="school_payment",
+        entity_id=payment.reference,
+        details={"amount": payment.amount, "currency": payment.currency,
+                 "provider": payment.provider, "invoice_id": payment.invoice_id,
+                 "reason": reason},
+    )
+    if payment.student_id:
+        record_notification(
+            db,
+            event_type="finance.payment_refunded",
+            subject="Paiement remboursé",
+            message=f"Le paiement de {payment.amount} {payment.currency} ({payment.payment_type}) a été remboursé.",
             school_id=payment.school_id,
             student_id=payment.student_id,
             source_type="school_payment",
