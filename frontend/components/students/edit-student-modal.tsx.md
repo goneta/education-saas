@@ -22,3 +22,4 @@
 
 - cmd.exe /c "cd frontend&& npx eslint components/<path>"; npm run build for shared/layout changes
 - i18n: uses the shared `studentForm` namespace (FR/EN/ES/SW) — labels, placeholders, gender options, buttons, validation + error messages.
+- Erreurs lisibles: parseApiErrorResponse + API_FIELD_TO_FORM (fin du [object Object]); messages de validation locale passés en i18n studentForm (avant: anglais codé en dur).

@@ -1,9 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
+import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { parseApiErrorResponse } from "@/lib/api-errors"
 import {
     Dialog,
     DialogContent,
@@ -24,10 +26,30 @@ interface AddStudentModalProps {
     onSuccess?: () => void
 }
 
+// API (snake_case) -> form state field mapping, used to surface backend
+// validation errors under the exact input concerned.
+const API_FIELD_TO_FORM: Record<string, string> = {
+    full_name: "fullName",
+    email: "email",
+    password: "password",
+    registration_number: "registrationNumber",
+    date_of_birth: "dateOfBirth",
+    gender: "gender",
+    student_address: "studentAddress",
+    parent_name: "parentName",
+    parent_phone: "parentPhone",
+    parent_email: "parentEmail",
+    parent_address: "parentAddress",
+    current_class_id: "currentClassId",
+}
+
 export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentModalProps) {
     const { token } = useAuth()
     const tr = useTranslations("classRoster")
     const sf = useTranslations("studentForm")
+    const router = useRouter()
+    const params = useParams()
+    const locale = params.locale as string
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -55,15 +77,47 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
     const [classes, setClasses] = useState<{ id: number; name: string; level: string }[]>([])
     const [selectedLevel, setSelectedLevel] = useState("")
 
+    const [referentialLoaded, setReferentialLoaded] = useState(false)
+
     // Load the levels referential + classes when the modal opens (#4 cascade).
     useEffect(() => {
         if (!open || !token) return
         const headers = { Authorization: `Bearer ${token}` }
-        fetch(`${API_BASE_URL}/levels?active_only=true`, { headers }).then(r => r.ok ? r.json() : []).then(setLevels).catch(() => undefined)
-        fetch(`${API_BASE_URL}/education/classes`, { headers }).then(r => r.ok ? r.json() : []).then(setClasses).catch(() => undefined)
+        setReferentialLoaded(false)
+        Promise.all([
+            fetch(`${API_BASE_URL}/levels?active_only=true`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
+            fetch(`${API_BASE_URL}/education/classes`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
+        ]).then(([levelRows, classRows]) => {
+            setLevels(Array.isArray(levelRows) ? levelRows : [])
+            setClasses(Array.isArray(classRows) ? classRows : [])
+            setReferentialLoaded(true)
+        })
     }, [open, token])
 
+    // The level list of THIS school = the global referential MERGED with the
+    // distinct levels of the school's real classes. If the Super-Admin never
+    // seeded the referential, levels still come from the classes — the list is
+    // only empty when the school truly has nothing to select.
+    const availableLevels = useMemo(() => {
+        const known = new Map<string, { id: number; code: string; name: string }>()
+        for (const level of levels) known.set(level.code, level)
+        let derivedId = -1
+        for (const cls of classes) {
+            if (cls.level && !known.has(cls.level)) {
+                known.set(cls.level, { id: derivedId--, code: cls.level, name: cls.level })
+            }
+        }
+        return Array.from(known.values())
+    }, [levels, classes])
+
     const classesForLevel = selectedLevel ? classes.filter(c => c.level === selectedLevel) : []
+    const noLevelsAvailable = referentialLoaded && availableLevels.length === 0
+    const noClassForSelectedLevel = referentialLoaded && Boolean(selectedLevel) && classesForLevel.length === 0
+
+    const goTo = (path: string) => {
+        onOpenChange(false)
+        router.push(`/${locale}${path}`)
+    }
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }))
@@ -148,8 +202,17 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
             })
 
             if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.detail || sf("createError"))
+                // Never show "[object Object]": parse FastAPI string/array/object
+                // details into a readable message + per-field errors. The form
+                // keeps every value the user already typed.
+                const parsed = await parseApiErrorResponse(response, sf("createError"))
+                const mapped: Record<string, string> = {}
+                for (const [apiField, message] of Object.entries(parsed.fieldErrors)) {
+                    const formField = API_FIELD_TO_FORM[apiField]
+                    if (formField) mapped[formField] = message
+                }
+                if (Object.keys(mapped).length) setValidationErrors(prev => ({ ...prev, ...mapped }))
+                throw new Error(parsed.message)
             }
 
             // Success
@@ -372,28 +435,50 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
                     {/* Informations sur la Classe (#4): level -> dynamically filtered classes */}
                     <div className="space-y-4">
                         <h3 className="text-sm font-semibold text-[#111827]">{tr("classInfo")}</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="level">{tr("schoolLevel")}</Label>
-                                <Select value={selectedLevel} onValueChange={value => { setSelectedLevel(value); handleInputChange("currentClassId", "") }}>
-                                    <SelectTrigger id="level"><SelectValue placeholder={tr("selectLevel")} /></SelectTrigger>
-                                    <SelectContent>
-                                        {levels.map(level => <SelectItem key={level.id} value={level.code}>{level.code} — {level.name}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                        {noLevelsAvailable ? (
+                            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-[#3a3125] dark:text-amber-100">
+                                <p>{sf("noLevels")}</p>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    <Button type="button" size="sm" variant="outline" onClick={() => goTo("/dashboard/education/classes")}>{sf("createClassAction")}</Button>
+                                    <Button type="button" size="sm" variant="outline" onClick={() => goTo("/dashboard/levels")}>{sf("manageLevelsAction")}</Button>
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="currentClassId">{tr("classLabel")}</Label>
-                                <Select value={formData.currentClassId} onValueChange={value => handleInputChange("currentClassId", value)} disabled={!selectedLevel}>
-                                    <SelectTrigger id="currentClassId"><SelectValue placeholder={selectedLevel ? tr("selectClass") : tr("chooseLevelFirst")} /></SelectTrigger>
-                                    <SelectContent>
-                                        {classesForLevel.length === 0 ? (
-                                            <SelectItem value="none" disabled>{tr("noClassForLevel")}</SelectItem>
-                                        ) : classesForLevel.map(cls => <SelectItem key={cls.id} value={String(cls.id)}>{cls.name}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
+                        ) : (
+                            <>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="level">{tr("schoolLevel")}</Label>
+                                        <Select value={selectedLevel} onValueChange={value => { setSelectedLevel(value); handleInputChange("currentClassId", "") }}>
+                                            <SelectTrigger id="level"><SelectValue placeholder={tr("selectLevel")} /></SelectTrigger>
+                                            <SelectContent>
+                                                {availableLevels.map(level => (
+                                                    <SelectItem key={level.code} value={level.code}>
+                                                        {level.code === level.name ? level.code : `${level.code} — ${level.name}`}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="currentClassId">{tr("classLabel")}</Label>
+                                        <Select value={formData.currentClassId} onValueChange={value => handleInputChange("currentClassId", value)} disabled={!selectedLevel || classesForLevel.length === 0}>
+                                            <SelectTrigger id="currentClassId"><SelectValue placeholder={selectedLevel ? tr("selectClass") : tr("chooseLevelFirst")} /></SelectTrigger>
+                                            <SelectContent>
+                                                {classesForLevel.map(cls => <SelectItem key={cls.id} value={String(cls.id)}>{cls.name}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                                {noClassForSelectedLevel && (
+                                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-[#3a3125] dark:text-amber-100">
+                                        <p>{sf("noClassForLevelMsg", { level: selectedLevel })}</p>
+                                        <div className="mt-2">
+                                            <Button type="button" size="sm" variant="outline" onClick={() => goTo("/dashboard/education/classes")}>{sf("createClassAction")}</Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
 
                     <DialogFooter>

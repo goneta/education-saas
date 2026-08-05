@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { parseApiErrorResponse } from "@/lib/api-errors"
 import {
     Dialog,
     DialogContent,
@@ -12,6 +13,21 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+
+// API (snake_case) -> form state field mapping for backend validation errors.
+const API_FIELD_TO_FORM: Record<string, string> = {
+    full_name: "fullName",
+    email: "email",
+    registration_number: "registrationNumber",
+    date_of_birth: "dateOfBirth",
+    gender: "gender",
+    student_address: "studentAddress",
+    parent_name: "parentName",
+    parent_phone: "parentPhone",
+    parent_email: "parentEmail",
+    parent_address: "parentAddress",
+    current_class_id: "currentClassId",
+}
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -102,22 +118,22 @@ export function EditStudentModal({ open, onOpenChange, student, onSuccess }: Edi
         const errors: Record<string, string> = {}
 
         // Required fields
-        if (!formData.fullName.trim()) errors.fullName = "Full name is required"
-        if (!formData.email.trim()) errors.email = "Email is required"
+        if (!formData.fullName.trim()) errors.fullName = sf("vFullName")
+        if (!formData.email.trim()) errors.email = sf("vEmailReq")
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            errors.email = "Invalid email format"
+            errors.email = sf("vEmailInvalid")
         }
-        if (!formData.registrationNumber.trim()) errors.registrationNumber = "Registration number is required"
-        if (!formData.dateOfBirth) errors.dateOfBirth = "Date of birth is required"
-        if (!formData.gender) errors.gender = "Gender is required"
-        if (!formData.studentAddress.trim()) errors.studentAddress = "Student address is required"
-        if (!formData.parentName.trim()) errors.parentName = "Parent name is required"
-        if (!formData.parentPhone.trim()) errors.parentPhone = "Parent phone is required"
-        if (!formData.parentAddress.trim()) errors.parentAddress = "Parent address is required"
+        if (!formData.registrationNumber.trim()) errors.registrationNumber = sf("vRegistration")
+        if (!formData.dateOfBirth) errors.dateOfBirth = sf("vDob")
+        if (!formData.gender) errors.gender = sf("vGender")
+        if (!formData.studentAddress.trim()) errors.studentAddress = sf("vStudentAddress")
+        if (!formData.parentName.trim()) errors.parentName = sf("vParentName")
+        if (!formData.parentPhone.trim()) errors.parentPhone = sf("vParentPhone")
+        if (!formData.parentAddress.trim()) errors.parentAddress = sf("vParentAddress")
 
         // Optional parent email validation
         if (formData.parentEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.parentEmail)) {
-            errors.parentEmail = "Invalid email format"
+            errors.parentEmail = sf("vEmailInvalid")
         }
 
         setValidationErrors(errors)
@@ -163,8 +179,17 @@ export function EditStudentModal({ open, onOpenChange, student, onSuccess }: Edi
             })
 
             if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.detail || sf("updateError"))
+                // Never show "[object Object]": parse FastAPI string/array/object
+                // details into a readable message + per-field errors, keeping the
+                // values the user already typed.
+                const parsed = await parseApiErrorResponse(response, sf("updateError"))
+                const mapped: Record<string, string> = {}
+                for (const [apiField, message] of Object.entries(parsed.fieldErrors)) {
+                    const formField = API_FIELD_TO_FORM[apiField]
+                    if (formField) mapped[formField] = message
+                }
+                if (Object.keys(mapped).length) setValidationErrors(prev => ({ ...prev, ...mapped }))
+                throw new Error(parsed.message)
             }
 
             // Success

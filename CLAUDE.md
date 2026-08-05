@@ -50,6 +50,27 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
+- **Gestion des Élèves — liste vide, erreurs lisibles, cascade niveau/classe,
+  dépendances**: (1) liste — la tolérance de lecture de `GET /students` couvre
+  maintenant les profils épinglés à un modèle d'établissement DÉSACTIVÉ/remplacé
+  (traités comme non épinglés via `~sma.in_(SMA actifs de l'école)`; miroir dans
+  /diagnostics; `test_students_list_tolerance.py` 2 green, in-memory), et la page
+  Élèves appelle `/students/diagnostics` sur liste vide pour afficher les hints
+  français (contexte/établissement/modèle/année) ou « aucun élève créé » +
+  bouton Ajouter. (2) **`lib/api-errors.ts`** (nouveau, réutilisable) : parse le
+  `detail` FastAPI (string | array 422 | objet) → message lisible + erreurs par
+  champ; les modals add/edit élève l'utilisent avec un mapping
+  `API_FIELD_TO_FORM` (snake_case → état du formulaire), valeurs saisies
+  conservées — **plus jamais `[object Object]`** (à généraliser aux autres
+  formulaires). (3) cascade — les niveaux du formulaire élève = référentiel
+  global `/levels` FUSIONNÉ avec les niveaux distincts des classes réelles du
+  contexte (un référentiel vide ne bloque plus); classes filtrées par niveau,
+  reset au changement. (4) dépendances manquantes — encarts explicites « aucun
+  niveau » / « aucune classe pour ce niveau {level} » avec actions rapides
+  (Créer une classe → education/classes, Gérer les niveaux → levels); i18n
+  4 locales (`lists.students.*`, `studentForm.*`). Motif à généraliser aux
+  autres formulaires de création (professeur, matière, emploi du temps…).
+
 - **CinetPay method-first UX + receipts/refunds (gateway invisible)**: users
   now pick the ACTUAL payment method everywhere — Orange Money / MTN Mobile
   Money / Moov Money / Wave (+ Stripe/Djamo/cash) — and "CinetPay" is never

@@ -37,6 +37,18 @@ interface Student {
     student_profile: StudentProfile
 }
 
+interface StudentsDiagnostics {
+    stages: {
+        student_profiles_total: number
+        active_users_with_profile: number
+        user_school_matches_context: number
+        profile_sma_matches_context: number
+        enrollment_rows_matching_context: number
+        final_list_count: number
+    }
+    hints: string[]
+}
+
 function normalizeStudents(payload: unknown): Student[] {
     if (Array.isArray(payload)) return payload as Student[]
     if (payload && typeof payload === "object") {
@@ -60,6 +72,7 @@ export default function StudentsPage() {
     const [students, setStudents] = useState<Student[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [diagnostics, setDiagnostics] = useState<StudentsDiagnostics | null>(null)
 
     const fetchStudents = useCallback(async () => {
         if (!token) {
@@ -82,6 +95,20 @@ export default function StudentsPage() {
             const rows = normalizeStudents(payload)
             if (!Array.isArray(payload) && rows.length === 0) throw new Error("La réponse de la liste des élèves est invalide.")
             setStudents(rows)
+            if (rows.length === 0) {
+                // Empty but no error: explain WHY instead of a silent blank list.
+                // The diagnostics endpoint replays the exact list filters stage by
+                // stage (contexte actif, établissement, modèle, année) and returns
+                // ready-made French hints; it is admin-only — non-admins just keep
+                // the standard empty state.
+                const diag = await fetch(`${API_BASE_URL}/students/diagnostics`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                    cache: "no-store",
+                }).then(r => (r.ok ? r.json() : null)).catch(() => null)
+                setDiagnostics(diag && diag.stages ? diag as StudentsDiagnostics : null)
+            } else {
+                setDiagnostics(null)
+            }
         } catch (reason) {
             setStudents([])
             setError(reason instanceof Error ? reason.message : "Impossible de charger les élèves.")
@@ -135,9 +162,30 @@ export default function StudentsPage() {
                     {isLoading ? (
                         <p className="py-12 text-center text-[#6B7280]">{t("students.loading")}</p>
                     ) : filter.filtered.length === 0 ? (
-                        <p className="py-12 text-center text-[#6B7280]">
-                            {filter.controls.query ? t("students.emptySearch", { query: filter.controls.query }) : t("students.empty")}
-                        </p>
+                        <div className="py-12 text-center text-[#6B7280]">
+                            <p>
+                                {filter.controls.query ? t("students.emptySearch", { query: filter.controls.query }) : t("students.empty")}
+                            </p>
+                            {!filter.controls.query && diagnostics && (
+                                diagnostics.stages.student_profiles_total === 0 ? (
+                                    <div className="mx-auto mt-6 max-w-xl rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-4 py-4 text-left text-sm dark:border-[#3b4248] dark:bg-[#262b2f]">
+                                        <p>{t("students.noneCreated")}</p>
+                                        <Button className="mt-3 rounded-lg bg-black text-white hover:bg-black/90" onClick={() => setShowAddModal(true)}>
+                                            <Plus className="mr-2 h-4 w-4" /> {t("students.add")}
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="mx-auto mt-6 max-w-2xl rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-left text-sm text-amber-900 dark:border-amber-800 dark:bg-[#3a3125] dark:text-amber-100">
+                                        <p className="font-semibold">{t("students.hiddenByContext", { count: diagnostics.stages.active_users_with_profile })}</p>
+                                        <ul className="mt-2 list-disc space-y-1 pl-5">
+                                            {diagnostics.hints.length > 0
+                                                ? diagnostics.hints.map((hint, index) => <li key={index}>{hint}</li>)
+                                                : <li>{t("students.checkContextHint")}</li>}
+                                        </ul>
+                                    </div>
+                                )
+                            )}
+                        </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">

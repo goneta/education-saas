@@ -29,3 +29,4 @@
 
 The student list links to the global journey administration workspace for transfers, imports, and academic-year closure.
 - i18n: uses the shared `lists` namespace (FR/EN/ES/SW) — no hardcoded UI strings (titles, columns, buttons, empty/loading states, dialog).
+- Fiabilité liste vide: quand la liste revient vide sans erreur, la page appelle /students/diagnostics (admins) et affiche un panneau explicatif — "aucun élève créé" + bouton Ajouter quand la base est vide, sinon les hints français du diagnostic (contexte établissement/modèle/année) au lieu d une liste muette.

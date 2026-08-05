@@ -234,6 +234,14 @@ def list_students(
         .filter(*enrollment_filters)
         .exists()
     )
+    # A profile pinned to a model assignment that is NOT active for this school
+    # anymore (the assignment was replaced/deactivated) is legacy data, not a
+    # different context: treat it like an unpinned profile so those students
+    # never silently disappear from their own school's list.
+    active_sma_ids = db.query(models.SchoolModelAssignment.id).filter(
+        models.SchoolModelAssignment.school_id == active_context.school_id,
+        models.SchoolModelAssignment.is_active == True,  # noqa: E712
+    )
     query = db.query(models.User).options(selectinload(models.User.student_profile)).join(
         models.StudentProfile, models.StudentProfile.user_id == models.User.id
     ).filter(
@@ -245,6 +253,7 @@ def list_students(
                 or_(
                     models.StudentProfile.school_model_assignment_id == active_context.school_model_assignment_id,
                     models.StudentProfile.school_model_assignment_id == None,  # noqa: E711
+                    ~models.StudentProfile.school_model_assignment_id.in_(active_sma_ids),
                 ),
             ),
         ),
@@ -285,11 +294,16 @@ def list_students_diagnostics(
     )
     users_with_profile = base.count()
     school_match = base.filter(models.User.school_id == ctx.school_id).count()
+    active_sma_ids = db.query(models.SchoolModelAssignment.id).filter(
+        models.SchoolModelAssignment.school_id == ctx.school_id,
+        models.SchoolModelAssignment.is_active == True,  # noqa: E712
+    )
     sma_match = base.filter(
         models.User.school_id == ctx.school_id,
         or_(
             models.StudentProfile.school_model_assignment_id == ctx.school_model_assignment_id,
             models.StudentProfile.school_model_assignment_id == None,  # noqa: E711
+            ~models.StudentProfile.school_model_assignment_id.in_(active_sma_ids),
         ),
     ).count()
     enrollment_filters = [
