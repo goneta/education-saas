@@ -16,7 +16,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from sqlalchemy.orm import Session
 
-from .. import database, models, schemas, security
+from .. import database, models, schemas, security, webhook_auth
 from ..services import payment_gateway, payment_service
 
 logger = logging.getLogger("teducai.payments")
@@ -34,13 +34,20 @@ MANAGER_ROLES = {
 
 def _verify_signature(provider: str, provided: Optional[str]) -> None:
     """Verify a provider webhook. Uses the provider-specific secret if set, else
-    a shared `SCHOOL_PAYMENT_WEBHOOK_SECRET`. When no secret is configured the
-    check is skipped (dev), mirroring the existing platform webhook. Real
+    the shared `SCHOOL_PAYMENT_WEBHOOK_SECRET`.
+
+    FAIL-CLOSED (audit SEC-01): in production a missing secret yields 503 (the
+    provider retries once the host is configured) instead of silently accepting
+    an unauthenticated call that would settle student invoices. Outside
+    production the check degrades to a no-op for local development. Real
     provider signature schemes (e.g. Stripe HMAC over the raw body) plug in here.
     """
-    secret = os.getenv(f"{provider.upper()}_WEBHOOK_SECRET") or os.getenv("SCHOOL_PAYMENT_WEBHOOK_SECRET")
-    if secret and provided != secret:
-        raise HTTPException(status_code=403, detail="Invalid webhook signature")
+    webhook_auth.verify_shared_secret(
+        provided,
+        f"{provider.upper()}_WEBHOOK_SECRET",
+        "SCHOOL_PAYMENT_WEBHOOK_SECRET",
+        purpose=f"{provider} payment",
+    )
 
 
 def _school_id(current_user: models.User) -> int:

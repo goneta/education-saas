@@ -23,7 +23,43 @@ elif os.getenv("APP_ENV") is None and not ENV_FILE.exists() and ENV_PRODUCTION_F
     # keys, DATABASE_URL, etc. load without requiring APP_ENV to be set first.
     load_dotenv(ENV_PRODUCTION_FILE)
 
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./education_saas.db")
+def is_production() -> bool:
+    """Single source of truth for "this process serves production".
+
+    A host that ships `.env.production` IS a production host even when the
+    process manager did not export APP_ENV — the same rule the SECRET_KEY guard
+    has always used, now shared by every production check (DB, webhooks).
+    """
+    return os.getenv("APP_ENV") == "production" or ENV_PRODUCTION_FILE.exists()
+
+
+def validate_database_url(url: str, *, production: bool, configured: bool) -> None:
+    """Refuse to serve production on the SQLite development fallback.
+
+    Audit CFG-01: `DATABASE_URL` defaulted to a local SQLite file, so a missing
+    variable let the app start *normally* on a file nobody backs up — data loss
+    discovered days later. Production must fail loudly at boot instead, exactly
+    like the SECRET_KEY guard. Pure function so the rule is unit-testable.
+    """
+    if not production:
+        return
+    if not configured:
+        raise RuntimeError(
+            "DATABASE_URL must be configured in production (refusing to start on the "
+            "SQLite development fallback). Set DATABASE_URL to the PostgreSQL instance."
+        )
+    if url.startswith("sqlite"):
+        raise RuntimeError(
+            "DATABASE_URL points at SQLite while APP_ENV=production (or .env.production "
+            "exists). Production requires PostgreSQL — refusing to start."
+        )
+
+
+_DATABASE_URL_ENV = os.getenv("DATABASE_URL")
+SQLALCHEMY_DATABASE_URL = _DATABASE_URL_ENV or "sqlite:///./education_saas.db"
+validate_database_url(
+    SQLALCHEMY_DATABASE_URL, production=is_production(), configured=bool(_DATABASE_URL_ENV)
+)
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False} if "sqlite" in SQLALCHEMY_DATABASE_URL else {}

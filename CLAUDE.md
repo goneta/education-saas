@@ -91,6 +91,20 @@ code is a red flag.
   weekly hours, holidays, the 7 pedagogical rule types with a dynamic param form,
   always‑enforced structural constraints). Rule types/params MUST mirror the engine.
 
+## Remédiation de l'audit pré-production (AUDIT_2026-08_PRE-PRODUCTION.md)
+
+Lots exécutés dans l'ordre validé : 0 → 1 → 2 → 3 → 4 → 5.
+
+- **Lot 0 — blocage financier : FAIT.** SEC-01 `backend/webhook_auth.py`
+  (fail-closed : secret non configuré en production ⇒ 503, jamais un passage
+  silencieux ; 403 en comparaison temps-constant sinon) consommé par
+  `payments._verify_signature` et `ai_billing._verify_webhook`. SEC-02 les 10
+  variables non documentées ajoutées aux 3 `.env*.example` + `require_env` des
+  secrets de webhook et contrôle PostgreSQL dans `teducai-prod-audit.sh`.
+  CFG-01 `database.is_production()` (source unique) + `validate_database_url()`
+  refusent le démarrage en production sans PostgreSQL. Tests
+  `test_webhook_auth.py` (7) ; suite complète **317 verts**.
+
 ## Recent change log (most recent first)
 
 - **Documentation, Aide intégrée & référentiel piloté par valeur**: (1) site

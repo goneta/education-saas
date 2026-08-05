@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from .. import audit, crypto_utils, database, models, rbac, schemas, security
+from .. import audit, crypto_utils, database, models, rbac, schemas, security, webhook_auth
 from ..services import ai_credits, ai_credit_sync, payment_gateway, payment_service, school_context as context_service
 
 
@@ -107,9 +107,9 @@ def _platform_payment_response(
 
 
 def _verify_webhook(secret_env: str, provided: Optional[str]) -> None:
-    secret = os.getenv(secret_env)
-    if secret and provided != secret:
-        raise HTTPException(status_code=403, detail="Invalid webhook signature")
+    """Fail-closed shared-secret check (audit SEC-01): an unconfigured secret is
+    a production misconfiguration (503, provider retries), never an open door."""
+    webhook_auth.verify_shared_secret(provided, secret_env, purpose=secret_env)
 
 
 def _allocation_response(row: models.SchoolAICreditAllocation) -> dict:

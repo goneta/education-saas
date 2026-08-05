@@ -37,8 +37,34 @@ require_env FIELD_ENCRYPTION_KEY
 require_env CORS_ALLOWED_ORIGINS
 require_env BACKUP_DIR
 
+# Audit SEC-01/SEC-02: these secrets authenticate the PUBLIC payment webhooks
+# (AI credits, subscriptions, student invoices). The application now refuses
+# such calls with 503 when they are missing, so an unset secret means payments
+# confirmations silently stop rather than being forged - both states must fail
+# this audit loudly.
+require_env PLATFORM_PAYMENT_WEBHOOK_SECRET
+require_env SCHOOL_PAYMENT_WEBHOOK_SECRET
+
 if [ "${APP_ENV:-}" != "production" ]; then
   fail "APP_ENV must be production"
+fi
+
+case "${DATABASE_URL:-}" in
+  postgresql*|postgres*)
+    ok "DATABASE_URL points at PostgreSQL"
+    ;;
+  "")
+    ;; # already reported by require_env
+  *)
+    fail "DATABASE_URL must point at PostgreSQL in production (got a non-PostgreSQL URL)"
+    ;;
+esac
+
+# CinetPay is the primary mobile-money gateway: without the secret key the
+# notify endpoint cannot validate the x-token HMAC (the check API remains the
+# authoritative gate, but the signature layer should be enabled in production).
+if [ -n "${CINETPAY_API_KEY:-}" ] && [ -z "${CINETPAY_SECRET_KEY:-}" ]; then
+  warn "CINETPAY_API_KEY is set but CINETPAY_SECRET_KEY is missing; notify HMAC validation is disabled"
 fi
 
 if printf '%s' "${CORS_ALLOWED_ORIGINS:-}" | grep -q '\*'; then
