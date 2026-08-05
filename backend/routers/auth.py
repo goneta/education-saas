@@ -266,6 +266,29 @@ def disable_mfa(payload: schemas.MfaVerifyRequest, current_user: models.User = D
     return {"enabled": False}
 
 
+@router.post("/refresh", response_model=schemas.Token)
+def refresh_token(current_user: models.User = Depends(security.get_current_user)):
+    """Sliding session (audit UX-01).
+
+    Access tokens live 30 minutes and there was no renewal, so staff were logged
+    out mid-form — losing an unsaved report card or student file. An
+    authenticated client can now exchange a still-valid token for a fresh one,
+    which keeps an ACTIVE user signed in without extending the lifetime of a
+    stolen token: the exchange requires a valid, non-revoked token
+    (`token_version` is re-checked by `get_current_user`), and an idle session
+    still expires normally.
+    """
+    access_token = security.create_access_token(
+        data={"sub": current_user.email, "ver": current_user.token_version},
+        expires_delta=timedelta(minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES),
+    )
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "expires_in": security.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    }
+
+
 @router.post("/logout")
 def logout(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(database.get_db)):
     current_user.token_version += 1

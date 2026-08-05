@@ -108,6 +108,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     }, [token, expireSession])
 
+    // UX-01: access tokens live 30 minutes and were never renewed, so staff were
+    // logged out mid-form and lost unsaved work. While the session is alive we
+    // exchange the token for a fresh one every 20 minutes. This does NOT keep an
+    // abandoned session open: the idle timer above still signs out an inactive
+    // user, and a revoked token (logout elsewhere, password reset) is refused.
+    useEffect(() => {
+        if (!token) return
+        const REFRESH_INTERVAL_MS = 20 * 60 * 1000
+        const interval = setInterval(async () => {
+            const activeToken = localStorage.getItem("access_token")
+            if (!activeToken) return
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${activeToken}` },
+                })
+                if (!response.ok) return  // expired/revoked: the 401 handler takes over
+                const data = await response.json()
+                if (data?.access_token) {
+                    localStorage.setItem("access_token", data.access_token)
+                    setToken(data.access_token)
+                }
+            } catch {
+                /* offline: keep the current token, the next tick retries */
+            }
+        }, REFRESH_INTERVAL_MS)
+        return () => clearInterval(interval)
+    }, [token])
+
     useEffect(() => {
         const handleUnauthorized = () => {
             const activeToken = localStorage.getItem("access_token")

@@ -1,9 +1,51 @@
 # Audit pré-production TeducAI — août 2026
 
-> **Statut : rapport d'audit uniquement. Aucune correction n'a été implémentée.**
+> **Statut : rapport validé, remédiation EXÉCUTÉE (lots 0 à 5).**
 > Cible de mise en production : **début septembre 2026**.
 > Périmètre : backend FastAPI, frontend Next.js, base de données, API, sécurité,
 > multi-tenant, performance, UX, métier, qualité, déploiement.
+
+---
+
+## 0. État de la remédiation (mis à jour après exécution)
+
+| Lot | Contenu | Statut | Preuve |
+|---|---|---|---|
+| **0** | SEC-01, SEC-02, CFG-01 | ✅ FAIT | `test_webhook_auth.py` (7) |
+| **1** | PRIV-01, PRIV-02, SEC-07, SEC-08 | ✅ FAIT | `test_access_scope.py` (5) |
+| **2** | SEC-03, SEC-04, SEC-05, SEC-06 | ✅ FAIT | `test_auth_hardening.py` (6) |
+| **3** | DATA-01, DATA-02 | ✅ FAIT | `test_deletion_guard.py` (4) |
+| **4** | PERF-01, PERF-03, FONC-01, OPS-01, OPS-02 | ✅ FAIT | `test_report_cards.py` (5), migration 0058 |
+| **5** | CFG-02, CFG-03, CFG-04, ARCH-04, QUAL-01, UX-01 | ✅ FAIT | `test_files_access.py` (4) |
+
+**Suite backend : 341 tests, 0 échec** (310 avant remédiation → +31 tests ciblant
+précisément les failles). Migrations 0057 et 0058 appliquées. Import applicatif OK.
+
+### Les 4 problèmes critiques sont fermés
+
+| ID | Avant | Après |
+|---|---|---|
+| SEC-01 | Webhook de paiement accepté **sans authentification** si le secret n'est pas défini | Fail-closed : 503 en production, 403 sur mauvais secret, comparaison temps-constant |
+| SEC-02 | Secret ni documenté ni vérifié | Dans les 3 `.env*.example` + `require_env` du script d'audit |
+| PRIV-01 | Un élève pouvait lire les sanctions de **tous** ses camarades | Filtrage par ligne : liste, détail (404), filtre et export CSV |
+| CFG-01 | Démarrage silencieux sur SQLite si `DATABASE_URL` manque | Refus de démarrer en production hors PostgreSQL |
+
+### Reste à faire (non réalisable en bac à sable — à exécuter sur l'environnement réel)
+
+| Tâche | Pourquoi elle n'a pas pu être faite ici |
+|---|---|
+| Test de charge (journée de rentrée) | Nécessite un environnement dimensionné et un jeu de données réaliste |
+| Répétition de restauration de sauvegarde | Nécessite l'environnement de production et une base à écraser |
+| `npm audit` + build frontend | Pas de `node_modules` dans ce bac à sable |
+| Paiement réel par opérateur (Orange, MTN, Moov, Wave) | Nécessite les clés live et un vrai téléphone |
+| Suppression de la duplication ARCH-01 (`reference_data`) | Volontairement reportée après le lancement (migration de données) |
+
+### Suivi post-lancement (inchangé)
+
+ARCH-01 (unification des référentiels), ARCH-03 (découpage des fichiers
+monolithiques), PERF-02/04/05 (N+1, workers multiples après Redis,
+échantillonnage de l'observabilité), FONC-03/04 (compléments Vie scolaire,
+exports Excel/PDF), SEC-09/SEC-10, UX-02, QUAL-02/03/04.
 
 ---
 

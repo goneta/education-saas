@@ -162,6 +162,23 @@ Lots exécutés dans l'ordre validé : 0 → 1 → 2 → 3 → 4 → 5.
   digests, absences, devoirs, agents recruteurs) + l'envoi des webhooks.
   Tests `test_report_cards.py` (5).
 
+- **Lot 5 — durcissement : FAIT.** CFG-02 **toutes les versions épinglées**
+  dans `backend/requirements.txt` (celles avec lesquelles la suite est verte) +
+  procédure `--no-deps` d'`openai-agents` documentée ; ARCH-04 `motor` et
+  `langchain` (jamais importés) retirés. CFG-04 `docker-compose.yml` =
+  développement uniquement : mot de passe par variable d'environnement, port
+  PostgreSQL sur 127.0.0.1, service MongoDB supprimé. CFG-03
+  `BACKEND_INTERNAL_URL` obligatoire en production (le repli :8000 contredisait
+  le port PM2 :8001). UX-01 session glissante : `POST /auth/refresh` +
+  rafraîchissement automatique toutes les 20 min côté frontend (le minuteur
+  d'inactivité déconnecte toujours les sessions abandonnées). QUAL-01
+  `test_files_access.py` couvre enfin le contrôle d'accès aux documents
+  (isolation inter-établissements incluse).
+  **Restent des tâches d'exploitation, non réalisables en bac à sable et à faire
+  sur l'environnement réel avant le Go :** test de charge, répétition de
+  restauration de sauvegarde, `npm audit` + build frontend, et un paiement réel
+  par opérateur mobile money.
+
 ## Recent change log (most recent first)
 
 - **Documentation, Aide intégrée & référentiel piloté par valeur**: (1) site

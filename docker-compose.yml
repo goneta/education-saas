@@ -1,29 +1,31 @@
+# LOCAL DEVELOPMENT ONLY — never deploy this file as-is (audit CFG-04).
+#
+# What changed after the audit:
+# - credentials come from the environment instead of being hardcoded
+#   (`saas_password` in clear text was an invitation);
+# - PostgreSQL is published on 127.0.0.1 only, so the database is not exposed
+#   to the network by simply starting the stack;
+# - the MongoDB service was removed: `motor` is imported nowhere in the code
+#   (ARCH-04), it only added an unused, unauthenticated datastore.
+#
+# Usage:
+#   POSTGRES_PASSWORD=... docker compose up -d
+# Production runs PostgreSQL as a managed/system service, not from this file.
+
 version: '3.8'
 
 services:
   db:
     image: postgres:15-alpine
-    restart: always
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: saas_admin
-      POSTGRES_PASSWORD: saas_password
-      POSTGRES_DB: education_saas_db
+      POSTGRES_USER: ${POSTGRES_USER:-saas_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in your shell or .env}
+      POSTGRES_DB: ${POSTGRES_DB:-education_saas_db}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  mongo:
-    image: mongo:latest
-    restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: saas_admin
-      MONGO_INITDB_ROOT_PASSWORD: saas_password
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-
 volumes:
   postgres_data:
-  mongo_data:

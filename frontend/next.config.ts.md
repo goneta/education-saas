@@ -22,3 +22,4 @@
 
 - cmd.exe /c "cd frontend&& npm run build" when relevant
 - SEC-06: en-tetes de securite declares pour TOUTES les pages (X-Content-Type-Options, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, HSTS, CSP avec frame-ancestors none / object-src none / form-action self). Auparavant seules les reponses d API en beneficiaient. La CSP conserve unsafe-inline/unsafe-eval pour les scripts (runtime Next); durcissement par nonce a planifier.
+- CFG-03: la valeur de repli BACKEND_INTERNAL_URL (:8000) contredisait le port PM2 (:8001) et pouvait rediriger le frontend vers un AUTRE backend. En production la variable est desormais obligatoire (erreur explicite au demarrage), le repli ne subsiste qu en developpement.

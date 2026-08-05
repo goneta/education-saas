@@ -37,7 +37,13 @@ const nextConfig = {
     return [{ source: '/:path*', headers: securityHeaders }];
   },
   async rewrites() {
-    const backendUrl = process.env.BACKEND_INTERNAL_URL || 'http://127.0.0.1:8000';
+    // Audit CFG-03: the old fallback was :8000 while PM2 serves the backend on
+    // :8001, so a missing variable silently proxied to ANOTHER app's backend.
+    // Development keeps a fallback; production must be explicit.
+    const backendUrl = process.env.BACKEND_INTERNAL_URL
+      || (process.env.NODE_ENV === 'production'
+        ? (() => { throw new Error('BACKEND_INTERNAL_URL must be set in production'); })()
+        : 'http://127.0.0.1:8000');
 
     return [
       {

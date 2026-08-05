@@ -25,3 +25,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npm run build" when relevant
+- UX-01: rafraichissement automatique du jeton toutes les 20 minutes tant que la session vit (fin des deconnexions en pleine saisie et des pertes de travail); en cas d echec le gestionnaire 401 existant prend le relais, et le minuteur d inactivite continue de deconnecter les sessions abandonnees.
