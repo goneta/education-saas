@@ -145,6 +145,23 @@ Lots exécutés dans l'ordre validé : 0 → 1 → 2 → 3 → 4 → 5.
   jour concurrente (découvert de crédits). Tests `test_deletion_guard.py` (4) ;
   suite complète **332 verts**.
 
+- **Lot 4 — exploitabilité : FAIT.** PERF-01 migration 0058 : **98 index**
+  manquants créés sur les clés de portée (school_id ×51, student_id ×19,
+  class_id, academic_year_id, subject_id, teacher_id, user_id) — liste figée
+  dans la migration, idempotente. PERF-03 `_engine_options()` :
+  `pool_pre_ping` (fin des 500 en rafale après un redémarrage PostgreSQL),
+  `pool_recycle` et dimensionnement explicite. FONC-01 **bulletin PDF**
+  (`services/report_cards.py` + `GET /grades/reports/student/{id}/term/{id}/pdf`)
+  : réutilise reportlab + le DocumentRegistry (QR vérifiable, idempotent par
+  élève+trimestre) ; au passage PRIV-02 appliqué au bulletin JSON qui ne
+  vérifiait **rien** (commentaire « skipping strict check for MVP velocity »).
+  OPS-02 `services/webhook_dispatch.py` + `POST /extensibility/deliveries/
+  dispatch` : les livraisons sortantes sont enfin **envoyées**, signées
+  HMAC-SHA256, avec backoff exponentiel puis échec définitif tracé. OPS-01 le
+  cron d'exemple couvre désormais les automatisations métier (relances,
+  digests, absences, devoirs, agents recruteurs) + l'envoi des webhooks.
+  Tests `test_report_cards.py` (5).
+
 ## Recent change log (most recent first)
 
 - **Documentation, Aide intégrée & référentiel piloté par valeur**: (1) site

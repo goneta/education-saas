@@ -8,3 +8,4 @@
 ## Verification
 - `python -m pytest backend/test_extensibility.py`
 - `GET /extensibility/deliveries` lists recent outbound deliveries (filter by status, newest first) so admins can monitor and use the retry endpoint.
+- OPS-02: `POST /extensibility/deliveries/dispatch` (admin) declenche l envoi reel des livraisons en attente via services/webhook_dispatch (signature HMAC, backoff exponentiel, echec definitif apres max_attempts). Entree cron ajoutee toutes les 5 minutes.

@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from .. import models, schemas, security, database
-from ..services import automation, school_context, student_lifecycle
+from ..services import access_scope, automation, deletion_guard, report_cards, school_context, student_lifecycle
 
 router = APIRouter(prefix="/grades", tags=["Grades & Evaluations"])
 
@@ -247,6 +248,12 @@ def get_report_card(
     ).first()
     if not profile:
         raise HTTPException(status_code=404, detail="Student not found")
+    # Audit PRIV-02: this endpoint carried a "skipping strict check for MVP
+    # velocity" comment — any authenticated user could read any student's
+    # report card. Staff keep the school view; a learner sees only their own
+    # bulletin and a parent only their children's.
+    if not access_scope.can_view_student(db, current_user, profile.id):
+        raise HTTPException(status_code=404, detail="Student not found")
     # Fetch all grades for this student in this term
     # Join Assessment to filter by term, and Subject for info
     grades = db.query(models.Grade).join(models.Assessment).filter(
@@ -316,4 +323,35 @@ def get_report_card(
         term_id=term_id,
         subjects=report_subjects,
         overall_average=round(overall_avg, 2)
+    )
+
+
+@router.get("/reports/student/{student_id}/term/{term_id}/pdf")
+def get_report_card_pdf(
+    student_id: int,
+    term_id: int,
+    current_user: models.User = Depends(security.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    """Printable bulletin (audit FONC-01).
+
+    The term report existed as JSON only, so the single most important document
+    of a school term could not be printed. Same data, same authorization rules,
+    rendered with reportlab and stamped with an authenticity QR resolvable at
+    the public /verify/{uuid} page.
+    """
+    report = get_report_card(student_id, term_id, current_user, db)
+    profile = db.query(models.StudentProfile).filter(
+        (models.StudentProfile.id == student_id)
+        | (models.StudentProfile.user_id == student_id)
+    ).first()
+    context = report_cards.build_context(db, profile=profile, term_id=term_id, report=report)
+    context = report_cards.attach_registry(db, context, issued_by=current_user)
+    db.commit()
+    pdf_bytes = report_cards.render_pdf(context)
+    filename = f"bulletin-{context.get('registration_number') or profile.id}-{term_id}.pdf"
+    return StreamingResponse(
+        iter([pdf_bytes]),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )

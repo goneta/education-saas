@@ -17,3 +17,35 @@ ENV_FILE=/var/www/teducai/education-saas/.env.production
 
 # Production audit every morning.
 30 6 * * * cd $APP_DIR && mkdir -p logs && APP_URL=$APP_URL ENV_FILE=$ENV_FILE bash scripts/production/teducai-prod-audit.sh >> logs/prod-audit.log 2>&1
+
+# ---------------------------------------------------------------------------
+# BUSINESS AUTOMATIONS (audit OPS-01)
+# ---------------------------------------------------------------------------
+# Without these lines the automation suite advertised in the product NEVER runs:
+# no fee reminders, no parent digests, no absence follow-up, no homework nudges.
+# Every runner is idempotent (anti-spam tracking prevents double sends), so a
+# missed slot simply catches up on the next run.
+#
+# TEDUCAI_CRON_TOKEN must be an API/admin token allowed to call /automations/*.
+# Set it in the environment file next to the other secrets.
+
+# Overdue fee reminders — every weekday at 08:00.
+0 8 * * 1-5 cd $APP_DIR && mkdir -p logs && curl -fsS -X POST "$APP_URL/api/backend/automations/fee-reminders/run" -H "Authorization: Bearer $TEDUCAI_CRON_TOKEN" >> logs/automations.log 2>&1
+
+# Absence follow-up to parents — every weekday at 18:00 (after the school day).
+0 18 * * 1-5 cd $APP_DIR && mkdir -p logs && curl -fsS -X POST "$APP_URL/api/backend/automations/absence-followup/run" -H "Authorization: Bearer $TEDUCAI_CRON_TOKEN" >> logs/automations.log 2>&1
+
+# Homework reminders (D-7 / D-3 / D-1) — every weekday at 17:00.
+0 17 * * 1-5 cd $APP_DIR && mkdir -p logs && curl -fsS -X POST "$APP_URL/api/backend/automations/homework-reminders/run" -H "Authorization: Bearer $TEDUCAI_CRON_TOKEN" >> logs/automations.log 2>&1
+
+# Weekly parent digest — Sunday 18:00.
+0 18 * * 0 cd $APP_DIR && mkdir -p logs && curl -fsS -X POST "$APP_URL/api/backend/automations/parent-digest/run" -H "Authorization: Bearer $TEDUCAI_CRON_TOKEN" >> logs/automations.log 2>&1
+
+# Staff anomaly brief — Monday 07:00.
+0 7 * * 1 cd $APP_DIR && mkdir -p logs && curl -fsS -X POST "$APP_URL/api/backend/automations/anomaly-digest/run" -H "Authorization: Bearer $TEDUCAI_CRON_TOKEN" >> logs/automations.log 2>&1
+
+# Recruiter saved-search agents — every day at 07:30.
+30 7 * * * cd $APP_DIR && mkdir -p logs && curl -fsS -X POST "$APP_URL/api/backend/employment/recruiter/saved-searches/run-all" -H "Authorization: Bearer $TEDUCAI_CRON_TOKEN" >> logs/automations.log 2>&1
+
+# Outbound webhook deliveries (audit OPS-02) — every 5 minutes.
+*/5 * * * * cd $APP_DIR && mkdir -p logs && curl -fsS -X POST "$APP_URL/api/backend/extensibility/deliveries/dispatch" -H "Authorization: Bearer $TEDUCAI_CRON_TOKEN" >> logs/webhooks.log 2>&1

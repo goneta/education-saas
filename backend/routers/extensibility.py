@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from .. import database, models, schemas, security
+from ..services import webhook_dispatch
 
 router = APIRouter(prefix="/extensibility", tags=["Platform Extensibility"])
 
@@ -108,6 +109,23 @@ def list_deliveries(
     if status:
         query = query.filter(models.WebhookDelivery.status == status)
     return query.order_by(models.WebhookDelivery.id.desc()).limit(min(max(limit, 1), 200)).all()
+
+
+@router.post("/deliveries/dispatch")
+def dispatch_deliveries(
+    limit: int = 100,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """Send every due outbound delivery (audit OPS-02).
+
+    Cron-friendly and idempotent: only `pending` rows whose `next_retry_at` has
+    come are sent, each request is HMAC-signed with the endpoint secret, and
+    failures back off exponentially until `max_attempts` before being marked
+    `failed` with the reason. Before this runner, queued deliveries were never
+    sent at all."""
+    _ensure_admin(current_user)
+    return webhook_dispatch.dispatch_pending(db, limit=limit)
 
 
 @router.post("/deliveries/{delivery_id}/retry")

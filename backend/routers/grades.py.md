@@ -28,3 +28,5 @@ Grade creation resolves the exact active enrollment and rejects writes to closed
 
 Assessment create/update/delete enforce academic-year editability (`_ensure_year_editable`); reads (`get_assessment`, `get_assessment_grades`) stay allowed on closed years so historical data remains consultable, while still being tenant-scoped.
 - DATA-01: supprimer une evaluation qui porte deja des notes est bloque (409) au lieu de detruire les notes.
+- FONC-01: `GET /grades/reports/student/{id}/term/{id}/pdf` rend le bulletin imprimable (services/report_cards, QR d authenticite + page publique /verify).
+- PRIV-02: le bulletin JSON verifiait explicitement rien (« skipping strict check for MVP velocity ») — il applique desormais `access_scope.can_view_student` (eleve = le sien, parent = ses enfants, personnel = l etablissement), acces non autorise masque en 404.
