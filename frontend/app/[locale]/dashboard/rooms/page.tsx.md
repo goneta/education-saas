@@ -6,3 +6,4 @@
 ## Maintenance Notes
 - Capacity feeds the timetable class>room capacity guard. Nb Classes is fetched per room.
 - Uses the shared `TableFilter`/`useTableFilter` (storageKey "rooms") for column-scoped, debounced, accent-insensitive search over the list.
+- Gate bâtiments (RequireOptions: « Créer un bâtiment » → /dashboard/buildings, submit bloqué) + types de salle fusionnés avec /reference-data/room_type (codes historiques conservés).

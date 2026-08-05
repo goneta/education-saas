@@ -57,3 +57,4 @@ The application registers the `/site` router for the public marketing-site conte
 - Registers the public verify router (/verify/{uuid}) — universal document authentication.
 - Registers the document-templates router (/document-templates) — diploma & certificate template module.
 - Registers the agent-platform router (/agents) — OpenAI Agents SDK multi-agent foundation.
+- Registered reference_data router (/reference-data — hierarchical global+local referential lists).

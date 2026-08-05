@@ -25,3 +25,4 @@
 - Includes the `navigation` Smart Transport keys (smartTransport, transportDashboard, drivers, vehicles, routes, transportAssignments); keep parity across en/fr/es/sw.
 - checkout namespace: "cinetpay" key replaced by "mobileMoney" + "cards" section labels (operator brands are displayed literally, no gateway branding); site.paymentMethodsDescription lists operator brands.
 - lists.students: noneCreated/hiddenByContext/checkContextHint (panneau diagnostic liste vide); studentForm: noLevels/createClassAction/manageLevelsAction/noClassForLevelMsg (dépendances manquantes + navigation rapide).
+- referenceData namespace (page Listes de référence: badges Globale/Établissement, CRUD, notes de permission) + sidebar.referenceData.

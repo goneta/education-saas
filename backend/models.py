@@ -3731,3 +3731,35 @@ class SiteContent(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     updated_by = relationship("User")
+
+
+class ReferenceItem(Base):
+    """Generic hierarchical reference data (listes de référence).
+
+    One table for every referential list (fee types, room types, leave types,
+    …): rows with school_id NULL are GLOBAL TeducAI data — created and managed
+    exclusively by the Super Admin, read-only for schools; rows with a
+    school_id are LOCAL extensions visible only to that school. Forms consume
+    the MERGED view (global + local) through services/reference_data.py.
+    """
+
+    __tablename__ = "reference_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    category = Column(String, nullable=False, index=True)
+    code = Column(String, nullable=False, index=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    sort_order = Column(Integer, default=0, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=True, index=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    school = relationship("School")
+    created_by = relationship("User")
+
+    __table_args__ = (
+        UniqueConstraint("category", "code", "school_id", name="_reference_item_uc"),
+    )

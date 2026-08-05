@@ -23,3 +23,4 @@
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
 - Renders `TimetableConstraintsPanel` (constraint engine UI: AI optimized generation, grid config, weekly hours, holidays, pedagogical rules, always-enforced constraints), passing the loaded subjects/teachers/classes.
+- Gates dépendances (classe/matière/professeur) sur le modal « Ajouter un cours » + submit bloqué; navigation rapide vers les pages de création.

@@ -27,6 +27,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { RequireOptions, missingRequired } from "@/components/ui/missing-dependency"
 
 interface ClassItem {
     id: number
@@ -64,6 +65,9 @@ export default function ClassesPage() {
     const tr = useTranslations("classRoster")
     const [classes, setClasses] = useState<ClassItem[]>([])
     const [teachers, setTeachers] = useState<TeacherOption[]>([])
+    // Merged reference list: 🌐 global TeducAI levels + 🏫 the school's own.
+    const [levels, setLevels] = useState<{ code: string; name: string }[]>([])
+    const [levelsLoaded, setLevelsLoaded] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [currentClass, setCurrentClass] = useState<ClassItem | null>(null)
@@ -84,6 +88,10 @@ export default function ClassesPage() {
         if (token) {
             fetchClasses()
             fetchTeachers()
+            fetch(`${API_BASE_URL}/reference-data/school_level`, { headers: { Authorization: `Bearer ${token}` } })
+                .then(r => r.ok ? r.json() : [])
+                .then(rows => { setLevels(Array.isArray(rows) ? rows : []); setLevelsLoaded(true) })
+                .catch(() => setLevelsLoaded(true))
         }
     // Initial metadata load is intentionally bound to the auth token.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -237,12 +245,32 @@ export default function ClassesPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="level">Niveau</Label>
-                                <Input
-                                    id="level"
-                                    value={formData.level}
-                                    onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-                                    placeholder="e.g. 6eme"
-                                />
+                                <RequireOptions
+                                    loaded={levelsLoaded}
+                                    count={levels.length}
+                                    message="Impossible de continuer. Vous devez d'abord disposer d'au moins un niveau scolaire (liste globale TeducAI ou niveau propre à l'établissement) avant de créer une classe."
+                                    actions={[{ label: "Ajouter un niveau", href: `/${locale}/dashboard/reference-data?category=school_level` }]}
+                                >
+                                    <Select
+                                        value={formData.level}
+                                        onValueChange={(val) => setFormData({ ...formData, level: val })}
+                                    >
+                                        <SelectTrigger id="level">
+                                            <SelectValue placeholder="Sélectionner un niveau" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {/* legacy value of an existing class kept selectable */}
+                                            {formData.level && !levels.some(l => l.code === formData.level) && (
+                                                <SelectItem value={formData.level}>{formData.level}</SelectItem>
+                                            )}
+                                            {levels.map(level => (
+                                                <SelectItem key={level.code} value={level.code}>
+                                                    {level.code === level.name ? level.code : `${level.code} — ${level.name}`}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </RequireOptions>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="teacher">Professeur principal</Label>
@@ -262,7 +290,7 @@ export default function ClassesPage() {
                                 </Select>
                             </div>
                             <DialogFooter>
-                                <Button type="submit">Enregistrer</Button>
+                                <Button type="submit" disabled={missingRequired([{ loaded: levelsLoaded, count: levels.length }])}>Enregistrer</Button>
                             </DialogFooter>
                         </form>
                     </DialogContent>

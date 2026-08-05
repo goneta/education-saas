@@ -11,7 +11,10 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/contexts/auth-context"
 import { Loader2 } from "lucide-react"
+import { useParams } from "next/navigation"
 import { API_BASE_URL } from "@/lib/config"
+import { parseApiErrorResponse } from "@/lib/api-errors"
+import { MissingDependency, missingRequired } from "@/components/ui/missing-dependency"
 
 const assessmentSchema = z.object({
     title: z.string().min(3, "Title must be at least 3 characters"),
@@ -50,10 +53,14 @@ interface CreateAssessmentModalProps {
 
 export function CreateAssessmentModal({ open, onOpenChange, onSuccess }: CreateAssessmentModalProps) {
     const { token } = useAuth()
+    const params = useParams()
+    const locale = (params?.locale as string) || "fr"
     const [loading, setLoading] = useState(false)
     const [classes, setClasses] = useState<ClassOption[]>([])
     const [subjects, setSubjects] = useState<SubjectOption[]>([])
     const [terms, setTerms] = useState<TermOption[]>([])
+    const [optionsLoaded, setOptionsLoaded] = useState(false)
+    const [apiError, setApiError] = useState<string | null>(null)
 
     const { register, control, handleSubmit, formState: { errors } } = useForm<AssessmentFormValues>({
         resolver: zodResolver(assessmentSchema),
@@ -87,6 +94,8 @@ export function CreateAssessmentModal({ open, onOpenChange, onSuccess }: CreateA
 
         } catch (e) {
             console.error(e)
+        } finally {
+            setOptionsLoaded(true)
         }
     }
 
@@ -105,10 +114,13 @@ export function CreateAssessmentModal({ open, onOpenChange, onSuccess }: CreateA
                 onSuccess()
                 onOpenChange(false)
             } else {
-                console.error("Failed to create assessment")
+                // Readable message, never a silent failure or "[object Object]".
+                const parsed = await parseApiErrorResponse(res, "Impossible de créer l'évaluation.")
+                setApiError(parsed.message)
             }
         } catch (e) {
             console.error(e)
+            setApiError("Impossible de créer l'évaluation.")
         } finally {
             setLoading(false)
         }
@@ -123,6 +135,19 @@ export function CreateAssessmentModal({ open, onOpenChange, onSuccess }: CreateA
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
+                    {apiError && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-[#3a2528] dark:text-red-100">{apiError}</div>}
+                    {optionsLoaded && classes.length === 0 && (
+                        <MissingDependency
+                            message="Impossible de continuer. Vous devez d'abord créer au moins une classe avant de pouvoir créer une évaluation."
+                            actions={[{ label: "Créer une classe", href: `/${locale}/dashboard/education/classes` }]}
+                        />
+                    )}
+                    {optionsLoaded && subjects.length === 0 && (
+                        <MissingDependency
+                            message="Aucune matière n'a encore été créée. Vous devez créer au moins une matière avant de pouvoir créer une évaluation."
+                            actions={[{ label: "Créer une matière", href: `/${locale}/dashboard/education/subjects` }]}
+                        />
+                    )}
                     <div className="space-y-2">
                         <Label htmlFor="title">Title</Label>
                         <Input id="title" {...register("title")} placeholder="e.g. Math Exam 1" />
@@ -234,7 +259,7 @@ export function CreateAssessmentModal({ open, onOpenChange, onSuccess }: CreateA
 
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                        <Button type="submit" disabled={loading}>
+                        <Button type="submit" disabled={loading || missingRequired([{ loaded: optionsLoaded, count: classes.length }, { loaded: optionsLoaded, count: subjects.length }, { loaded: optionsLoaded, count: terms.length }])}>
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Create
                         </Button>

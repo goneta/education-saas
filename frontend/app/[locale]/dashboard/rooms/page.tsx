@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
+import { useParams } from "next/navigation"
 import { DoorOpen, Eye, Plus, Trash2, X } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
@@ -9,6 +10,7 @@ import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
+import { RequireOptions, missingRequired } from "@/components/ui/missing-dependency"
 
 interface Room { id: number; name: string; room_type: string; capacity?: number | null; building_id?: number | null; is_active: boolean }
 interface Building { id: number; name: string }
@@ -19,8 +21,14 @@ const ROOM_TYPES = ["classroom", "laboratory", "computer_room", "workshop", "gym
 export default function RoomsPage() {
     const t = useTranslations("facilities")
     const { token } = useAuth()
+    const params = useParams()
+    const locale = (params?.locale as string) || "fr"
     const [rooms, setRooms] = useState<Room[]>([])
     const [buildings, setBuildings] = useState<Building[]>([])
+    const [buildingsLoaded, setBuildingsLoaded] = useState(false)
+    // 🌐 global TeducAI room types + 🏫 the school's own, merged with the
+    // historical hardcoded codes so existing rooms keep their labels.
+    const [refRoomTypes, setRefRoomTypes] = useState<{ code: string; name: string }[]>([])
     const [counts, setCounts] = useState<Record<number, number>>({})
     const [form, setForm] = useState({ building_id: "", name: "", capacity: "", room_type: "classroom" })
     const [error, setError] = useState<string | null>(null)
@@ -37,6 +45,11 @@ export default function RoomsPage() {
         const roomList: Room[] = r.ok ? await r.json() : []
         setRooms(roomList)
         if (b.ok) setBuildings(await b.json())
+        setBuildingsLoaded(true)
+        fetch(`${API_BASE_URL}/reference-data/room_type`, { headers })
+            .then(res => res.ok ? res.json() : [])
+            .then(rows => setRefRoomTypes(Array.isArray(rows) ? rows : []))
+            .catch(() => undefined)
         // Nb Classes per room.
         const entries = await Promise.all(roomList.map(async room => {
             const res = await fetch(`${API_BASE_URL}/facilities/rooms/${room.id}/classes`, { headers })
@@ -72,7 +85,16 @@ export default function RoomsPage() {
     }
 
     const buildingName = (id?: number | null) => buildings.find(b => b.id === id)?.name || "—"
-    const typeLabel = (rt: string) => ROOM_TYPES.includes(rt) ? t(rt as "classroom") : rt
+    const typeLabel = (rt: string) => ROOM_TYPES.includes(rt)
+        ? t(rt as "classroom")
+        : (refRoomTypes.find(item => item.code === rt)?.name || rt)
+    // One merged list: historical codes + reference items not already covered.
+    const roomTypeOptions = [
+        ...ROOM_TYPES.map(rt => ({ value: rt, label: t(rt as "classroom") })),
+        ...refRoomTypes
+            .filter(item => !ROOM_TYPES.includes(item.code.toLowerCase()) && !ROOM_TYPES.includes(item.code))
+            .map(item => ({ value: item.code, label: item.name })),
+    ]
 
     const columns: FilterColumn<Room>[] = [
         { key: "name", label: t("name"), accessor: r => r.name },
@@ -91,12 +113,21 @@ export default function RoomsPage() {
 
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
                 <CardHeader><CardTitle>{t("addRoom")}</CardTitle></CardHeader>
-                <CardContent className="grid gap-3 md:grid-cols-5">
-                    <select value={form.building_id} onChange={e => setForm({ ...form, building_id: e.target.value })} className="apple-select"><option value="">{t("building")}…</option>{buildings.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select>
-                    <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder={t("name")} className="apple-input" />
-                    <input type="number" min={1} value={form.capacity} onChange={e => setForm({ ...form, capacity: e.target.value })} placeholder={t("capacity")} className="apple-input" />
-                    <select value={form.room_type} onChange={e => setForm({ ...form, room_type: e.target.value })} className="apple-select">{ROOM_TYPES.map(rt => <option key={rt} value={rt}>{t(rt as "classroom")}</option>)}</select>
-                    <Button onClick={create} className="bg-black text-white hover:bg-black/90"><Plus className="mr-2 h-4 w-4" /> {t("add")}</Button>
+                <CardContent className="space-y-3">
+                    <RequireOptions
+                        loaded={buildingsLoaded}
+                        count={buildings.length}
+                        message="Impossible de continuer. Vous devez d'abord créer au moins un bâtiment avant de pouvoir ajouter une salle."
+                        actions={[{ label: "Créer un bâtiment", href: `/${locale}/dashboard/buildings` }]}
+                    >
+                        <div className="grid gap-3 md:grid-cols-5">
+                            <select value={form.building_id} onChange={e => setForm({ ...form, building_id: e.target.value })} className="apple-select"><option value="">{t("building")}…</option>{buildings.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select>
+                            <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder={t("name")} className="apple-input" />
+                            <input type="number" min={1} value={form.capacity} onChange={e => setForm({ ...form, capacity: e.target.value })} placeholder={t("capacity")} className="apple-input" />
+                            <select value={form.room_type} onChange={e => setForm({ ...form, room_type: e.target.value })} className="apple-select">{roomTypeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}</select>
+                            <Button onClick={create} disabled={missingRequired([{ loaded: buildingsLoaded, count: buildings.length }])} className="bg-black text-white hover:bg-black/90"><Plus className="mr-2 h-4 w-4" /> {t("add")}</Button>
+                        </div>
+                    </RequireOptions>
                 </CardContent>
             </Card>
 

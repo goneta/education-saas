@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { MissingDependency, missingRequired } from "@/components/ui/missing-dependency"
 
 interface Stats { students: number; submitted: number; missing: number; graded: number; late: number; average?: number | null; success_rate?: number | null; max_score: number }
 interface Assignment { id: number; title: string; assignment_type: string; mode: string; status: string; class_id: number; subject_id?: number | null; max_score: number; due_date?: string | null; ai_generated: boolean; stats?: Stats }
@@ -24,6 +25,7 @@ export default function AssignmentsPage() {
     const [rows, setRows] = useState<Assignment[]>([])
     const [classes, setClasses] = useState<ClassOption[]>([])
     const [subjects, setSubjects] = useState<SubjectOption[]>([])
+    const [optionsLoaded, setOptionsLoaded] = useState(false)
     const [statusFilter, setStatusFilter] = useState("")
     const [error, setError] = useState<string | null>(null)
     const [busy, setBusy] = useState<string | null>(null)
@@ -44,6 +46,7 @@ export default function AssignmentsPage() {
         ])
         if (c.ok) setClasses((await c.json()).map((x: ClassOption) => ({ id: x.id, name: x.name })))
         if (s.ok) setSubjects((await s.json()).map((x: SubjectOption) => ({ id: x.id, name: x.name })))
+        setOptionsLoaded(true)
     }, [headers, statusFilter])
 
     useEffect(() => { void load() }, [load])
@@ -113,6 +116,18 @@ export default function AssignmentsPage() {
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
                 <CardHeader><CardTitle className="flex items-center gap-2"><Wand2 className="h-4 w-4" /> {t("create")}</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
+                    {optionsLoaded && classes.length === 0 && (
+                        <MissingDependency
+                            message="Impossible de continuer. Vous devez d'abord créer au moins une classe avant de pouvoir créer un devoir."
+                            actions={[{ label: "Créer une classe", href: `/${locale}/dashboard/education/classes` }]}
+                        />
+                    )}
+                    {optionsLoaded && subjects.length === 0 && (
+                        <MissingDependency
+                            message="Aucune matière n'a encore été créée. Vous devez créer au moins une matière avant de pouvoir créer un devoir."
+                            actions={[{ label: "Créer une matière", href: `/${locale}/dashboard/education/subjects` }]}
+                        />
+                    )}
                     <div className="grid gap-3 md:grid-cols-3">
                         <label className="text-xs text-[#6B7280]">{t("titleField")}<input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="apple-input mt-1 w-full" /></label>
                         <label className="text-xs text-[#6B7280]">{t("type")}<select value={form.assignment_type} onChange={e => setForm({ ...form, assignment_type: e.target.value })} className="apple-select mt-1 w-full">{TYPES.map(x => <option key={x} value={x}>{t(`types.${x}` as "types.devoir")}</option>)}</select></label>
@@ -139,8 +154,8 @@ export default function AssignmentsPage() {
                     </div>
 
                     <div className="flex gap-2">
-                        <Button onClick={() => create(false)} disabled={busy !== null || !form.class_id} variant="outline">{t("saveDraft")}</Button>
-                        <Button onClick={() => create(true)} disabled={busy !== null || !form.class_id} className="bg-black text-white hover:bg-black/90"><Send className="mr-1 h-4 w-4" /> {t("publish")}</Button>
+                        <Button onClick={() => create(false)} disabled={busy !== null || !form.class_id || missingRequired([{ loaded: optionsLoaded, count: classes.length }, { loaded: optionsLoaded, count: subjects.length }])} variant="outline">{t("saveDraft")}</Button>
+                        <Button onClick={() => create(true)} disabled={busy !== null || !form.class_id || missingRequired([{ loaded: optionsLoaded, count: classes.length }, { loaded: optionsLoaded, count: subjects.length }])} className="bg-black text-white hover:bg-black/90"><Send className="mr-1 h-4 w-4" /> {t("publish")}</Button>
                     </div>
                 </CardContent>
             </Card>

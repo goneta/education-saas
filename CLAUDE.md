@@ -50,6 +50,33 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
+- **Référentiels hiérarchiques (🌐 global + 🏫 local) + gates de dépendances
+  génériques**: (1) **Backend** — table générique `ReferenceItem` (migration
+  0055; school_id NULL = donnée GLOBALE TeducAI gérée par le Super Admin,
+  lecture seule pour les établissements; school_id renseigné = extension LOCALE
+  invisible aux autres écoles), `services/reference_data.py` (registre
+  `CATEGORIES` : school_level/school_type/fee_type/room_type/building_type/
+  leave_type/evaluation_type/document_type/sanction_type/reward_type — une
+  nouvelle liste future = 1 entrée; `merged_items` = LA liste fusionnée des
+  formulaires, dédupliquée par code; permissions: écoles jamais sur le global
+  (403), 409 doublon, tout audité `reference.*`; catégorie school_level =
+  référentiel `SchoolLevel` existant en global + ajouts locaux, zéro
+  duplication), router `/reference-data`, seeds globaux FR dans la migration.
+  Tests `test_reference_data.py` (5 green, in-memory). (2) **Page Système →
+  Listes de référence** (`/dashboard/reference-data?category=`): badges
+  🌐 Globale TeducAI / 🏫 Établissement, CRUD selon permissions, ajout local
+  par les écoles; i18n `referenceData` 4 locales. (3) **Mécanisme générique
+  « dépendance manquante »** — `components/ui/missing-dependency.tsx`
+  (`MissingDependency` encart + boutons de création rapide, `RequireOptions`
+  wrapper de select, `missingRequired` pour bloquer la soumission). Câblé sur :
+  modal élève (niveaux fusionnés via /reference-data/school_level), Classes
+  (niveau = Select référentiel, plus de texte libre), Salles (gate bâtiment +
+  types de salle fusionnés), Emploi du temps (classe/matière/professeur),
+  Devoirs (classe/matière), Évaluations (classe/matière/trimestre + erreurs
+  API lisibles), Congés (types fusionnés). **À câbler ensuite (même motif, à
+  faire au fil des incréments)** : pédagogie, stages, transport, personnel,
+  bibliothèque et autres formulaires à selects DB.
+
 - **Gestion des Élèves — liste vide, erreurs lisibles, cascade niveau/classe,
   dépendances**: (1) liste — la tolérance de lecture de `GET /students` couvre
   maintenant les profils épinglés à un modèle d'établissement DÉSACTIVÉ/remplacé

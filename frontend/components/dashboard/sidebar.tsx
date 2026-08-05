@@ -190,6 +190,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/ai-agents`, label: t("aiAgents"), icon: BrainCircuit },
                 { href: `/${locale}/dashboard/ai-credits`, label: t("aiCredits"), icon: CreditCard },
                 { href: `/${locale}/dashboard/levels`, label: t("schoolLevels"), icon: GraduationCap },
+                { href: `/${locale}/dashboard/reference-data`, label: t("referenceData"), icon: ClipboardCheck },
                 { href: `/${locale}/dashboard/extensibility`, label: t("integrations"), icon: Webhook },
                 { href: `/${locale}/dashboard/automations`, label: t("automations"), icon: BellRing },
                 { href: `/${locale}/dashboard/settings`, label: t("settings"), icon: Settings },

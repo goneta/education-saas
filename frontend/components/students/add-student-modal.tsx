@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { parseApiErrorResponse } from "@/lib/api-errors"
+import { MissingDependency } from "@/components/ui/missing-dependency"
 import {
     Dialog,
     DialogContent,
@@ -47,7 +48,6 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
     const { token } = useAuth()
     const tr = useTranslations("classRoster")
     const sf = useTranslations("studentForm")
-    const router = useRouter()
     const params = useParams()
     const locale = params.locale as string
     const [isLoading, setIsLoading] = useState(false)
@@ -85,7 +85,8 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
         const headers = { Authorization: `Bearer ${token}` }
         setReferentialLoaded(false)
         Promise.all([
-            fetch(`${API_BASE_URL}/levels?active_only=true`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
+            // Merged referential: 🌐 global TeducAI levels + 🏫 the school's own.
+            fetch(`${API_BASE_URL}/reference-data/school_level`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
             fetch(`${API_BASE_URL}/education/classes`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
         ]).then(([levelRows, classRows]) => {
             setLevels(Array.isArray(levelRows) ? levelRows : [])
@@ -113,11 +114,6 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
     const classesForLevel = selectedLevel ? classes.filter(c => c.level === selectedLevel) : []
     const noLevelsAvailable = referentialLoaded && availableLevels.length === 0
     const noClassForSelectedLevel = referentialLoaded && Boolean(selectedLevel) && classesForLevel.length === 0
-
-    const goTo = (path: string) => {
-        onOpenChange(false)
-        router.push(`/${locale}${path}`)
-    }
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }))
@@ -436,13 +432,13 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
                     <div className="space-y-4">
                         <h3 className="text-sm font-semibold text-[#111827]">{tr("classInfo")}</h3>
                         {noLevelsAvailable ? (
-                            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-[#3a3125] dark:text-amber-100">
-                                <p>{sf("noLevels")}</p>
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                    <Button type="button" size="sm" variant="outline" onClick={() => goTo("/dashboard/education/classes")}>{sf("createClassAction")}</Button>
-                                    <Button type="button" size="sm" variant="outline" onClick={() => goTo("/dashboard/levels")}>{sf("manageLevelsAction")}</Button>
-                                </div>
-                            </div>
+                            <MissingDependency
+                                message={sf("noLevels")}
+                                actions={[
+                                    { label: sf("createClassAction"), href: `/${locale}/dashboard/education/classes` },
+                                    { label: sf("manageLevelsAction"), href: `/${locale}/dashboard/reference-data?category=school_level` },
+                                ]}
+                            />
                         ) : (
                             <>
                                 <div className="grid grid-cols-2 gap-4">
@@ -470,12 +466,10 @@ export function AddStudentModal({ open, onOpenChange, onSuccess }: AddStudentMod
                                     </div>
                                 </div>
                                 {noClassForSelectedLevel && (
-                                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-[#3a3125] dark:text-amber-100">
-                                        <p>{sf("noClassForLevelMsg", { level: selectedLevel })}</p>
-                                        <div className="mt-2">
-                                            <Button type="button" size="sm" variant="outline" onClick={() => goTo("/dashboard/education/classes")}>{sf("createClassAction")}</Button>
-                                        </div>
-                                    </div>
+                                    <MissingDependency
+                                        message={sf("noClassForLevelMsg", { level: selectedLevel })}
+                                        actions={[{ label: sf("createClassAction"), href: `/${locale}/dashboard/education/classes` }]}
+                                    />
                                 )}
                             </>
                         )}

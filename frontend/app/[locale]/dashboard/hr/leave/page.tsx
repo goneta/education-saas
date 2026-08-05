@@ -29,6 +29,9 @@ export default function LeavePage() {
     const { token, user } = useAuth()
     const [requests, setRequests] = useState<LeaveRequest[]>([])
     const [people, setPeople] = useState<Person[]>([])
+    // 🌐 global TeducAI leave types + 🏫 the school's own, merged with the
+    // historical hardcoded codes so existing requests keep their labels.
+    const [refLeaveTypes, setRefLeaveTypes] = useState<{ code: string; name: string }[]>([])
     const [form, setForm] = useState({ leave_type: "annual", start_date: "", end_date: "", reason: "" })
     const [error, setError] = useState<string | null>(null)
 
@@ -39,6 +42,10 @@ export default function LeavePage() {
         if (!headers) return
         const res = await fetch(`${API_BASE_URL}/hr/leave-requests`, { headers })
         if (res.ok) setRequests(await res.json())
+        fetch(`${API_BASE_URL}/reference-data/leave_type`, { headers })
+            .then(r => r.ok ? r.json() : [])
+            .then(rows => setRefLeaveTypes(Array.isArray(rows) ? rows : []))
+            .catch(() => undefined)
         if (isApprover) {
             const [staff, teachers] = await Promise.all([
                 fetch(`${API_BASE_URL}/personnel`, { headers }),
@@ -71,7 +78,16 @@ export default function LeavePage() {
     }
 
     const personName = (id: number) => id === user?.id ? (user?.full_name || `#${id}`) : (people.find(p => p.user_id === id)?.full_name || `#${id}`)
-    const typeLabel = (lt: string) => LEAVE_TYPES.includes(lt) ? t(lt as "annual") : lt
+    const typeLabel = (lt: string) => LEAVE_TYPES.includes(lt)
+        ? t(lt as "annual")
+        : (refLeaveTypes.find(item => item.code === lt)?.name || lt)
+    // One merged list: historical codes + reference items not already covered.
+    const leaveTypeOptions = [
+        ...LEAVE_TYPES.map(lt => ({ value: lt, label: t(lt as "annual") })),
+        ...refLeaveTypes
+            .filter(item => !LEAVE_TYPES.includes(item.code.toLowerCase()) && !LEAVE_TYPES.includes(item.code))
+            .map(item => ({ value: item.code, label: item.name })),
+    ]
     const fmt = (d: string) => d ? new Date(d).toLocaleDateString() : "—"
     const statusBadge = (s: string) => <span className={`rounded-full px-2 py-0.5 text-xs ${s === "approved" ? "bg-green-100 text-green-800" : s === "rejected" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"}`}>{t(s as "pending")}</span>
 
@@ -94,7 +110,7 @@ export default function LeavePage() {
             <Card className="rounded-xl border border-[#E5E7EB] bg-white shadow-sm dark:border-[#3b4248] dark:bg-[#202528]">
                 <CardHeader><CardTitle>{t("request")}</CardTitle></CardHeader>
                 <CardContent className="grid gap-3 md:grid-cols-4">
-                    <select value={form.leave_type} onChange={e => setForm({ ...form, leave_type: e.target.value })} className="apple-select">{LEAVE_TYPES.map(lt => <option key={lt} value={lt}>{t(lt as "annual")}</option>)}</select>
+                    <select value={form.leave_type} onChange={e => setForm({ ...form, leave_type: e.target.value })} className="apple-select">{leaveTypeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}</select>
                     <input type="date" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} className="apple-input" aria-label={t("startDate")} />
                     <input type="date" value={form.end_date} onChange={e => setForm({ ...form, end_date: e.target.value })} className="apple-input" aria-label={t("endDate")} />
                     <input value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} placeholder={t("reason")} className="apple-input" />

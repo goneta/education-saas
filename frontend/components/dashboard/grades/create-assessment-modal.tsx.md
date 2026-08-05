@@ -21,3 +21,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint components/<path>"; npm run build for shared/layout changes
+- Gates dépendances (classe/matière/trimestre) + erreurs API lisibles via lib/api-errors (plus de silence sur échec) + submit bloqué tant qu une liste requise est vide.

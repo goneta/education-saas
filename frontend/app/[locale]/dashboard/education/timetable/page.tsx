@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import type { ReactNode } from "react"
+import { useParams } from "next/navigation"
 import { Download, Edit3, FileText, Lock, Plus, RefreshCw, Trash2, Unlock, Upload, Wand2 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
+import { MissingDependency, missingRequired } from "@/components/ui/missing-dependency"
 import { API_BASE_URL } from "@/lib/config"
 import { requestConfirmation } from "@/lib/confirmation"
 import { AppleAccordion } from "@/components/ui/apple-accordion"
@@ -59,9 +61,12 @@ const emptyForm = {
 
 export default function TimetablePage() {
     const { token, user } = useAuth()
+    const params = useParams()
+    const locale = (params?.locale as string) || "fr"
     const [entries, setEntries] = useState<TimetableEntry[]>([])
     const [classes, setClasses] = useState<ClassItem[]>([])
     const [subjects, setSubjects] = useState<Subject[]>([])
+    const [metaLoaded, setMetaLoaded] = useState(false)
     const [teachers, setTeachers] = useState<Teacher[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [filterClassId, setFilterClassId] = useState("")
@@ -124,6 +129,7 @@ export default function TimetablePage() {
         if (classRes.ok) setClasses(await classRes.json())
         if (subjectRes.ok) setSubjects(await subjectRes.json())
         if (teacherRes.ok) setTeachers(await teacherRes.json())
+        setMetaLoaded(true)
     }, [authHeaders, token])
 
     useEffect(() => { void fetchMeta() }, [fetchMeta])
@@ -431,6 +437,24 @@ export default function TimetablePage() {
                     <DialogHeader><DialogTitle>{formData.id ? "Modifier un cours" : "Ajouter un cours"}</DialogTitle></DialogHeader>
                     <div className="space-y-4 py-4">
                         {error && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</div>}
+                        {metaLoaded && classes.length === 0 && (
+                            <MissingDependency
+                                message="Impossible de continuer. Vous devez d'abord créer au moins une classe avant de pouvoir ajouter un cours à l'emploi du temps."
+                                actions={[{ label: "Créer une classe", href: `/${locale}/dashboard/education/classes` }]}
+                            />
+                        )}
+                        {metaLoaded && subjects.length === 0 && (
+                            <MissingDependency
+                                message="Aucune matière n'a encore été créée. Vous devez créer au moins une matière avant de pouvoir ajouter un cours."
+                                actions={[{ label: "Créer une matière", href: `/${locale}/dashboard/education/subjects` }]}
+                            />
+                        )}
+                        {metaLoaded && teachers.length === 0 && (
+                            <MissingDependency
+                                message="Aucun professeur n'a encore été ajouté. Ajoutez au moins un professeur pour pouvoir affecter les cours."
+                                actions={[{ label: "Ajouter un professeur", href: `/${locale}/dashboard/teachers` }]}
+                            />
+                        )}
                         <div className="grid gap-3 md:grid-cols-3">
                             <Field label="Classe"><select value={formData.class_id} onChange={event => setFormData({ ...formData, class_id: event.target.value })} className="apple-select"><option value="">Sélectionner</option>{classes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
                             <Field label="Matière"><select value={formData.subject_id} onChange={event => setFormData({ ...formData, subject_id: event.target.value })} className="apple-select"><option value="">Sélectionner</option>{subjects.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
@@ -452,7 +476,7 @@ export default function TimetablePage() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setShowModal(false)}>Annuler</Button>
-                        <Button onClick={saveEntry} disabled={saving} className="bg-black text-white hover:bg-black/90">{saving ? "Enregistrement..." : "Enregistrer"}</Button>
+                        <Button onClick={saveEntry} disabled={saving || missingRequired([{ loaded: metaLoaded, count: classes.length }, { loaded: metaLoaded, count: subjects.length }])} className="bg-black text-white hover:bg-black/90">{saving ? "Enregistrement..." : "Enregistrer"}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
