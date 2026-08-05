@@ -28,7 +28,8 @@
     "passwordPlaceholder": "Introduce tu contrasena",
     "submit": "Iniciar sesion",
     "submitting": "Iniciando sesion...",
-    "failed": "No se pudo iniciar sesion"
+    "failed": "No se pudo iniciar sesion",
+    "forgotPassword": "¿Olvidó su contraseña?"
   },
   "navigation": {
     "overview": "Vista general",

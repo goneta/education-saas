@@ -28,7 +28,8 @@
     "passwordPlaceholder": "Enter your password",
     "submit": "Log in",
     "submitting": "Logging in...",
-    "failed": "Login failed"
+    "failed": "Login failed",
+    "forgotPassword": "Forgot password?"
   },
   "navigation": {
     "overview": "Overview",

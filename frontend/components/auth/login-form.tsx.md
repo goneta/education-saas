@@ -22,3 +22,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint components/<path>"; npm run build for shared/layout changes
+- SEC-05: lien « Mot de passe oublie ? » vers /{locale}/forgot-password (cle i18n auth.forgotPassword, 4 locales).

@@ -3882,3 +3882,15 @@ class DocumentGenerateRequest(BaseModel):
     kind: Optional[str] = None  # required when template_id is absent
     template_id: Optional[int] = None
     overrides: Optional[dict] = None
+
+
+class PasswordForgotRequest(BaseModel):
+    """Audit SEC-05 — the answer is always generic, so this never leaks whether
+    the address has an account."""
+    email: str
+    language: Optional[str] = "fr"
+
+
+class PasswordResetRequest(BaseModel):
+    token: str
+    new_password: str

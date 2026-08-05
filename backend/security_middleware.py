@@ -35,10 +35,36 @@ def _redis():
         return None
 
 
+# Audit SEC-03: `X-Forwarded-For` used to be trusted unconditionally, so any
+# caller could rotate the header and get a fresh rate-limit bucket per request —
+# the login/OTP brute-force protection was effectively off. The header is now
+# honored ONLY when the direct peer is a declared proxy.
+TRUSTED_PROXY_IPS = {
+    ip.strip()
+    for ip in os.getenv("TRUSTED_PROXY_IPS", "127.0.0.1,::1").split(",")
+    if ip.strip()
+}
+
+
+def client_ip(request: Request) -> str:
+    """The address the rate limiter counts against.
+
+    Behind a declared reverse proxy (Apache/Nginx on the same host by default)
+    the left-most `X-Forwarded-For` entry is used; otherwise the peer address is
+    authoritative and a spoofed header is ignored.
+    """
+    peer = request.client.host if request.client else "unknown"
+    if peer in TRUSTED_PROXY_IPS:
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            candidate = forwarded.split(",", 1)[0].strip()
+            if candidate:
+                return candidate
+    return peer
+
+
 def _client_key(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for")
-    ip = forwarded.split(",", 1)[0].strip() if forwarded else (request.client.host if request.client else "unknown")
-    return f"{ip}:{request.url.path}"
+    return f"{client_ip(request)}:{request.url.path}"
 
 
 async def rate_limit_middleware(request: Request, call_next):

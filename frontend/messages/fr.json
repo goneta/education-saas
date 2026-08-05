@@ -28,7 +28,8 @@
     "passwordPlaceholder": "Entrez votre mot de passe",
     "submit": "Se connecter",
     "submitting": "Connexion en cours...",
-    "failed": "Connexion impossible"
+    "failed": "Connexion impossible",
+    "forgotPassword": "Mot de passe oublié ?"
   },
   "navigation": {
     "overview": "Vue d'ensemble",

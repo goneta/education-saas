@@ -21,3 +21,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npm run build" when relevant
+- SEC-06: en-tetes de securite declares pour TOUTES les pages (X-Content-Type-Options, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, HSTS, CSP avec frame-ancestors none / object-src none / form-action self). Auparavant seules les reponses d API en beneficiaient. La CSP conserve unsafe-inline/unsafe-eval pour les scripts (runtime Next); durcissement par nonce a planifier.

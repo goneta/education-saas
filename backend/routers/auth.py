@@ -4,7 +4,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from .. import crypto_utils, localization, models, schemas, security, database, totp
-from ..services import school_model_templates
+from ..services import email_service, password_reset, school_model_templates
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -131,18 +131,30 @@ def login_for_access_token(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account or school is suspended")
     if user.mfa_enabled:
         secret = crypto_utils.decrypt_secret(user.mfa_secret)
-        if not otp_code or not secret or not totp.verify(secret, otp_code, valid_window=1):
+        submitted = (otp_code or "").strip()
+        # Audit SEC-04: a wrong OTP used to cost the attacker nothing — failures
+        # were neither counted nor locked out, making a 6-digit second factor
+        # brute-forceable. MFA failures now feed the SAME lockout as passwords,
+        # and an accepted code cannot be replayed inside its validity window.
+        replayed = bool(submitted and user.mfa_last_code and submitted == user.mfa_last_code)
+        if not submitted or not secret or replayed or not totp.verify(secret, submitted, valid_window=1):
+            user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+            if user.failed_login_attempts >= 5:
+                user.locked_until = now + timedelta(minutes=15)
             db.add(models.SecurityEvent(
-                event_type="mfa_failed",
+                event_type="mfa_replay_blocked" if replayed else "mfa_failed",
                 severity="high",
                 actor_id=user.id,
                 school_id=user.school_id,
                 ip_address=request.client.host if request.client else None,
                 user_agent=request.headers.get("user-agent"),
+                details={"attempts": user.failed_login_attempts},
             ))
             db.commit()
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="MFA code is required or invalid")
-    
+        user.mfa_last_code = submitted
+
+
     user.failed_login_attempts = 0
     user.locked_until = None
     user.last_login_at = now
@@ -259,3 +271,84 @@ def logout(current_user: models.User = Depends(security.get_current_user), db: S
     current_user.token_version += 1
     db.commit()
     return {"message": "Logged out"}
+
+
+# --- Self-service password reset (audit SEC-05) ------------------------------
+
+GENERIC_RESET_ANSWER = {
+    "message": "Si un compte existe pour cette adresse, un lien de réinitialisation vient d'être envoyé."
+}
+
+
+@router.post("/password/forgot")
+def forgot_password(
+    payload: schemas.PasswordForgotRequest,
+    request: Request,
+    db: Session = Depends(database.get_db),
+):
+    """Send a reset link. The answer is ALWAYS the same so the endpoint can
+    never be used to discover which e-mail addresses have an account.
+
+    Honesty rule: when SMTP is not configured the server says so (503) instead
+    of pretending a mail was sent — an administrator must fix the configuration.
+    """
+    email = (payload.email or "").strip().lower()
+    user = db.query(models.User).filter(models.User.email == email).first() if email else None
+
+    if not user or not user.is_active:
+        return GENERIC_RESET_ANSWER
+
+    if not email_service.is_configured():
+        raise HTTPException(
+            status_code=503,
+            detail="L'envoi d'e-mails n'est pas configuré sur ce serveur. Contactez l'administration.",
+        )
+
+    token = password_reset.create_token(
+        db, user, ip_address=request.client.host if request.client else None
+    )
+    if token is None:  # throttled: same generic answer, no new mail
+        db.commit()
+        return GENERIC_RESET_ANSWER
+
+    db.add(models.SecurityEvent(
+        event_type="password_reset_requested",
+        severity="medium",
+        actor_id=user.id,
+        school_id=user.school_id,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    ))
+    db.commit()
+
+    try:
+        password_reset.send_reset_email(user, token, language=payload.language or "fr")
+    except email_service.EmailNotConfigured:
+        raise HTTPException(status_code=503, detail="L'envoi d'e-mails n'est pas configuré sur ce serveur.")
+    except Exception:
+        raise HTTPException(status_code=502, detail="L'e-mail de réinitialisation n'a pas pu être envoyé.")
+    return GENERIC_RESET_ANSWER
+
+
+@router.post("/password/reset")
+def reset_password(
+    payload: schemas.PasswordResetRequest,
+    request: Request,
+    db: Session = Depends(database.get_db),
+):
+    """Consume a one-shot token and set the new password. Every session issued
+    before the reset is revoked (`token_version`), and the account is unlocked."""
+    user = password_reset.consume_token(db, (payload.token or "").strip())
+    if not user:
+        raise HTTPException(status_code=400, detail="Lien de réinitialisation invalide ou expiré.")
+    password_reset.apply_new_password(db, user, payload.new_password)
+    db.add(models.SecurityEvent(
+        event_type="password_reset_completed",
+        severity="high",
+        actor_id=user.id,
+        school_id=user.school_id,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    ))
+    db.commit()
+    return {"message": "Mot de passe réinitialisé. Vous pouvez maintenant vous connecter."}

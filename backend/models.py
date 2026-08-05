@@ -256,6 +256,9 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     mfa_enabled = Column(Boolean, default=False, nullable=False)
     mfa_secret = Column(String, nullable=True)
+    # Anti-replay for TOTP (audit SEC-04): the last accepted code cannot be
+    # presented twice inside its validity window.
+    mfa_last_code = Column(String, nullable=True)
     failed_login_attempts = Column(Integer, default=0, nullable=False)
     locked_until = Column(DateTime(timezone=True), nullable=True)
     last_login_at = Column(DateTime(timezone=True), nullable=True)
@@ -3879,3 +3882,24 @@ class BoardingRecord(Base):
     school = relationship("School")
     student = relationship("StudentProfile")
     room = relationship("Room")
+
+
+class PasswordResetToken(Base):
+    """Self-service password reset (audit SEC-05).
+
+    Only the SHA-256 hash of the token is stored, so a database read never
+    yields a usable reset link. One-shot: `used_at` is stamped on consumption
+    and every other pending token of the user is invalidated at the same time.
+    """
+
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    token_hash = Column(String, nullable=False, unique=True, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    used_at = Column(DateTime(timezone=True), nullable=True)
+    requested_ip = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")

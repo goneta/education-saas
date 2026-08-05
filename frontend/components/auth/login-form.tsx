@@ -82,7 +82,13 @@ export function LoginForm() {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="password">{t("password")}</Label>
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="password">{t("password")}</Label>
+                            {/* SEC-05: self-service recovery — an admin is no longer the only way back in. */}
+                            <a href={`/${locale}/forgot-password`} className="text-sm text-[#6B7280] underline hover:text-[#111827]">
+                                {t("forgotPassword")}
+                            </a>
+                        </div>
                         <Input
                             id="password"
                             type="password"

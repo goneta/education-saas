@@ -28,7 +28,8 @@
     "passwordPlaceholder": "Weka nenosiri lako",
     "submit": "Ingia",
     "submitting": "Inaingia...",
-    "failed": "Kuingia kumeshindikana"
+    "failed": "Kuingia kumeshindikana",
+    "forgotPassword": "Umesahau nenosiri?"
   },
   "navigation": {
     "overview": "Muhtasari",

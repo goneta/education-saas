@@ -118,6 +118,19 @@ Lots exécutés dans l'ordre validé : 0 → 1 → 2 → 3 → 4 → 5.
   profils réellement publiés (`is_publicly_listed`). Tests
   `test_access_scope.py` (5) ; suite complète **322 verts**.
 
+- **Lot 2 — authentification : FAIT.** SEC-05 réinitialisation self-service
+  (`services/password_reset.py` + `POST /auth/password/forgot|reset`, migration
+  0057 `password_reset_tokens`) : jeton stocké **haché**, usage unique, TTL 60
+  min, throttling horaire, réponse **toujours générique** (aucune énumération),
+  503 explicite si SMTP absent (jamais de faux envoi), reset ⇒ `token_version++`
+  (toutes les sessions révoquées) ; pages `/forgot-password` et
+  `/reset-password` + lien sur le login (i18n 4 locales). SEC-04 un échec MFA
+  alimente désormais le verrouillage (5 essais/15 min) + anti-rejeu TOTP
+  (`users.mfa_last_code`). SEC-03 `client_ip()` n'honore `X-Forwarded-For` que
+  derrière `TRUSTED_PROXY_IPS` (défaut 127.0.0.1,::1). SEC-06 en-têtes de
+  sécurité (CSP, HSTS, X-Frame-Options…) déclarés dans `next.config.ts` pour
+  toutes les pages. Tests `test_auth_hardening.py` (6) ; suite **328 verts**.
+
 ## Recent change log (most recent first)
 
 - **Documentation, Aide intégrée & référentiel piloté par valeur**: (1) site
