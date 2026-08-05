@@ -72,9 +72,13 @@ export const DOC_GROUPS_FR: DocGroup[] = [
         { slug: "announcements", label: "Annonces" },
         { slug: "leave", label: "Gestion des congés" },
     ]},
+    { tab: "Features", title: "Vie scolaire", items: [
+        { slug: "school-life", label: "Discipline, examens, activités, santé & internat" },
+    ]},
     { tab: "Admin", title: "Plateforme & administration", items: [
         { slug: "multi-tenant", label: "Établissements & contexte" },
         { slug: "roles-permissions", label: "Rôles & permissions" },
+        { slug: "reference-data", label: "Listes de référence & formulaires intelligents" },
         { slug: "personnel", label: "Personnel de l'établissement" },
         { slug: "document-verification", label: "QR & vérification des documents" },
         { slug: "help-center", label: "Centre d'aide intégré" },
@@ -86,6 +90,67 @@ export const DOC_GROUPS_FR: DocGroup[] = [
 ]
 
 export const DOC_PAGES_FR: Record<string, DocPage> = {
+    "school-life": {
+        slug: "school-life", label: "Discipline, examens, activités, santé & internat", breadcrumb: "Fonctionnalités / Vie scolaire",
+        title: "Modules Vie scolaire",
+        description: "Cinq modules de production — Discipline, Examens, Activités, Santé scolaire et Internat — partageant un moteur CRUD factorisé, les listes de référence hiérarchiques et les gardes de dépendances des formulaires.",
+        blocks: P(
+            { k: "p", text: "Les modules **Vie scolaire** couvrent la vie quotidienne de l'établissement au-delà des cours. Ils partagent un moteur backend unique et une page frontend générique : chaque module se comporte exactement de la même façon — liste avec recherche côté serveur (y compris par nom d'élève), filtres statut et type, pagination exacte, création/édition en dialogue, suppression, export CSV et impression." },
+            { k: "h2", text: "Les cinq modules" },
+            { k: "table", headers: ["Module", "Menu", "Objectif", "Modèle de données"], rows: [
+                ["Discipline", "Gestion → Discipline", "Sanctions, récompenses et incidents par élève, avec workflow de statut (ouvert / résolu / annulé).", "discipline_records"],
+                ["Examens", "Scolarité → Examens", "Sessions d'examens officielles : planification, classe, matière, salle, durée, barème et coefficient.", "exam_sessions (partagée avec la planification operations — étendue, pas dupliquée)"],
+                ["Activités", "Gestion → Activités", "Sorties, clubs, compétitions et événements, avec capacité et participation facultative.", "school_activities"],
+                ["Santé scolaire", "Gestion → Santé scolaire", "Visites médicales, vaccinations, allergies, blessures et urgences par élève.", "health_records"],
+                ["Internat", "Gestion → Internat", "Affectation des internes aux chambres — les chambres proviennent du module Bâtiments & Salles existant.", "boarding_records (room_id → salles facilities)"],
+            ]},
+            { k: "h2", text: "Référentiels utilisés" },
+            { k: "p", text: "Chaque liste de types s'appuie sur les [listes de référence hiérarchiques](/docs/reference-data) : types de sanctions, de récompenses, d'incidents, d'évaluations, d'activités et de dossiers santé. Les entrées globales TeducAI sont fusionnées avec les ajouts propres de l'établissement en une seule liste. Dans Discipline, la liste suit la nature choisie — sanction → types de sanctions, récompense → types de récompenses, incident → types d'incidents — et changer la nature réinitialise un type sélectionné dans la liste précédente." },
+            { k: "h2", text: "Permissions" },
+            { k: "table", headers: ["Action", "Qui"], rows: [
+                ["Créer / modifier / supprimer (les cinq modules)", "Super Admin, Admin d'établissement, Direction"],
+                ["Consulter Discipline, Examens, Activités, Internat", "Tout membre authentifié de l'établissement"],
+                ["Consulter Santé scolaire", "Super Admin, Admin, Direction UNIQUEMENT — données médicales confidentielles : la liste et l'export CSV sont eux aussi restreints"],
+            ]},
+            { k: "p", text: "Chaque mutation écrit une entrée d'audit (`school_life.{module}.created|updated|deleted`). Les enregistrements sont strictement cloisonnés par établissement : une autre école ne peut ni lire, ni modifier, ni même deviner l'existence d'un enregistrement." },
+            { k: "h2", text: "Workflows" },
+            { k: "p", text: "**Création** — le formulaire charge ses sources (élèves, classes, matières, salles, types du référentiel). Si une liste requise est vide, un message explicite et un bouton de création rapide remplacent la liste, et la validation reste bloquée. **Modification** — cliquez sur une ligne ; le même dialogue s'ouvre pré-rempli. **Suppression** — depuis les actions de la ligne, avec confirmation ; la suppression est auditée. **Export** — le bouton CSV télécharge la vue filtrée courante ; le bouton Imprimer imprime la liste." },
+            { k: "h2", text: "API" },
+            { k: "code", lang: "bash", code: "GET    /school-life/{module}?search=&status=&type_code=&skip=&limit=   # liste + total exact\nGET    /school-life/{module}/{id}\nPOST   /school-life/{module}\nPATCH  /school-life/{module}/{id}\nDELETE /school-life/{module}/{id}\nGET    /school-life/{module}/export.csv\n# {module} = discipline | exams | activities | health | boarding" },
+        ),
+    },
+    "reference-data": {
+        slug: "reference-data", label: "Listes de référence & formulaires intelligents", breadcrumb: "Admin / Listes de référence",
+        title: "Listes de référence & mécanisme des formulaires intelligents",
+        description: "Comment les données de référence globales TeducAI, les extensions par établissement et le comportement générique des formulaires fonctionnent ensemble — la référence pour tous les développements futurs.",
+        blocks: P(
+            { k: "h2", text: "Deux niveaux de données de référence" },
+            { k: "p", text: "Chaque liste de référence de la plateforme (niveaux scolaires, types de frais, de salles, de congés, d'évaluations, de sanctions/récompenses/incidents, d'activités, de dossiers santé, de documents…) existe à deux niveaux : les entrées **🌐 globales**, créées et gérées exclusivement par le Super Administrateur TeducAI et visibles par tous les établissements, et les entrées **🏫 locales**, qu'un établissement crée pour lui-même et que les autres établissements ne voient jamais." },
+            { k: "table", headers: ["Capacité", "Super Administrateur", "Admin d'établissement / Direction"], rows: [
+                ["Voir & utiliser les entrées globales", "Oui", "Oui (lecture seule)"],
+                ["Créer / modifier / supprimer les entrées globales", "Oui", "Jamais — l'API répond 403"],
+                ["Créer des entrées locales pour son établissement", "Oui (tout établissement)", "Oui (son établissement uniquement)"],
+                ["Modifier / supprimer des entrées locales", "Oui", "Uniquement celles de son établissement"],
+                ["Voir les entrées locales d'un autre établissement", "Oui", "Jamais"],
+            ]},
+            { k: "p", text: "Les formulaires affichent toujours **une seule liste fusionnée** — entrées globales + entrées locales de l'établissement courant, dédupliquées par code et triées — l'utilisateur n'a jamais à se demander d'où vient une valeur. S'il manque une valeur dans la liste globale, l'établissement ajoute sa propre entrée locale (ex. : les types de frais globaux n'ont pas « Frais de laboratoire » — le Lycée ABC le crée et lui seul le voit)." },
+            { k: "h2", text: "Gérer les listes" },
+            { k: "p", text: "**Système → Listes de référence** affiche chaque catégorie avec les badges de portée (🌐 Globale TeducAI / 🏫 Établissement). Les lignes globales sont en « Lecture seule » pour les admins d'établissement ; les lignes locales offrent renommage, activation/désactivation et suppression. Les niveaux scolaires conservent leur source globale sur la page Niveaux dédiée — la page des référentiels y renvoie." },
+            { k: "h2", text: "Le mécanisme des formulaires intelligents" },
+            { k: "p", text: "Chaque formulaire de création dont les listes déroulantes proviennent de la base suit un comportement uniforme, fourni par des composants partagés — aucun formulaire ne le réimplémente :" },
+            { k: "table", headers: ["Comportement", "Ce que voit l'utilisateur"], rows: [
+                ["Vérification automatique des prérequis", "Pendant le chargement, un squelette discret ; le formulaire connaît les listes dont il a besoin (élèves, classes, matières, salles, types du référentiel)."],
+                ["Détection des listes vides", "Une liste requise vide n'est jamais affichée en silence. Un encart explicite la remplace : « Impossible de continuer. Vous devez d'abord créer au moins un niveau scolaire avant de pouvoir ajouter un élève. »"],
+                ["Actions de création rapide", "Chaque encart propose des boutons qui mènent directement à la page de création de la donnée manquante (Créer une classe, Créer une matière, Gérer les niveaux…)."],
+                ["Blocage de la validation", "Le bouton de validation reste désactivé tant qu'une liste requise est vide — aucun enregistrement à moitié valide."],
+                ["Erreurs lisibles", "Les erreurs de validation de l'API sont converties en messages par champ, affichés sous le champ concerné ; les valeurs déjà saisies sont conservées. L'interface ne peut jamais afficher un objet illisible."],
+            ]},
+            { k: "h2", text: "API" },
+            { k: "code", lang: "bash", code: "GET    /reference-data/categories        # le registre des catégories\nGET    /reference-data/{category}        # la liste FUSIONNÉE (globale + votre établissement)\nPOST   /reference-data/{category}        # super admin -> globale; admin établissement -> locale\nPATCH  /reference-data/items/{id}\nDELETE /reference-data/items/{id}        # 403 pour les établissements sur les lignes globales" },
+            { k: "h2", text: "Pour les développements futurs" },
+            { k: "p", text: "Ajouter une nouvelle liste de référence = **une entrée** dans le registre des catégories côté backend — permissions, fusion et interface de gestion suivent automatiquement. Construire un nouveau module avec formulaires = réutiliser les composants de garde partagés et les endpoints de référence fusionnés ; un module de type Vie scolaire = un appel d'enregistrement backend + un objet de configuration frontend." },
+        ),
+    },
     "automations": {
         slug: "automations", label: "Suite d'automatisations", breadcrumb: "Fonctionnalités / Automatisations",
         title: "Suite d'automatisations",

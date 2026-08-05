@@ -6,3 +6,4 @@
   (components/school-life/module-page.tsx) — list/recherche/filtres/pagination/
   création/édition/suppression/export CSV/impression, gates de dépendances et
   référentiels 🌐+🏫 automatiques. Voir school_life.py (backend contract).
+- Le champ Type suit la nature choisie via refCategoryBy (sanction_type / reward_type / incident_type).

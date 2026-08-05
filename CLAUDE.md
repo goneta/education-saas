@@ -16,6 +16,43 @@ notifications and master data (zero data duplication).
 - **Response schemas are tolerant on read** (email fields are `Optional[str]`, not
   `EmailStr`) so one bad stored value never 500s a list; input schemas stay strict. A
   global `ResponseValidationError` handler logs the exact failing field.
+- **Git discipline (standing user instruction)**: every increment ends with DOX +
+  CLAUDE.md updated, then `git add -A`, a descriptive commit and `git push origin main`.
+  Leave the tree clean.
+
+## Reference data + forms — the platform contract (apply to EVERY new module)
+
+Three shared mechanisms replace per‑page code. Never re‑implement them.
+
+1. **Hierarchical reference lists** — `backend/services/reference_data.py` +
+   `routers/reference_data.py` (`/reference-data`), table `reference_items`
+   (migration 0055). `school_id IS NULL` = **🌐 global TeducAI** row: created,
+   edited and deleted ONLY by the Super Admin, visible to every school,
+   **read‑only for schools (403 on any school write)**. `school_id` set =
+   **🏫 local** row: managed by that school's admin/direction, invisible to every
+   other school. `merged_items()` is the single list forms display (global +
+   local, deduped by code). Categories live in the `CATEGORIES` registry —
+   **adding a new referential list = one entry**, permissions/merge/management UI
+   follow. `school_level` keeps the existing `SchoolLevel` referential as its
+   global source (managed on `/dashboard/levels`) — zero duplication.
+   Every mutation is audited (`reference.*`). UI: `/dashboard/reference-data`.
+2. **Missing‑dependency form gates** — `frontend/components/ui/missing-dependency.tsx`:
+   `RequireOptions` (wraps a DB‑fed select: skeleton while loading → explicit
+   callout + quick‑create buttons when empty → the field otherwise),
+   `MissingDependency` (standalone callout) and `missingRequired(lists)` (disables
+   submit while a required list is loaded‑and‑empty). A creation form must NEVER
+   render an empty DB‑fed dropdown without an explanation and a way out.
+3. **Readable API errors** — `frontend/lib/api-errors.ts` (`parseApiErrorResponse`)
+   turns FastAPI `detail` (string | 422 array | object) into a readable message +
+   per‑field errors; forms map them with an `API_FIELD_TO_FORM` record and keep the
+   values already typed. `[object Object]` must never reach the UI.
+
+**Building a new CRUD module**: register it in `backend/routers/school_life.py`
+via `_register_module(...)` (list+search+filters+pagination+detail+CRUD+CSV export,
+tenant scoping, role‑gated writes, audit — all provided) and add ONE `ModuleConfig`
+consumed by `frontend/components/school-life/module-page.tsx` (list, filters,
+dialog, export, print, gates and merged referentials — all provided). Bespoke CRUD
+code is a red flag.
 
 ## Architecture map (high‑level)
 
@@ -32,6 +69,12 @@ notifications and master data (zero data duplication).
 - Smart Transport: `routers/transport.py` — fleet, drivers, vehicles, routes, bus
   stops (GPS), assignments, GPS positions, boarding attendance, incidents, fuel, AI
   route optimizer, transport→Finance billing.
+- Vie scolaire: `routers/school_life.py` (`/school-life/{module}`) — Discipline,
+  Examens (réutilise `exam_sessions`), Activités, Santé scolaire (lectures
+  restreintes à l'administration), Internat (chambres = `rooms` de facilities);
+  un moteur CRUD factorisé + une page frontend générique.
+- Référentiels: `services/reference_data.py` + `routers/reference_data.py`
+  (`/reference-data`) — listes globales TeducAI + extensions par établissement.
 - Comms `communication` (announcements) · HR `hr` (leave approval) · Analytics
   `analytics` (CSV export + AI insights) · Extensibility `extensibility` (webhooks +
   API keys).
@@ -49,6 +92,25 @@ notifications and master data (zero data duplication).
   always‑enforced structural constraints). Rule types/params MUST mirror the engine.
 
 ## Recent change log (most recent first)
+
+- **Documentation, Aide intégrée & référentiel piloté par valeur**: (1) site
+  Docs — deux nouvelles pages EN+FR: `school-life` (les 5 modules: objectif,
+  menus, modèles de données, permissions dont la confidentialité Santé,
+  référentiels, workflows création/modification/suppression, API) et
+  `reference-data` (🌐 global vs 🏫 local, tableau des permissions, mécanisme
+  des formulaires intelligents, API, règles pour les développements futurs);
+  groupes "School life"/"Vie scolaire" et entrée Admin. (2) **Aide intégrée** —
+  sections `reference_data` et `school_life` en 4 locales (pourquoi une liste
+  est vide, comment créer la donnée manquante, données globales vs
+  établissement, permissions des référentiels, utilisation des 5 modules);
+  aide contextuelle câblée (`MODULE_BY_PATH`) sur les nouvelles routes.
+  (3) **Cohérence doc↔code** — la doc annonçait sanctions/récompenses/incidents
+  pour Discipline alors que le formulaire n'offrait que `sanction_type`:
+  ajout générique `FieldSpec.refCategoryBy {field, map}` (la catégorie de
+  référence suit la valeur d'un autre champ; toutes les catégories mappées
+  préchargées; filtre = union; changer le champ pilote réinitialise le champ
+  dépendant) — Discipline mappe désormais sanction/récompense/incident sur
+  leurs référentiels respectifs. Suite backend: 310 verts.
 
 - **Modules Vie scolaire (Discipline, Examens, Activités, Santé scolaire,
   Internat) + Transport Externe**: cinq modules production-ready sur UN moteur

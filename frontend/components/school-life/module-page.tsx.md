@@ -20,3 +20,4 @@
 ## Verification
 - Type-check by inspection (no node_modules in sandbox); backend contract in
   test_school_life.py.
+- Référentiel piloté par une valeur: FieldSpec.refCategoryBy {field, map} — la catégorie de référence suit la valeur d un autre champ (Discipline: nature sanction/reward/incident -> sanction_type/reward_type/incident_type). Toutes les catégories mappées sont préchargées; sourceFor/labelFor résolvent la catégorie depuis le formulaire (dialogue) ou depuis la ligne (tableau); le filtre de type liste l union; changer le champ pilote réinitialise le champ dépendant (setFieldValue).

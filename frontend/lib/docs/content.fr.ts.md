@@ -15,3 +15,4 @@ Invariants that MUST hold:
 Consumed only through `registry.ts` — never imported directly by components.
 Adding a new English page? Add its French entry here too (or it falls back to
 English via the registry, which is acceptable but should be avoided for parity).
+- Traduction FR complète des deux nouvelles pages (school-life, reference-data) + groupes "Vie scolaire" et "Listes de référence & formulaires intelligents".

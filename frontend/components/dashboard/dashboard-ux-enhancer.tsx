@@ -33,6 +33,13 @@ const MODULE_BY_PATH: Array<[RegExp, string, string]> = [
     [/dashboard\/emploi/, "employment", "employment"],
     [/ai-command-center/, "ai_automation", "ai_first_erp"],
     [/ai-credits/, "ai_automation", "ai_credits"],
+    // Vie scolaire + référentiels: contextual help opens the matching section.
+    [/dashboard\/discipline/, "discipline", "school_life"],
+    [/dashboard\/activities/, "activities", "school_life"],
+    [/dashboard\/health/, "health", "school_life"],
+    [/boarding-school/, "boarding", "school_life"],
+    [/education\/exams/, "exams", "school_life"],
+    [/reference-data/, "reference_data", "reference_data"],
     [/students/, "students", "students"],
     [/teachers/, "teachers", "teachers"],
     [/education\/timetable/, "timetable", "timetable"],

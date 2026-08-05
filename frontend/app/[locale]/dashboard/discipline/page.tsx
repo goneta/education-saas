@@ -31,7 +31,11 @@ const config: ModuleConfig = {
             { value: "reward", label: "Récompense" },
             { value: "incident", label: "Incident" },
         ] },
-        { key: "type_code", label: "Type (référentiel)", type: "reference", refCategory: "sanction_type", createHref: "/dashboard/reference-data?category=sanction_type", createLabel: "Gérer les types" },
+        // Le référentiel suit la nature choisie: sanction → types de sanctions,
+        // récompense → types de récompenses, incident → types d'incidents.
+        { key: "type_code", label: "Type (référentiel)", type: "reference",
+          refCategoryBy: { field: "record_kind", map: { sanction: "sanction_type", reward: "reward_type", incident: "incident_type" } },
+          createHref: "/dashboard/reference-data?category=sanction_type", createLabel: "Gérer les types" },
         { key: "title", label: "Titre", type: "text", required: true, placeholder: "ex. Avertissement pour retards répétés" },
         { key: "record_date", label: "Date", type: "date" },
         { key: "status", label: "Statut", type: "select", options: [

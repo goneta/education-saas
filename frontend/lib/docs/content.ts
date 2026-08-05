@@ -57,9 +57,13 @@ export const DOC_GROUPS: DocGroup[] = [
         { slug: "announcements", label: "Announcements" },
         { slug: "leave", label: "Leave management" },
     ]},
+    { tab: "Features", title: "School life", items: [
+        { slug: "school-life", label: "Discipline, exams, activities, health & boarding" },
+    ]},
     { tab: "Admin", title: "Platform & administration", items: [
         { slug: "multi-tenant", label: "Institutions & context" },
         { slug: "roles-permissions", label: "Roles & permissions" },
+        { slug: "reference-data", label: "Reference lists & smart forms" },
         { slug: "personnel", label: "School staff" },
         { slug: "document-verification", label: "Document QR & verification" },
         { slug: "help-center", label: "In-app Help Center" },
@@ -73,6 +77,67 @@ export const DOC_GROUPS: DocGroup[] = [
 const P = (...blocks: DocBlock[]) => blocks
 
 export const DOC_PAGES: Record<string, DocPage> = {
+    "school-life": {
+        slug: "school-life", label: "Discipline, exams, activities, health & boarding", breadcrumb: "Features / School life",
+        title: "School life modules",
+        description: "Five production modules — Discipline, Exams, Activities, School health and Boarding — sharing one factorized CRUD engine, the hierarchical reference lists and the smart-form dependency gates.",
+        blocks: P(
+            { k: "p", text: "The **Vie scolaire** modules cover the daily life of the school beyond teaching. They share one backend engine and one generic frontend page, so every module behaves identically: list with server-side search (including by student name), status and type filters, exact pagination, create/edit dialog, delete, CSV export and print." },
+            { k: "h2", text: "The five modules" },
+            { k: "table", headers: ["Module", "Menu", "Purpose", "Data model"], rows: [
+                ["Discipline", "Gestion → Discipline", "Sanctions, rewards and incidents per student, with a status workflow (open / resolved / cancelled).", "discipline_records"],
+                ["Exams", "Scolarité → Examens", "Official exam sessions: planning, class, subject, room, duration, max score and coefficient.", "exam_sessions (shared with operations planning — extended, not duplicated)"],
+                ["Activities", "Gestion → Activités", "Outings, clubs, competitions and events, with capacity and optional participation fee.", "school_activities"],
+                ["School health", "Gestion → Santé scolaire", "Medical visits, vaccinations, allergies, injuries and emergencies per student.", "health_records"],
+                ["Boarding", "Gestion → Internat", "Assignment of boarding students to rooms — rooms come from the existing Buildings & Rooms module.", "boarding_records (room_id → facilities rooms)"],
+            ]},
+            { k: "h2", text: "Reference lists used" },
+            { k: "p", text: "Every type dropdown draws from the [hierarchical reference lists](/docs/reference-data): sanction, reward and incident types, evaluation types, activity types and health record types. Global TeducAI entries are merged with the school's own additions into one list. In Discipline the list follows the chosen nature — sanction → sanction types, reward → reward types, incident → incident types — and changing the nature clears a type picked from the previous list." },
+            { k: "h2", text: "Permissions" },
+            { k: "table", headers: ["Action", "Who"], rows: [
+                ["Create / edit / delete (all five modules)", "Super Admin, School Admin, Direction"],
+                ["Read Discipline, Exams, Activities, Boarding", "Any authenticated member of the school"],
+                ["Read School health", "Super Admin, School Admin, Direction ONLY — medical data is confidential, even the list and CSV export are restricted"],
+            ]},
+            { k: "p", text: "Every mutation writes an audit record (`school_life.{module}.created|updated|deleted`). All rows are strictly school-scoped: another school can never read, edit or even discover a record." },
+            { k: "h2", text: "Workflows" },
+            { k: "p", text: "**Create** — the form loads its dropdown sources (students, classes, subjects, rooms, reference types). If a required list is empty you get an explicit message and a quick-create button instead of an empty dropdown, and the submit stays disabled. **Edit** — click a row; the same dialog opens pre-filled. **Delete** — from the row actions, with confirmation; the deletion is audited. **Export** — the CSV button downloads the current filtered view; the print button prints the list." },
+            { k: "h2", text: "API" },
+            { k: "code", lang: "bash", code: "GET    /school-life/{module}?search=&status=&type_code=&skip=&limit=   # list + exact total\nGET    /school-life/{module}/{id}\nPOST   /school-life/{module}\nPATCH  /school-life/{module}/{id}\nDELETE /school-life/{module}/{id}\nGET    /school-life/{module}/export.csv\n# {module} = discipline | exams | activities | health | boarding" },
+        ),
+    },
+    "reference-data": {
+        slug: "reference-data", label: "Reference lists & smart forms", breadcrumb: "Admin / Reference lists",
+        title: "Reference lists & the smart-form mechanism",
+        description: "How global TeducAI reference data, per-school extensions and the generic missing-dependency form behavior work together — the reference for all future development.",
+        blocks: P(
+            { k: "h2", text: "Two levels of reference data" },
+            { k: "p", text: "Every referential list of the platform (school levels, fee types, room types, leave types, evaluation types, sanction/reward/incident types, activity types, health record types, document types…) exists at two levels: **🌐 global** entries created and managed exclusively by the TeducAI Super Administrator and visible to every school, and **🏫 local** entries a school creates for itself, invisible to every other school." },
+            { k: "table", headers: ["Capability", "Super Administrator", "School admin / Direction"], rows: [
+                ["See & use global entries", "Yes", "Yes (read-only)"],
+                ["Create / edit / delete global entries", "Yes", "Never — the API answers 403"],
+                ["Create local entries for their school", "Yes (any school)", "Yes (own school only)"],
+                ["Edit / delete local entries", "Yes", "Own school's entries only"],
+                ["See another school's local entries", "Yes", "Never"],
+            ]},
+            { k: "p", text: "Forms always display **one merged list** — global entries plus the current school's local entries, deduplicated by code and sorted — so users never think about where a value comes from. If a value is missing from the global list, the school adds its own local entry (e.g. the global fee types lack « Frais de laboratoire » — Lycée ABC creates it and only Lycée ABC sees it)." },
+            { k: "h2", text: "Managing the lists" },
+            { k: "p", text: "**Système → Listes de référence** shows every category with scope badges (🌐 Globale TeducAI / 🏫 Établissement). Global rows show « Lecture seule » to school admins; local rows offer rename, activate/deactivate and delete. School levels keep their global source on the dedicated Levels page — the reference page links to it." },
+            { k: "h2", text: "The smart-form mechanism" },
+            { k: "p", text: "Every creation form whose dropdowns are fed by the database follows one uniform behavior, provided by shared components — no form re-implements it:" },
+            { k: "table", headers: ["Behavior", "What the user sees"], rows: [
+                ["Automatic prerequisite check", "While loading, a subtle skeleton; the form knows which lists it needs (students, classes, subjects, rooms, reference types)."],
+                ["Empty-list detection", "An empty required dropdown is never rendered silently. An explicit callout replaces it: « Impossible de continuer. Vous devez d'abord créer au moins un niveau scolaire avant de pouvoir ajouter un élève. »"],
+                ["Quick-create actions", "Each callout carries buttons that navigate straight to the creation page of the missing data (Créer une classe, Créer une matière, Gérer les niveaux…)."],
+                ["Submission blocking", "The submit button stays disabled while a required list is empty — no half-valid records."],
+                ["Readable errors", "API validation errors are parsed into per-field messages under the exact input; the values already typed are preserved. The UI can never display an unreadable object."],
+            ]},
+            { k: "h2", text: "API" },
+            { k: "code", lang: "bash", code: "GET    /reference-data/categories        # the category registry\nGET    /reference-data/{category}        # the MERGED list (global + your school)\nPOST   /reference-data/{category}        # super admin -> global; school admin -> local\nPATCH  /reference-data/items/{id}\nDELETE /reference-data/items/{id}        # 403 for schools on global rows" },
+            { k: "h2", text: "For future development" },
+            { k: "p", text: "Adding a new referential list is **one entry** in the backend category registry — permissions, merge and the management UI follow automatically. Building a new module with forms means reusing the shared gate components and the merged reference endpoints; a Vie scolaire-style module is one backend registration call plus one frontend configuration object." },
+        ),
+    },
     "automations": {
         slug: "automations", label: "Automation suite", breadcrumb: "Features / Automations",
         title: "Automation suite",

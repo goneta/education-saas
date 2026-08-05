@@ -27,6 +27,10 @@ export interface FieldSpec {
     type: "text" | "textarea" | "date" | "number" | "checkbox" | "select" | "student" | "class" | "subject" | "room" | "reference"
     required?: boolean
     refCategory?: string
+    /** Reference category driven by another field's value (e.g. Discipline:
+     *  nature sanction → sanction_type, reward → reward_type, incident →
+     *  incident_type). Falls back to `refCategory` when unmapped. */
+    refCategoryBy?: { field: string; map: Record<string, string> }
     options?: FieldOption[]
     placeholder?: string
     /** quick-create page for the source list ("/dashboard/…", locale added automatically) */
@@ -52,6 +56,14 @@ export interface ModuleConfig {
 interface Row { id: number; student_name?: string | null; [key: string]: unknown }
 
 const PAGE_SIZE = 20
+
+/** Every reference category a field can ever resolve to (static + value-driven). */
+function referenceCategoriesOf(field: FieldSpec): string[] {
+    const categories = new Set<string>()
+    if (field.refCategory) categories.add(field.refCategory)
+    for (const category of Object.values(field.refCategoryBy?.map || {})) categories.add(category)
+    return [...categories]
+}
 
 export function SchoolLifeModulePage({ config }: { config: ModuleConfig }) {
     const { token } = useAuth()
@@ -102,11 +114,15 @@ export function SchoolLifeModulePage({ config }: { config: ModuleConfig }) {
     useEffect(() => { void load() }, [load])
 
     // Load every dropdown source the config declares (students / classes /
-    // subjects / rooms / merged reference lists).
+    // subjects / rooms / merged reference lists — including every category a
+    // value-driven reference field can resolve to).
     useEffect(() => {
         if (!headers) return
-        const kinds = new Set(config.fields.map(field =>
-            field.type === "reference" ? `reference:${field.refCategory}` : field.type))
+        const kinds = new Set<string>()
+        for (const field of config.fields) {
+            if (field.type !== "reference") { kinds.add(field.type); continue }
+            for (const category of referenceCategoriesOf(field)) kinds.add(`reference:${category}`)
+        }
         const jobs: [string, Promise<FieldOption[]>][] = []
         const get = (path: string) => fetch(`${API_BASE_URL}${path}`, { headers }).then(r => r.ok ? r.json() : []).catch(() => [])
         if (kinds.has("student")) jobs.push(["student", get("/students").then((data: { id: number; full_name: string; student_profile?: { id?: number } }[]) =>
@@ -130,15 +146,42 @@ export function SchoolLifeModulePage({ config }: { config: ModuleConfig }) {
         })
     }, [headers, config.fields])
 
-    const sourceFor = (field: FieldSpec): FieldOption[] => {
+    /** Which reference category a field resolves to for the given record
+     *  (form state by default, a table row when rendering the list). */
+    const resolveRefCategory = (field: FieldSpec, values?: Record<string, unknown>): string | undefined => {
+        if (!field.refCategoryBy) return field.refCategory
+        const driver = String((values ?? form)[field.refCategoryBy.field] ?? "")
+        return field.refCategoryBy.map[driver] || field.refCategory
+    }
+
+    const sourceFor = (field: FieldSpec, values?: Record<string, unknown>): FieldOption[] => {
         if (field.type === "select") return field.options || []
-        if (field.type === "reference") return sources[`reference:${field.refCategory}`] || []
+        if (field.type === "reference") {
+            const category = resolveRefCategory(field, values)
+            if (field.refCategoryBy && !category) {
+                // No nature chosen yet: offer every mapped category at once.
+                return referenceCategoriesOf(field).flatMap(item => sources[`reference:${item}`] || [])
+            }
+            return sources[`reference:${category}`] || []
+        }
         return sources[field.type] || []
     }
 
     const requiredGates = config.fields
         .filter(field => field.required && ["student", "class", "subject", "room", "reference"].includes(field.type))
         .map(field => ({ loaded: sourcesLoaded, count: sourceFor(field).length }))
+
+    /** Setting a value that DRIVES a reference category resets the dependent
+     *  field, so a type from the previous category can never be submitted. */
+    const setFieldValue = (key: string, value: string | boolean) => {
+        setForm(previous => {
+            const next = { ...previous, [key]: value }
+            for (const field of config.fields) {
+                if (field.refCategoryBy?.field === key) next[field.key] = ""
+            }
+            return next
+        })
+    }
 
     const openCreate = () => {
         setEditing(null)
@@ -218,10 +261,10 @@ export function SchoolLifeModulePage({ config }: { config: ModuleConfig }) {
         URL.revokeObjectURL(link.href)
     }
 
-    const labelFor = (field: FieldSpec | undefined, value: unknown): string => {
+    const labelFor = (field: FieldSpec | undefined, value: unknown, values?: Record<string, unknown>): string => {
         if (value === null || value === undefined || value === "") return "—"
         if (!field) return String(value)
-        const options = sourceFor(field)
+        const options = sourceFor(field, values)
         const match = options.find(option => option.value === String(value))
         return match ? match.label : String(value)
     }
@@ -254,7 +297,8 @@ export function SchoolLifeModulePage({ config }: { config: ModuleConfig }) {
                 {typeField && (
                     <select value={typeFilter} onChange={event => { setTypeFilter(event.target.value); setPage(0) }} className="apple-select w-56">
                         <option value="">Tous les types</option>
-                        {sourceFor(typeField).map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        {/* {} forces the union of every mapped category, so the filter lists all types */}
+                        {sourceFor(typeField, {}).map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
                     </select>
                 )}
                 <Button variant="outline" onClick={() => void load()} className="gap-2"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualiser</Button>
@@ -283,7 +327,7 @@ export function SchoolLifeModulePage({ config }: { config: ModuleConfig }) {
                                                 <td key={column.key} className="px-3 py-2">
                                                     {column.key === "student_name"
                                                         ? (row.student_name || "—")
-                                                        : labelFor(config.fields.find(field => field.key === column.key), row[column.key])}
+                                                        : labelFor(config.fields.find(field => field.key === column.key), row[column.key], row)}
                                                 </td>
                                             ))}
                                             <td className="px-3 py-2 text-right print:hidden" onClick={event => event.stopPropagation()}>
@@ -326,7 +370,7 @@ export function SchoolLifeModulePage({ config }: { config: ModuleConfig }) {
                             ) : field.type === "text" ? (
                                 <input value={String(form[field.key] ?? "")} onChange={event => setForm({ ...form, [field.key]: event.target.value })} className="apple-input w-full" placeholder={field.placeholder} />
                             ) : (
-                                <select value={String(form[field.key] ?? "")} onChange={event => setForm({ ...form, [field.key]: event.target.value })} className="apple-select w-full">
+                                <select value={String(form[field.key] ?? "")} onChange={event => setFieldValue(field.key, event.target.value)} className="apple-select w-full">
                                     <option value="">{field.placeholder || "Sélectionner…"}</option>
                                     {options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
                                 </select>
