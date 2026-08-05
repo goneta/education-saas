@@ -172,6 +172,20 @@ def record_usage(
     wallet = ensure_credits(db, user, credits) if status == "successful" else wallet_for_user(db, user)
     before = wallet.balance_credits
     if status == "successful":
+        # Audit DATA-02: the debit used to be a read-modify-write with no lock,
+        # so two concurrent AI calls could both read the same balance and each
+        # subtract from it — a lost update that overdraws the wallet (free AI).
+        # Allocation transfers already used with_for_update(); the consumption
+        # path now does too. SQLite ignores FOR UPDATE (single writer), while
+        # PostgreSQL serialises the concurrent debits.
+        locked = (
+            db.query(models.AIWallet)
+            .filter(models.AIWallet.id == wallet.id)
+            .with_for_update()
+            .first()
+        )
+        wallet = locked or wallet
+        before = wallet.balance_credits
         wallet.balance_credits -= credits
         wallet.total_used_credits += credits
         _consume_school_allocations(db, user, credits)

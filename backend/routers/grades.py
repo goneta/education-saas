@@ -143,6 +143,12 @@ def delete_assessment(
     if not assessment:
         raise HTTPException(status_code=404, detail="Assessment not found")
     _ensure_year_editable(db, current_user)
+    # Audit DATA-01: deleting an assessment that already carries grades used to
+    # destroy them (or 500 on PostgreSQL). Grades must be removed deliberately.
+    deletion_guard.ensure_deletable(
+        db, entity_label="cette évaluation",
+        references=deletion_guard.ASSESSMENT_REFERENCES, value=assessment_id,
+    )
 
     db.delete(assessment)
     db.commit()

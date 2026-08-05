@@ -24,3 +24,4 @@
 ## Verification
 
 - python -m py_compile backend\services\<module>.py; run targeted backend tests when available
+- DATA-02: `record_usage` verrouille la ligne du portefeuille (`with_for_update`) avant de debiter — le read-modify-write concurrent pouvait provoquer une perte de mise a jour (decouvert de credits / IA gratuite). Les transferts d allocation utilisaient deja ce verrou.

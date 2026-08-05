@@ -131,6 +131,20 @@ Lots exécutés dans l'ordre validé : 0 → 1 → 2 → 3 → 4 → 5.
   sécurité (CSP, HSTS, X-Frame-Options…) déclarés dans `next.config.ts` pour
   toutes les pages. Tests `test_auth_hardening.py` (6) ; suite **328 verts**.
 
+- **Lot 3 — intégrité des données : FAIT.** DATA-01
+  `backend/services/deletion_guard.py` : politique de suppression **explicite**
+  et déclarative (`Reference` + maps `CLASS_REFERENCES` / `SUBJECT_REFERENCES` /
+  `ASSESSMENT_REFERENCES`). Supprimer une donnée maîtresse encore référencée
+  renvoie un **409 nommant chaque bloqueur et son nombre** au lieu d'une 500 FK
+  opaque (PostgreSQL) ou d'une cascade ORM destructrice : classe (inscriptions,
+  emploi du temps, devoirs, évaluations, examens, activités, frais), matière
+  (auparavant **sans aucun garde-fou**), évaluation portant des notes.
+  **Convention** : toute nouvelle suppression physique de donnée maîtresse
+  déclare ses références ici. DATA-02 `record_usage` verrouille la ligne du
+  portefeuille (`with_for_update`) avant de débiter — fin de la perte de mise à
+  jour concurrente (découvert de crédits). Tests `test_deletion_guard.py` (4) ;
+  suite complète **332 verts**.
+
 ## Recent change log (most recent first)
 
 - **Documentation, Aide intégrée & référentiel piloté par valeur**: (1) site

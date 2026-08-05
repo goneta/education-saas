@@ -27,3 +27,4 @@
 Grade creation resolves the exact active enrollment and rejects writes to closed academic years or students outside the active context.
 
 Assessment create/update/delete enforce academic-year editability (`_ensure_year_editable`); reads (`get_assessment`, `get_assessment_grades`) stay allowed on closed years so historical data remains consultable, while still being tenant-scoped.
+- DATA-01: supprimer une evaluation qui porte deja des notes est bloque (409) au lieu de detruire les notes.

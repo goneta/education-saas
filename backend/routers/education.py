@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from sqlalchemy.orm import Session
 from typing import Any, Dict, List, Optional
 from .. import audit, models, pdf, schemas, security, database, tenancy
-from ..services import school_context, timetable_constraints, timetable_config, timetable_optimizer, timetable_simulation, timetable_substitution
+from ..services import deletion_guard, school_context, timetable_constraints, timetable_config, timetable_optimizer, timetable_simulation, timetable_substitution
 
 router = APIRouter(prefix="/education", tags=["Education"])
 
@@ -329,6 +329,13 @@ def delete_class(
     student_count = db.query(models.StudentProfile.id).filter(models.StudentProfile.current_class_id == class_id).count()
     if student_count:
         raise HTTPException(status_code=409, detail=f"Cette classe contient {student_count} élève(s) et ne peut pas être supprimée. Transférez d'abord les élèves.")
+    # Audit DATA-01: enrolments, timetable slots, assignments, assessments,
+    # exams, activities and fees also reference the class. Without this guard
+    # PostgreSQL answered with an opaque 500 (FK violation) — or worse, an ORM
+    # cascade silently destroyed them.
+    deletion_guard.ensure_deletable(
+        db, entity_label="cette classe", references=deletion_guard.CLASS_REFERENCES, value=class_id
+    )
 
     db.delete(cls)
     db.commit()
@@ -534,7 +541,12 @@ def delete_subject(
         raise HTTPException(status_code=404, detail="Matiere introuvable dans le contexte actif.")
     if sub.is_system_default:
         raise HTTPException(status_code=409, detail="Une matiere systeme ne peut pas etre supprimee.")
-        
+    # Audit DATA-01: a subject used by the timetable, assignments, assessments
+    # or exams had NO guard at all before.
+    deletion_guard.ensure_deletable(
+        db, entity_label="cette matière", references=deletion_guard.SUBJECT_REFERENCES, value=subject_id
+    )
+
     db.delete(sub)
     db.commit()
 
