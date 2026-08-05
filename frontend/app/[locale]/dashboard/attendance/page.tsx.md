@@ -21,3 +21,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
+- Gate dépendance classes (encart + « Créer une classe ») avant l appel; erreurs plus silencieuses.

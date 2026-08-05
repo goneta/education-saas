@@ -21,3 +21,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint components/<path>"; npm run build for shared/layout changes
+- Gates: aucun livre disponible / aucun élève (encart + « Créer un élève ») + submit bloqué; erreurs API via lib/api-errors (fin des messages bruts).

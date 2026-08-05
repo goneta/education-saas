@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { MissingDependency } from "@/components/ui/missing-dependency"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -50,9 +52,12 @@ type AttendanceRecord = {
 
 export default function AttendancePage() {
     const { token } = useAuth()
+    const params = useParams()
+    const locale = (params?.locale as string) || "fr"
     const [date, setDate] = useState<Date>(new Date())
     const [selectedClass, setSelectedClass] = useState<string>("")
     const [classes, setClasses] = useState<ClassItem[]>([])
+    const [classesLoaded, setClassesLoaded] = useState(false)
     const [slots, setSlots] = useState<TimetableSlot[]>([])
     const [selectedSlot, setSelectedSlot] = useState<TimetableSlot | null>(null)
     const [isMarkingOpen, setIsMarkingOpen] = useState(false)
@@ -62,6 +67,7 @@ export default function AttendancePage() {
             headers: { Authorization: `Bearer ${token}` }
         })
         if (res.ok) setClasses(await res.json())
+        setClassesLoaded(true)
     }
 
     const fetchSlots = async () => {
@@ -106,6 +112,12 @@ export default function AttendancePage() {
 
     return (
         <div className="space-y-6">
+            {classesLoaded && classes.length === 0 && (
+                <MissingDependency
+                    message="Impossible de continuer. Vous devez d'abord créer au moins une classe (avec son emploi du temps) avant de pouvoir faire l'appel."
+                    actions={[{ label: "Créer une classe", href: `/${locale}/dashboard/education/classes` }]}
+                />
+            )}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <h1 className="text-3xl font-bold tracking-tight">Attendance</h1>
                 <div className="flex gap-4">

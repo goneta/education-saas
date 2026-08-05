@@ -19,10 +19,20 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from .. import database, models, schemas, security
-from ..services import automation
+from ..services import automation, ttransport_gateway
 from ..services.ai_service import ai_service
 
 router = APIRouter(prefix="/transport", tags=["Smart Transport"])
+
+
+@router.get("/integration/status")
+def ttransportai_integration_status(current_user: models.User = Depends(security.get_current_user)):
+    """State of the future TTransportAI integration for the Transport hub.
+
+    Architecture placeholder: reports configuration honestly and always
+    ``connected: False`` until the real client is implemented in
+    services/ttransport_gateway.py — nothing is ever faked."""
+    return ttransport_gateway.integration_status()
 
 # Roles allowed to mutate transport master data. Reads stay open to any
 # authenticated user within the tenant (mirrors the former Operations behavior).

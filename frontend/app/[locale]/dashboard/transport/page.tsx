@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
-import { Bus, Users, Route as RouteIcon, Gauge, Wallet, Wrench, MapPin, ShieldAlert, Fuel } from "lucide-react"
+import { Bus, Users, Route as RouteIcon, Gauge, Wallet, Wrench, MapPin, ShieldAlert, Fuel, Satellite } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
@@ -30,15 +30,30 @@ const EMPTY: TransportDashboard = {
     fuel_cost_total: 0, open_incidents: 0, boardings_today: 0,
 }
 
+interface IntegrationStatus {
+    provider: string
+    connected: boolean
+    configured: boolean
+    capabilities: { key: string; label_fr: string }[]
+    message: string
+}
+
 export default function TransportDashboardPage() {
     const t = useTranslations("transport")
     const { token } = useAuth()
     const [data, setData] = useState<TransportDashboard>(EMPTY)
+    const [integration, setIntegration] = useState<IntegrationStatus | null>(null)
 
     const load = useCallback(async () => {
         if (!token) return
         const response = await fetch(`${API_BASE_URL}/transport/dashboard`, { headers: { Authorization: `Bearer ${token}` } })
         if (response.ok) setData(await response.json())
+        // Future TTransportAI integration status (architecture placeholder —
+        // honest "not connected" until the real client ships).
+        fetch(`${API_BASE_URL}/transport/integration/status`, { headers: { Authorization: `Bearer ${token}` } })
+            .then(r => r.ok ? r.json() : null)
+            .then(payload => setIntegration(payload))
+            .catch(() => undefined)
     }, [token])
 
     useEffect(() => { void load() }, [load])
@@ -79,6 +94,40 @@ export default function TransportDashboardPage() {
                     </Card>
                 ))}
             </div>
+
+            {integration && (
+                <Card className="rounded-[20px] border border-dashed border-[#94A3B8] bg-white shadow-sm dark:border-[#4b5563] dark:bg-[#202528]">
+                    <CardContent className="pt-6">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eef1f4] dark:bg-[#343b41]">
+                                    <Satellite className="h-5 w-5 text-[#111827] dark:text-white" />
+                                </div>
+                                <div>
+                                    <p className="font-semibold text-[#111827] dark:text-white">Intégration {integration.provider}</p>
+                                    <p className="text-sm text-[#6B7280] dark:text-[#c7d0da]">{integration.message}</p>
+                                </div>
+                            </div>
+                            <span className={`rounded-full px-3 py-1 text-xs font-medium ${integration.connected ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800 dark:bg-[#3a3125] dark:text-amber-100"}`}>
+                                {integration.connected ? "Connectée" : "À venir"}
+                            </span>
+                        </div>
+                        <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-[#6B7280] dark:text-[#c7d0da]">
+                            Cette section deviendra le point d&apos;entrée TTransportAI pour :
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                            {integration.capabilities.map(capability => (
+                                <span key={capability.key} className="rounded-full border border-[#E5E7EB] px-3 py-1 text-xs text-[#374151] dark:border-[#3b4248] dark:text-[#c7d0da]">
+                                    {capability.label_fr}
+                                </span>
+                            ))}
+                        </div>
+                        <p className="mt-3 text-xs text-[#94A3B8]">
+                            La gestion locale (véhicules, chauffeurs, lignes, arrêts, embarquements, incidents, carburant) reste pleinement fonctionnelle en attendant l&apos;API TTransportAI.
+                        </p>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     )
 }

@@ -50,6 +50,25 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
+- **Gates de dépendances généralisés + section Transport prête pour
+  TTransportAI**: (1) le mécanisme MissingDependency/missingRequired couvre
+  maintenant AUSSI: Pédagogie (classes requises pour devoir/support),
+  Stages (élèves requis + encart entreprises), Présences (classes requises
+  pour l'appel), Bibliothèque (prêt: livres disponibles + élèves requis +
+  erreurs API lisibles). Personnel: dépendance département OPTIONNELLE (pas
+  de gate, comportement correct). Discipline/Examens/Activités/Santé/
+  Internat: modules inexistants à ce jour — le mécanisme les couvrira dès
+  leur création. (2) **TTransportAI (architecture seulement, RIEN d'intégré)**:
+  `services/ttransport_gateway.py` = LA couture unique de la future
+  intégration (11 capacités cibles listées; `integration_status()` honnête —
+  `connected: False` tant que le client réel n'existe pas; env
+  TTRANSPORTAI_API_URL/API_KEY documentées dans .env.example);
+  `GET /transport/integration/status`; le hub Transport affiche le panneau
+  « Intégration TTransportAI — À venir » avec les capacités cibles, la
+  gestion locale restant pleinement fonctionnelle. Contrats pour plus tard:
+  webhooks verify-first, paiements transport TOUJOURS via le Payment Service
+  central. Tests `test_ttransport_gateway.py` (2 green).
+
 - **Référentiels hiérarchiques (🌐 global + 🏫 local) + gates de dépendances
   génériques**: (1) **Backend** — table générique `ReferenceItem` (migration
   0055; school_id NULL = donnée GLOBALE TeducAI gérée par le Super Admin,
@@ -493,7 +512,9 @@ notifications and master data (zero data duplication).
 
 ## NOT READY (need decisions/credentials/infra — never faked)
 
-Live payment operability (real keys/webhook secrets), WhatsApp/voice/video providers,
+TTransportAI API integration (architecture + placeholder gateway shipped; the
+real client, webhooks and data mapping await the TTransportAI API),
+live payment operability (real keys/webhook secrets), WhatsApp/voice/video providers,
 real‑time GPS push (MQTT/WebSocket) + facial recognition + native mobile apps,
 async webhook sender/GraphQL/marketplace/SDK, Docker/K8s/HA/tracing
 and the 100k‑users/300ms load targets. See `SPEC.md` §5.

@@ -1,10 +1,12 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { MissingDependency, missingRequired } from "@/components/ui/missing-dependency"
 
 interface ClassItem { id: number; name: string }
 interface Assignment { id: number; title: string; class_id: number; due_date: string | null; status: string }
@@ -13,7 +15,10 @@ interface RequestRow { id: number; request_type: string; status: string; student
 
 export default function PedagogyPage() {
     const { token } = useAuth()
+    const params = useParams()
+    const locale = (params?.locale as string) || "fr"
     const [classes, setClasses] = useState<ClassItem[]>([])
+    const [classesLoaded, setClassesLoaded] = useState(false)
     const [assignments, setAssignments] = useState<Assignment[]>([])
     const [materials, setMaterials] = useState<Material[]>([])
     const [requests, setRequests] = useState<RequestRow[]>([])
@@ -30,6 +35,7 @@ export default function PedagogyPage() {
             fetch(`${API_BASE_URL}/pedagogy/requests`, { headers }),
         ])
         if (classesRes.ok) setClasses(await classesRes.json())
+        setClassesLoaded(true)
         if (assignmentsRes.ok) setAssignments(await assignmentsRes.json())
         if (materialsRes.ok) setMaterials(await materialsRes.json())
         if (requestsRes.ok) setRequests(await requestsRes.json())
@@ -91,13 +97,19 @@ export default function PedagogyPage() {
                 <p className="text-sm text-[#6B7280] mt-1">Course content, homework, submissions and school office requests.</p>
             </div>
 
+            {classesLoaded && classes.length === 0 && (
+                <MissingDependency
+                    message="Impossible de continuer. Vous devez d'abord créer au moins une classe avant de pouvoir publier un devoir ou partager un support de cours."
+                    actions={[{ label: "Créer une classe", href: `/${locale}/dashboard/education/classes` }]}
+                />
+            )}
             <div className="grid gap-4 lg:grid-cols-2">
                 <Card><CardHeader><CardTitle>Create Assignment</CardTitle></CardHeader><CardContent className="space-y-3">
                     <input placeholder="Title" value={assignmentForm.title} onChange={(e) => setAssignmentForm({ ...assignmentForm, title: e.target.value })} className="w-full border rounded-md px-3 py-2 text-sm" />
                     <select value={assignmentForm.class_id} onChange={(e) => setAssignmentForm({ ...assignmentForm, class_id: e.target.value })} className="w-full border rounded-md px-3 py-2 text-sm"><option value="">Class</option>{classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
                     <input type="date" value={assignmentForm.due_date} onChange={(e) => setAssignmentForm({ ...assignmentForm, due_date: e.target.value })} className="w-full border rounded-md px-3 py-2 text-sm" />
                     <textarea placeholder="Instructions" value={assignmentForm.instructions} onChange={(e) => setAssignmentForm({ ...assignmentForm, instructions: e.target.value })} className="w-full min-h-24 border rounded-md px-3 py-2 text-sm" />
-                    <Button onClick={createAssignment}>Publish</Button>
+                    <Button onClick={createAssignment} disabled={missingRequired([{ loaded: classesLoaded, count: classes.length }])}>Publish</Button>
                 </CardContent></Card>
 
                 <Card><CardHeader><CardTitle>Share Course Material</CardTitle></CardHeader><CardContent className="space-y-3">
@@ -105,7 +117,7 @@ export default function PedagogyPage() {
                     <select value={materialForm.class_id} onChange={(e) => setMaterialForm({ ...materialForm, class_id: e.target.value })} className="w-full border rounded-md px-3 py-2 text-sm"><option value="">Class</option>{classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
                     <input placeholder="Document URL" value={materialForm.content_url} onChange={(e) => setMaterialForm({ ...materialForm, content_url: e.target.value })} className="w-full border rounded-md px-3 py-2 text-sm" />
                     <textarea placeholder="Content or notes" value={materialForm.content_text} onChange={(e) => setMaterialForm({ ...materialForm, content_text: e.target.value })} className="w-full min-h-24 border rounded-md px-3 py-2 text-sm" />
-                    <Button onClick={createMaterial}>Share</Button>
+                    <Button onClick={createMaterial} disabled={missingRequired([{ loaded: classesLoaded, count: classes.length }])}>Share</Button>
                 </CardContent></Card>
             </div>
 

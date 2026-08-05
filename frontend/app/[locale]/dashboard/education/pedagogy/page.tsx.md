@@ -22,3 +22,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
+- Gate dépendance classes (MissingDependency + boutons désactivés) sur Create Assignment et Share Course Material.

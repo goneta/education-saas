@@ -7,7 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/contexts/auth-context"
+import { useParams } from "next/navigation"
 import { API_BASE_URL } from "@/lib/config"
+import { parseApiErrorResponse } from "@/lib/api-errors"
+import { MissingDependency, missingRequired } from "@/components/ui/missing-dependency"
 
 export interface LibraryBook {
     id: number
@@ -32,8 +35,11 @@ interface IssueLoanModalProps {
 
 export function IssueLoanModal({ open, onOpenChange, onSuccess, books }: IssueLoanModalProps) {
     const { token } = useAuth()
+    const params = useParams()
+    const locale = (params?.locale as string) || "fr"
     const [isLoading, setIsLoading] = useState(false)
     const [students, setStudents] = useState<StudentOption[]>([])
+    const [studentsLoaded, setStudentsLoaded] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
     const [formData, setFormData] = useState({
@@ -57,6 +63,8 @@ export function IssueLoanModal({ open, onOpenChange, onSuccess, books }: IssueLo
                     }
                 } catch {
                     console.error("Failed to fetch students")
+                } finally {
+                    setStudentsLoaded(true)
                 }
             }
             fetchStudents()
@@ -86,8 +94,9 @@ export function IssueLoanModal({ open, onOpenChange, onSuccess, books }: IssueLo
             })
 
             if (!response.ok) {
-                const data = await response.json()
-                throw new Error(data.detail || "Failed to issue book")
+                // Readable message, never "[object Object]".
+                const parsed = await parseApiErrorResponse(response, "Impossible d'enregistrer le prêt.")
+                throw new Error(parsed.message)
             }
 
             onSuccess()
@@ -119,6 +128,18 @@ export function IssueLoanModal({ open, onOpenChange, onSuccess, books }: IssueLo
                         <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
                             {error}
                         </div>
+                    )}
+                    {availableBooks.length === 0 && (
+                        <MissingDependency
+                            message="Aucun livre disponible à l'emprunt. Ajoutez d'abord un livre (ou attendez un retour) avant d'enregistrer un prêt."
+                            actions={[]}
+                        />
+                    )}
+                    {studentsLoaded && students.length === 0 && (
+                        <MissingDependency
+                            message="Impossible de continuer. Vous devez d'abord créer au moins un élève avant d'enregistrer un prêt."
+                            actions={[{ label: "Créer un élève", href: `/${locale}/dashboard/students` }]}
+                        />
                     )}
 
                     <div className="grid gap-2">
@@ -183,7 +204,7 @@ export function IssueLoanModal({ open, onOpenChange, onSuccess, books }: IssueLo
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={isLoading} className="bg-black text-white hover:bg-black/90">
+                        <Button type="submit" disabled={isLoading || availableBooks.length === 0 || missingRequired([{ loaded: studentsLoaded, count: students.length }])} className="bg-black text-white hover:bg-black/90">
                             {isLoading ? "Processing..." : "Issue Book"}
                         </Button>
                     </DialogFooter>

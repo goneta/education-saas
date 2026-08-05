@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react"
+import { useParams } from "next/navigation"
 import {
     BarChart3,
     BriefcaseBusiness,
@@ -16,6 +17,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { TableFilter, useTableFilter, type FilterColumn } from "@/components/ui/table-filter"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { MissingDependency } from "@/components/ui/missing-dependency"
 
 type Company = {
     id: number
@@ -109,6 +111,9 @@ function StatCard({ title, value, icon: Icon, detail }: { title: string; value: 
 
 export default function InternshipsPage() {
     const { token } = useAuth()
+    const params = useParams()
+    const locale = (params?.locale as string) || "fr"
+    const [depsLoaded, setDepsLoaded] = useState(false)
     const [companies, setCompanies] = useState<Company[]>([])
     const [internships, setInternships] = useState<Internship[]>([])
     const [students, setStudents] = useState<Student[]>([])
@@ -218,6 +223,7 @@ export default function InternshipsPage() {
             const data = await studentsRes.json()
             setStudents(Array.isArray(data) ? data : [])
         }
+        setDepsLoaded(true)
     }, [headers])
 
     useEffect(() => {
@@ -454,6 +460,22 @@ export default function InternshipsPage() {
                     <CardTitle className="text-xl">Créer un stage</CardTitle>
                 </CardHeader>
                 <CardContent>
+                    {depsLoaded && students.length === 0 && (
+                        <div className="mb-3">
+                            <MissingDependency
+                                message="Impossible de continuer. Vous devez d'abord créer au moins un élève avant de pouvoir créer un stage."
+                                actions={[{ label: "Créer un élève", href: `/${locale}/dashboard/students` }]}
+                            />
+                        </div>
+                    )}
+                    {depsLoaded && companies.length === 0 && (
+                        <div className="mb-3">
+                            <MissingDependency
+                                message="Aucune entreprise partenaire n'est encore enregistrée : utilisez le formulaire « Entreprises partenaires » de cette page pour en créer une, ou saisissez le nom de l'entreprise en champ libre."
+                                actions={[]}
+                            />
+                        </div>
+                    )}
                     <form onSubmit={submitInternship} className="grid gap-3 lg:grid-cols-4">
                         <select className="apple-select" title="Entreprise: selectionnez une entreprise partenaire existante ou saisissez un nom manuel." value={internshipForm.company_id} onChange={e => setInternshipForm({ ...internshipForm, company_id: e.target.value })}>
                             <option value="">Entreprise partenaire</option>

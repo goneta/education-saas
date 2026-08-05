@@ -24,3 +24,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
+- Gates dépendances: élèves requis (encart + « Créer un élève »), entreprises partenaires absentes = encart informatif (formulaire entreprise sur la même page, champ libre possible).
