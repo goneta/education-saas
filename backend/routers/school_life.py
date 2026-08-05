@@ -8,10 +8,16 @@ tenant scoping (rows always school-scoped to the caller), role-gated writes,
 and an audit record for every mutation. Type codes come from the hierarchical
 reference lists (global TeducAI + school-local, services/reference_data.py).
 
-Permissions:
+Permissions (audit PRIV-01 — tightened):
 - writes: SUPER_ADMIN / SCHOOL_ADMIN / DIRECTION everywhere;
-- reads: any authenticated member of the school — EXCEPT Santé scolaire
-  (sensitive medical data): reads are restricted to the write roles too.
+- reads of PERSONAL records (Discipline, Internat): staff see their school's
+  records, while a student sees only their own and a parent only their linked
+  children's — row-level filtering via `services/access_scope.py`;
+- reads of Santé scolaire: administration only (medical data), reads included;
+- reads of Examens and Activités stay open to every member of the school: they
+  are school-wide schedules with no personal data (an exam calendar and an
+  activity programme are meant to be seen by students and parents). Writes
+  remain staff-only.
 """
 
 import csv
@@ -25,6 +31,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from .. import audit, database, models, security
+from ..services import access_scope
 
 router = APIRouter(prefix="/school-life", tags=["Vie scolaire"])
 
@@ -105,15 +112,37 @@ def _register_module(
             _require_manage(current_user)
         return _school_id(current_user)
 
-    def _get_or_404(db: Session, current_user: models.User, item_id: int):
-        row = db.query(model).filter(model.id == item_id, model.school_id == _school_id(current_user)).first()
+    def _scope_rows(db: Session, query, current_user: models.User):
+        """Row-level restriction for modules holding PERSONAL records
+        (audit PRIV-01): a student sees only their own records, a parent only
+        their children's; staff keep the full school view. Modules without a
+        `student_id` (Examens, Activités) are school-wide by design."""
+        if "student_id" not in fields:
+            return query
+        allowed = access_scope.visible_student_ids(db, current_user)
+        if allowed is None:
+            return query
+        if not allowed:
+            return query.filter(False)  # sees nothing, never everything
+        return query.filter(model.student_id.in_(allowed))
+
+    def _get_or_404(db: Session, current_user: models.User, item_id: int, *, for_write: bool = True):
+        """Tenant scope + (on reads) the same row-level rule as the list, so a
+        record hidden from the list can never be fetched by its id."""
+        query = db.query(model).filter(model.id == item_id, model.school_id == _school_id(current_user))
+        if not for_write:
+            query = _scope_rows(db, query, current_user)
+        row = query.first()
         if not row:
             raise HTTPException(status_code=404, detail="Enregistrement introuvable.")
         return row
 
     def _base_query(db: Session, school_id: int, search: Optional[str], status: Optional[str],
-                    type_code: Optional[str], student_id: Optional[int]):
+                    type_code: Optional[str], student_id: Optional[int],
+                    current_user: Optional[models.User] = None):
         query = db.query(model).filter(model.school_id == school_id)
+        if current_user is not None:
+            query = _scope_rows(db, query, current_user)
         if status:
             query = query.filter(model.status == status)
         if type_code and type_field:
@@ -146,7 +175,7 @@ def _register_module(
         db: Session = Depends(database.get_db),
     ):
         school_id = _read_guard(current_user)
-        query = _base_query(db, school_id, search, status, type_code, student_id)
+        query = _base_query(db, school_id, search, status, type_code, student_id, current_user)
         total = query.count()
         rows = query.offset(max(skip, 0)).limit(min(max(limit, 1), 200)).all()
         return {"total": total, "items": [_serialize(row, fields) for row in rows]}
@@ -160,7 +189,7 @@ def _register_module(
         db: Session = Depends(database.get_db),
     ):
         school_id = _read_guard(current_user)
-        rows = _base_query(db, school_id, search, status, type_code, None).limit(10000).all()
+        rows = _base_query(db, school_id, search, status, type_code, None, current_user).limit(10000).all()
         headers = export_headers or (["id", "student_name"] + fields + ["created_at"])
         buffer = io.StringIO()
         writer = csv.DictWriter(buffer, fieldnames=headers, extrasaction="ignore")
@@ -181,7 +210,7 @@ def _register_module(
         db: Session = Depends(database.get_db),
     ):
         _read_guard(current_user)
-        return _serialize(_get_or_404(db, current_user, item_id), fields)
+        return _serialize(_get_or_404(db, current_user, item_id, for_write=False), fields)
 
     @router.post(f"/{slug}")
     def create_item(

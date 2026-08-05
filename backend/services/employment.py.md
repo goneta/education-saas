@@ -24,3 +24,4 @@
 
 - `python -m py_compile backend\services\employment.py`
 - Run targeted backend tests for sharecode, privacy filtering, and year-closure CV refresh when available.
+- SEC-07: `_rate_limit_access` factorise la limitation par IP (sharecode 20/min, recherche publique 30/min) et `is_publicly_listed(cv)` formalise la chaine d opt-in complete (share_enabled + looking_for_job + visible_in_sector_search).

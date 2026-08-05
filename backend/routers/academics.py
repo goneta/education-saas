@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from .. import database, models, security
-from ..services import academics
+from ..services import academics, access_scope
 
 router = APIRouter(prefix="/academics", tags=["Academic Management"])
 
@@ -24,11 +24,17 @@ def student_gpa(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user),
 ):
-    """Automatic weighted GPA for a student (optionally a single term),
-    tenant-scoped via the student's institution."""
+    """Automatic weighted GPA for a student (optionally a single term).
+
+    Tenant-scoped via the student's institution AND row-scoped (audit PRIV-02):
+    staff may read any student of their school, a learner only their own record
+    and a parent only their linked children's. Unauthorized access is masked as
+    404 so identifiers cannot be probed."""
     school_id = _school_id(current_user)
     student = db.query(models.StudentProfile).filter(models.StudentProfile.id == student_id).first()
     student_user = db.query(models.User).filter(models.User.id == student.user_id).first() if student else None
     if not student or not student_user or student_user.school_id != school_id:
+        raise HTTPException(status_code=404, detail="Élève introuvable dans cet établissement")
+    if not access_scope.can_view_student(db, current_user, student_id):
         raise HTTPException(status_code=404, detail="Élève introuvable dans cet établissement")
     return academics.compute_gpa(db, student_id, term_id)

@@ -429,22 +429,36 @@ def create_reference_data(
 @router.get("/reference-data/{category}", response_model=List[ReferenceDataResponse])
 def get_reference_data(
     category: str,
-    school_id: Optional[int] = None, # If provided, fetches Global + School Specific
+    school_id: Optional[int] = None,
+    current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
+    """Legacy reference data (superseded by `/reference-data`, see ARCH-01).
+
+    Audit SEC-08: this endpoint used to be unauthenticated and accepted an
+    arbitrary `school_id`, so anyone could read any institution's local lists.
+    It now requires authentication and ignores a foreign `school_id`: a caller
+    only ever sees the global entries plus those of their OWN school
+    (the Super Admin may still target a specific institution).
+    """
     query = db.query(models.ReferenceData).filter(
         models.ReferenceData.category == category,
         models.ReferenceData.is_active == True
     )
-    
-    if school_id:
-        # Fetch Global (school_id is Null) OR School Specific
-        query = query.filter((models.ReferenceData.school_id == None) | (models.ReferenceData.school_id == school_id))
+
+    if current_user.role == models.UserRole.SUPER_ADMIN:
+        scoped_school_id = school_id or current_user.school_id
     else:
-        # Default to Global only if no school specified?
-        # Or maybe minimal set. For now, fetch Global.
+        scoped_school_id = current_user.school_id
+
+    if scoped_school_id:
+        # Global entries (school_id NULL) merged with the caller's own school.
+        query = query.filter(
+            (models.ReferenceData.school_id == None) | (models.ReferenceData.school_id == scoped_school_id)
+        )
+    else:
         query = query.filter(models.ReferenceData.school_id == None)
-        
+
     return query.order_by(models.ReferenceData.order).all()
 
 

@@ -105,6 +105,19 @@ Lots exécutés dans l'ordre validé : 0 → 1 → 2 → 3 → 4 → 5.
   refusent le démarrage en production sans PostgreSQL. Tests
   `test_webhook_auth.py` (7) ; suite complète **317 verts**.
 
+- **Lot 1 — confidentialité : FAIT.** PRIV-01/PRIV-02
+  `backend/services/access_scope.py` = LA règle d'autorisation intra-tenant
+  (`visible_student_ids` → `None` pour le personnel, son propre profil pour un
+  élève, les enfants rattachés pour un parent, **ensemble vide** sinon —
+  jamais « tout »). Appliquée dans `school_life` (Discipline/Internat/Santé :
+  liste, détail 404, `student_id`, export CSV) et au GPA `academics`. Examens
+  et Activités restent des calendriers visibles par tous (sans donnée
+  personnelle), écritures administration. SEC-08 `/system/reference-data`
+  authentifié et cantonné à l'établissement de l'appelant. SEC-07 recherche
+  publique Emploi limitée en débit + journalisée, photo de CV réservée aux
+  profils réellement publiés (`is_publicly_listed`). Tests
+  `test_access_scope.py` (5) ; suite complète **322 verts**.
+
 ## Recent change log (most recent first)
 
 - **Documentation, Aide intégrée & référentiel piloté par valeur**: (1) site

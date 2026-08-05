@@ -313,13 +313,36 @@ def recommended_jobs(db: Session, cv: models.StudentCV, *, limit: int = 20) -> l
 
 
 def rate_limit_sharecode(db: Session, *, ip_address: str | None) -> None:
+    _rate_limit_access(db, ip_address=ip_address, access_type="sharecode_lookup", max_per_minute=20)
+
+
+def rate_limit_public_search(db: Session, *, ip_address: str | None) -> None:
+    """Audit SEC-07: the anonymous marketplace search returns up to 60 opted-in
+    student profiles per call. Without a cap it is a bulk-scraping endpoint, so
+    searches are counted (and thereby logged) per IP like sharecode lookups."""
+    _rate_limit_access(db, ip_address=ip_address, access_type="public_search", max_per_minute=30)
+
+
+def _rate_limit_access(db: Session, *, ip_address: str | None, access_type: str, max_per_minute: int) -> None:
     if not ip_address:
         return
     since = _utcnow() - timedelta(minutes=1)
     count = db.query(models.StudentCVAccessLog).filter(
         models.StudentCVAccessLog.ip_address == ip_address,
-        models.StudentCVAccessLog.access_type == "sharecode_lookup",
+        models.StudentCVAccessLog.access_type == access_type,
         models.StudentCVAccessLog.created_at >= since,
     ).count()
-    if count >= 20:
+    if count >= max_per_minute:
         raise HTTPException(status_code=429, detail="Trop de tentatives. Reessayez plus tard.")
+
+
+def is_publicly_listed(cv: models.StudentCV) -> bool:
+    """A CV is *published* only with the full opt-in chain: sharing enabled,
+    actively looking for a job, and explicitly visible in sector search.
+
+    Audit SEC-07: photos used to be served by sequential id for any CV with
+    `share_enabled`, which exposed the picture of students who had only shared
+    their CV privately through a sharecode.
+    """
+    privacy = {**DEFAULT_PRIVACY, **(cv.privacy_settings or {})}
+    return bool(cv.share_enabled and cv.looking_for_job and privacy.get("visible_in_sector_search"))

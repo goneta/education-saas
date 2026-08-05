@@ -209,7 +209,20 @@ def skill_categories():
 
 @router.get("/public-profiles")
 def public_profiles(request: Request, sector: str | None = None, q: str | None = None, db: Session = Depends(database.get_db)):
+    """Public marketplace search over CVs whose owner opted in (share_enabled +
+    looking_for_job + visible_in_sector_search, the latter OFF by default).
+
+    Audit SEC-07: anonymous callers are now rate-limited and their searches are
+    logged, so the endpoint cannot be used to bulk-scrape opted-in students."""
     _require_paid_recruiter_if_authenticated(request, db)
+    ip_address = request.client.host if request.client else None
+    employment.rate_limit_public_search(db, ip_address=ip_address)
+    db.add(models.StudentCVAccessLog(
+        access_type="public_search",
+        ip_address=ip_address,
+        user_agent=request.headers.get("user-agent"),
+    ))
+    db.commit()
     query = db.query(models.StudentCV).options(selectinload(models.StudentCV.work_history)).filter(
         models.StudentCV.looking_for_job == True,  # noqa: E712
         models.StudentCV.share_enabled == True,  # noqa: E712
@@ -262,8 +275,13 @@ def recruiter_lookup_sharecode(payload: schemas.SharecodeLookup, request: Reques
 
 @router.get("/cv/{cv_id}/photo")
 def get_cv_photo(cv_id: int, db: Session = Depends(database.get_db)):
-    cv = db.query(models.StudentCV).filter(models.StudentCV.id == cv_id, models.StudentCV.share_enabled == True).first()  # noqa: E712
-    if not cv:
+    """Photo of a PUBLISHED CV only (audit SEC-07).
+
+    `share_enabled` alone used to be enough, so the picture of a student who had
+    only shared their CV privately via a sharecode could be fetched by walking
+    identifiers. The full opt-in chain is now required."""
+    cv = db.query(models.StudentCV).filter(models.StudentCV.id == cv_id).first()
+    if not cv or not employment.is_publicly_listed(cv):
         raise HTTPException(status_code=404, detail="Photo introuvable.")
     return _active_file_response(_latest_employment_file(db, "employment_cv_photo", str(cv.id)))
 

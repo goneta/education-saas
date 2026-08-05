@@ -11,3 +11,4 @@
 ## Verification
 
 - `python -m pytest backend/test_academics.py`
+- PRIV-02: le GPA verifie desormais `access_scope.can_view_student` en plus du perimetre etablissement (un eleve ne peut plus lire la moyenne d un camarade); acces non autorise masque en 404.
