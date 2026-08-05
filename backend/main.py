@@ -12,7 +12,7 @@ from .database import SessionLocal
 from .observability import observability_middleware
 from .security_middleware import rate_limit_middleware, security_headers_middleware
 from . import models
-from .routers import auth, students, teachers, chat, education, attendance, grades, dashboard, library, finance, system, pedagogy, operations, enterprise, documents, files, internships, ai_automation, ai_billing, bootstrap, account, context, student_lifecycle, employment, site, facilities, transport, payments, platform, sis, academics, communication, hr, analytics, extensibility, ai_learning, levels, personnel, payroll, public_api, automations, self_documents, assignments, billing, verify, document_templates, agent_platform, reference_data
+from .routers import auth, students, teachers, chat, education, attendance, grades, dashboard, library, finance, system, pedagogy, operations, enterprise, documents, files, internships, ai_automation, ai_billing, bootstrap, account, context, student_lifecycle, employment, site, facilities, transport, payments, platform, sis, academics, communication, hr, analytics, extensibility, ai_learning, levels, personnel, payroll, public_api, automations, self_documents, assignments, billing, verify, document_templates, agent_platform, reference_data, school_life
 
 app = FastAPI(title="TeducAI API")
 logger = logging.getLogger("teducai")
@@ -107,6 +107,7 @@ app.include_router(verify.router)
 app.include_router(document_templates.router)
 app.include_router(agent_platform.router)
 app.include_router(reference_data.router)
+app.include_router(school_life.router)
 app.include_router(enterprise.router)
 app.include_router(documents.router)
 app.include_router(files.router)

@@ -125,6 +125,10 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/buildings`, label: t("buildings"), icon: Building2 },
                 { href: `/${locale}/dashboard/rooms`, label: t("rooms"), icon: DoorOpen },
                 { href: `/${locale}/dashboard/personnel`, label: t("personnel"), icon: UserCog },
+                { href: `/${locale}/dashboard/discipline`, label: t("discipline"), icon: ShieldCheck },
+                { href: `/${locale}/dashboard/activities`, label: t("activities"), icon: Award },
+                { href: `/${locale}/dashboard/health`, label: t("schoolHealth"), icon: ClipboardCheck },
+                { href: `/${locale}/dashboard/boarding-school`, label: t("boardingSchool"), icon: Building2 },
                 { href: `/${locale}/dashboard/hr/leave`, label: t("leave"), icon: Calendar },
                 { href: `/${locale}/dashboard/communication`, label: t("announcements"), icon: MessageSquare },
             ]
@@ -138,6 +142,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/education/pedagogy`, label: t("pedagogy"), icon: GraduationCap },
                 { href: `/${locale}/dashboard/education/internships`, label: t("internships"), icon: BriefcaseBusiness },
                 { href: `/${locale}/dashboard/assignments`, label: t("assignments"), icon: ClipboardList },
+                { href: `/${locale}/dashboard/education/exams`, label: t("exams"), icon: ClipboardCheck },
                 { href: `/${locale}/dashboard/grades/assessments`, label: t("grades"), icon: ClipboardCheck },
                 { href: `/${locale}/dashboard/education/document-templates`, label: t("docTemplates"), icon: Award },
                 { href: `/${locale}/dashboard/library`, label: t("library"), icon: BookOpen },
@@ -167,6 +172,7 @@ export function Sidebar({ isResizablePanel = false, forceVisible = false, onNavi
                 { href: `/${locale}/dashboard/transport/tracking`, label: t("tracking"), icon: Navigation },
                 { href: `/${locale}/dashboard/transport/boarding`, label: t("boarding"), icon: ScanLine },
                 { href: `/${locale}/dashboard/transport/fleet-ops`, label: t("fleetOps"), icon: Wrench },
+                { href: `/${locale}/dashboard/transport/external`, label: t("externalTransport"), icon: Navigation },
             ]
         },
         {

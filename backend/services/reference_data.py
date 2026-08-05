@@ -36,6 +36,9 @@ CATEGORIES: dict[str, dict[str, str]] = {
     "document_type": {"fr": "Types de documents", "en": "Document types"},
     "sanction_type": {"fr": "Types de sanctions", "en": "Sanction types"},
     "reward_type": {"fr": "Types de récompenses", "en": "Reward types"},
+    "activity_type": {"fr": "Types d'activités", "en": "Activity types"},
+    "incident_type": {"fr": "Types d'incidents", "en": "Incident types"},
+    "health_record_type": {"fr": "Types de dossiers santé", "en": "Health record types"},
 }
 
 # Roles allowed to manage a school's LOCAL items.

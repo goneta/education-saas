@@ -21,3 +21,4 @@
   Duplicate code in the merged view -> 409. Every mutation audited (`reference.*`).
 ## Verification
 - `python -m pytest backend/test_reference_data.py` (5 green).
+- 3 nouvelles catégories: activity_type, incident_type, health_record_type (semées en global par la migration 0056) — consommées par les modules Vie scolaire.

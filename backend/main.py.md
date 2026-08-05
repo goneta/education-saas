@@ -58,3 +58,4 @@ The application registers the `/site` router for the public marketing-site conte
 - Registers the document-templates router (/document-templates) — diploma & certificate template module.
 - Registers the agent-platform router (/agents) — OpenAI Agents SDK multi-agent foundation.
 - Registered reference_data router (/reference-data — hierarchical global+local referential lists).
+- Registered school_life router (/school-life — Discipline/Examens/Activités/Santé/Internat, moteur CRUD factorisé).

@@ -50,6 +50,38 @@ notifications and master data (zero data duplication).
 
 ## Recent change log (most recent first)
 
+- **Modules Vie scolaire (Discipline, Examens, Activités, Santé scolaire,
+  Internat) + Transport Externe**: cinq modules production-ready sur UN moteur
+  factorisé. **Backend** — migration 0056: tables `discipline_records`,
+  `school_activities`, `health_records`, `boarding_records` (school/élève-
+  scoped) + `exam_sessions` EXISTANTE étendue colonne-only (subject_id Integer
+  simple — SQLite n'ALTER-add pas de colonne contrainte —, durée, salle,
+  barème, coefficient, notes; table partagée avec la planification operations,
+  zéro duplication) + seeds globaux des 3 nouvelles catégories référentiel
+  (`activity_type`, `incident_type`, `health_record_type`).
+  `routers/school_life.py` (`/school-life/{slug}`): `_register_module` fournit
+  à chaque module la MÊME surface — liste (recherche serveur incl. nom
+  d'élève, filtres statut/type/élève, pagination skip-limit avec total exact),
+  détail, create/update/delete audités (`school_life.{slug}.*`), export CSV —
+  tenant-scoped; écritures SUPER_ADMIN/SCHOOL_ADMIN/DIRECTION; lectures tout
+  membre de l'école SAUF `health` (données médicales: lectures restreintes
+  aussi). Internat réutilise les `rooms` de facilities comme chambres.
+  Tests `test_school_life.py` (3 green, in-memory + dependency overrides).
+  **Frontend** — `components/school-life/module-page.tsx`: page CRUD générique
+  pilotée par config (colonnes, champs typés text/textarea/date/number/
+  checkbox/select/student/class/subject/room/reference) avec gates
+  RequireOptions + création rapide, référentiels fusionnés 🌐+🏫, erreurs API
+  lisibles, export CSV et impression; les 5 pages ne sont que des configs
+  (`/dashboard/discipline`, `/dashboard/education/exams`,
+  `/dashboard/activities`, `/dashboard/health`, `/dashboard/boarding-school`).
+  **Menus** — Gestion: Discipline/Activités/Santé scolaire/Internat;
+  Scolarité: Examens; Smart Transport (intact) + entrée **Transport Externe**
+  (`/dashboard/transport/external`): section dédiée aux établissements sans
+  flotte interne, point d'entrée TTransportAI (statut honnête + 11 capacités;
+  architecture seulement). Un futur module de ce type = 1 appel
+  `_register_module` + 1 ModuleConfig. i18n sidebar 4 locales; contenu des
+  pages en français (motif classes/timetable) — sweep i18n ultérieur.
+
 - **Gates de dépendances généralisés + section Transport prête pour
   TTransportAI**: (1) le mécanisme MissingDependency/missingRequired couvre
   maintenant AUSSI: Pédagogie (classes requises pour devoir/support),

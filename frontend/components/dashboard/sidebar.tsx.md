@@ -43,3 +43,4 @@
 - Scolarité: admin menu gains "Diplômes & certificats" (`/dashboard/education/document-templates`, Award) after Notes.
 - AI Agents: admin System menu gains "Agents IA" (/dashboard/ai-agents, BrainCircuit) after AI command center. Role menus (teacher/student/parent) get their entries in a later increment; the page itself is role-safe (server filters capabilities).
 - Système section gains « Listes de référence » (/dashboard/reference-data, référentiels globaux 🌐 + locaux 🏫).
+- Gestion: entrées Discipline / Activités / Santé scolaire / Internat; Scolarité: entrée Examens; Smart Transport: entrée Transport Externe (page TTransportAI). Clés sidebar 4 locales.

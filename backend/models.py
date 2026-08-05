@@ -1843,6 +1843,11 @@ class AdmissionApplication(Base):
 
 
 class ExamSession(Base):
+    """Exam sessions — shared by the legacy operations planning AND the
+    Scolarité → Examens module (routers/school_life.py). Extended column-only
+    in migration 0056 (subject/duration/room/scoring/notes); `exam_type` codes
+    come from the `evaluation_type` reference list (global + school-local)."""
+
     __tablename__ = "exam_sessions"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -1850,8 +1855,14 @@ class ExamSession(Base):
     exam_type = Column(String, nullable=False, index=True)
     class_id = Column(Integer, ForeignKey("classes.id"), nullable=True)
     program_id = Column(Integer, ForeignKey("academic_programs.id"), nullable=True)
+    subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=True)
     start_date = Column(DateTime, nullable=True)
     end_date = Column(DateTime, nullable=True)
+    duration_minutes = Column(Integer, nullable=True)
+    room = Column(String, nullable=True)
+    max_score = Column(Float, nullable=True)
+    coefficient = Column(Float, nullable=True)
+    notes = Column(Text, nullable=True)
     status = Column(String, default="planned", nullable=False)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
     created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
@@ -1859,6 +1870,7 @@ class ExamSession(Base):
 
     class_ = relationship("Class")
     program = relationship("AcademicProgram")
+    subject = relationship("Subject")
     school = relationship("School")
     created_by = relationship("User")
 
@@ -3763,3 +3775,107 @@ class ReferenceItem(Base):
     __table_args__ = (
         UniqueConstraint("category", "code", "school_id", name="_reference_item_uc"),
     )
+
+
+# --- Vie scolaire modules: Discipline, Examens, Activités, Santé, Internat ---
+# All five follow the same conventions: school-scoped rows, type codes drawn
+# from the hierarchical reference lists (reference_items / global + local),
+# writes role-gated in routers/school_life.py and audited.
+
+
+class DisciplineRecord(Base):
+    """Sanctions, récompenses et incidents disciplinaires d'un élève."""
+
+    __tablename__ = "discipline_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False, index=True)
+    record_kind = Column(String, nullable=False, index=True)  # sanction | reward | incident
+    type_code = Column(String, nullable=True, index=True)  # reference_items code (sanction/reward/incident type)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    record_date = Column(DateTime(timezone=True), nullable=True)
+    status = Column(String, default="open", nullable=False, index=True)  # open | resolved | cancelled
+    decided_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    school = relationship("School")
+    student = relationship("StudentProfile")
+    decided_by = relationship("User")
+
+
+class SchoolActivity(Base):
+    """Activités scolaires (sorties, clubs, événements…)."""
+
+    __tablename__ = "school_activities"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    activity_type_code = Column(String, nullable=True, index=True)  # reference_items activity_type
+    description = Column(Text, nullable=True)
+    location = Column(String, nullable=True)
+    start_date = Column(DateTime(timezone=True), nullable=True)
+    end_date = Column(DateTime(timezone=True), nullable=True)
+    class_id = Column(Integer, ForeignKey("classes.id"), nullable=True, index=True)
+    responsible_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    capacity = Column(Integer, nullable=True)
+    fee_amount = Column(Float, nullable=True)
+    status = Column(String, default="planned", nullable=False, index=True)  # planned | ongoing | completed | cancelled
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    school = relationship("School")
+    school_class = relationship("Class")
+    responsible = relationship("User")
+
+
+class HealthRecord(Base):
+    """Santé scolaire: visites, vaccinations, incidents médicaux, allergies.
+
+    Sensitive medical data: reads AND writes restricted to administration in
+    routers/school_life.py (SUPER_ADMIN / SCHOOL_ADMIN / DIRECTION)."""
+
+    __tablename__ = "health_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False, index=True)
+    record_type_code = Column(String, nullable=True, index=True)  # reference_items health_record_type
+    title = Column(String, nullable=False)
+    details = Column(Text, nullable=True)
+    record_date = Column(DateTime(timezone=True), nullable=True)
+    severity = Column(String, nullable=True)  # low | medium | high
+    treated_by = Column(String, nullable=True)
+    follow_up_date = Column(DateTime(timezone=True), nullable=True)
+    is_confidential = Column(Boolean, default=True, nullable=False)
+    status = Column(String, default="open", nullable=False, index=True)  # open | closed
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    school = relationship("School")
+    student = relationship("StudentProfile")
+
+
+class BoardingRecord(Base):
+    """Internat: affectation d'un élève interne à une chambre (Room existante
+    du module facilities — zéro duplication de la gestion des salles)."""
+
+    __tablename__ = "boarding_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    student_id = Column(Integer, ForeignKey("student_profiles.id"), nullable=False, index=True)
+    room_id = Column(Integer, ForeignKey("rooms.id"), nullable=True, index=True)
+    start_date = Column(DateTime(timezone=True), nullable=True)
+    end_date = Column(DateTime(timezone=True), nullable=True)
+    status = Column(String, default="active", nullable=False, index=True)  # active | ended | cancelled
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    school = relationship("School")
+    student = relationship("StudentProfile")
+    room = relationship("Room")
