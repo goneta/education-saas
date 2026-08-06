@@ -4,7 +4,7 @@ from sqlalchemy import func
 from typing import List, Optional
 from datetime import datetime
 from .. import models, schemas, security, database
-from ..services import school_context, student_lifecycle
+from ..services import access_scope, school_context, student_lifecycle
 
 router = APIRouter(prefix="/attendance", tags=["Attendance"])
 
@@ -90,16 +90,35 @@ def get_attendance(
     class_id: Optional[int] = None,
     date: Optional[datetime] = None,
     student_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 200,
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
+    """Attendance records of the caller's school.
+
+    Second-pass audit — two defects fixed here:
+    * **Volumetrics**: the endpoint returned `query.all()` with no bound. Attendance
+      is the fastest-growing table (students x days x slots): one school-year of an
+      800-pupil school is ~700 000 rows, serialised in a single response. It is now
+      paginated (default 200, hard cap 500) and ordered deterministically.
+    * **Row-level authorization** (same rule as PRIV-02): any authenticated member
+      could list every pupil's attendance. A learner now sees only their own records
+      and a parent only their children's; staff keep the school view.
+    """
     if not current_user.school_id:
         raise HTTPException(status_code=400, detail="User not part of a school")
-        
+
     query = db.query(models.Attendance).join(models.Timetable).join(models.Class).filter(
         models.Class.school_id == current_user.school_id
     )
-    
+
+    allowed_students = access_scope.visible_student_ids(db, current_user)
+    if allowed_students is not None:
+        if not allowed_students:
+            return []
+        query = query.filter(models.Attendance.student_id.in_(allowed_students))
+
     if timetable_id:
         query = query.filter(models.Attendance.timetable_id == timetable_id)
     if class_id:
@@ -108,8 +127,13 @@ def get_attendance(
         query = query.filter(models.Attendance.date == date)
     if student_id:
         query = query.filter(models.Attendance.student_id == student_id)
-        
-    return query.all()
+
+    return (
+        query.order_by(models.Attendance.date.desc(), models.Attendance.id.desc())
+        .offset(max(skip, 0))
+        .limit(min(max(limit, 1), 500))
+        .all()
+    )
 
 @router.get("/stats", response_model=schemas.AttendanceStats)
 def get_attendance_stats(

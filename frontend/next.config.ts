@@ -39,11 +39,19 @@ const nextConfig = {
   async rewrites() {
     // Audit CFG-03: the old fallback was :8000 while PM2 serves the backend on
     // :8001, so a missing variable silently proxied to ANOTHER app's backend.
-    // Development keeps a fallback; production must be explicit.
-    const backendUrl = process.env.BACKEND_INTERNAL_URL
-      || (process.env.NODE_ENV === 'production'
-        ? (() => { throw new Error('BACKEND_INTERNAL_URL must be set in production'); })()
-        : 'http://127.0.0.1:8000');
+    //
+    // Second-pass fix: this function runs at BUILD time too (`next build` sets
+    // NODE_ENV=production), so throwing here broke the CI build and any deploy
+    // pipeline that builds before the runtime env exists. We now warn loudly at
+    // build time and let PM2/ecosystem.config.js supply the value at runtime —
+    // where `teducai-prod-audit.sh` also checks it.
+    const backendUrl = process.env.BACKEND_INTERNAL_URL || 'http://127.0.0.1:8000';
+    if (!process.env.BACKEND_INTERNAL_URL) {
+      console.warn(
+        '[TeducAI] BACKEND_INTERNAL_URL is not set — falling back to http://127.0.0.1:8000. '
+        + 'Set it in the runtime environment (PM2) so the frontend never proxies to another app.'
+      );
+    }
 
     return [
       {

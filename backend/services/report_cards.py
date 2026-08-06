@@ -82,6 +82,19 @@ def build_context(
     }
 
 
+def registry_source_id(student_id: int, term_id: int) -> int:
+    """Collision-free identity for a (student, term) bulletin.
+
+    Second-pass fix: the first implementation concatenated the two numbers
+    (`int(f"{student_id}{term_id}")`), so student 1 / term 23 and student 12 /
+    term 3 both produced 123 — two different pupils sharing ONE registry entry.
+    The QR of one bulletin then resolved to the other pupil's data, and
+    regenerating one silently overwrote the other. Cantor-style pairing keeps
+    the mapping injective.
+    """
+    return student_id * 100_000 + term_id
+
+
 def attach_registry(db: Session, context: dict, *, issued_by: Optional[models.User] = None) -> dict:
     """Register the bulletin so its QR resolves at /verify/{uuid}. Idempotent per
     (student, term) — regenerating the same bulletin keeps the same UUID."""
@@ -101,7 +114,7 @@ def attach_registry(db: Session, context: dict, *, issued_by: Optional[models.Us
             "Date": document_registry.now_iso(),
         },
         source_type="report_card",
-        source_id=int(f"{context['student_id']}{context['term_id']}"),
+        source_id=registry_source_id(context["student_id"], context["term_id"]),
         issued_by=issued_by,
     )
     context["uuid"] = row.uuid

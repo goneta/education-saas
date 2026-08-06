@@ -40,6 +40,49 @@ précisément les failles). Migrations 0057 et 0058 appliquées. Import applicat
 | Paiement réel par opérateur (Orange, MTN, Moov, Wave) | Nécessite les clés live et un vrai téléphone |
 | Suppression de la duplication ARCH-01 (`reference_data`) | Volontairement reportée après le lancement (migration de données) |
 
+---
+
+## 0 bis. Seconde passe de vérification (6 août 2026)
+
+Relecture ciblée **du code écrit pendant la remédiation** (là où le risque de
+régression est le plus élevé) + balayage performance/bugs. Sept constats, dont
+**trois régressions introduites par la remédiation elle-même** — c'est
+exactement ce que la double vérification devait attraper.
+
+### Corrigés dans cette passe
+
+| ID | Constat | Gravité | Origine |
+|---|---|---|---|
+| **BUG-A** | `next.config.ts` **cassait le build** : `rewrites()` s'exécute aussi au *build* (`next build` force `NODE_ENV=production`), et mon garde-fou levait une exception si `BACKEND_INTERNAL_URL` était absent → CI en échec et pipeline de déploiement bloqué. Remplacé par un avertissement bruyant au build, la variable restant contrôlée au *runtime* par `teducai-prod-audit.sh`. | **Critique** | Introduit (Lot 5) |
+| **BUG-B** | Identifiant du registre des bulletins calculé par concaténation `int(f"{élève}{trimestre}")` : élève 1/trimestre 23 et élève 12/trimestre 3 donnaient **123**. Deux élèves partageaient une seule entrée d'authenticité — le QR de l'un renvoyait aux données de l'autre, et régénérer un bulletin écrasait l'autre. Remplacé par `registry_source_id()` injectif. | **Élevée** | Introduit (Lot 4) |
+| **BUG-C** | `requirements.txt` épinglait `griffe==1.5.1`, un paquet **jamais installé et au mauvais nom** : `openai-agents` demande `griffelib>=2`. Pin retiré, contraintes réelles documentées (y compris l'écart assumé sur `pydantic`). | Moyenne | Introduit (Lot 5) |
+| **BUG-D** | `GET /attendance/` renvoyait **toute l'assiduité de l'établissement sans limite** (~700 000 lignes pour 800 élèves après une année) **et sans filtrage par élève** : n'importe quel membre pouvait lister les absences de tous. Pagination (défaut 200, plafond 500) + règle `access_scope` appliquée. | **Élevée** | Pré-existant, manqué en passe 1 |
+| **PERF-06** | 13 clés de **jointure** non indexées sur les tables qui grossissent chaque jour (`attendance.timetable_id`, `grades.assessment_id`, `payments.fee_id`, `assignment_submissions.assignment_id`, `*_by_id` d'audit…). La migration 0058 n'avait couvert que les clés de *portée*. Migration **0059** ajoutée. | Moyenne | Lacune de ma migration 0058 |
+
+Tests de non-régression : `backend/test_second_pass_audit.py` (5) —
+non-collision des identifiants de bulletin, deux élèves = deux entrées
+distinctes, pagination de l'assiduité, portée par élève/parent, et le chemin
+« aucun élève visible » qui n'avait jamais été exécuté de bout en bout.
+**Suite complète : 346 tests, 0 échec.**
+
+### Constatés, NON corrigés (décision assumée)
+
+| ID | Constat | Gravité | Pourquoi pas maintenant |
+|---|---|---|---|
+| **PERF-07** | Listes encore non paginées sur des tables qui croissent : paiements (`finance.py:381`), frais (`:495`), annonces (`communication.py:44`), devoirs de l'élève. Volumétrie bornée par la taille de l'établissement (milliers de lignes, pas centaines de milliers). | Moyenne | Même correctif que BUG-D à appliquer, mais à froid : toucher les écrans Finance à trois semaines du lancement crée plus de risque qu'il n'en retire. À faire en première itération post-lancement. |
+| **MONEY-02** | Tous les montants sont en `FLOAT` (`Fee.amount`, `StudentInvoice.amount_due/paid`, `Payment.amount`…). En FCFA (sans centimes) l'impact est faible, mais un cumul flottant peut laisser un résidu (`remaining_balance` à 1e-9) qui empêche une facture de basculer en **PAID**. | Moyenne | Passage en `Numeric` = migration de toutes les tables financières + revue de chaque calcul. Trop risqué avant septembre ; à planifier avec une fenêtre de test. Atténuation immédiate possible : comparer avec une tolérance (`<= 0.01`) plutôt que `<= 0`. |
+| **OBS-01** | `observability_middleware` écrit en base à chaque 5xx/requête lente : pendant un incident de base, l'observabilité amplifie la charge. | Moyenne | Déjà listé en passe 1 (PERF-05), inchangé. |
+
+### Vérifications faites sans anomalie
+
+Comparaisons de dates naïves/avec fuseau (aucune), `except:` nus (aucun),
+injections SQL (les deux `text()` sont des constantes), `dangerouslySetInnerHTML`
+(aucun), chemin « portée vide » (retourne bien une liste vide, jamais tout),
+unicité des références de paiement (contrainte DB présente), verrous sur les
+transferts de crédits, idempotence de la régénération d'un bulletin.
+
+---
+
 ### Suivi post-lancement (inchangé)
 
 ARCH-01 (unification des référentiels), ARCH-03 (découpage des fichiers

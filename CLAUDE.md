@@ -93,7 +93,26 @@ code is a red flag.
 
 ## Remédiation de l'audit pré-production (AUDIT_2026-08_PRE-PRODUCTION.md)
 
-Lots exécutés dans l'ordre validé : 0 → 1 → 2 → 3 → 4 → 5.
+Lots exécutés dans l'ordre validé : 0 → 1 → 2 → 3 → 4 → 5, **plus une seconde
+passe de vérification** (6 août) qui a trouvé 3 régressions introduites par la
+remédiation elle-même — d'où la règle : relire en priorité le code fraîchement
+écrit.
+
+- **Seconde passe : FAIT.** BUG-A `next.config.ts` cassait le **build** (
+  `rewrites()` s'exécute aussi au build ; `next build` force
+  `NODE_ENV=production`) → avertissement au lieu d'une exception. BUG-B
+  identifiant du registre des bulletins par concaténation ⇒ **collisions entre
+  élèves** (1/23 et 12/3 → 123) → `registry_source_id()` injectif. BUG-C pin
+  `griffe` erroné (openai-agents veut `griffelib>=2`) → retiré et documenté.
+  BUG-D `GET /attendance/` sans limite **ni portée** (~700k lignes, tous les
+  élèves visibles) → pagination + `access_scope`. PERF-06 migration **0059** :
+  13 clés de **jointure** non indexées sur les tables à forte croissance
+  (0058 n'avait couvert que les clés de portée). Tests
+  `test_second_pass_audit.py` (5) ; suite **346 verts**.
+  *Non corrigés volontairement* : PERF-07 (listes Finance/annonces à paginer, à
+  froid après le lancement) et MONEY-02 (montants en `FLOAT` → migration
+  `Numeric` risquée avant septembre ; atténuation : comparer les soldes avec
+  une tolérance plutôt qu'à zéro).
 
 - **Lot 0 — blocage financier : FAIT.** SEC-01 `backend/webhook_auth.py`
   (fail-closed : secret non configuré en production ⇒ 503, jamais un passage

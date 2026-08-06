@@ -32,8 +32,12 @@ email-validator==2.1.0
 # AI
 openai==2.45.0
 pydantic==2.11.10
-griffe==1.5.1
-# openai-agents==0.18.2  -> install separately with --no-deps (see header)
+# openai-agents==0.18.2 -> install separately with --no-deps (see header).
+# Its declared extras are deliberately NOT installed: it asks for
+# `griffelib>=2` (only used by its docstring-based tool introspection, which we
+# do not use) and `pydantic>=2.12.2`, which would drag the FastAPI 0.104 stack
+# out of its tested range. The agent platform tests are green on the pins above.
+# Re-check this note before upgrading openai-agents.
 
 # Documents
 reportlab==4.0.7

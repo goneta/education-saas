@@ -24,3 +24,4 @@
 # Student enrollment scope
 
 Attendance records inherit the active student enrollment and academic-year lock enforcement.
+- Seconde passe (BUG-D): `GET /attendance/` renvoyait TOUTE l assiduite de l etablissement sans limite (~700k lignes apres une annee pour 800 eleves) et sans filtrage par eleve. Desormais pagine (skip/limit, defaut 200, plafond 500, tri deterministe) et soumis a `access_scope.visible_student_ids` (eleve = ses propres releves, parent = ses enfants, personnel = l etablissement); un parametre student_id etranger ne contourne pas la regle.

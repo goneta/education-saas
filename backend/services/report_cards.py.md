@@ -18,3 +18,4 @@
   same authorization as the JSON report (access_scope).
 ## Verification
 - `python -m pytest backend/test_report_cards.py` (5 green).
+- Seconde passe (BUG-B): `registry_source_id(student_id, term_id)` remplace la concatenation `int(f'{eleve}{trimestre}')` qui provoquait des collisions (eleve 1/trim 23 et eleve 12/trim 3 -> 123): deux eleves partageaient une entree d authenticite, le QR de l un renvoyant aux donnees de l autre.
