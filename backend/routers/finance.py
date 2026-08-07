@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, Header, HTTPException
+import logging
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Response
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 from typing import List, Optional
@@ -6,7 +8,14 @@ from datetime import datetime, time
 from uuid import uuid4
 
 from .. import audit, models, schemas, database, rbac, security
-from ..services import automation, school_context, student_lifecycle
+from ..services import automation, money, school_context, student_lifecycle
+
+logger = logging.getLogger("teducai.finance")
+
+# Safety cap for the unpaginated payments list (audit PERF-07): a caller that
+# does not paginate can never make the server serialize an unbounded result
+# set. When it bites, the response says so via X-Truncated.
+PAYMENTS_HARD_CAP = 5000
 
 router = APIRouter(
     prefix="/finance",
@@ -333,21 +342,28 @@ def record_fee_payment(
     return _serialize_fee(_get_fee_or_404(fee_id, db, current_user))
 
 
-@router.get("/payments")
-def list_payments(
+def _filtered_payments_query(
+    db: Session,
+    current_user: models.User,
+    *,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     operator_id: Optional[int] = None,
     class_id: Optional[int] = None,
     fee_category: Optional[str] = None,
-    school_model_assignment_id: Optional[int] = None,
-    academic_year_id: Optional[int] = None,
-    x_school_model_assignment_id: Optional[int] = Header(default=None, alias="X-School-Model-Assignment-ID"),
-    x_academic_year_id: Optional[int] = Header(default=None, alias="X-Academic-Year-ID"),
-    db: Session = Depends(database.get_db),
-    current_user: models.User = Depends(security.get_current_user)
+    model_assignment: Optional[int] = None,
+    year: Optional[int] = None,
 ):
-    rbac.require_permission(current_user, "finance:read", db)
+    """The ONE place that builds the filtered, school-scoped payments query.
+
+    Extracted so aggregations (cash journal, reports) and the paginated list all
+    share the same filters. Before this, the aggregators called the HTTP handler
+    `list_payments(...)` **positionally** — and `cash_journal` passed 7 arguments
+    to an 11-parameter signature, so `db` landed in `school_model_assignment_id`
+    and the real `db` stayed a `Depends` object: `GET /finance/cash-journal`
+    answered **HTTP 500**, every day, on the cashier's till-closing screen.
+    Handlers are endpoints, not helpers — this function is the helper.
+    """
     query = _payments_query(db, current_user).options(
         selectinload(models.Payment.recorded_by),
         selectinload(models.Payment.fee).selectinload(models.Fee.student).selectinload(models.StudentProfile.user),
@@ -364,9 +380,7 @@ def list_payments(
     # Active-context scoping: explicit query params win, otherwise fall back to the
     # active context headers the frontend injects globally. The query is already
     # school-scoped, so narrowing by these values can only restrict within the
-    # caller's own school. Absent both, behaviour stays school-wide (backward compatible).
-    model_assignment = school_model_assignment_id or x_school_model_assignment_id
-    year = academic_year_id or x_academic_year_id
+    # caller's own school. Absent both, behaviour stays school-wide.
     if model_assignment:
         query = query.filter(models.Fee.school_model_assignment_id == model_assignment)
     if year:
@@ -378,7 +392,62 @@ def list_payments(
             (models.Fee.class_id == class_id) |
             (models.StudentProfile.current_class_id == class_id)
         )
-    return [_serialize_payment(payment) for payment in query.order_by(models.Payment.payment_date.desc()).all()]
+    return query.order_by(models.Payment.payment_date.desc())
+
+
+def collect_payments(db: Session, current_user: models.User, **filters) -> list[dict]:
+    """Every matching payment, serialized — for aggregations that MUST see all
+    rows (cash journal, financial reports). Never paginated on purpose."""
+    return [_serialize_payment(payment) for payment in _filtered_payments_query(db, current_user, **filters).all()]
+
+
+@router.get("/payments")
+def list_payments(
+    response: Response,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    operator_id: Optional[int] = None,
+    class_id: Optional[int] = None,
+    fee_category: Optional[str] = None,
+    school_model_assignment_id: Optional[int] = None,
+    academic_year_id: Optional[int] = None,
+    skip: int = 0,
+    limit: Optional[int] = None,
+    x_school_model_assignment_id: Optional[int] = Header(default=None, alias="X-School-Model-Assignment-ID"),
+    x_academic_year_id: Optional[int] = Header(default=None, alias="X-Academic-Year-ID"),
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user)
+):
+    """Payments of the caller's school, newest first.
+
+    Pagination (audit PERF-07): `limit` is **optional and unbounded by default**,
+    so existing consumers (exports, scripts) keep receiving the full list exactly
+    as before. The Finance screen passes `skip`/`limit` explicitly and reads the
+    total from the `X-Total-Count` header. A safety cap
+    (`PAYMENTS_HARD_CAP`) protects the server from a pathological volume, and
+    when it truncates it says so through `X-Truncated` — no silent cap.
+    """
+    rbac.require_permission(current_user, "finance:read", db)
+    query = _filtered_payments_query(
+        db, current_user,
+        start_date=start_date, end_date=end_date, operator_id=operator_id,
+        class_id=class_id, fee_category=fee_category,
+        model_assignment=school_model_assignment_id or x_school_model_assignment_id,
+        year=academic_year_id or x_academic_year_id,
+    )
+    total = query.count()
+    response.headers["X-Total-Count"] = str(total)
+
+    effective_limit = limit if limit is not None else PAYMENTS_HARD_CAP
+    effective_limit = min(max(effective_limit, 1), PAYMENTS_HARD_CAP)
+    rows = query.offset(max(skip, 0)).limit(effective_limit).all()
+    if limit is None and total > PAYMENTS_HARD_CAP:
+        response.headers["X-Truncated"] = "true"
+        logger.warning(
+            "Payments list truncated at %s of %s rows for school %s — paginate this consumer",
+            PAYMENTS_HARD_CAP, total, current_user.school_id,
+        )
+    return [_serialize_payment(payment) for payment in rows]
 
 
 @router.get("/cash-journal")
@@ -390,7 +459,11 @@ def cash_journal(
     current_user: models.User = Depends(security.get_current_user)
 ):
     rbac.require_permission(current_user, "finance:read", db)
-    payments = list_payments(start_date, end_date, operator_id, None, None, db, current_user)
+    # Aggregation: needs EVERY matching payment, and uses keyword arguments so a
+    # signature change can never silently shift them again (this exact call used
+    # to pass `db` as school_model_assignment_id -> HTTP 500 on this endpoint).
+    payments = collect_payments(db, current_user, start_date=start_date,
+                                end_date=end_date, operator_id=operator_id)
     by_category = {}
     by_operator = {}
     for payment in payments:
@@ -472,7 +545,10 @@ def finance_reports(
     rbac.require_permission(current_user, "finance:read", db)
     model_assignment = school_model_assignment_id or x_school_model_assignment_id
     year = academic_year_id or x_academic_year_id
-    payments = list_payments(start_date, end_date, operator_id, class_id, fee_category, model_assignment, year, None, None, db, current_user)
+    payments = collect_payments(db, current_user, start_date=start_date, end_date=end_date,
+                                operator_id=operator_id, class_id=class_id,
+                                fee_category=fee_category, model_assignment=model_assignment,
+                                year=year)
     fee_query = db.query(models.Fee).options(
         selectinload(models.Fee.payments),
         selectinload(models.Fee.student).selectinload(models.StudentProfile.user),

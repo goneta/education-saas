@@ -22,3 +22,4 @@
 ## Verification
 
 - cmd.exe /c "cd frontend&& npx eslint app/<path>"; npm run build when routes/layouts change
+- Lot 6: la page avalait silencieusement les erreurs (`if (res.ok) setJournal(...)`), d ou un ecran vide sans explication quand l endpoint renvoyait 500 — c est pourquoi la panne du journal de caisse n avait jamais ete signalee. L echec est desormais affiche (via lib/api-errors) avec un bouton Reessayer, et la cloture est BLOQUEE tant que le journal n est pas charge, pour ne pas enregistrer une cloture contre un total de 0 FCFA.

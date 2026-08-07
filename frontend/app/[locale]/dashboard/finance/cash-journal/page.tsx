@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
+import { parseApiErrorResponse } from "@/lib/api-errors"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ExplainedField } from "@/components/ui/explained-field"
@@ -26,13 +27,29 @@ export default function CashJournalPage() {
     const [journal, setJournal] = useState<Journal | null>(null)
     const [counted, setCounted] = useState("")
     const [message, setMessage] = useState<string | null>(null)
+    const [loadError, setLoadError] = useState<string | null>(null)
 
     const loadJournal = useCallback(async () => {
         if (!token) return
+        setLoadError(null)
         const qs = new URLSearchParams()
         Object.entries(filters).forEach(([key, value]) => value && qs.set(key, value))
-        const res = await fetch(`${API_BASE_URL}/finance/cash-journal?${qs.toString()}`, { headers: { Authorization: `Bearer ${token}` } })
-        if (res.ok) setJournal(await res.json())
+        try {
+            const res = await fetch(`${API_BASE_URL}/finance/cash-journal?${qs.toString()}`, { headers: { Authorization: `Bearer ${token}` } })
+            if (!res.ok) {
+                // Audit Lot 6: this page used to do `if (res.ok) setJournal(...)`, so
+                // when the endpoint answered 500 the cashier just saw an empty screen
+                // with no explanation — which is why a broken till-closing screen went
+                // unreported. A failure must now be visible and retryable.
+                setJournal(null)
+                setLoadError((await parseApiErrorResponse(res, "Le journal de caisse n'a pas pu être chargé.")).message)
+                return
+            }
+            setJournal(await res.json())
+        } catch {
+            setJournal(null)
+            setLoadError("Serveur injoignable. Vérifiez votre connexion, puis réessayez.")
+        }
     }, [filters, token])
 
     const closeDay = async () => {
@@ -64,9 +81,23 @@ export default function CashJournalPage() {
                 <Button onClick={loadJournal}>{tx(locale, "refresh")}</Button>
             </div>
 
+            {loadError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 print:hidden dark:border-red-900 dark:bg-[#3a2528] dark:text-red-100">
+                    <p className="font-semibold">Journal indisponible</p>
+                    <p className="mt-1">{loadError}</p>
+                    <p className="mt-1 text-xs">
+                        Ne clôturez pas la caisse tant que le journal n&apos;est pas affiché : les totaux
+                        ci-dessous seraient incomplets.
+                    </p>
+                    <Button variant="outline" size="sm" className="mt-2" onClick={loadJournal}>Réessayer</Button>
+                </div>
+            )}
+
             <div className="grid gap-4 lg:grid-cols-3">
                 <Card><CardContent className="pt-6"><p className="text-sm text-[#6B7280]">{tx(locale, "journalTotal")}</p><p className="text-2xl font-bold text-green-700">{(journal?.total || 0).toLocaleString()} FCFA</p></CardContent></Card>
-                <Card className="lg:col-span-2"><CardContent className="pt-6"><div className="grid gap-3 md:grid-cols-[1fr_auto]"><ExplainedField label="Caisse comptée" help="Montant réellement compté physiquement en fin de journée. Il sert au rapprochement avec le total système."><input type="number" placeholder="Montant compté" value={counted} onChange={(e) => setCounted(e.target.value)} className="apple-input" /></ExplainedField><Button onClick={closeDay}>{tx(locale, "submitClosure")}</Button></div>{message && <p className="mt-2 text-sm text-[#6B7280]">{message}</p>}</CardContent></Card>
+                <Card className="lg:col-span-2"><CardContent className="pt-6"><div className="grid gap-3 md:grid-cols-[1fr_auto]"><ExplainedField label="Caisse comptée" help="Montant réellement compté physiquement en fin de journée. Il sert au rapprochement avec le total système."><input type="number" placeholder="Montant compté" value={counted} onChange={(e) => setCounted(e.target.value)} className="apple-input" /></ExplainedField>{/* Never let a till be closed against a total we could not load: the
+    closure would be recorded against 0 FCFA. */}
+<Button onClick={closeDay} disabled={!journal || !counted}>{tx(locale, "submitClosure")}</Button></div>{!journal && <p className="mt-2 text-sm text-amber-700">Clôture indisponible tant que le journal n&apos;est pas chargé.</p>}{message && <p className="mt-2 text-sm text-[#6B7280]">{message}</p>}</CardContent></Card>
             </div>
 
             <div className="grid gap-4">

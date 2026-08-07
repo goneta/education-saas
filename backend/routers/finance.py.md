@@ -27,3 +27,4 @@
 # Student enrollment scope
 
 Student fees require an active enrollment in the selected school/model/year and inherit that enrollment ID. Closed academic years reject fee creation unless a valid historical edit grant applies.
+- Lot 6 (PERF-07): `_filtered_payments_query` + `collect_payments` factorisent la requete paiements; les agregations (journal de caisse, rapports) l appellent en arguments NOMMES. Corrige un BUG REEL: `cash_journal` passait 7 arguments positionnels a une signature de 11 -> `db` atterrissait dans school_model_assignment_id et `GET /finance/cash-journal` renvoyait 500 (ecran de cloture de caisse casse, non couvert par les tests). `GET /finance/payments` accepte desormais skip/limit (limite optionnelle, defaut inchange), publie `X-Total-Count`, et un plafond de securite PAYMENTS_HARD_CAP protege le serveur en signalant la troncature via `X-Truncated` (jamais silencieuse). Regle: une poignee HTTP n est pas un helper — passer par collect_payments.

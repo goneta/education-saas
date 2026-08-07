@@ -93,6 +93,26 @@ code is a red flag.
 
 ## Remédiation de l'audit pré-production (AUDIT_2026-08_PRE-PRODUCTION.md)
 
+- **Lot 6 — pagination Finance (PERF-07) : FAIT, et il a révélé un bug majeur.**
+  En factorisant la requête paiements (`_filtered_payments_query` +
+  `collect_payments`, appelés en arguments **nommés**), on a découvert que
+  `cash_journal` passait **7 arguments positionnels à une signature de 11** :
+  `db` atterrissait dans `school_model_assignment_id` et le vrai `db` restait un
+  objet `Depends`. **`GET /finance/cash-journal` renvoyait donc 500** —
+  l'écran de clôture de caisse, utilisé chaque jour, était cassé, et aucun test
+  ne le couvrait. Côté liste : `skip`/`limit` optionnels (défaut **inchangé**,
+  aucun consommateur cassé), total publié via `X-Total-Count`, plafond de
+  sécurité `PAYMENTS_HARD_CAP` signalant toute troncature par `X-Truncated`
+  (jamais silencieuse). Les agrégations (journal, rapports) voient toujours
+  **toutes** les lignes. **Frontend** : la page Journal de caisse avalait les
+  erreurs (`if (res.ok) …`) — d'où un écran vide inexpliqué ; l'échec est
+  maintenant affiché avec un bouton Réessayer, et la **clôture est bloquée**
+  tant que le journal n'est pas chargé (sinon on enregistrait une clôture
+  contre 0 FCFA). Constat au passage : **aucune page ne consomme
+  `/finance/payments`** — ce sont les agrégations qui alimentent les écrans.
+  **Convention** : une poignée HTTP n'est pas un helper ; les agrégations
+  passent par `collect_payments`. Tests `test_finance_pagination.py` (4).
+
 Lots exécutés dans l'ordre validé : 0 → 1 → 2 → 3 → 4 → 5, **plus une seconde
 passe de vérification** (6 août) qui a trouvé 3 régressions introduites par la
 remédiation elle-même — d'où la règle : relire en priorité le code fraîchement
