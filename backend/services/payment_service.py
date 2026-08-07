@@ -18,6 +18,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from .. import audit, models
+from . import money
 from .automation import record_notification
 
 CASH = "cash"
@@ -110,11 +111,14 @@ def apply_school_payment(
             .first()
         )
         if invoice:
-            invoice.amount_paid = (invoice.amount_paid or 0) + payment.amount
-            invoice.remaining_balance = max((invoice.amount_due or 0) - invoice.amount_paid, 0)
+            # MONEY-02: amounts are FLOAT, so a fully paid invoice could keep a
+            # 1e-16 residue, stay PARTIAL forever and block the pupil's
+            # certificate. Normalize on write, compare with a tolerance.
+            invoice.amount_paid = money.normalize((invoice.amount_paid or 0) + payment.amount)
+            invoice.remaining_balance = money.remaining(invoice.amount_due, invoice.amount_paid)
             invoice.status = (
                 models.StudentInvoiceStatus.PAID
-                if invoice.remaining_balance <= 0
+                if money.is_settled(invoice.remaining_balance)
                 else models.StudentInvoiceStatus.PARTIAL
             )
 
@@ -268,11 +272,11 @@ def refund_school_payment(
             .first()
         )
         if invoice:
-            invoice.amount_paid = max((invoice.amount_paid or 0) - payment.amount, 0)
-            invoice.remaining_balance = max((invoice.amount_due or 0) - invoice.amount_paid, 0)
+            invoice.amount_paid = max(money.normalize((invoice.amount_paid or 0) - payment.amount), 0.0)
+            invoice.remaining_balance = money.remaining(invoice.amount_due, invoice.amount_paid)
             invoice.status = (
-                models.StudentInvoiceStatus.PAID if invoice.remaining_balance <= 0
-                else models.StudentInvoiceStatus.PARTIAL if invoice.amount_paid > 0
+                models.StudentInvoiceStatus.PAID if money.is_settled(invoice.remaining_balance)
+                else models.StudentInvoiceStatus.PARTIAL if money.is_outstanding(invoice.amount_paid)
                 else models.StudentInvoiceStatus.UNPAID
             )
 

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session, selectinload
 from typing import List
 from datetime import datetime
 from .. import localization, models, rbac, schemas, security, database, tenancy
-from ..services import automation, employment, school_context, student_lifecycle
+from ..services import automation, employment, money, school_context, student_lifecycle
 
 router = APIRouter(prefix="/students", tags=["Students"])
 
@@ -391,10 +391,11 @@ def get_student(
 
 
 def _student_outstanding_balance(student_profile: models.StudentProfile) -> float:
-    return sum(
-        max(fee.amount - sum(payment.amount for payment in fee.payments), 0)
+    """Total still due by a pupil, residue-free (MONEY-02)."""
+    return money.normalize(sum(
+        money.remaining(fee.amount, sum(payment.amount for payment in fee.payments))
         for fee in getattr(student_profile, "fees", [])
-    )
+    ))
 
 @router.put("/{student_id}", response_model=schemas.StudentResponse)
 def update_student(
@@ -581,8 +582,10 @@ def generate_certificate(
         raise HTTPException(status_code=404, detail="Student not found")
 
     fees = db.query(models.Fee).filter(models.Fee.student_id == student.student_profile.id).all()
-    outstanding = sum(max(fee.amount - sum(payment.amount for payment in fee.payments), 0) for fee in fees)
-    blocked = certificate_in.certificate_type != models.CertificateType.SCHOOLING and outstanding > 0
+    outstanding = _student_outstanding_balance(student.student_profile)
+    # MONEY-02: `outstanding > 0` on FLOAT amounts blocked the certificate of a
+    # family that had paid in full, over a residue of 1e-16.
+    blocked = certificate_in.certificate_type != models.CertificateType.SCHOOLING and money.is_outstanding(outstanding)
     school = student.school
     content = None if blocked else (
         f"{certificate_in.certificate_type.value} - {student.full_name} "
