@@ -215,14 +215,14 @@ def public_profiles(request: Request, sector: str | None = None, q: str | None =
     Audit SEC-07: anonymous callers are now rate-limited and their searches are
     logged, so the endpoint cannot be used to bulk-scrape opted-in students."""
     _require_paid_recruiter_if_authenticated(request, db)
-    ip_address = request.client.host if request.client else None
-    employment.rate_limit_public_search(db, ip_address=ip_address)
-    db.add(models.StudentCVAccessLog(
-        access_type="public_search",
-        ip_address=ip_address,
-        user_agent=request.headers.get("user-agent"),
-    ))
-    db.commit()
+    # Note (correctif seconde passe) : la première version de ce garde-fou
+    # écrivait un StudentCVAccessLog pour tracer la recherche — or cette table
+    # exige un `student_cv_id` (elle trace l'accès à UN CV, pas une recherche).
+    # L'insertion violait la contrainte NOT NULL : **la page publique /emploi
+    # renvoyait 500**. La limitation de débit anti-moissonnage est désormais
+    # portée par le middleware (bucket dédié, plus strict que le débit global),
+    # et la journalisation des requêtes est déjà assurée par observability.
+    logger.info("public marketplace search sector=%s query=%s", sector or "-", (q or "-")[:40])
     query = db.query(models.StudentCV).options(selectinload(models.StudentCV.work_history)).filter(
         models.StudentCV.looking_for_job == True,  # noqa: E712
         models.StudentCV.share_enabled == True,  # noqa: E712

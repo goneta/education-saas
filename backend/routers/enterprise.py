@@ -583,7 +583,18 @@ def advanced_direction_dashboard(
     _enterprise_read(current_user, db)
     _manager(current_user)
     school_id = _school_id(current_user)
-    payment_query = db.query(models.Payment, models.Fee, models.StudentProfile, models.Class).join(models.Fee).outerjoin(models.StudentProfile, models.Fee.student_id == models.StudentProfile.id).outerjoin(models.Class, models.StudentProfile.current_class_id == models.Class.id).filter(models.Fee.school_id == school_id)
+    # La jointure DOIT être explicite : avec quatre entités sélectionnées,
+    # `.join(models.Fee)` sans `select_from` ni clause ON est ambigu et
+    # SQLAlchemy 2.0 lève InvalidRequestError — ce tableau de bord Direction
+    # répondait donc **500** (trouvé par le balayage anti-500 de la surface API).
+    payment_query = (
+        db.query(models.Payment, models.Fee, models.StudentProfile, models.Class)
+        .select_from(models.Payment)
+        .join(models.Fee, models.Payment.fee_id == models.Fee.id)
+        .outerjoin(models.StudentProfile, models.Fee.student_id == models.StudentProfile.id)
+        .outerjoin(models.Class, models.StudentProfile.current_class_id == models.Class.id)
+        .filter(models.Fee.school_id == school_id)
+    )
     if start_date:
         payment_query = payment_query.filter(models.Payment.payment_date >= datetime.fromisoformat(start_date))
     if end_date:

@@ -12,6 +12,9 @@ RATE_LIMIT_ENABLED = os.getenv("RATE_LIMIT_ENABLED", "").lower() == "true" or os
 RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60"))
 RATE_LIMIT_MAX_REQUESTS = int(os.getenv("RATE_LIMIT_MAX_REQUESTS", "120"))
 AUTH_RATE_LIMIT_MAX_REQUESTS = int(os.getenv("AUTH_RATE_LIMIT_MAX_REQUESTS", "60"))
+# Recherche publique du marketplace Emploi (audit SEC-07) : plafond dedie.
+PUBLIC_SEARCH_PATHS = {"/employment/public-profiles"}
+PUBLIC_SEARCH_MAX_REQUESTS = int(os.getenv("PUBLIC_SEARCH_RATE_LIMIT", "30"))
 MAX_REQUEST_BODY_BYTES = int(os.getenv("MAX_REQUEST_BODY_BYTES", str(2 * 1024 * 1024)))
 
 _requests: dict[str, deque[float]] = defaultdict(deque)
@@ -78,7 +81,15 @@ async def rate_limit_middleware(request: Request, call_next):
         return await call_next(request)
 
     key = _client_key(request)
-    max_requests = AUTH_RATE_LIMIT_MAX_REQUESTS if request.url.path.startswith("/auth/") else RATE_LIMIT_MAX_REQUESTS
+    max_requests = RATE_LIMIT_MAX_REQUESTS
+    if request.url.path.startswith("/auth/"):
+        max_requests = AUTH_RATE_LIMIT_MAX_REQUESTS
+    elif request.url.path in PUBLIC_SEARCH_PATHS:
+        # Audit SEC-07: la recherche publique du marketplace Emploi renvoie
+        # jusqu'à 60 profils d'élèves (souvent mineurs) par appel, sans
+        # authentification. Elle mérite un plafond plus strict que le débit
+        # général pour rester inexploitable en moissonnage.
+        max_requests = PUBLIC_SEARCH_MAX_REQUESTS
     redis_client = _redis()
     if redis_client:
         redis_key = f"rate:{key}"

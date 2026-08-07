@@ -316,11 +316,11 @@ def rate_limit_sharecode(db: Session, *, ip_address: str | None) -> None:
     _rate_limit_access(db, ip_address=ip_address, access_type="sharecode_lookup", max_per_minute=20)
 
 
-def rate_limit_public_search(db: Session, *, ip_address: str | None) -> None:
-    """Audit SEC-07: the anonymous marketplace search returns up to 60 opted-in
-    student profiles per call. Without a cap it is a bulk-scraping endpoint, so
-    searches are counted (and thereby logged) per IP like sharecode lookups."""
-    _rate_limit_access(db, ip_address=ip_address, access_type="public_search", max_per_minute=30)
+# Note (seconde passe) : la limitation de la recherche publique ne passe PLUS par
+# StudentCVAccessLog. Cette table exige un `student_cv_id` (elle trace l'acces a UN
+# CV) : y ecrire une ligne de recherche violait la contrainte NOT NULL et faisait
+# repondre 500 a la page publique /emploi. Le plafond anti-moissonnage est
+# desormais applique par security_middleware (PUBLIC_SEARCH_PATHS).
 
 
 def _rate_limit_access(db: Session, *, ip_address: str | None, access_type: str, max_per_minute: int) -> None:

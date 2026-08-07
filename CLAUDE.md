@@ -113,6 +113,32 @@ code is a red flag.
   **Convention** : une poignée HTTP n'est pas un helper ; les agrégations
   passent par `collect_payments`. Tests `test_finance_pagination.py` (4).
 
+- **Campagne « erreurs avalées en silence » (en cours).** Constat de départ :
+  **277 sites frontend** (86 fichiers) masquent une panne serveur — 177 `if
+  (res.ok)` sans `else`, **28 `res.ok ? json() : []`** (le plus toxique : un 500
+  devient une **liste vide**, donc l'app affiche « aucune classe, créez-en une »
+  alors que les classes existent → l'utilisateur crée des doublons) et 72
+  `.catch(() => undefined)`. Côté backend, seulement 6 `except: pass`.
+  Réponses : (1) `frontend/lib/api-client.ts` — `fetchJson` (lève une erreur
+  lisible), `fetchList` → `{data, error, loaded}` qui **distingue vide et
+  échoué**, `emptyList()` ; premier consommateur `school-life/module-page.tsx`
+  (bandeau « Listes non chargées » + Recharger, et le garde-fou « donnée
+  manquante » ne se déclenche plus sur un échec). (2)
+  `backend/test_api_surface_smoke.py` — **filet anti-500 sur toute la surface
+  d'API** : les 213 routes GET sans paramètre sont appelées, seul un 500 fait
+  échouer (422/404/400/403/503 sont des réponses légitimes, listées et
+  justifiées ; exclusions explicites, jamais silencieuses). Il a immédiatement
+  trouvé **deux 500 en production** : `/employment/public-profiles` (régression
+  du Lot 1 — le journal SEC-07 insérait un `StudentCVAccessLog` sans le
+  `student_cv_id` NOT NULL : **la page publique /emploi était cassée depuis** ;
+  la traçabilité passe au journal applicatif, le plafond anti-moissonnage à
+  `security_middleware.PUBLIC_SEARCH_PATHS`, 30 req/min) et
+  `/enterprise/direction-dashboard/advanced` (jointure ambiguë SQLAlchemy 2.0
+  avec quatre entités → `select_from` + ON explicite). Détail méthodo : la
+  première exécution affichait 135 échecs pour **un seul** vrai bug — une
+  transaction laissée en échec empoisonnait la session partagée ; d'où le
+  `rollback()` après chaque appel. Suite **568 verts**.
+
 Lots exécutés dans l'ordre validé : 0 → 1 → 2 → 3 → 4 → 5, **plus une seconde
 passe de vérification** (6 août) qui a trouvé 3 régressions introduites par la
 remédiation elle-même — d'où la règle : relire en priorité le code fraîchement

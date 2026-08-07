@@ -21,3 +21,4 @@
 ## Verification
 
 - python -m py_compile backend\routers\<module>.py; python -c "import backend.main as m; print(m.app.title)"
+- Correctif seconde passe: `/enterprise/direction-dashboard/advanced` renvoyait **500** (jointure ambigue SQLAlchemy 2.0 avec quatre entites selectionnees). `select_from(Payment)` + clause ON explicite. Detecte par le balayage anti-500 de la surface API.

@@ -14,6 +14,7 @@ import { Download, Pencil, Plus, Printer, RefreshCw, Trash2 } from "lucide-react
 import { useAuth } from "@/contexts/auth-context"
 import { API_BASE_URL } from "@/lib/config"
 import { parseApiErrorResponse } from "@/lib/api-errors"
+import { fetchList } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -83,6 +84,7 @@ export function SchoolLifeModulePage({ config }: { config: ModuleConfig }) {
     // Option sources, loaded once per source kind actually used by the config.
     const [sources, setSources] = useState<Record<string, FieldOption[]>>({})
     const [sourcesLoaded, setSourcesLoaded] = useState(false)
+    const [sourcesError, setSourcesError] = useState<string | null>(null)
 
     const [dialogOpen, setDialogOpen] = useState(false)
     const [editing, setEditing] = useState<Row | null>(null)
@@ -123,28 +125,40 @@ export function SchoolLifeModulePage({ config }: { config: ModuleConfig }) {
             if (field.type !== "reference") { kinds.add(field.type); continue }
             for (const category of referenceCategoriesOf(field)) kinds.add(`reference:${category}`)
         }
-        const jobs: [string, Promise<FieldOption[]>][] = []
-        const get = (path: string) => fetch(`${API_BASE_URL}${path}`, { headers }).then(r => r.ok ? r.json() : []).catch(() => [])
-        if (kinds.has("student")) jobs.push(["student", get("/students").then((data: { id: number; full_name: string; student_profile?: { id?: number } }[]) =>
-            (Array.isArray(data) ? data : []).filter(s => s.student_profile?.id).map(s => ({ value: String(s.student_profile!.id), label: s.full_name })))])
-        if (kinds.has("class")) jobs.push(["class", get("/education/classes").then((data: { id: number; name: string }[]) =>
-            (Array.isArray(data) ? data : []).map(c => ({ value: String(c.id), label: c.name })))])
-        if (kinds.has("subject")) jobs.push(["subject", get("/education/subjects").then((data: { id: number; name: string }[]) =>
-            (Array.isArray(data) ? data : []).map(s => ({ value: String(s.id), label: s.name })))])
-        if (kinds.has("room")) jobs.push(["room", get("/facilities/rooms").then((data: { id: number; name: string }[]) =>
-            (Array.isArray(data) ? data : []).map(r => ({ value: String(r.id), label: r.name })))])
+        // Un échec de chargement N'EST PAS une liste vide : le distinguer est
+        // vital ici, car ces sources alimentent les garde-fous « dépendance
+        // manquante ». Avec l'ancien `r.ok ? r.json() : []`, un 500 ou une
+        // session expirée affichait « Aucune classe n'existe, créez-en une »
+        // alors que les classes existent — l'utilisateur créait des doublons.
+        const jobs: [string, Promise<{ options: FieldOption[]; error: string | null }>][] = []
+        const get = async <T,>(path: string, map: (rows: T[]) => FieldOption[]) => {
+            const state = await fetchList<T>(path, { token, fallbackMessage: `Chargement impossible (${path}).` })
+            return { options: state.error ? [] : map(state.data), error: state.error }
+        }
+        if (kinds.has("student")) jobs.push(["student", get<{ id: number; full_name: string; student_profile?: { id?: number } }>(
+            "/students", rows => rows.filter(s => s.student_profile?.id).map(s => ({ value: String(s.student_profile!.id), label: s.full_name })))])
+        if (kinds.has("class")) jobs.push(["class", get<{ id: number; name: string }>(
+            "/education/classes", rows => rows.map(c => ({ value: String(c.id), label: c.name })))])
+        if (kinds.has("subject")) jobs.push(["subject", get<{ id: number; name: string }>(
+            "/education/subjects", rows => rows.map(s => ({ value: String(s.id), label: s.name })))])
+        if (kinds.has("room")) jobs.push(["room", get<{ id: number; name: string }>(
+            "/facilities/rooms", rows => rows.map(r => ({ value: String(r.id), label: r.name })))])
         for (const kind of kinds) {
             if (kind.startsWith("reference:")) {
                 const category = kind.split(":")[1]
-                jobs.push([kind, get(`/reference-data/${category}`).then((data: { code: string; name: string }[]) =>
-                    (Array.isArray(data) ? data : []).map(item => ({ value: item.code, label: item.name })))])
+                jobs.push([kind, get<{ code: string; name: string }>(
+                    `/reference-data/${category}`, rows => rows.map(item => ({ value: item.code, label: item.name })))])
             }
         }
         Promise.all(jobs.map(async ([key, promise]) => [key, await promise] as const)).then(entries => {
-            setSources(Object.fromEntries(entries))
-            setSourcesLoaded(true)
+            setSources(Object.fromEntries(entries.map(([key, result]) => [key, result.options])))
+            const failures = entries.map(([, result]) => result.error).filter(Boolean) as string[]
+            setSourcesError(failures.length ? failures[0] : null)
+            // `loaded` ne vaut true que si TOUT a réellement répondu : sinon les
+            // garde-fous resteraient muets sur une donnée qu'ils croient absente.
+            setSourcesLoaded(failures.length === 0)
         })
-    }, [headers, config.fields])
+    }, [headers, token, config.fields])
 
     /** Which reference category a field resolves to for the given record
      *  (form state by default, a table row when rendering the list). */
@@ -402,7 +416,21 @@ export function SchoolLifeModulePage({ config }: { config: ModuleConfig }) {
                 </DialogContent>
             </Dialog>
 
-            {sourcesLoaded && requiredGates.some(gate => gate.count === 0) && !dialogOpen && (
+            {/* Un échec de chargement des listes ne doit JAMAIS se déguiser en
+                « donnée manquante » : on le dit, et on propose de réessayer. */}
+            {sourcesError && !dialogOpen && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 print:hidden dark:border-red-900 dark:bg-[#3a2528] dark:text-red-100">
+                    <p className="font-semibold">Listes non chargées</p>
+                    <p className="mt-1">{sourcesError}</p>
+                    <p className="mt-1 text-xs">
+                        Les données existent peut-être : c&apos;est leur chargement qui a échoué.
+                        Ne créez pas de doublon avant d&apos;avoir rechargé.
+                    </p>
+                    <Button variant="outline" size="sm" className="mt-2" onClick={() => window.location.reload()}>Recharger</Button>
+                </div>
+            )}
+
+            {sourcesLoaded && !sourcesError && requiredGates.some(gate => gate.count === 0) && !dialogOpen && (
                 <MissingDependency
                     message="Des données préalables sont manquantes pour créer un enregistrement dans ce module — ouvrez le formulaire pour voir le détail et les actions de création rapide."
                     actions={[]}

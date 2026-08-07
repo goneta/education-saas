@@ -24,3 +24,4 @@
 
 - python -m py_compile backend\models.py backend\schemas.py backend\main.py; python -m pytest backend when relevant
 - SEC-03: `client_ip(request)` remplace la confiance aveugle en `X-Forwarded-For`. L en-tete n est honore que si le pair direct figure dans TRUSTED_PROXY_IPS (defaut 127.0.0.1,::1); sinon l adresse du pair fait foi, ce qui retablit la protection anti-force-brute sur /auth/.
+- SEC-07: bucket de debit dedie pour `/employment/public-profiles` (PUBLIC_SEARCH_MAX_REQUESTS, 30/min par defaut) — plus strict que le debit general, car cet endpoint public renvoie jusqu a 60 profils d eleves par appel.
