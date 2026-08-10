@@ -242,10 +242,28 @@ def get_report_card(
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db)
 ):
-    profile = db.query(models.StudentProfile).filter(
-        (models.StudentProfile.id == student_id)
-        | (models.StudentProfile.user_id == student_id)
-    ).first()
+    # The route accepts either a StudentProfile id or the pupil's User id, which
+    # used to be resolved with `profile.id == x OR profile.user_id == x`. That is
+    # ambiguous: id 5 matches profile #5 AND the profile whose user_id is 5 — two
+    # different children — and `.first()` picked arbitrarily, so a bulletin could
+    # be served for the wrong pupil. Resolve the profile id first, deterministically,
+    # and fall back to the user id only when nothing matched.
+    #
+    # Tenancy is enforced inside the query, not after it: `access_scope` answers the
+    # row-level question only ("which pupils inside my school") and returns "no
+    # restriction" for staff, so on its own it let an administrator of school A read
+    # the full bulletin of a pupil of school B by walking identifiers. Filtering in
+    # the query also stops a foreign row from being selected and then rejected —
+    # which turned legitimate lookups into 404s.
+    scoped = db.query(models.StudentProfile).join(
+        models.User, models.User.id == models.StudentProfile.user_id
+    )
+    if current_user.school_id:
+        scoped = scoped.filter(models.User.school_id == current_user.school_id)
+    profile = (
+        scoped.filter(models.StudentProfile.id == student_id).first()
+        or scoped.filter(models.StudentProfile.user_id == student_id).first()
+    )
     if not profile:
         raise HTTPException(status_code=404, detail="Student not found")
     # Audit PRIV-02: this endpoint carried a "skipping strict check for MVP
@@ -261,9 +279,6 @@ def get_report_card(
         models.Assessment.term_id == term_id
     ).options(joinedload(models.Grade.assessment).joinedload(models.Assessment.subject)).all()
     
-    # Check permissions (Student themselves, Parent, Teacher, Admin)
-    # Skipping strict check for MVP velocity, but ideally check user.id or role.
-
     # Group by Subject
     subjects_map = {}
     for grade in grades:

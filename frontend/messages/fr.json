@@ -283,7 +283,8 @@
     "computer_room": "Salle informatique",
     "workshop": "Atelier",
     "gym": "Gymnase",
-    "other": "Autre"
+    "other": "Autre",
+    "loadFailed": "Impossible de charger cette liste depuis le serveur. Rien n'a été supprimé — veuillez réessayer."
   },
   "personnel": {
     "title": "Personnel scolaire",

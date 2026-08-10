@@ -283,7 +283,8 @@
     "computer_room": "Sala de informática",
     "workshop": "Taller",
     "gym": "Gimnasio",
-    "other": "Otro"
+    "other": "Otro",
+    "loadFailed": "No se pudo cargar esta lista desde el servidor. No se ha eliminado nada — inténtelo de nuevo."
   },
   "personnel": {
     "title": "Personal escolar",

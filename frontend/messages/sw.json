@@ -283,7 +283,8 @@
     "computer_room": "Chumba cha kompyuta",
     "workshop": "Karakana",
     "gym": "Mazoezi",
-    "other": "Nyingine"
+    "other": "Nyingine",
+    "loadFailed": "Imeshindwa kupakia orodha hii kutoka kwa seva. Hakuna kilichofutwa — tafadhali jaribu tena."
   },
   "personnel": {
     "title": "Wafanyakazi wa shule",

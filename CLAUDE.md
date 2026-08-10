@@ -93,6 +93,29 @@ code is a red flag.
 
 ## Remédiation de l'audit pré-production (AUDIT_2026-08_PRE-PRODUCTION.md)
 
+- **Passe 3 — audit indépendant (AUDIT_2026-08_PASSE-3.md) : FAIT.** Trois
+  constats, **deux bloquants**, tous deux *créés ou révélés par la remédiation
+  elle-même*. **P3-A (P0)** — le bulletin résolvait son paramètre par
+  `profile.id == x OR profile.user_id == x` : l'id 5 désigne **deux enfants**
+  (profil n°5 et profil dont `user_id`=5) et `.first()` tranchait au hasard →
+  bulletin du mauvais élève ; en multi-écoles la ligne sélectionnée pouvait être
+  étrangère, que le contrôle de tenancy rejetait ensuite → **404 sur des accès
+  légitimes**. Corrigé : tenancy **dans la requête** + résolution déterministe
+  (id de profil d'abord, repli sur l'id de compte). **P3-B (P1)** — aucun
+  `conftest.py` : les 26 modules `TestClient(app)` écrivaient dans
+  `education_saas.db` (7,3 Mo accumulés) → suite non déterministe (3 échecs
+  fantômes), 11 min 32 s, et rien n'empêchait un run de viser une vraie base.
+  Corrigé : base SQLite privée par session (par PID), schéma monté au démarrage,
+  **refus de démarrer si `DATABASE_URL` n'est pas SQLite**. **P3-C (P2)** — sur
+  Salles, un 500 armait le garde-fou « dépendance manquante » (« aucun bâtiment
+  — créez-en un » + soumission désactivée) : seule une réponse réussie l'arme
+  désormais. Suite : **617 verts, 0 échec, 3 min 57 s** (contre 3 échecs / 607 /
+  11 min 32 s).
+  **Règle à retenir** : une règle d'autorisation doit être testée **dans les deux
+  sens**. La sonde inter-établissement (`test_cross_tenant_probe.py`, 7 surfaces
+  A→B) passait au vert pendant que le bulletin était cassé pour tout le monde,
+  puisqu'elle *attend* un 403/404 ; seul un test positif l'a révélé.
+
 - **Lot 6 — pagination Finance (PERF-07) : FAIT, et il a révélé un bug majeur.**
   En factorisant la requête paiements (`_filtered_payments_query` +
   `collect_payments`, appelés en arguments **nommés**), on a découvert que

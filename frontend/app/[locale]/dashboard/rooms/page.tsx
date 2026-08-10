@@ -42,10 +42,25 @@ export default function RoomsPage() {
             fetch(`${API_BASE_URL}/facilities/rooms`, { headers }),
             fetch(`${API_BASE_URL}/facilities/buildings`, { headers }),
         ])
-        const roomList: Room[] = r.ok ? await r.json() : []
+        // A failed request must never look like "there is no data". Rendering an
+        // empty list on a 500 tells the user their rooms/buildings do not exist
+        // and pushes them to re-create records that are already there.
+        if (!r.ok) {
+            setError(t("loadFailed"))
+            return
+        }
+        const roomList: Room[] = await r.json()
+        setError(null)
         setRooms(roomList)
-        if (b.ok) setBuildings(await b.json())
-        setBuildingsLoaded(true)
+        if (b.ok) {
+            setBuildings(await b.json())
+            // Only a successful response may arm the missing-dependency gate:
+            // otherwise a server error would claim "no building — create one"
+            // and disable the form.
+            setBuildingsLoaded(true)
+        } else {
+            setError(t("loadFailed"))
+        }
         fetch(`${API_BASE_URL}/reference-data/room_type`, { headers })
             .then(res => res.ok ? res.json() : [])
             .then(rows => setRefRoomTypes(Array.isArray(rows) ? rows : []))

@@ -283,7 +283,8 @@
     "computer_room": "Computer room",
     "workshop": "Workshop",
     "gym": "Gym",
-    "other": "Other"
+    "other": "Other",
+    "loadFailed": "Could not load this list from the server. Nothing was deleted — please retry."
   },
   "personnel": {
     "title": "School staff",
