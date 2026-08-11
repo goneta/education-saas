@@ -46,6 +46,25 @@ def batch_update_attendance(
             academic_year_id=active_context.academic_year_id,
         )
         if not enrollment:
+            # Two very different causes used to share one misleading message.
+            # `/students/` returns the ACCOUNT (User) while attendance keys on the
+            # pupil PROFILE, so a caller naturally sends the wrong id — and the
+            # two only coincide while the id sequences happen to run together, so
+            # it works on a fresh install and starts failing later. Answering
+            # "pupil outside the active enrolment context" sent integrators
+            # hunting an enrolment problem that did not exist.
+            known_profile = db.query(models.StudentProfile.id).filter(
+                models.StudentProfile.id == student_update.student_id
+            ).first()
+            if not known_profile:
+                raise HTTPException(
+                    status_code=404,
+                    detail=(
+                        f"Aucun profil eleve avec l'identifiant {student_update.student_id}. "
+                        "Attendu : l'id du PROFIL eleve (student_profile.id), pas l'id du "
+                        "compte utilisateur renvoye par /students/."
+                    ),
+                )
             raise HTTPException(status_code=403, detail="Eleve hors du contexte d'inscription actif.")
         student_profile_id = enrollment.student_global_profile.student_profile_id
         # Check if record exists

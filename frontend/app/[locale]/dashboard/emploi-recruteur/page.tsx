@@ -120,7 +120,15 @@ export default function RecruiterDashboardPage() {
       }
     }).catch(() => undefined)
     fetch(`${API_BASE_URL}/employment/recruiter/jobs`, { headers }).then(res => res.json()).then(data => setJobs(Array.isArray(data) ? data : [])).catch(() => undefined)
-    fetch(`${API_BASE_URL}/employment/recruiter/saved-searches`, { headers }).then(res => res.ok ? res.json() : []).then(data => setSavedSearches(Array.isArray(data) ? data : [])).catch(() => undefined)
+    // A failed request must not read as "you have no saved searches": the agents
+    // would look deleted and the recruiter would recreate them.
+    fetch(`${API_BASE_URL}/employment/recruiter/saved-searches`, { headers })
+      .then(res => {
+        if (!res.ok) throw new Error("saved-searches")
+        return res.json()
+      })
+      .then(data => setSavedSearches(Array.isArray(data) ? data : []))
+      .catch(() => setStatus("Vos recherches enregistrees n'ont pas pu etre chargees. Elles ne sont pas perdues : reessayez."))
   }
 
   useEffect(load, [headers])

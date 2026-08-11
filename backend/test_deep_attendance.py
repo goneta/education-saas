@@ -121,7 +121,9 @@ def _mark(school, status, *, student_id=None, timetable_id=None, date=None, rema
             "date": date or datetime(2026, 9, 7).isoformat(),
             "students": [
                 {
-                    "student_id": student_id or school["student_id"],
+                    # profil eleve, pas l'id de compte : les deux ne coincident
+                    # que tant que les sequences d'id se suivent par hasard.
+                    "student_id": student_id or school["profile_id"],
                     "status": status,
                     "remarks": remarks,
                 }
@@ -239,6 +241,11 @@ def test_pagination_does_not_repeat_a_row(school):
 
 
 def test_class_filter_is_honoured(school):
+    # Ce test lisait une ligne créée par un test précédent : il échouait donc
+    # seul, ou dès que l'ordre changeait. Un test qui dépend d'un autre ne peut
+    # pas servir de barrière CI — il crée lui-même la donnée qu'il vérifie.
+    seeded = _mark(school, "present", date=datetime(2026, 9, 21).isoformat())
+    assert seeded.status_code == 200, seeded.text
     response = client.get(
         f"/attendance/?class_id={school['class_id']}", headers=school["headers"]
     )

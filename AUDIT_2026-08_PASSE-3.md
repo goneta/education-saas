@@ -20,6 +20,8 @@ La suite passe de **3 échecs / 607 tests** à **0 échec / 617 tests**, et de
 | **P3-A** | Identifiant ambigu sur le bulletin : `profile.id == x OR profile.user_id == x` pouvait renvoyer **le bulletin d'un autre enfant** ; combiné au contrôle de tenancy, il transformait aussi des accès légitimes en 404 | **P0** | ✅ Corrigé |
 | **P3-B** | Aucune isolation des tests : 26 modules écrivaient dans la base de développement (7,3 Mo accumulés) → suite **non déterministe** (3 échecs fantômes), lente, et rien n'empêchait un run de viser une vraie base | **P1** | ✅ Corrigé |
 | **P3-C** | Le garde-fou « dépendance manquante » des Salles s'armait sur une **erreur serveur** : un 500 affichait « aucun bâtiment — créez-en un » et désactivait le formulaire | **P2** | ✅ Corrigé |
+| **P3-D** | `/attendance/batch` attend l'id du **profil** élève, mais `/students/` renvoie le **compte** : un intégrateur envoie naturellement le mauvais id, cela fonctionne tant que les séquences d'id coïncident, puis échoue avec un 403 trompeur (« hors du contexte d'inscription ») | **P2** | ✅ Corrigé (404 explicite) |
+| **P3-E** | Suites `test_deep_*` dépendantes de l'ordre : un test lisait une donnée créée par un autre | **P2** | ✅ Corrigé |
 
 ---
 
@@ -130,14 +132,17 @@ frontend, paiement réel par opérateur mobile money. Voir
 **Dette identifiée, non corrigée ici (P2/P3, chiffrée) :**
 
 * Campagne « erreurs avalées » : **176** `if (res.ok)` sans `else` et **67**
-  `.catch(() => undefined)` subsistent (le motif le plus toxique — 500 → liste
-  vide — est passé de 28 à **2** : `documents/page.tsx:238`,
-  `emploi-recruteur/page.tsx:123`). Ces deux pages n'ont ni état d'erreur ni
-  traducteur : le correctif demande un bandeau + i18n, non fait ici faute de
-  pouvoir vérifier le rendu (pas de `node_modules`).
-* Les suites `test_deep_*.py` restent **dépendantes de l'ordre** (état partagé
-  via une fixture de module) ; elles passent désormais, mais cette fragilité
-  devrait être retirée avant d'en faire une barrière CI.
+  `.catch(() => undefined)` subsistent. En revanche le motif le plus toxique
+  (500 → liste vide, qui pousse à recréer des données existantes) est **éteint** :
+  28 → 0 site nuisible. Les deux derniers (`documents` : partages existants,
+  `emploi-recruteur` : recherches enregistrées) passent désormais par le bandeau
+  `status` déjà présent sur ces pages. Le seul reste (`rooms`, types de salle)
+  est **bénin** : la liste de secours `ROOM_TYPES` est codée en dur, donc le
+  formulaire reste utilisable et n'annonce jamais « rien n'existe ».
+* ~~Les suites `test_deep_*.py` restent dépendantes de l'ordre~~ — **corrigé
+  (P3-E)** : `test_class_filter_is_honoured` crée désormais la donnée qu'il
+  vérifie, et `_mark()` utilise l'id de profil. Les suites passent isolément
+  comme en lot : elles peuvent servir de barrière CI.
 
 ---
 
@@ -154,3 +159,27 @@ révélés par la remédiation*. Le code écrit pour corriger un audit mérite l
 défiance que le code d'origine — et toute règle d'autorisation doit être testée
 dans les deux sens, faute de quoi une fonctionnalité entièrement cassée peut
 passer pour « sécurisée ».
+
+
+---
+
+## 7. Addendum — un faux positif, et pourquoi il est consigné
+
+Pendant cette passe j'ai d'abord conclu à un **P0 de contexte multi-tenant** :
+« créer une école B empêche l'école A d'enregistrer des présences » (403
+« Élève hors du contexte d'inscription actif »), reproduit hors des fixtures.
+C'était **faux** : ma sonde envoyait l'id du **compte** utilisateur là où
+l'API attend l'id du **profil** élève. Avec le bon identifiant, le scénario
+passe — et un test de non-régression le prouve désormais
+(`test_context_regression_probe.py`).
+
+Ce faux positif est instructif à deux titres :
+
+1. Il n'a été démasqué que parce que le contexte résolu a été **imprimé** avant
+   et après (école 1, modèle 1, année 1 — identiques). Sans cette mesure, un
+   bloquant inexistant partait dans le rapport.
+2. Il révèle le vrai défaut, plus discret : **la confusion d'identifiants est
+   silencieuse et différée**. Elle fonctionne sur une installation neuve, où
+   les séquences d'id se suivent, et casse plus tard en production. C'est la
+   même famille que P3-A (bulletin) — d'où le message d'erreur explicite ajouté
+   en P3-D plutôt qu'un simple correctif de test.

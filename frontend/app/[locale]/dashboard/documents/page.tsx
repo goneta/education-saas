@@ -82,6 +82,7 @@ const COPY = {
         sendShare: "Envoyer le partage",
         selected: "Selectionnes",
         sharedWith: "Partages existants",
+        sharesLoadFailed: "Les partages existants n'ont pas pu etre charges. La liste ci-dessous est peut-etre incomplete : reessayez avant de repartager.",
         close: "Fermer",
         empty: "Aucun document disponible.",
         noRecipients: "Aucun destinataire trouve.",
@@ -126,6 +127,7 @@ const COPY = {
         sendShare: "Send share",
         selected: "Selected",
         sharedWith: "Existing shares",
+        sharesLoadFailed: "Existing shares could not be loaded. The list below may be incomplete — retry before sharing again.",
         close: "Close",
         empty: "No document available.",
         noRecipients: "No recipient found.",
@@ -235,7 +237,15 @@ export default function DocumentsPage({ params: { locale } }: { params: { locale
         setRecipients([])
         if (!headers) return
         const response = await fetch(`${API_BASE_URL}/files/${file.id}/shares`, { headers })
-        setShares(response.ok ? await response.json() : [])
+        // An empty list and a failed request are not the same thing. Rendering
+        // "no existing shares" after a 500 invites the user to re-share a
+        // document that is already shared — silently duplicating access grants.
+        if (!response.ok) {
+            setShares([])
+            setStatus(copy.sharesLoadFailed)
+            return
+        }
+        setShares(await response.json())
     }
 
     const sendShare = async () => {
