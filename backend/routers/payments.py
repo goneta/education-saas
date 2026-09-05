@@ -230,12 +230,15 @@ def refund_payment(
     )
     if not payment:
         raise HTTPException(status_code=404, detail="Payment introuvable")
-    try:
-        applied = payment_service.refund_school_payment(
-            db, payment, current_user=current_user, reason=payload.reason if payload else None
-        )
-    except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc))
+    # Check if payment is eligible for refund (must be successful or already refunded)
+    if payment.status not in ("successful", "refunded"):
+        raise HTTPException(status_code=409, detail="Only successful payments can be refunded")
+    applied = payment_service.refund_school_payment(
+        db, payment, current_user=current_user, reason=payload.reason if payload else None
+    )
+    if not applied:
+        # Idempotent: already refunded - return status without error
+        return {"reference": payment.reference, "status": payment.status, "applied": False}
     db.commit()
     return {"reference": payment.reference, "status": payment.status, "applied": applied}
 

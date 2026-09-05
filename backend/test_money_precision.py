@@ -122,7 +122,7 @@ def test_refund_restores_a_coherent_balance():
     db.refresh(invoice)
     assert invoice.status == models.StudentInvoiceStatus.PAID
 
-    payment_service.refund_school_payment(db, payment, current_user=admin)
+    payment_service.refund_school_payment(db, payment, current_user=admin, reason="Test refund")
     db.commit()
     db.refresh(invoice)
     assert invoice.amount_paid == 0.0
