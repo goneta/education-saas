@@ -3091,6 +3091,90 @@ class PublicAnnouncement(BaseModel):
     published_at: Optional[datetime] = None
 
 
+# ============================================================================
+# Public API v2 — Third Party Integration Schemas
+# ============================================================================
+
+class StudentProfileData(BaseModel):
+    registration_number: Optional[str] = None
+    gender: Optional[str] = None
+    date_of_birth: Optional[datetime] = None
+    current_class_id: Optional[int] = None
+    parent_phone: Optional[str] = None
+    address: Optional[str] = None
+
+
+class StudentCreate(BaseModel):
+    email: str
+    full_name: str
+    password: Optional[str] = None
+    is_active: Optional[bool] = True
+    profile_data: Optional[StudentProfileData] = None
+
+
+class StudentUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    is_active: Optional[bool] = None
+    profile_data: Optional[StudentProfileData] = None
+
+
+class TeacherCreate(BaseModel):
+    email: str
+    full_name: str
+    password: Optional[str] = None
+    is_active: Optional[bool] = True
+
+
+class TeacherUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class ClassCreate(BaseModel):
+    name: str
+    level: Optional[str] = None
+    academic_year_id: Optional[int] = None
+    capacity: Optional[int] = None
+
+
+class ClassUpdate(BaseModel):
+    name: Optional[str] = None
+    level: Optional[str] = None
+    capacity: Optional[int] = None
+
+
+class SubjectCreate(BaseModel):
+    name: str
+    coefficient: Optional[int] = None
+
+
+class SubjectUpdate(BaseModel):
+    name: Optional[str] = None
+    coefficient: Optional[int] = None
+
+
+class SchoolCreate(BaseModel):
+    name: str
+    domain_prefix: str
+    school_type: str = "GENERAL"
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    country: Optional[str] = "CI"
+    city: Optional[str] = None
+
+
+class SchoolUpdate(BaseModel):
+    name: Optional[str] = None
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    city: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
 class CanteenMealPlanCreate(BaseModel):
     name: str
     day_of_week: Optional[str] = None
