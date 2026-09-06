@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from .. import audit, database, models, schemas, security
@@ -87,29 +87,42 @@ def _student_name(student: models.StudentProfile) -> str:
 
 
 def _internship_scope(db: Session, current_user: models.User):
-    query = db.query(models.Internship).filter(models.Internship.school_id == _school_id(current_user))
+    school_id = _school_id(current_user)
     if _can_manage(current_user):
-        return query
+        return select(models.Internship).where(models.Internship.school_id == school_id)
     if current_user.role in INTERNSHIP_MENTORS:
-        return query.filter(or_(
-            models.Internship.teacher_ref_id == current_user.id,
-            models.Internship.pedagogy_coordinator_id == current_user.id,
-            models.Internship.internship_manager_id == current_user.id,
-        ))
+        return select(models.Internship).where(
+            models.Internship.school_id == school_id,
+            or_(
+                models.Internship.teacher_ref_id == current_user.id,
+                models.Internship.pedagogy_coordinator_id == current_user.id,
+                models.Internship.internship_manager_id == current_user.id,
+            ),
+        )
     if current_user.role in {models.UserRole.STUDENT, models.UserRole.PUPIL}:
         student = db.query(models.StudentProfile).filter(models.StudentProfile.user_id == current_user.id).first()
         if not student:
-            return query.filter(models.Internship.id == -1)
-        internship_ids = db.query(models.InternshipAssignment.internship_id).filter(models.InternshipAssignment.student_id == student.id)
-        return query.filter(models.Internship.id.in_(internship_ids))
+            return select(models.Internship).where(models.Internship.id == -1)
+        internship_ids = db.execute(
+            select(models.InternshipAssignment.internship_id).where(
+                models.InternshipAssignment.student_id == student.id
+            )
+        ).scalars().all()
+        return select(models.Internship).where(models.Internship.id.in_(internship_ids))
     if current_user.role == models.UserRole.PARENT:
-        linked_students = db.query(models.ParentStudentLink.student_id).filter(
-            models.ParentStudentLink.parent_user_id == current_user.id,
-            models.ParentStudentLink.is_active == True,
-        )
-        internship_ids = db.query(models.InternshipAssignment.internship_id).filter(models.InternshipAssignment.student_id.in_(linked_students))
-        return query.filter(models.Internship.id.in_(internship_ids))
-    return query.filter(models.Internship.id == -1)
+        linked_students = db.execute(
+            select(models.ParentStudentLink.student_id).where(
+                models.ParentStudentLink.parent_user_id == current_user.id,
+                models.ParentStudentLink.is_active == True,
+            )
+        ).scalars().all()
+        internship_ids = db.execute(
+            select(models.InternshipAssignment.internship_id).where(
+                models.InternshipAssignment.student_id.in_(linked_students)
+            )
+        ).scalars().all()
+        return select(models.Internship).where(models.Internship.id.in_(internship_ids))
+    return select(models.Internship).where(models.Internship.id == -1)
 
 
 def _company_response(db: Session, row: models.PartnerCompany) -> schemas.PartnerCompanyResponse:
@@ -137,34 +150,57 @@ def dashboard_summary(
     current_user: models.User = Depends(security.get_current_user),
 ):
     school_id = _school_id(current_user)
-    scoped_ids = _internship_scope(db, current_user).with_entities(models.Internship.id).subquery()
-    total = db.query(func.count(models.Internship.id)).filter(models.Internship.id.in_(scoped_ids)).scalar() or 0
-    active = db.query(func.count(models.Internship.id)).filter(
-        models.Internship.id.in_(scoped_ids),
-        models.Internship.status.in_(["planned", "in_progress"]),
+    scope_select = _internship_scope(db, current_user)
+    scoped_ids = select(models.Internship.id).where(scope_select.whereclause).subquery() if scope_select.whereclause else select(models.Internship.id).where(models.Internship.id == -1).subquery()
+    total = db.execute(select(func.count(models.Internship.id)).where(models.Internship.id.in_(scoped_ids))).scalar() or 0
+    active = db.execute(
+        select(func.count(models.Internship.id)).where(
+            models.Internship.id.in_(scoped_ids),
+            models.Internship.status.in_(["planned", "in_progress"]),
+        )
     ).scalar() or 0
-    completed = db.query(func.count(models.Internship.id)).filter(
-        models.Internship.id.in_(scoped_ids),
-        models.Internship.status.in_(["completed", "evaluated"]),
+    completed = db.execute(
+        select(func.count(models.Internship.id)).where(
+            models.Internship.id.in_(scoped_ids),
+            models.Internship.status.in_(["completed", "evaluated"]),
+        )
     ).scalar() or 0
-    companies = db.query(func.count(models.PartnerCompany.id)).filter(models.PartnerCompany.school_id == school_id).scalar() or 0
-    students = db.query(func.count(func.distinct(models.InternshipAssignment.student_id))).filter(
-        models.InternshipAssignment.school_id == school_id,
-        models.InternshipAssignment.internship_id.in_(scoped_ids),
+    companies = db.execute(
+        select(func.count(models.PartnerCompany.id)).where(models.PartnerCompany.school_id == school_id)
     ).scalar() or 0
-    evaluated = db.query(func.count(models.Internship.id)).filter(
-        models.Internship.id.in_(scoped_ids),
-        models.Internship.status == "evaluated",
+    students = db.execute(
+        select(func.count(func.distinct(models.InternshipAssignment.student_id))).where(
+            models.InternshipAssignment.school_id == school_id,
+            models.InternshipAssignment.internship_id.in_(select(models.Internship.id).where(scope_select.whereclause)),
+        )
     ).scalar() or 0
-    by_company = dict(db.query(models.Internship.company_name, func.count(models.Internship.id)).filter(
-        models.Internship.id.in_(scoped_ids)
-    ).group_by(models.Internship.company_name).all())
-    by_level = dict(db.query(models.Internship.academic_level, func.count(models.Internship.id)).filter(
-        models.Internship.id.in_(scoped_ids)
-    ).group_by(models.Internship.academic_level).all())
-    by_country = dict(db.query(models.PartnerCompany.country, func.count(models.PartnerCompany.id)).filter(
-        models.PartnerCompany.school_id == school_id
-    ).group_by(models.PartnerCompany.country).all())
+    evaluated = db.execute(
+        select(func.count(models.Internship.id)).where(
+            models.Internship.id.in_(scoped_ids),
+            models.Internship.status == "evaluated",
+        )
+    ).scalar() or 0
+    by_company = dict(
+        db.execute(
+            select(models.Internship.company_name, func.count(models.Internship.id)).where(
+                models.Internship.id.in_(scoped_ids)
+            ).group_by(models.Internship.company_name)
+        ).all()
+    )
+    by_level = dict(
+        db.execute(
+            select(models.Internship.academic_level, func.count(models.Internship.id)).where(
+                models.Internship.id.in_(scoped_ids)
+            ).group_by(models.Internship.academic_level)
+        ).all()
+    )
+    by_country = dict(
+        db.execute(
+            select(models.PartnerCompany.country, func.count(models.PartnerCompany.id)).where(
+                models.PartnerCompany.school_id == school_id
+            ).group_by(models.PartnerCompany.country)
+        ).all()
+    )
     return schemas.InternshipDashboardResponse(
         total_internships=int(total),
         active_internships=int(active),
@@ -262,12 +298,12 @@ def list_internships(
 ):
     query = _internship_scope(db, current_user)
     if status:
-        query = query.filter(models.Internship.status == status)
+        query = query.where(models.Internship.status == status)
     if company_id:
-        query = query.filter(models.Internship.company_id == company_id)
+        query = query.where(models.Internship.company_id == company_id)
     if class_id:
-        query = query.filter(models.Internship.class_id == class_id)
-    return [_internship_response(db, row) for row in query.order_by(models.Internship.created_at.desc()).all()]
+        query = query.where(models.Internship.class_id == class_id)
+    return [_internship_response(db, row) for row in db.execute(query.order_by(models.Internship.created_at.desc())).scalars().all()]
 
 
 @router.post("/", response_model=schemas.InternshipResponse)
