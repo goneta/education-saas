@@ -10,10 +10,12 @@ from sqlalchemy import func, text
 from .audit import audit_mutation_middleware
 from .database import SessionLocal
 from .observability import observability_middleware
+from .sentry_setup import configure_sentry
 from .security_middleware import rate_limit_middleware, security_headers_middleware
 from . import models
 from .routers import auth, students, teachers, chat, education, attendance, grades, dashboard, library, finance, system, pedagogy, operations, enterprise, documents, files, internships, ai_automation, ai_billing, bootstrap, account, context, student_lifecycle, employment, site, facilities, transport, payments, platform, sis, academics, communication, hr, analytics, extensibility, ai_learning, levels, personnel, payroll, public_api, automations, self_documents, assignments, billing, verify, document_templates, agent_platform, reference_data, school_life, public_api_v2
 
+configure_sentry()
 app = FastAPI(title="TeducAI API")
 logger = logging.getLogger("teducai")
 

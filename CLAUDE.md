@@ -19,6 +19,11 @@ notifications and master data (zero data duplication).
 - **Git discipline (standing user instruction)**: every increment ends with DOX +
   CLAUDE.md updated, then `git add -A`, a descriptive commit and `git push origin main`.
   Leave the tree clean.
+- **Sentry backend**: `backend/sentry_setup.py` starts before FastAPI only when
+  `SENTRY_DSN` is set. `sentry-sdk==2.70.0`; event, trace and log exports are
+  scrubbed for school/child/payment data, default PII and AI auto-integrations
+  disabled. Defaults: 10% traces, 1% profile sessions. `backend/conftest.py`
+  clears the DSN so tests cannot send events. See `docs/sentry-observability.md`.
 
 ## Reference data + forms — the platform contract (apply to EVERY new module)
 

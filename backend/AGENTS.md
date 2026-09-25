@@ -17,6 +17,7 @@
 - New Pydantic contracts must use distinct names across feature areas; partner/public API schemas must not shadow core school, student, teacher, class or subject contracts.
 - Do not restore `Base.metadata.create_all()` as a substitute for production migrations.
 - Secrets and provider keys must not be logged or returned in API responses.
+- Sentry is optional and initialized at API startup from `SENTRY_DSN`. Keep student, parent, health, payment, request and authentication data out of exported telemetry; do not enable default PII or unredacted log forwarding.
 - The system super administrator bootstrap must stay idempotent and shared between CLI and HTTP entrypoints.
 - Use `backend.tenancy` helpers for school-scoped routes that support both global `SUPER_ADMIN` access and school-local users.
 - Cash payments and AI credit movements must preserve payment method, validator, internal reference, wallet balances, paired transactions, and audit history.
@@ -44,6 +45,7 @@
 - Targeted syntax check: `python -m py_compile backend\\models.py backend\\schemas.py backend\\main.py`.
 - `conftest.py` redirects backend tests to a private temporary SQLite database before application imports and rejects a configured non-SQLite database. Do not migrate the developer database merely to run pytest. Production migration validation is a separate check.
 - Backend tests: `python -m pytest backend`. Note `test_auth.py` requires a separately running live server on `localhost:8000` and is not a self-contained pytest case; the rest use `TestClient` directly against the app.
+- Sentry privacy/configuration tests: `python -m pytest backend/test_sentry_setup.py`.
 - Import smoke check: `python -c "import backend.main as m; print(m.app.title)"`.
 
 # Child DOX Index

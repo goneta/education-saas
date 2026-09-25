@@ -42,6 +42,7 @@ if _configured and not _configured.startswith("sqlite"):
 _TEST_DB = pathlib.Path(tempfile.gettempdir()) / f"teducai_test_{os.getpid()}.db"
 _TEST_DB.unlink(missing_ok=True)
 os.environ["DATABASE_URL"] = f"sqlite:///{_TEST_DB.as_posix()}"
+os.environ["SENTRY_DSN"] = ""
 
 # A deterministic secret so token signing does not depend on the developer's env.
 os.environ.setdefault("SECRET_KEY", "test-only-secret-not-used-in-production")

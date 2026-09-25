@@ -9,6 +9,7 @@
 ## Local Contracts
 - **Refuses to run** when `DATABASE_URL` is not SQLite — a test run can never
   write into staging/production.
+- Forces `SENTRY_DSN` empty before importing the app so local test failures never reach the live Sentry project.
 - Before this existed, the 26 `TestClient(app)` modules wrote into the developer
   database (7.3 MB accumulated): the suite was non-deterministic (3 phantom
   failures), slowed to 11 min 32 s, and nothing stopped it hitting a real DB.
