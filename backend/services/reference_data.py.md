@@ -18,7 +18,10 @@
   school_id); SCHOOL_ADMIN/DIRECTION -> ALWAYS local to their school; scope
   "global" from a school -> 403 GLOBAL_READONLY_DETAIL. `_load_for_write` — a
   school NEVER updates/deletes a global row (403), nor another school's row.
-  Duplicate code in the merged view -> 409. Every mutation audited (`reference.*`).
+  Duplicate code in the merged view -> 409 on create and update, including inactive
+  values and legacy SchoolLevel codes. Global writes check every school because
+  they appear in every merged list; separate schools may reuse local codes.
+  Blank names/codes -> 422 before any field mutation. Every mutation audited (`reference.*`).
 ## Verification
-- `python -m pytest backend/test_reference_data.py` (5 green).
+- `python -m pytest backend/test_reference_data.py backend/test_reference_validation.py`.
 - 3 nouvelles catégories: activity_type, incident_type, health_record_type (semées en global par la migration 0056) — consommées par les modules Vie scolaire.

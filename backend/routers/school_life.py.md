@@ -19,5 +19,8 @@
   migration 0056; type field = `exam_type`); `boarding` REUSES facilities
   `rooms` for chambers — zero duplication.
 ## Verification
-- `python -m pytest backend/test_school_life.py` (3 green).
+- Required fields are checked before mutation for both POST and PATCH. PATCH
+  may omit a required field but cannot replace it with null, empty or whitespace.
+  Invalid values return 422 and leave the existing record intact.
+- `python -m pytest backend/test_school_life.py backend/test_school_life_contract.py`.
 - PRIV-01 (audit): les lectures ne sont plus ouvertes a tout membre de l etablissement. `_scope_rows` applique `services/access_scope.visible_student_ids` aux modules porteurs de donnees personnelles (Discipline, Internat, Sante): un eleve ne voit que ses propres enregistrements, un parent ceux de ses enfants rattaches, le personnel garde la vue etablissement. Le filtrage couvre la liste, le detail (`_get_or_404(..., for_write=False)` -> 404 sur une ligne masquee), le parametre student_id et l export CSV. Examens et Activites restent visibles a tous (calendriers sans donnee personnelle), ecritures toujours reservees a l administration.

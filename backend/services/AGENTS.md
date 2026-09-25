@@ -16,6 +16,7 @@
 - The TeducAI multi-agent roster lives in `ai_agents.py` (41 agents, source of truth for chat routing). Every agent prompt must embed the shared `SECURITY_PREAMBLE`; `select_agent` must stay permission-aware and side-effect free, and routing must never replace the per-request RBAC/tenant enforcement in the chat router. Routing is LLM-first (`ai_service.route_to_agent`) with deterministic keyword fallback and a coordinator default; it must always degrade gracefully when no provider is configured (never raise).
 - Checkout provider integrations must never mark payments successful before an authenticated provider webhook confirms the transaction.
 - Payment adapters must normalize provider-specific currency rules, including zero-decimal XOF/FCFA amounts.
+- Reference codes must remain unique in merged school/global lists on both create and update, including inactive values and legacy school levels. Validate changes before mutating persisted fields; reject collisions with 409 and blank required values with 422.
 
 # Work Guidance
 

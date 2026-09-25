@@ -6,15 +6,33 @@ and manage ONLY their local extensions; the Super Admin manages the global
 lists. See services/reference_data.py for the rules.
 """
 
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from pydantic import BaseModel, Field
 
 from .. import database, models, security
 from ..services import reference_data
 
 router = APIRouter(prefix="/reference-data", tags=["Reference data"])
+
+
+class ReferenceCreate(BaseModel):
+    name: str
+    code: Optional[str] = None
+    description: Optional[str] = None
+    sort_order: int = 0
+    scope: Optional[Literal["global", "school"]] = None
+    school_id: Optional[int] = Field(default=None, gt=0)
+
+
+class ReferenceUpdate(BaseModel):
+    name: Optional[str] = None
+    code: Optional[str] = None
+    description: Optional[str] = None
+    sort_order: Optional[int] = None
+    is_active: Optional[bool] = None
 
 
 def _caller_school_id(current_user: models.User, school_id: Optional[int]) -> Optional[int]:
@@ -51,12 +69,13 @@ def list_items(
 @router.post("/{category}")
 def create_item(
     category: str,
-    payload: dict,
+    payload: ReferenceCreate,
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db),
 ):
     """Super Admin -> global item (scope 'school' + school_id for a local one);
     school admin/direction -> ALWAYS a local item of their own school."""
+    payload = payload.model_dump()
     name = payload.get("name")
     if not isinstance(name, str):
         raise HTTPException(status_code=422, detail="Le nom est obligatoire.")
@@ -78,11 +97,11 @@ def create_item(
 @router.patch("/items/{item_id}")
 def update_item(
     item_id: int,
-    payload: dict,
+    payload: ReferenceUpdate,
     current_user: models.User = Depends(security.get_current_user),
     db: Session = Depends(database.get_db),
 ):
-    item = reference_data.update_item(db, item_id, current_user=current_user, data=payload)
+    item = reference_data.update_item(db, item_id, current_user=current_user, data=payload.model_dump(exclude_unset=True))
     db.commit()
     return item
 

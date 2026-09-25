@@ -31,6 +31,7 @@
 - Student collection queries must derive visibility from active enrollments rather than only the legacy `users.school_id`.
 - Public Site CMS content (`/site/content`) is read without authentication and written only by the Super Admin; writes ignore unknown sections, deep-merge over saved values, and are audited.
 - Assessment routes must scope by the owning class's school (cross-school read/update/delete → 404) and enforce academic-year editability on mutations, while keeping reads available on closed years.
+- Shared school-life CRUD must validate required fields on PATCH as well as POST before mutating a row; partial updates may omit required fields but cannot clear them.
 - Every endpoint that calls a real AI provider must gate on the caller's AI credits before generation and record usage against the caller's wallet afterwards (chat, AI command-center, and employment agent all do); never expose unmetered provider access.
 - Only the platform Super Admin may grant the wildcard admin roles (`super_admin`/`school_admin`/`admin`), whether as a primary role or a `UserRoleAssignment` role key; role assignment and user create/update must reject these for non-super-admins to prevent privilege escalation.
 - Timetable scheduling constraints must stay data-driven: pedagogical/human rules live in `TimetableConstraintRule` rows and are evaluated by `services/timetable_constraints.py` (never hard-coded), with the router validating `rule_type` against the engine's supported list and scoping rules by school.

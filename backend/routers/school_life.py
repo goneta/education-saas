@@ -107,6 +107,14 @@ def _register_module(
 ):
     """Mount the uniform CRUD surface for one module under /school-life/{slug}."""
 
+    def _validate_required(payload: dict, *, partial: bool = False) -> None:
+        for field in required:
+            if partial and field not in payload:
+                continue
+            value = payload.get(field)
+            if value is None or (isinstance(value, str) and not value.strip()):
+                raise HTTPException(status_code=422, detail=f"Le champ « {field} » est obligatoire.")
+
     def _read_guard(current_user: models.User) -> int:
         if restricted_read:
             _require_manage(current_user)
@@ -220,9 +228,7 @@ def _register_module(
     ):
         _require_manage(current_user)
         school_id = _school_id(current_user)
-        for field in required:
-            if payload.get(field) in (None, ""):
-                raise HTTPException(status_code=422, detail=f"Le champ « {field} » est obligatoire.")
+        _validate_required(payload)
         if "student_id" in fields:
             _validate_student(db, school_id, payload.get("student_id"))
         row = model(school_id=school_id)
@@ -250,6 +256,7 @@ def _register_module(
     ):
         _require_manage(current_user)
         row = _get_or_404(db, current_user, item_id)
+        _validate_required(payload, partial=True)
         if "student_id" in payload and "student_id" in fields:
             _validate_student(db, row.school_id, payload.get("student_id"))
         for field in fields:

@@ -9,4 +9,6 @@
   school admin/direction -> always local), `PATCH|DELETE /items/{id}` (permission
   rules enforced in the service; global rows 403 for schools).
 ## Verification
-- `python -m pytest backend/test_reference_data.py`
+- POST/PATCH use Pydantic request models; invalid field types and create scopes
+  produce 422 before database writes, instead of conversion/SQL errors.
+- `python -m pytest backend/test_reference_data.py backend/test_reference_validation.py`

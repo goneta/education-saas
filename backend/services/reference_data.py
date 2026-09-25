@@ -58,6 +58,32 @@ def ensure_category(category: str) -> None:
         raise HTTPException(status_code=404, detail="Catégorie de référentiel inconnue.")
 
 
+def _required_text(value: str, field: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise HTTPException(status_code=422, detail=f"{field} est obligatoire.")
+    return value.strip()
+
+
+def _check_code(db: Session, category: str, code: str, school_id: Optional[int],
+                exclude_id: Optional[int] = None) -> None:
+    query = db.query(models.ReferenceItem).filter(
+        models.ReferenceItem.category == category, models.ReferenceItem.code == code,
+    )
+    if school_id is not None:
+        query = query.filter((models.ReferenceItem.school_id == None)
+                             | (models.ReferenceItem.school_id == school_id))
+    if exclude_id is not None:
+        query = query.filter(models.ReferenceItem.id != exclude_id)
+    # Global additions affect every school's merged list, including inactive items.
+    conflict = query.first() is not None
+    if category == "school_level":
+        conflict = conflict or db.query(models.SchoolLevel).filter(
+            models.SchoolLevel.code == code,
+        ).first() is not None
+    if conflict:
+        raise HTTPException(status_code=409, detail="Ce code existe déjà dans cette liste.")
+
+
 def _serialize(row: models.ReferenceItem) -> dict:
     return {
         "id": row.id,
@@ -167,17 +193,13 @@ def create_item(
     school_id: Optional[int] = None,
 ) -> dict:
     ensure_category(category)
-    clean_name = (name or "").strip()
-    if not clean_name:
-        raise HTTPException(status_code=422, detail="Le nom est obligatoire.")
-    clean_code = (code or clean_name).strip().upper().replace(" ", "_")[:64]
+    clean_name = _required_text(name, "Le nom")
+    clean_code = _required_text(code if code is not None else clean_name, "Le code").upper().replace(" ", "_")[:64]
     target_school_id = _resolve_write_scope(current_user, scope, school_id)
 
     # A code must stay unique in the school's MERGED view (and in the global
     # list for global items) so the single-list illusion never breaks.
-    merged = merged_items(db, category, target_school_id or school_id, include_inactive=True)
-    if any(item["code"] == clean_code for item in merged):
-        raise HTTPException(status_code=409, detail="Ce code existe déjà dans cette liste.")
+    _check_code(db, category, clean_code, target_school_id)
 
     row = models.ReferenceItem(
         category=category,
@@ -219,11 +241,18 @@ def _load_for_write(db: Session, item_id: int, current_user: models.User) -> mod
 
 def update_item(db: Session, item_id: int, *, current_user: models.User, data: dict) -> dict:
     row = _load_for_write(db, item_id, current_user)
+    data = dict(data)
+    if "name" in data:
+        data["name"] = _required_text(data["name"], "Le nom")
+    if "code" in data:
+        data["code"] = _required_text(data["code"], "Le code").upper().replace(" ", "_")[:64]
+        if data["code"] != row.code:
+            _check_code(db, row.category, data["code"], row.school_id, row.id)
     for key in ("name", "description", "sort_order", "is_active"):
         if key in data and data[key] is not None:
             setattr(row, key, data[key])
     if data.get("code"):
-        row.code = str(data["code"]).strip().upper().replace(" ", "_")[:64]
+        row.code = data["code"]
     audit.record_audit(
         db,
         action="reference.item.updated",

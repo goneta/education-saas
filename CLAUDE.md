@@ -22,6 +22,16 @@ notifications and master data (zero data duplication).
 
 ## Reference data + forms — the platform contract (apply to EVERY new module)
 
+- Regression suites: `test_reference_validation.py` covers merged-code collisions,
+  whitespace and malformed API input; `test_school_life_contract.py` applies 12
+  independent HTTP scenarios to each of the five school-life modules.
+- Reference POST/PATCH use typed request models. Code uniqueness is checked
+  before mutation against globals and the owning school's local data (including
+  inactive rows and legacy levels); global writes must not hide an existing local
+  code in any school. School-life PATCH cannot clear required fields (422).
+- These suites extend the audit; they do not establish ten scenarios for every
+  application feature or validate production load, live payments or restoration.
+
 Three shared mechanisms replace per‑page code. Never re‑implement them.
 
 1. **Hierarchical reference lists** — `backend/services/reference_data.py` +
