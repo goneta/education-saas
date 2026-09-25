@@ -3104,7 +3104,7 @@ class StudentProfileData(BaseModel):
     address: Optional[str] = None
 
 
-class StudentCreate(BaseModel):
+class PublicV2StudentCreate(BaseModel):
     email: str
     full_name: str
     password: Optional[str] = None
@@ -3112,50 +3112,50 @@ class StudentCreate(BaseModel):
     profile_data: Optional[StudentProfileData] = None
 
 
-class StudentUpdate(BaseModel):
+class PublicV2StudentUpdate(BaseModel):
     full_name: Optional[str] = None
     email: Optional[str] = None
     is_active: Optional[bool] = None
     profile_data: Optional[StudentProfileData] = None
 
 
-class TeacherCreate(BaseModel):
+class PublicV2TeacherCreate(BaseModel):
     email: str
     full_name: str
     password: Optional[str] = None
     is_active: Optional[bool] = True
 
 
-class TeacherUpdate(BaseModel):
+class PublicV2TeacherUpdate(BaseModel):
     full_name: Optional[str] = None
     email: Optional[str] = None
     is_active: Optional[bool] = None
 
 
-class ClassCreate(BaseModel):
+class PublicV2ClassCreate(BaseModel):
     name: str
     level: Optional[str] = None
     academic_year_id: Optional[int] = None
     capacity: Optional[int] = None
 
 
-class ClassUpdate(BaseModel):
+class PublicV2ClassUpdate(BaseModel):
     name: Optional[str] = None
     level: Optional[str] = None
     capacity: Optional[int] = None
 
 
-class SubjectCreate(BaseModel):
+class PublicV2SubjectCreate(BaseModel):
     name: str
     coefficient: Optional[int] = None
 
 
-class SubjectUpdate(BaseModel):
+class PublicV2SubjectUpdate(BaseModel):
     name: Optional[str] = None
     coefficient: Optional[int] = None
 
 
-class SchoolCreate(BaseModel):
+class PublicV2SchoolCreate(BaseModel):
     name: str
     domain_prefix: str
     school_type: str = "GENERAL"
@@ -3166,7 +3166,7 @@ class SchoolCreate(BaseModel):
     city: Optional[str] = None
 
 
-class SchoolUpdate(BaseModel):
+class PublicV2SchoolUpdate(BaseModel):
     name: Optional[str] = None
     address: Optional[str] = None
     phone: Optional[str] = None

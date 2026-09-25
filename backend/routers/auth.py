@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import or_
@@ -7,6 +9,7 @@ from .. import crypto_utils, localization, models, schemas, security, database, 
 from ..services import email_service, password_reset, school_model_templates
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+logger = logging.getLogger(__name__)
 
 
 
@@ -81,9 +84,10 @@ def register_school(school: schemas.SchoolCreate, owner: schemas.UserCreate, db:
     except HTTPException:
         db.rollback()
         raise
-    except Exception:
+    except Exception as exc:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Registration failed")
+        logger.error("School registration failed (%s)", type(exc).__name__)
+        raise HTTPException(status_code=500, detail="Registration failed") from None
 
 @router.post("/token", response_model=schemas.Token)
 def login_for_access_token(

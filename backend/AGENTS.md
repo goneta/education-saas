@@ -14,6 +14,7 @@
 
 - API changes must preserve tenant isolation, RBAC checks, audit logging for sensitive actions, and existing route behavior unless explicitly changed.
 - Model changes that affect production schema require an Alembic migration under `alembic/versions`.
+- New Pydantic contracts must use distinct names across feature areas; partner/public API schemas must not shadow core school, student, teacher, class or subject contracts.
 - Do not restore `Base.metadata.create_all()` as a substitute for production migrations.
 - Secrets and provider keys must not be logged or returned in API responses.
 - The system super administrator bootstrap must stay idempotent and shared between CLI and HTTP entrypoints.

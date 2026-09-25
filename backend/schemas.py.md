@@ -8,6 +8,7 @@
 
 - Python source file used by the backend, migrations, scripts, tests, or utilities.
 - Exposes API schemas for schools, users, AI billing, and other modules, including username, system-account flags, account type, and dashboard destination hints in user responses.
+- Public partner API v2 request models use `PublicV2*` names. Keep core `SchoolCreate`, `ClassCreate`, `TeacherCreate`, `StudentUpdate` and `SubjectCreate` bindings intact; shadowing them breaks core registration and CRUD validation at runtime.
 - `AIProviderResponse` includes `balance_api_supported`, indicating whether the provider's balance can be auto-synced from its API.
 - `StudentProfileResponse` overrides `date_of_birth`, `gender`, and `parent_email` as optional/plain on read so admission/import-created profiles (which may lack them, or hold a malformed email) do not 500 the roster; creation schemas keep these required/validated.
 - `TimetableConstraintRule*` schemas describe the configurable scheduling rules (rule_type, JSON parameters, severity, scope); the router validates `rule_type` against the engine's supported list.

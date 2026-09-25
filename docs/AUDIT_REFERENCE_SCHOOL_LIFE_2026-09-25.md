@@ -2,6 +2,12 @@
 
 ## Reproduced defects
 
+- After incorporating three newer commits from `origin/main`, the public API v2
+  addition was found to redeclare core Pydantic classes. In particular,
+  `SchoolCreate` lost `country_code`, making school registration return 500 and
+  cascading into dozens of backend tests. Namespaced `PublicV2*` request models
+  restore the original core bindings and keep partner endpoints typed.
+
 - Reference updates accepted codes already used in the merged list. Deduplication
   could hide an entry from school forms. Create and update now reject conflicts
   with 409, including inactive rows, legacy levels and global/local collisions.
@@ -19,8 +25,10 @@
   school-life suite was collected.
 - School-life suite: 12 scenarios per module, 60 total. Its initial run produced
   55 passes and 5 failures, all for clearing mandatory fields with PATCH.
-- After the shared CRUD correction, the full backend suite passed: 697 tests,
-  0 failures, 153.31 seconds. Deprecation warnings remain (2237 warnings).
+- Before integrating newer remote commits, the full backend suite passed:
+  697 tests, 0 failures, 153.31 seconds. After integrating and fixing the
+  partner API v2 schema collision, the complete suite passed again: 707 tests,
+  0 failures, 184.23 seconds. Deprecation warnings remain (2236 warnings).
 
 ## Scope and remaining checks
 

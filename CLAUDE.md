@@ -29,6 +29,9 @@ notifications and master data (zero data duplication).
   before mutation against globals and the owning school's local data (including
   inactive rows and legacy levels); global writes must not hide an existing local
   code in any school. School-life PATCH cannot clear required fields (422).
+- Partner API v2 schemas must keep `PublicV2*` names. Reusing core names such as
+  `SchoolCreate` shadows the existing Pydantic class and breaks school
+  registration with a 500; `test_public_v2_schema_isolation.py` guards this.
 - These suites extend the audit; they do not establish ten scenarios for every
   application feature or validate production load, live payments or restoration.
 

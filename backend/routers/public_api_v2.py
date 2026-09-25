@@ -21,8 +21,9 @@ import hashlib
 from .. import database, models
 from ..schemas import (
     PublicStudent, PublicTeacher, PublicClass, PublicSubject, PublicAnnouncement, PublicKeyInfo,
-    StudentCreate, StudentUpdate, TeacherCreate, TeacherUpdate, ClassCreate, ClassUpdate,
-    SubjectCreate, SubjectUpdate, SchoolCreate, SchoolUpdate,
+    PublicV2StudentCreate, PublicV2StudentUpdate, PublicV2TeacherCreate, PublicV2TeacherUpdate,
+    PublicV2ClassCreate, PublicV2ClassUpdate, PublicV2SubjectCreate, PublicV2SubjectUpdate,
+    PublicV2SchoolCreate, PublicV2SchoolUpdate,
 )
 
 router = APIRouter(prefix="/api/v2", tags=["Public API (v2) - Third Party Integration"])
@@ -141,7 +142,7 @@ def get_student(
 
 @router.post("/students", response_model=PublicStudent, status_code=201)
 def create_student(
-    payload: StudentCreate,
+    payload: PublicV2StudentCreate,
     api_key: models.ApiKey = Depends(require_api_key),
     db: Session = Depends(database.get_db)
 ):
@@ -195,7 +196,7 @@ def create_student(
 @router.put("/students/{student_id}", response_model=PublicStudent)
 def update_student(
     student_id: int,
-    payload: StudentUpdate,
+    payload: PublicV2StudentUpdate,
     api_key: models.ApiKey = Depends(require_api_key),
     db: Session = Depends(database.get_db)
 ):
@@ -330,7 +331,7 @@ def get_teacher(
 
 @router.post("/teachers", response_model=PublicTeacher, status_code=201)
 def create_teacher(
-    payload: TeacherCreate,
+    payload: PublicV2TeacherCreate,
     api_key: models.ApiKey = Depends(require_api_key),
     db: Session = Depends(database.get_db)
 ):
@@ -363,7 +364,7 @@ def create_teacher(
 @router.put("/teachers/{teacher_id}", response_model=PublicTeacher)
 def update_teacher(
     teacher_id: int,
-    payload: TeacherUpdate,
+    payload: PublicV2TeacherUpdate,
     api_key: models.ApiKey = Depends(require_api_key),
     db: Session = Depends(database.get_db)
 ):
@@ -453,7 +454,7 @@ def get_class(
 
 @router.post("/classes", response_model=PublicClass, status_code=201)
 def create_class(
-    payload: ClassCreate,
+    payload: PublicV2ClassCreate,
     api_key: models.ApiKey = Depends(require_api_key),
     db: Session = Depends(database.get_db)
 ):
@@ -474,7 +475,7 @@ def create_class(
 @router.put("/classes/{class_id}", response_model=PublicClass)
 def update_class(
     class_id: int,
-    payload: ClassUpdate,
+    payload: PublicV2ClassUpdate,
     api_key: models.ApiKey = Depends(require_api_key),
     db: Session = Depends(database.get_db)
 ):
@@ -540,7 +541,7 @@ def list_subjects(
 
 @router.post("/subjects", response_model=PublicSubject, status_code=201)
 def create_subject(
-    payload: SubjectCreate,
+    payload: PublicV2SubjectCreate,
     api_key: models.ApiKey = Depends(require_api_key),
     db: Session = Depends(database.get_db)
 ):
@@ -559,7 +560,7 @@ def create_subject(
 @router.put("/subjects/{subject_id}", response_model=PublicSubject)
 def update_subject(
     subject_id: int,
-    payload: SubjectUpdate,
+    payload: PublicV2SubjectUpdate,
     api_key: models.ApiKey = Depends(require_api_key),
     db: Session = Depends(database.get_db)
 ):
@@ -626,7 +627,7 @@ def list_schools(
 
 @router.post("/schools", response_model=PublicKeyInfo, status_code=201)
 def create_school(
-    payload: SchoolCreate,
+    payload: PublicV2SchoolCreate,
     api_key: models.ApiKey = Depends(require_api_key),
     db: Session = Depends(database.get_db)
 ):
@@ -652,7 +653,7 @@ def create_school(
 @router.put("/schools/{school_id}", response_model=PublicKeyInfo)
 def update_school(
     school_id: int,
-    payload: SchoolUpdate,
+    payload: PublicV2SchoolUpdate,
     api_key: models.ApiKey = Depends(require_api_key),
     db: Session = Depends(database.get_db)
 ):

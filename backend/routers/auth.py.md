@@ -9,6 +9,7 @@
 - Python source file used by the backend, migrations, scripts, tests, or utilities. It participates in the FastAPI API boundary.
 - Owns registration, login, MFA, and `/auth/me`; login accepts either email or username while keeping password verification and account lockout protections.
 - School registration initializes an organization and initial model assignment without replacing existing academic data.
+- Unexpected registration errors roll back the active session, log only the exception class, and return a generic 500 without exposing SQL parameters or credentials. The historical first-school commit remains a separate atomicity concern.
 - `/auth/me` returns account-type metadata and a recommended dashboard path so the frontend can redirect recruiters, external students, school users, and super admins without guessing from UI state.
 
 ## DOX Scope
