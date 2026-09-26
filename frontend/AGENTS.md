@@ -25,6 +25,7 @@
 - Student, teacher, and staff profile photos must use authenticated file reads and permission-aware uploads.
 - Dashboard API requests propagate the validated active school-model and academic-year context; the global selector persists changes through backend context APIs.
 - Student screens treat the global student journey as the durable history and clearly distinguish local editable enrollment data from cross-school read-only academic history and hidden finance.
+- Sentry error monitoring and 10% tracing cover browser, Node, and Edge only when a DSN is configured. Keep school, child, and payment data out of telemetry; do not enable replay or raw request capture without a privacy review. Browser CSP must allow only the configured ingest origin.
 
 # Work Guidance
 

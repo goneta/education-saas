@@ -1,5 +1,8 @@
 # package.json
 
+`@sentry/nextjs` is pinned to 11.0.0 for browser, Node, and Edge error
+monitoring/tracing. Update `package-lock.json` with npm when changing it.
+
 ## Source File
 
 - `frontend/package.json`

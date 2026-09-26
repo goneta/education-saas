@@ -1,6 +1,10 @@
 import createNextIntlPlugin from 'next-intl/plugin';
+import { withSentryConfig } from '@sentry/nextjs/config';
 
 const withNextIntl = createNextIntlPlugin('./i18n.ts');
+const sentryIngestOrigin = process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? new URL(process.env.NEXT_PUBLIC_SENTRY_DSN).origin
+  : null;
 
 // Audit SEC-06: security headers were only set by the FastAPI middleware, so
 // they applied to API responses and NOT to the HTML pages Next.js serves —
@@ -22,7 +26,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self' data:",
-      "connect-src 'self'",
+      `connect-src 'self'${sentryIngestOrigin ? ` ${sentryIngestOrigin}` : ''}`,
       "frame-ancestors 'none'",
       "object-src 'none'",
       "base-uri 'self'",
@@ -62,4 +66,12 @@ const nextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+export default withSentryConfig(withNextIntl(nextConfig), {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  telemetry: false,
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN || !process.env.SENTRY_ORG || !process.env.SENTRY_PROJECT,
+  },
+});

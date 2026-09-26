@@ -1,5 +1,11 @@
 # next.config.ts
 
+Sentry wraps the existing next-intl configuration. The CSP permits outbound
+browser events only to the origin extracted from `NEXT_PUBLIC_SENTRY_DSN` at
+build time. Source-map upload runs only when `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`,
+and `SENTRY_PROJECT` are all available; otherwise it is disabled. Keep the
+backend rewrite and security headers intact when changing this composition.
+
 ## Source File
 
 - `frontend/next.config.ts`

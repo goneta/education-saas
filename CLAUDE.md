@@ -11,8 +11,9 @@ notifications and master data (zero data duplication).
 - **Tenancy + RBAC**: every query is school‑scoped; writes are role‑gated.
 - **Migrations**: Alembic in `alembic/versions/`; run `alembic upgrade head`. Written
   against SQLite (tests) — column‑only FKs (no `ALTER TABLE ADD CONSTRAINT`).
-- **Tests**: `pytest backend`. Frontend has **no `node_modules` in the sandbox** —
-  verify FE by inspection (`npm run build`/lint/Playwright can't run here).
+- **Tests**: `pytest backend`. The frontend dependency tree is intentionally
+  removed after checks to keep searches fast; temporarily run `npm ci` for
+  lint/build, then remove `frontend/node_modules` after verification.
 - **Response schemas are tolerant on read** (email fields are `Optional[str]`, not
   `EmailStr`) so one bad stored value never 500s a list; input schemas stay strict. A
   global `ResponseValidationError` handler logs the exact failing field.
@@ -24,6 +25,13 @@ notifications and master data (zero data duplication).
   scrubbed for school/child/payment data, default PII and AI auto-integrations
   disabled. Defaults: 10% traces, 1% profile sessions. `backend/conftest.py`
   clears the DSN so tests cannot send events. See `docs/sentry-observability.md`.
+- **Sentry frontend**: `@sentry/nextjs` covers browser/Node/Edge errors and 10%
+  tracing. `instrumentation-client.ts`, `instrumentation.ts`, server/edge configs,
+  `app/global-error.tsx`, and `sentry-privacy.ts` own the setup. The privacy
+  scrubber keeps only error types/stack positions and route templates; replay,
+  logs, PII and HTTP payloads stay off. Build with `NEXT_PUBLIC_SENTRY_DSN`,
+  optionally upload private source maps using `SENTRY_ORG`, `SENTRY_PROJECT`,
+  `SENTRY_AUTH_TOKEN`; see `docs/sentry-observability.md`.
 
 ## Reference data + forms — the platform contract (apply to EVERY new module)
 

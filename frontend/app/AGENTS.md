@@ -13,6 +13,7 @@
 - Public pages should detect session state where applicable and route authenticated users toward the dashboard.
 - The student lifecycle workspace owns transfer decisions, concurrent enrollment entry, duplicate-safe import preview/commit, and strongly confirmed academic-year closure.
 - The public landing page renders its hero, partners, FAQ, testimonials, and SEO from the Site CMS (`@/lib/site-content`) with built-in fallbacks; the Super Admin edits this content at `/dashboard/site`.
+- The root `global-error.tsx` captures uncaught render errors through Sentry and must remain usable without locale providers or application context.
 
 # Work Guidance
 
